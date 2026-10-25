@@ -1,10 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, RefreshCw, Settings } from "lucide-react";
+import { Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, RefreshCw, Settings, Trophy } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useVoto } from "@/lib/voto/store";
 import { NotificationsSheet } from "./NotificationsSheet";
+import { AchievementsSheet } from "./AchievementsSheet";
 import { SimulatorSheet } from "./SimulatorSheet";
 import { SubjectSheet } from "./SubjectSheet";
 
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [notif, setNotif] = useState(false);
+  const [achievements, setAchievements] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
   const [subject, setSubject] = useState<string | null>(null);
 
@@ -60,6 +62,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               {v.source === "demo" && v.ready && (
                 <span className="rounded-md border border-primary/40 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-widest text-primary">DEMO</span>
               )}
+              <button type="button" onClick={() => setAchievements(true)} className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Achievement">
+                <Trophy className="h-[18px] w-[18px]" />
+              </button>
               <button
                 type="button"
                 onClick={() => setNotif(true)}
@@ -121,6 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {v.ready && (
         <>
           <NotificationsSheet open={notif} onOpenChange={setNotif} />
+          <AchievementsSheet open={achievements} onOpenChange={setAchievements} />
           <SimulatorSheet open={sim.open} subjectId={sim.subjectId} onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))} />
           <SubjectSheet id={subject} onClose={() => setSubject(null)} onSimulate={(id) => { setSubject(null); setSim({ open: true, subjectId: id }); }} />
         </>
