@@ -78,6 +78,7 @@ function Settings() {
   const [input, setInput] = useState(v.url);
   const [testing, setTesting] = useState(false);
   const [showMoreThemes, setShowMoreThemes] = useState(false);
+  const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
   const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
   const [showSchema, setShowSchema] = useState(false);
   useEffect(() => setInput(v.url), [v.url]);
@@ -118,11 +119,14 @@ function Settings() {
 
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
-        {THEMES.map((t) => <button key={t.id} type="button" aria-pressed={v.theme === t.id} onClick={() => v.setTheme(t.id)} className={cn("press card-surface overflow-hidden p-0 text-left", v.theme === t.id && "border-primary") }>
+        {THEMES.slice(0, showMoreCompleteThemes ? THEMES.length : 4).map((t) => <button key={t.id} type="button" aria-pressed={v.theme === t.id} onClick={() => v.setTheme(t.id)} className={cn("press card-surface overflow-hidden p-0 text-left", v.theme === t.id && "border-primary") }>
           <span className="block h-16" style={{ background: t.sw }} />
           <span className="block p-3"><span className="block text-xs font-semibold">{t.label}</span><span className="mt-1 block text-[10px] text-muted-foreground">{t.description}</span></span>
         </button>)}
       </div>
+      <button type="button" onClick={() => setShowMoreCompleteThemes((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
+        {showMoreCompleteThemes ? "Mostra meno temi completi" : "Mostra tutti i temi completi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreCompleteThemes && "rotate-180")} />
+      </button>
 
       <SectionTitle>Aspetto</SectionTitle>
       <div className="mb-4 grid grid-cols-2 gap-2">
@@ -139,28 +143,30 @@ function Settings() {
         <button type="button" aria-pressed={v.glass} onClick={() => v.setGlass(true)} className={cn("press rounded-xl border p-3 text-left text-xs", v.glass ? "border-primary bg-primary-soft font-semibold text-primary" : "border-border text-muted-foreground")}>Attivo<span className="mt-1 block text-[10px] font-normal">Trasparenze e sfocatura</span></button>
         <button type="button" aria-pressed={!v.glass} onClick={() => v.setGlass(false)} className={cn("press rounded-xl border p-3 text-left text-xs", !v.glass ? "border-primary bg-primary-soft font-semibold text-primary" : "border-border text-muted-foreground")}>Disattivo<span className="mt-1 block text-[10px] font-normal">Aspetto piatto</span></button>
       </div>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-        {ACCENTS.slice(0, showMoreThemes ? ACCENTS.length : 6).map((a) => (
-          <button key={a.id} type="button" aria-pressed={v.accent === a.id} onClick={() => v.setAccent(a.id)}
-            className={cn("press card-surface flex flex-col items-center gap-2 p-3 text-[11px]", v.accent === a.id && "border-primary")}>
-            <span className="h-7 w-7 rounded-full" style={{ background: a.sw }} />{a.label}
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={() => setShowMoreThemes((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
-        {showMoreThemes ? "Mostra meno temi" : "Mostra altri temi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreThemes && "rotate-180")} />
-      </button>
-      <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {BGS.slice(0, showMoreBackgrounds ? BGS.length : 4).map((b) => (
-          <button key={b.id} type="button" aria-pressed={v.bg === b.id} onClick={() => v.setBg(b.id)}
-            className={cn("press flex h-16 items-end rounded-xl border p-2.5 text-[11px]", v.bg === b.id ? "border-primary" : "border-border")}
-            style={{ background: b.sw }}>{b.label}</button>
-        ))}
-      </div>
-      <button type="button" onClick={() => setShowMoreBackgrounds((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
-        {showMoreBackgrounds ? "Mostra meno sfondi" : "Mostra altri sfondi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreBackgrounds && "rotate-180")} />
-      </button>
+      {v.theme === "original" && <>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {ACCENTS.slice(0, showMoreThemes ? ACCENTS.length : 6).map((a) => (
+            <button key={a.id} type="button" aria-pressed={v.accent === a.id} onClick={() => v.setAccent(a.id)}
+              className={cn("press card-surface flex flex-col items-center gap-2 p-3 text-[11px]", v.accent === a.id && "border-primary")}>
+              <span className="h-7 w-7 rounded-full" style={{ background: a.sw }} />{a.label}
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => setShowMoreThemes((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
+          {showMoreThemes ? "Mostra meno colori" : "Mostra altri colori"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreThemes && "rotate-180")} />
+        </button>
+        <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {BGS.slice(0, showMoreBackgrounds ? BGS.length : 4).map((b) => (
+            <button key={b.id} type="button" aria-pressed={v.bg === b.id} onClick={() => v.setBg(b.id)}
+              className={cn("press flex h-16 items-end rounded-xl border p-2.5 text-[11px]", v.bg === b.id ? "border-primary" : "border-border")}
+              style={{ background: b.sw }}>{b.label}</button>
+          ))}
+        </div>
+        <button type="button" onClick={() => setShowMoreBackgrounds((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
+          {showMoreBackgrounds ? "Mostra meno sfondi" : "Mostra altri sfondi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreBackgrounds && "rotate-180")} />
+        </button>
+      </>}
 
       <SectionTitle>Dati</SectionTitle>
       <button type="button" onClick={v.resetDemo} className="press card-surface flex w-full items-center gap-3 p-4 text-left text-sm">
