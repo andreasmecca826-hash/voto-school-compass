@@ -8,6 +8,7 @@ import type { DataSource, VotoData } from "./types";
 export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
 export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 export type Mode = "chiaro" | "scuro";
+export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k";
 
 interface Ctx {
   ready: boolean;
@@ -22,6 +23,7 @@ interface Ctx {
   bg: Bg;
   mode: Mode;
   glass: boolean;
+  theme: Theme;
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
   isRead: (id: string, remote: boolean) => boolean;
@@ -35,6 +37,7 @@ interface Ctx {
   setBg: (b: Bg) => void;
   setMode: (m: Mode) => void;
   setGlass: (enabled: boolean) => void;
+  setTheme: (theme: Theme) => void;
   now: Date;
 }
 
@@ -63,6 +66,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [bg, setBgS] = useState<Bg>("nero");
   const [mode, setModeS] = useState<Mode>("scuro");
   const [glass, setGlassS] = useState(true);
+  const [theme, setThemeS] = useState<Theme>("original");
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
 
@@ -106,6 +110,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setBgS(load(KEYS.bg, "nero"));
     setModeS(load(KEYS.mode, "scuro"));
     setGlassS(load(KEYS.glass, true));
+    setThemeS(load(KEYS.theme, "original"));
     setLastSync(load(KEYS.lastSync, null));
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
@@ -128,11 +133,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset.bg = bg;
     root.dataset.mode = mode;
     root.dataset.glass = glass ? "on" : "off";
-  }, [accent, bg, mode, glass, ready]);
+    root.dataset.theme = theme;
+  }, [accent, bg, mode, glass, theme, ready]);
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, now,
+      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -191,8 +197,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setBg: (b) => { setBgS(b); save(KEYS.bg, b); },
       setMode: (m) => { setModeS(m); save(KEYS.mode, m); },
       setGlass: (enabled) => { setGlassS(enabled); save(KEYS.glass, enabled); },
+      setTheme: (next) => { setThemeS(next); save(KEYS.theme, next); },
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, now, completions, readIds, refreshImpl],
+    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, now, completions, readIds, refreshImpl],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;

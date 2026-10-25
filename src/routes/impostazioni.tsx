@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
-import { useVoto, type Accent, type Bg, type Mode } from "@/lib/voto/store";
+import { useVoto, type Accent, type Bg, type Mode, type Theme } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/impostazioni")({
   head: () => ({
@@ -62,6 +62,16 @@ const MODES: { id: Mode; label: string; description: string }[] = [
   { id: "scuro", label: "Scuro", description: "Contrasto morbido e sfondo scuro" },
   { id: "chiaro", label: "Chiaro", description: "Sfondo chiaro e testo scuro" },
 ];
+const THEMES: { id: Theme; label: string; description: string; sw: string }[] = [
+  { id: "original", label: "Originale", description: "Lo stile VOTO attuale", sw: "linear-gradient(135deg,#151515,#e85d5d)" },
+  { id: "lavender", label: "Lavender", description: "Morbido, lilla e rilassato", sw: "linear-gradient(135deg,#211832,#c4a7ff)" },
+  { id: "cybercore", label: "Cybercore", description: "Neon, terminale e futuristico", sw: "linear-gradient(135deg,#050b0f,#00f0c8)" },
+  { id: "brutalist", label: "Brutalist", description: "Netto, forte e senza fronzoli", sw: "linear-gradient(135deg,#f4f000,#111)" },
+  { id: "retro-os", label: "Retro OS", description: "Finestre e colori da computer vintage", sw: "linear-gradient(135deg,#c0c0c0,#083c83)" },
+  { id: "dark-academia", label: "Dark Academia", description: "Carta, cuoio e atmosfera classica", sw: "linear-gradient(135deg,#201711,#c8a875)" },
+  { id: "glassmorphism", label: "Glassmorphism", description: "Superfici morbide e iridescenti", sw: "linear-gradient(135deg,#24205b,#8ee7ff)" },
+  { id: "y2k", label: "Y2K", description: "Cromato, rosa e azzurro", sw: "linear-gradient(135deg,#ff77c8,#76e6ff)" },
+];
 
 function Settings() {
   const v = useVoto();
@@ -106,7 +116,15 @@ function Settings() {
         </div>
       </section>
 
-      <SectionTitle>Tema</SectionTitle>
+      <SectionTitle>Tema completo</SectionTitle>
+      <div className="grid grid-cols-2 gap-2">
+        {THEMES.map((t) => <button key={t.id} type="button" aria-pressed={v.theme === t.id} onClick={() => v.setTheme(t.id)} className={cn("press card-surface overflow-hidden p-0 text-left", v.theme === t.id && "border-primary") }>
+          <span className="block h-16" style={{ background: t.sw }} />
+          <span className="block p-3"><span className="block text-xs font-semibold">{t.label}</span><span className="mt-1 block text-[10px] text-muted-foreground">{t.description}</span></span>
+        </button>)}
+      </div>
+
+      <SectionTitle>Aspetto</SectionTitle>
       <div className="mb-4 grid grid-cols-2 gap-2">
         {MODES.map((m) => {
           const Icon = m.id === "chiaro" ? Sun : Moon;

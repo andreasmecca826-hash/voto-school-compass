@@ -9,6 +9,7 @@ export const KEYS = {
   bg: "voto.bg",
   mode: "voto.mode",
   glass: "voto.glass",
+  theme: "voto.theme",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {
