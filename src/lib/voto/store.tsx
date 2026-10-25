@@ -4,7 +4,7 @@ import { makeDemoData } from "./demo";
 import { fetchVotoData } from "./parse";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
-import type { Interrogazione } from "./interrogazioni";
+import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 
 export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
 export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
@@ -37,6 +37,15 @@ function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
   });
   DEFAULT_HOME_MODULES.forEach((m) => { if (!ids.has(m.id)) result.push(m); });
   return result;
+}
+
+function normalizeInterrogazioni(value: unknown): Interrogazione[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is Interrogazione => !!item && typeof item === "object" && typeof item.id === "string" && typeof item.subject === "string" && typeof item.date === "string").map((item) => ({
+    ...item,
+    completed: item.completed === true,
+    checklist: Array.isArray(item.checklist) ? item.checklist : DEFAULT_PREPARATION.map((prep) => ({ ...prep })),
+  }));
 }
 
 interface Ctx {
@@ -72,8 +81,9 @@ interface Ctx {
   toggleHomeModule: (id: HomeModuleId) => void;
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
   resetHomeModules: () => void;
-  addInterrogazione: (item: Omit<Interrogazione, "id" | "completed">) => void;
+  addInterrogazione: (item: Omit<Interrogazione, "id" | "completed" | "checklist">) => void;
   toggleInterrogazione: (id: string) => void;
+  toggleInterrogazionePrep: (id: string, preparationId: string) => void;
   removeInterrogazione: (id: string) => void;
   now: Date;
 }
@@ -151,7 +161,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setGlassS(load(KEYS.glass, true));
     setThemeS(load(KEYS.theme, "original"));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
-    setInterrogazioni(load<Interrogazione[]>(KEYS.interrogazioni, []));
+    setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
@@ -255,12 +265,17 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       }),
       resetHomeModules: () => { setHomeModulesS(DEFAULT_HOME_MODULES); save(KEYS.homeModules, DEFAULT_HOME_MODULES); },
       addInterrogazione: (item) => setInterrogazioni((current) => {
-        const next = [{ ...item, id: crypto.randomUUID(), completed: false }, ...current];
+        const next = [{ ...item, id: crypto.randomUUID(), completed: false, checklist: DEFAULT_PREPARATION.map((prep) => ({ ...prep })) }, ...current];
         save(KEYS.interrogazioni, next);
         return next;
       }),
       toggleInterrogazione: (id) => setInterrogazioni((current) => {
         const next = current.map((item) => item.id === id ? { ...item, completed: !item.completed } : item);
+        save(KEYS.interrogazioni, next);
+        return next;
+      }),
+      toggleInterrogazionePrep: (id, preparationId) => setInterrogazioni((current) => {
+        const next = current.map((item) => item.id === id ? { ...item, checklist: item.checklist.map((prep) => prep.id === preparationId ? { ...prep, done: !prep.done } : prep) } : item);
         save(KEYS.interrogazioni, next);
         return next;
       }),

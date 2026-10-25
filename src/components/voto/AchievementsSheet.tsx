@@ -20,6 +20,10 @@ export function AchievementsSheet({ open, onOpenChange }: { open: boolean; onOpe
     const gradesByDate = [...subject.grades].sort((a, b) => a.date.localeCompare(b.date));
     return gradesByDate.length >= 2 && average(subject.grades)! > gradesByDate[0].value;
   });
+  const consistent = v.data.subjects.filter((subject) => {
+    const gradesByDate = [...subject.grades].sort((a, b) => a.date.localeCompare(b.date));
+    return gradesByDate.length >= 2 && average(subject.grades)! > gradesByDate[0].value;
+  }).length >= 2;
   const weekStart = START_OF_WEEK(v.now);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
@@ -29,6 +33,7 @@ export function AchievementsSheet({ open, onOpenChange }: { open: boolean; onOpe
     return due >= weekStart && due <= weekEnd;
   });
   const organized = weeklyAssignments.length > 0 && weeklyAssignments.every((assignment) => v.isDone(assignment.id, assignment.completed));
+  const prepared = v.interrogazioni.some((item) => item.checklist.length > 0 && item.checklist.every((preparation) => preparation.done));
   const achievements = [
     { emoji: "📗", title: "Prima valutazione", text: "Ricevi il tuo primo voto.", unlocked: grades.length > 0 },
     { emoji: "🎯", title: "Obiettivo raggiunto", text: "Raggiungi la media che ti eri prefissato.", unlocked: avg !== null && avg >= v.target },
@@ -36,6 +41,8 @@ export function AchievementsSheet({ open, onOpenChange }: { open: boolean; onOpe
     { emoji: "💯", title: "Voto perfetto", text: "Prendi 10 in una materia.", unlocked: grades.some((grade) => grade.value === 10) },
     { emoji: "🧠", title: "Secchione", text: "Raggiungi una media di almeno 9.", unlocked: avg !== null && avg >= 9 },
     { emoji: "🔥", title: "Settimana organizzata", text: "Completi tutti gli impegni della settimana.", unlocked: organized },
+    { emoji: "📚", title: "Sempre preparato", text: "Completi la checklist di preparazione di un'interrogazione.", unlocked: prepared },
+    { emoji: "🏅", title: "Costanza", text: "Migliori i tuoi risultati in più materie.", unlocked: consistent },
   ];
   const unlocked = achievements.filter((achievement) => achievement.unlocked).length;
 
