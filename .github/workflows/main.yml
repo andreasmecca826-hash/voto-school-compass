@@ -1,5 +1,5 @@
 
-name: VOTO - Build check
+name: VOTO - Build Android APK
 
 on:
   workflow_dispatch:
@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Scarica il codice
         uses: actions/checkout@v4
@@ -19,5 +20,12 @@ jobs:
       - name: Installa dipendenze
         run: bun install --frozen-lockfile
 
-      - name: Controlla compilazione
+      - name: Compila VOTO
         run: bun run build
+
+      - name: Conserva la versione web compilata
+        uses: actions/upload-artifact@v4
+        with:
+          name: VOTO-web-build
+          path: dist/
+          if-no-files-found: error
