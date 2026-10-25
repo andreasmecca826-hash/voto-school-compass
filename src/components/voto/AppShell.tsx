@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, CheckSquare, LayoutGrid, RefreshCw, Settings } from "lucide-react";
+import { Bell, BookOpen, CalendarClock, CheckSquare, LayoutGrid, RefreshCw, Settings } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
   { to: "/voti", label: "Voti", icon: BookOpen },
   { to: "/compiti", label: "Compiti", icon: CheckSquare },
+  { to: "/orario", label: "Orario", icon: CalendarClock },
   { to: "/impostazioni", label: "Impostazioni", icon: Settings },
 ] as const;
 
@@ -91,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t border-border bg-background/90 backdrop-blur-xl md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
-          <ul className="grid grid-cols-4">
+          <ul className="grid grid-cols-5">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = to === "/" ? path === "/" : path.startsWith(to);
               return (
