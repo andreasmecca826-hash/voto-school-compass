@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Clock3, Github, Megaphone, Minus, StickyNote } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Clock3, Github, Minus, StickyNote } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
@@ -40,7 +40,6 @@ function Dashboard() {
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
   const showingDays = attendanceView === "days";
   const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
-  const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
 
   const micro =
     avg === null ? "Nessun voto ancora: il primo arriverà presto."
@@ -138,9 +137,6 @@ function Dashboard() {
 
       <SectionTitle>Note</SectionTitle>
       {notes.length === 0 ? <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" /> : <ul className="space-y-2">{notes.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
-
-      <SectionTitle>Bacheca</SectionTitle>
-      {bulletin.length === 0 ? <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" /> : <ul className="space-y-2">{bulletin.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
 
       <GoalWidget avg={avg} />
     </div>
