@@ -58,7 +58,7 @@ export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOp
                   </div>
                   <p className="mt-0.5 text-sm font-medium">{n.title}</p>
                   {n.message && <p className="mt-0.5 text-xs text-muted-foreground">{n.message}</p>}
-                  {n.type === "notice" && <a href="https://www.portaleargo.it/argofamiglia/" target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri DidUP</a>}
+                  {n.type === "notice" && <a href="https://www.portaleargo.it/famiglia/" target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri DidUP</a>}
                   {!read && (
                     <button type="button" onClick={() => v.markRead([n.id])} className="mt-2 text-xs font-medium text-primary">
                       Segna come letta
