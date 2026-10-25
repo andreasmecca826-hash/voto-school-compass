@@ -33,6 +33,7 @@ jobs:
       - name: Carica file generati
         uses: actions/upload-artifact@v4
         with:
+        include-hidden-files: true
           name: VOTO-build-debug
           path: |
             dist/**
