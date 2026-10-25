@@ -3,9 +3,7 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { average, fmt, neededGrade } from "@/lib/voto/calc";
 import { useVoto } from "@/lib/voto/store";
-import { BottomSheet, Chip } from "./ui";
-
-const WEIGHTS = [0.25, 0.5, 1, 1.5, 2];
+import { BottomSheet } from "./ui";
 
 export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolean; onOpenChange: (o: boolean) => void; subjectId?: string }) {
   const v = useVoto();
@@ -58,24 +56,39 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
       </div>
       <Slider className="mt-3" min={4} max={10} step={0.25} value={[target]} onValueChange={([x]) => setTarget(x)} aria-label="Media obiettivo" />
 
-      <p className="mb-2 mt-5 text-xs text-muted-foreground">Peso del prossimo voto</p>
-      <div className="flex flex-wrap gap-2">
-        {WEIGHTS.map((w) => <Chip key={w} active={weight === w} onClick={() => setWeight(w)}>{fmt(w * 100, 0)}%</Chip>)}
+      <div className="mt-5 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">Peso del prossimo voto</span>
+        <span className="tabular font-display text-lg font-semibold">{fmt(weight * 100, 0)}%</span>
+      </div>
+      <Slider
+        className="mt-3"
+        min={0.25}
+        max={2}
+        step={0.25}
+        value={[weight]}
+        onValueChange={([x]) => setWeight(x)}
+        aria-label="Peso del prossimo voto"
+      />
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground" aria-hidden="true">
+        <span>25%</span>
+        <span>200%</span>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl bg-card p-1" role="radiogroup" aria-label="Tipo di media">
-        {[true, false].map((w) => (
-          <button
-            key={String(w)}
-            type="button"
-            role="radio"
-            aria-checked={weighted === w}
-            onClick={() => setWeighted(w)}
-            className={cn("press h-9 rounded-lg text-xs font-medium", weighted === w ? "bg-surface text-foreground" : "text-muted-foreground")}
-          >
-            {w ? "Ponderata" : "Aritmetica"}
-          </button>
-        ))}
+      <div className="mt-5 flex items-center justify-between rounded-xl bg-card px-3.5 py-3">
+        <div>
+          <p className="text-xs font-medium">Usa pesi per i voti</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Media ponderata</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={weighted}
+          aria-label="Usa pesi per i voti"
+          onClick={() => setWeighted((current) => !current)}
+          className={cn("press relative h-6 w-11 rounded-full transition-colors", weighted ? "bg-primary" : "bg-muted")}
+        >
+          <span className={cn("absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", weighted ? "translate-x-6" : "translate-x-1")} />
+        </button>
       </div>
 
       <div className={cn("mt-5 rounded-2xl border p-5 text-center", res.status === "impossible" ? "border-danger/30 bg-danger-soft" : res.status === "reached" ? "border-success/30 bg-success-soft" : "border-primary/30 bg-primary-soft")}>
