@@ -4,12 +4,13 @@ import { makeDemoData } from "./demo";
 import { fetchVotoData } from "./parse";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
+import type { Interrogazione } from "./interrogazioni";
 
 export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
 export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 export type Mode = "chiaro" | "scuro";
 export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k" | "primavera" | "estate" | "autunno" | "inverno";
-export type HomeModuleId = "media" | "simulatore" | "presenze" | "compiti" | "note" | "bacheca" | "obiettivo";
+export type HomeModuleId = "media" | "simulatore" | "presenze" | "compiti" | "interrogazioni" | "note" | "bacheca" | "obiettivo";
 export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
 
 export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
@@ -17,6 +18,7 @@ export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
   { id: "simulatore", enabled: true },
   { id: "presenze", enabled: true },
   { id: "compiti", enabled: true },
+  { id: "interrogazioni", enabled: true },
   { id: "note", enabled: true },
   { id: "bacheca", enabled: true },
   { id: "obiettivo", enabled: true },
@@ -52,6 +54,7 @@ interface Ctx {
   glass: boolean;
   theme: Theme;
   homeModules: HomeModuleConfig[];
+  interrogazioni: Interrogazione[];
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
   isRead: (id: string, remote: boolean) => boolean;
@@ -69,6 +72,9 @@ interface Ctx {
   toggleHomeModule: (id: HomeModuleId) => void;
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
   resetHomeModules: () => void;
+  addInterrogazione: (item: Omit<Interrogazione, "id" | "completed">) => void;
+  toggleInterrogazione: (id: string) => void;
+  removeInterrogazione: (id: string) => void;
   now: Date;
 }
 
@@ -99,6 +105,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [glass, setGlassS] = useState(true);
   const [theme, setThemeS] = useState<Theme>("original");
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
+  const [interrogazioni, setInterrogazioni] = useState<Interrogazione[]>([]);
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
 
@@ -144,6 +151,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setGlassS(load(KEYS.glass, true));
     setThemeS(load(KEYS.theme, "original"));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
+    setInterrogazioni(load<Interrogazione[]>(KEYS.interrogazioni, []));
     setLastSync(load(KEYS.lastSync, null));
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
@@ -171,7 +179,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, now,
+      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, interrogazioni, now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -246,8 +254,23 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         return next;
       }),
       resetHomeModules: () => { setHomeModulesS(DEFAULT_HOME_MODULES); save(KEYS.homeModules, DEFAULT_HOME_MODULES); },
+      addInterrogazione: (item) => setInterrogazioni((current) => {
+        const next = [{ ...item, id: crypto.randomUUID(), completed: false }, ...current];
+        save(KEYS.interrogazioni, next);
+        return next;
+      }),
+      toggleInterrogazione: (id) => setInterrogazioni((current) => {
+        const next = current.map((item) => item.id === id ? { ...item, completed: !item.completed } : item);
+        save(KEYS.interrogazioni, next);
+        return next;
+      }),
+      removeInterrogazione: (id) => setInterrogazioni((current) => {
+        const next = current.filter((item) => item.id !== id);
+        save(KEYS.interrogazioni, next);
+        return next;
+      }),
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, now, completions, readIds, refreshImpl],
+    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, interrogazioni, now, completions, readIds, refreshImpl],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;

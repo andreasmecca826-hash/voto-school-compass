@@ -11,6 +11,7 @@ export const KEYS = {
   glass: "voto.glass",
   theme: "voto.theme",
   homeModules: "voto.homeModules",
+  interrogazioni: "voto.interrogazioni",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

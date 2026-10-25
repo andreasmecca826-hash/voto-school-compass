@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Clock3, Github, Megaphone, Minus, StickyNote } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, CalendarDays, ChevronRight, Clock3, Github, Megaphone, Minus, StickyNote } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
@@ -41,6 +41,7 @@ function Dashboard() {
   const showingDays = attendanceView === "days";
   const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
   const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
+  const interrogazioni = v.interrogazioni.filter((item) => !item.completed).slice(0, 3);
   const isHomeModuleVisible = (id: string) => v.homeModules.find((module) => module.id === id)?.enabled ?? false;
   const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
 
@@ -142,6 +143,11 @@ function Dashboard() {
       ) : (
         <ul className="space-y-2">{today.map((a) => <AssignmentRow key={a.id} a={a} />)}</ul>
       )}</div>}
+
+      {isHomeModuleVisible("interrogazioni") && <div style={{ order: homeOrder("interrogazioni") }}>
+      <SectionTitle action={<Link to="/interrogazioni" className="text-xs font-medium text-primary">Vedi tutte</Link>}>Interrogazioni</SectionTitle>
+      {interrogazioni.length === 0 ? <Empty icon={<CalendarDays className="h-6 w-6" />} title="Nessuna interrogazione" text="Aggiungila dalla sezione Interrogazioni." /> : <ul className="space-y-2">{interrogazioni.map((item) => <li key={item.id} className="card-surface flex items-center gap-3 p-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"><CalendarDays className="h-4 w-4" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{item.subject}</p><p className="text-[11px] text-muted-foreground">{fmtDate(item.date)}{item.time ? ` · ${item.time}` : ""}</p></div>{item.notes && <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">{item.notes}</span>}</li>)}</ul>}
+      </div>}
 
       {isHomeModuleVisible("note") && <div style={{ order: homeOrder("note") }}>
       <SectionTitle>Note</SectionTitle>

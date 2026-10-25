@@ -81,6 +81,7 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "simulatore", label: "Simulatore voto" },
   { id: "presenze", label: "Presenze" },
   { id: "compiti", label: "Compiti di oggi" },
+  { id: "interrogazioni", label: "Interrogazioni" },
   { id: "note", label: "Note" },
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
