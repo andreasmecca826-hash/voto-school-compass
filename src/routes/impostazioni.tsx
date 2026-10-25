@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy, Github, Loader2, RotateCcw, ShieldAlert } from "lucide-react";
+import { ChevronDown, Copy, Github, Loader2, RotateCcw, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
@@ -23,6 +23,7 @@ const SCHEMA = `{
   "student": {"name":"Studente","className":"4B","schoolYear":"2026/2027"},
   "updatedAt": "2026-10-25T08:30:00+02:00",
   "previousAverage": 7.35,
+  "attendance": {"absenceDays":14,"absenceHours":84,"delays":1,"earlyExits":0,"annualHours":990,"absenceLimitHours":247.5},
   "subjects": [
     {"id":"matematica","name":"Matematica","color":"#E85D5D",
      "grades":[{"id":"g1","value":7.5,"date":"2026-10-20","type":"scritto","weight":1,"comment":"Equazioni"}]}
@@ -40,6 +41,11 @@ const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "azzurro", label: "Azzurro", sw: "oklch(0.68 0.15 205)" },
   { id: "rosa", label: "Rosa", sw: "oklch(0.68 0.15 345)" },
   { id: "arancio", label: "Arancio", sw: "oklch(0.68 0.18 45)" },
+  { id: "turchese", label: "Turchese", sw: "oklch(0.68 0.15 180)" },
+  { id: "indaco", label: "Indaco", sw: "oklch(0.68 0.16 275)" },
+  { id: "lime", label: "Lime", sw: "oklch(0.68 0.16 115)" },
+  { id: "oro", label: "Oro", sw: "oklch(0.68 0.19 85)" },
+  { id: "corallo", label: "Corallo", sw: "oklch(0.68 0.19 12)" },
   { id: "mono", label: "Mono", sw: "oklch(0.92 0 0)" },
 ];
 const BGS: { id: Bg; label: string; sw: string }[] = [
@@ -47,12 +53,19 @@ const BGS: { id: Bg; label: string; sw: string }[] = [
   { id: "carbone", label: "Carbone", sw: "oklch(0.18 0.004 260)" },
   { id: "grafite", label: "Grafite", sw: "oklch(0.23 0.006 250)" },
   { id: "chiaro", label: "Chiaro", sw: "oklch(0.97 0.008 90)" },
+  { id: "notteblu", label: "Notte blu", sw: "oklch(0.14 0.035 255)" },
+  { id: "bosco", label: "Bosco", sw: "oklch(0.15 0.035 155)" },
+  { id: "prugna", label: "Prugna", sw: "oklch(0.15 0.035 315)" },
+  { id: "carta", label: "Carta", sw: "oklch(0.95 0.025 75)" },
 ];
 
 function Settings() {
   const v = useVoto();
   const [input, setInput] = useState(v.url);
   const [testing, setTesting] = useState(false);
+  const [showMoreThemes, setShowMoreThemes] = useState(false);
+  const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
+  const [showSchema, setShowSchema] = useState(false);
   useEffect(() => setInput(v.url), [v.url]);
 
   const status = !v.url ? "Non connesso · dati demo" : v.error ? `Errore: ${v.error}` : "Connesso";
@@ -89,29 +102,29 @@ function Settings() {
         </div>
       </section>
 
-      <SectionTitle action={<button type="button" onClick={() => navigator.clipboard.writeText(SCHEMA).then(() => toast.success("Schema copiato"), () => toast.error("Copia non riuscita"))} className="inline-flex items-center gap-1 text-xs font-medium text-primary"><Copy className="h-3.5 w-3.5" /> Copia</button>}>
-        Schema JSON
-      </SectionTitle>
-      <pre className="card-surface no-scrollbar overflow-x-auto p-4 font-mono text-[10.5px] leading-relaxed text-muted-foreground">{SCHEMA}</pre>
-      <p className="mt-2 text-[11px] text-muted-foreground">Voti non numerici (es. "giust.") vengono ignorati; "7+" = 7,25, "7-" = 6,75; peso predefinito 1.</p>
-
       <SectionTitle>Tema</SectionTitle>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-        {ACCENTS.map((a) => (
+        {ACCENTS.slice(0, showMoreThemes ? ACCENTS.length : 6).map((a) => (
           <button key={a.id} type="button" aria-pressed={v.accent === a.id} onClick={() => v.setAccent(a.id)}
             className={cn("press card-surface flex flex-col items-center gap-2 p-3 text-[11px]", v.accent === a.id && "border-primary")}>
             <span className="h-7 w-7 rounded-full" style={{ background: a.sw }} />{a.label}
           </button>
         ))}
       </div>
+      <button type="button" onClick={() => setShowMoreThemes((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
+        {showMoreThemes ? "Mostra meno temi" : "Mostra altri temi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreThemes && "rotate-180")} />
+      </button>
       <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {BGS.map((b) => (
+        {BGS.slice(0, showMoreBackgrounds ? BGS.length : 4).map((b) => (
           <button key={b.id} type="button" aria-pressed={v.bg === b.id} onClick={() => v.setBg(b.id)}
             className={cn("press flex h-16 items-end rounded-xl border p-2.5 text-[11px]", v.bg === b.id ? "border-primary" : "border-border")}
             style={{ background: b.sw }}>{b.label}</button>
         ))}
       </div>
+      <button type="button" onClick={() => setShowMoreBackgrounds((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
+        {showMoreBackgrounds ? "Mostra meno sfondi" : "Mostra altri sfondi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreBackgrounds && "rotate-180")} />
+      </button>
 
       <SectionTitle>Dati</SectionTitle>
       <button type="button" onClick={v.resetDemo} className="press card-surface flex w-full items-center gap-3 p-4 text-left text-sm">
@@ -123,6 +136,18 @@ function Settings() {
         <p><span className="font-display font-semibold text-foreground">VOTO.</span> versione 1.0.0</p>
         <p className="mt-2">Installabile dal browser (Aggiungi a schermata Home). Per l'APK Android segui la guida Capacitor nel README.</p>
       </section>
+
+      <SectionTitle>Schema JSON</SectionTitle>
+      <button type="button" onClick={() => setShowSchema((x) => !x)} className="press flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold">
+        {showSchema ? "Nascondi schema JSON" : "Visualizza schema JSON"}<ChevronDown className={cn("h-4 w-4 transition-transform", showSchema && "rotate-180")} />
+      </button>
+      {showSchema && (
+        <div className="mt-2">
+          <button type="button" onClick={() => navigator.clipboard.writeText(SCHEMA).then(() => toast.success("Schema copiato"), () => toast.error("Copia non riuscita"))} className="press mb-2 inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-primary"><Copy className="h-3.5 w-3.5" /> Copia schema</button>
+          <pre className="card-surface no-scrollbar overflow-x-auto p-4 font-mono text-[10.5px] leading-relaxed text-muted-foreground">{SCHEMA}</pre>
+          <p className="mt-2 text-[11px] text-muted-foreground">Voti non numerici vengono ignorati; "7+" = 7,25 e "7-" = 6,75. Il peso predefinito è 1.</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,8 +5,8 @@ import { fetchVotoData } from "./parse";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 
-export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "mono";
-export type Bg = "nero" | "carbone" | "grafite" | "chiaro";
+export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
+export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 
 interface Ctx {
   ready: boolean;

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { daysBetween, fmtDate, fmtTime } from "@/lib/voto/dates";
 import { useVoto } from "@/lib/voto/store";
+import { useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const v = useVoto();
   const ui = useUi();
+  const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
   const { subjects, assignments, notifications, previousAverage } = v.data;
   const avg = overallAverage(subjects);
   const history = averageHistory(subjects);
@@ -34,6 +36,9 @@ function Dashboard() {
     .sort((a, b) => `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`));
   const attendance = v.data.attendance ?? { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 247.5 };
   const remainingHours = Math.max(0, attendance.absenceLimitHours - attendance.absenceHours);
+  const absenceLimitDays = attendance.absenceLimitHours / 6;
+  const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
+  const showingDays = attendanceView === "days";
   const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
   const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
 
@@ -100,13 +105,20 @@ function Dashboard() {
 
       <SectionTitle>Presenze</SectionTitle>
       <section className="card-surface p-4">
+        <div className="mb-4 grid grid-cols-2 rounded-xl border border-border bg-surface p-1">
+          {(["hours", "days"] as const).map((view) => (
+            <button key={view} type="button" onClick={() => setAttendanceView(view)} className={cn("press rounded-lg px-3 py-2 text-xs font-semibold", attendanceView === view ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>
+              {view === "hours" ? "Ore" : "Giorni"}
+            </button>
+          ))}
+        </div>
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"><Clock3 className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">Ore di assenza</p>
-            <p className="mt-1 tabular font-display text-3xl font-semibold">{fmt(attendance.absenceHours, 1)} <span className="text-sm font-normal text-muted-foreground">/ {fmt(attendance.absenceLimitHours, 1)} ore</span></p>
+            <p className="text-sm font-semibold">{showingDays ? "Giorni di assenza" : "Ore di assenza"}</p>
+            <p className="mt-1 tabular font-display text-3xl font-semibold">{fmt(showingDays ? attendance.absenceDays : attendance.absenceHours, showingDays ? 0 : 1)} <span className="text-sm font-normal text-muted-foreground">/ {fmt(showingDays ? absenceLimitDays : attendance.absenceLimitHours, showingDays ? 2 : 1)} {showingDays ? "giorni" : "ore"}</span></p>
             <p className={cn("mt-1 text-xs", attendance.absenceHours > attendance.absenceLimitHours ? "text-danger" : "text-muted-foreground")}>
-              {attendance.absenceHours > attendance.absenceLimitHours ? "Limite del 25% superato" : `Puoi ancora fare ${fmt(remainingHours, 1)} ore`}
+              {attendance.absenceHours > attendance.absenceLimitHours ? "Limite del 25% superato" : `Puoi ancora fare ${fmt(showingDays ? remainingDays : remainingHours, showingDays ? 2 : 1)} ${showingDays ? "giorni" : "ore"}`}
             </p>
           </div>
         </div>
