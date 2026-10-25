@@ -35,12 +35,18 @@ const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
   { id: "ambra", label: "Ambra", sw: "oklch(0.68 0.15 70)" },
   { id: "viola", label: "Viola", sw: "oklch(0.68 0.15 300)" },
+  { id: "blu", label: "Blu", sw: "oklch(0.68 0.16 250)" },
+  { id: "verde", label: "Verde", sw: "oklch(0.68 0.14 145)" },
+  { id: "azzurro", label: "Azzurro", sw: "oklch(0.68 0.15 205)" },
+  { id: "rosa", label: "Rosa", sw: "oklch(0.68 0.15 345)" },
+  { id: "arancio", label: "Arancio", sw: "oklch(0.68 0.18 45)" },
   { id: "mono", label: "Mono", sw: "oklch(0.92 0 0)" },
 ];
 const BGS: { id: Bg; label: string; sw: string }[] = [
   { id: "nero", label: "Nero", sw: "oklch(0.13 0 0)" },
   { id: "carbone", label: "Carbone", sw: "oklch(0.18 0.004 260)" },
   { id: "grafite", label: "Grafite", sw: "oklch(0.23 0.006 250)" },
+  { id: "chiaro", label: "Chiaro", sw: "oklch(0.97 0.008 90)" },
 ];
 
 function Settings() {
@@ -90,7 +96,7 @@ function Settings() {
       <p className="mt-2 text-[11px] text-muted-foreground">Voti non numerici (es. "giust.") vengono ignorati; "7+" = 7,25, "7-" = 6,75; peso predefinito 1.</p>
 
       <SectionTitle>Tema</SectionTitle>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {ACCENTS.map((a) => (
           <button key={a.id} type="button" aria-pressed={v.accent === a.id} onClick={() => v.setAccent(a.id)}
             className={cn("press card-surface flex flex-col items-center gap-2 p-3 text-[11px]", v.accent === a.id && "border-primary")}>
@@ -99,7 +105,7 @@ function Settings() {
         ))}
       </div>
       <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {BGS.map((b) => (
           <button key={b.id} type="button" aria-pressed={v.bg === b.id} onClick={() => v.setBg(b.id)}
             className={cn("press flex h-16 items-end rounded-xl border p-2.5 text-[11px]", v.bg === b.id ? "border-primary" : "border-border")}
