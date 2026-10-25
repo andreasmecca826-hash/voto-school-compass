@@ -116,6 +116,11 @@ function Settings() {
           </button>;
         })}
       </div>
+      <p className="mb-2 text-xs text-muted-foreground">Effetto Liquid glass</p>
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <button type="button" aria-pressed={v.glass} onClick={() => v.setGlass(true)} className={cn("press rounded-xl border p-3 text-left text-xs", v.glass ? "border-primary bg-primary-soft font-semibold text-primary" : "border-border text-muted-foreground")}>Attivo<span className="mt-1 block text-[10px] font-normal">Trasparenze e sfocatura</span></button>
+        <button type="button" aria-pressed={!v.glass} onClick={() => v.setGlass(false)} className={cn("press rounded-xl border p-3 text-left text-xs", !v.glass ? "border-primary bg-primary-soft font-semibold text-primary" : "border-border text-muted-foreground")}>Disattivo<span className="mt-1 block text-[10px] font-normal">Aspetto piatto</span></button>
+      </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {ACCENTS.slice(0, showMoreThemes ? ACCENTS.length : 6).map((a) => (
           <button key={a.id} type="button" aria-pressed={v.accent === a.id} onClick={() => v.setAccent(a.id)}

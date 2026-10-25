@@ -8,6 +8,7 @@ export const KEYS = {
   accent: "voto.accent",
   bg: "voto.bg",
   mode: "voto.mode",
+  glass: "voto.glass",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

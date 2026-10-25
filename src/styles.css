@@ -121,6 +121,9 @@
   --muted-foreground: oklch(0.45 0.025 260);
   --secondary: oklch(0.88 0.03 250);
   --accent: oklch(0.86 0.035 250);
+  --primary: oklch(0.58 var(--chroma) var(--hue));
+  --primary-soft: oklch(0.58 var(--chroma) var(--hue) / 0.14);
+  --ring: oklch(0.58 var(--chroma) var(--hue) / 0.55);
 }
 [data-mode="scuro"] { color-scheme: dark; }
 
@@ -180,6 +183,19 @@
   box-shadow: 0 14px 34px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.16);
   -webkit-backdrop-filter: blur(30px) saturate(175%);
   backdrop-filter: blur(30px) saturate(175%);
+}
+
+[data-glass="off"] .card-surface {
+  background: var(--color-card);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+[data-glass="off"] .glass-panel {
+  background: var(--color-background);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* Badge dell’editor Lovable: non fa parte dell’interfaccia di VOTO. */

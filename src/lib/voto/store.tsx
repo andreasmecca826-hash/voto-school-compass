@@ -21,6 +21,7 @@ interface Ctx {
   accent: Accent;
   bg: Bg;
   mode: Mode;
+  glass: boolean;
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
   isRead: (id: string, remote: boolean) => boolean;
@@ -33,6 +34,7 @@ interface Ctx {
   setAccent: (a: Accent) => void;
   setBg: (b: Bg) => void;
   setMode: (m: Mode) => void;
+  setGlass: (enabled: boolean) => void;
   now: Date;
 }
 
@@ -60,6 +62,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [accent, setAccentS] = useState<Accent>("rosso");
   const [bg, setBgS] = useState<Bg>("nero");
   const [mode, setModeS] = useState<Mode>("scuro");
+  const [glass, setGlassS] = useState(true);
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
 
@@ -102,6 +105,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setAccentS(load(KEYS.accent, "rosso"));
     setBgS(load(KEYS.bg, "nero"));
     setModeS(load(KEYS.mode, "scuro"));
+    setGlassS(load(KEYS.glass, true));
     setLastSync(load(KEYS.lastSync, null));
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
@@ -123,11 +127,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset.accent = accent;
     root.dataset.bg = bg;
     root.dataset.mode = mode;
-  }, [accent, bg, mode, ready]);
+    root.dataset.glass = glass ? "on" : "off";
+  }, [accent, bg, mode, glass, ready]);
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, now,
+      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -185,8 +190,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setAccent: (a) => { setAccentS(a); save(KEYS.accent, a); },
       setBg: (b) => { setBgS(b); save(KEYS.bg, b); },
       setMode: (m) => { setModeS(m); save(KEYS.mode, m); },
+      setGlass: (enabled) => { setGlassS(enabled); save(KEYS.glass, enabled); },
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, now, completions, readIds, refreshImpl],
+    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, now, completions, readIds, refreshImpl],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;
