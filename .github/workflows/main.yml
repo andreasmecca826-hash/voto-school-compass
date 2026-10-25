@@ -1,5 +1,5 @@
 
-name: VOTO - Build Android APK
+name: VOTO - Build web
 
 on:
   workflow_dispatch:
@@ -23,12 +23,19 @@ jobs:
       - name: Compila VOTO
         run: bun run build
 
-      
-      - name: Conserva la versione web compilata
+      - name: Mostra cartelle generate
+        run: |
+          echo "Cartella corrente:"
+          pwd
+          echo "File generati:"
+          find . -maxdepth 3 -type d \( -name dist -o -name build -o -name .output \) -print
+
+      - name: Carica file generati
         uses: actions/upload-artifact@v4
         with:
-          name: VOTO-web-build
+          name: VOTO-build-debug
           path: |
-            dist/
-            build/
-          if-no-files-found: warn
+            dist/**
+            build/**
+            .output/**
+          if-no-files-found: error
