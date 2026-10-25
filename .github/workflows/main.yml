@@ -23,7 +23,7 @@ jobs:
       - name: Compila VOTO
         run: bun run build
 
-            - name: Mostra cartelle generate
+        - name: Mostra cartelle generate
         run: |
           echo "Cartella corrente:"
           pwd
