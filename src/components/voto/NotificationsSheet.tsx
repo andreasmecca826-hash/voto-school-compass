@@ -16,7 +16,7 @@ export const NOTIF_META: Record<NotificationType, { label: string; icon: typeof 
 export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const v = useVoto();
   const [filter, setFilter] = useState<NotificationType | "all">("all");
-  const visibleNotifications = v.data.notifications.filter((n) => n.type !== "notice");
+  const visibleNotifications = v.data.notifications;
   const list = [...visibleNotifications]
     .filter((n) => filter === "all" || n.type === filter)
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
@@ -26,7 +26,7 @@ export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOp
     <BottomSheet open={open} onOpenChange={onOpenChange} title="Notifiche" description={`${unreadIds.length} non lette`}>
       <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5">
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>Tutte</Chip>
-        {(Object.keys(NOTIF_META) as NotificationType[]).filter((t) => t !== "notice").map((t) => (
+        {(Object.keys(NOTIF_META) as NotificationType[]).map((t) => (
           <Chip key={t} active={filter === t} onClick={() => setFilter(t)}>{NOTIF_META[t].label}</Chip>
         ))}
       </div>
@@ -58,7 +58,7 @@ export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOp
                   </div>
                   <p className="mt-0.5 text-sm font-medium">{n.title}</p>
                   {n.message && <p className="mt-0.5 text-xs text-muted-foreground">{n.message}</p>}
-                  {n.attachmentUrl && <a href={n.attachmentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri PDF{n.attachmentName ? ` · ${n.attachmentName}` : ""}</a>}
+                  {n.type === "notice" && <a href="https://www.portaleargo.it/argofamiglia/" target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri DidUP</a>}
                   {!read && (
                     <button type="button" onClick={() => v.markRead([n.id])} className="mt-2 text-xs font-medium text-primary">
                       Segna come letta

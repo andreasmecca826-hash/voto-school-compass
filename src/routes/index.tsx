@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Clock3, Github, Minus, StickyNote } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Clock3, Github, Megaphone, Minus, StickyNote } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
@@ -40,6 +40,7 @@ function Dashboard() {
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
   const showingDays = attendanceView === "days";
   const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
+  const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
 
   const micro =
     avg === null ? "Nessun voto ancora: il primo arriverà presto."
@@ -138,6 +139,9 @@ function Dashboard() {
       <SectionTitle>Note</SectionTitle>
       {notes.length === 0 ? <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" /> : <ul className="space-y-2">{notes.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
 
+      <SectionTitle>Bacheca</SectionTitle>
+      {bulletin.length === 0 ? <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" /> : <ul className="space-y-2">{bulletin.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
+
       <GoalWidget avg={avg} />
     </div>
   );
@@ -154,7 +158,7 @@ function NotifItem({ id }: { id: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{n.title}</p>
         <p className="truncate text-[11px] text-muted-foreground">{M.label}{n.message ? ` · ${n.message}` : ""}</p>
-        {n.attachmentUrl && <a href={n.attachmentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full items-center rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri PDF{n.attachmentName ? ` · ${n.attachmentName}` : ""}</a>}
+        {n.type === "notice" && <a href="https://www.portaleargo.it/argofamiglia/" target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full items-center rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri DidUP</a>}
       </div>
       {read ? (
         <span className="text-[11px] text-muted-foreground">{fmtDate(n.date)}</span>
