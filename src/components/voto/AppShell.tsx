@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       }}
     >
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
-        <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-xl md:rounded-t-[2rem]">
+        <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
             <div className="min-w-0">
               <Link to="/" className="font-display text-xl font-bold tracking-tight" aria-label="VOTO. dashboard">
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 px-5 pb-28">{v.ready ? children : <ShellSkeleton />}</main>
 
         <nav
-          className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t border-border bg-background/90 backdrop-blur-xl md:bottom-6 md:rounded-b-[2rem]"
+          className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
           <ul className="grid grid-cols-5">
