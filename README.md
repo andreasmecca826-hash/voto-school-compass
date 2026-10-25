@@ -1,29 +1,29 @@
-# Welcome to your Lovable project
+# VOTO.
 
-This project was built with [Lovable](https://lovable.dev).
+Dashboard scolastica personale, mobile-first, in italiano.
 
-## Build with Lovable
-
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+## Setup
+```
+npm install
 npm run dev
+npm run build
 ```
 
-## Built with
+## Dati da GitHub
+1. Crea un repository (meglio privato-pseudonimizzato: un repo pubblico rende i dati visibili a chiunque abbia l'URL).
+2. Carica `voto.json` seguendo lo schema (Impostazioni → Schema JSON).
+3. Apri il file su GitHub → "Raw" e copia l'URL `https://raw.githubusercontent.com/...`.
+4. Incollalo in Impostazioni → "Testa e salva".
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+Gli ultimi dati validi restano salvati sul dispositivo; i compiti completati sono salvati per ID e non vengono sovrascritti dagli aggiornamenti.
+
+## APK Android (Capacitor)
+```
+npm install @capacitor/core @capacitor/cli @capacitor/android
+npx cap init VOTO it.voto.app
+npm run build
+npx cap add android
+npx cap sync android
+npx cap open android
+```
+Usa sempre un URL HTTPS per il JSON.
