@@ -1,0 +1,23 @@
+
+name: VOTO - Build check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Installa Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Installa dipendenze
+        run: bun install --frozen-lockfile
+
+      - name: Controlla compilazione
+        run: bun run build
