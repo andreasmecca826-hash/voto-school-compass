@@ -16,16 +16,17 @@ export const NOTIF_META: Record<NotificationType, { label: string; icon: typeof 
 export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const v = useVoto();
   const [filter, setFilter] = useState<NotificationType | "all">("all");
-  const list = [...v.data.notifications]
+  const visibleNotifications = v.data.notifications.filter((n) => n.type !== "notice");
+  const list = [...visibleNotifications]
     .filter((n) => filter === "all" || n.type === filter)
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
-  const unreadIds = v.data.notifications.filter((n) => !v.isRead(n.id, n.read)).map((n) => n.id);
+  const unreadIds = visibleNotifications.filter((n) => !v.isRead(n.id, n.read)).map((n) => n.id);
 
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title="Notifiche" description={`${unreadIds.length} non lette`}>
       <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5">
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>Tutte</Chip>
-        {(Object.keys(NOTIF_META) as NotificationType[]).map((t) => (
+        {(Object.keys(NOTIF_META) as NotificationType[]).filter((t) => t !== "notice").map((t) => (
           <Chip key={t} active={filter === t} onClick={() => setFilter(t)}>{NOTIF_META[t].label}</Chip>
         ))}
       </div>

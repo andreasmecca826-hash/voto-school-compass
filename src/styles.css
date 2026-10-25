@@ -109,6 +109,21 @@
   --accent: oklch(0.9 0.015 90);
 }
 
+[data-mode="chiaro"] {
+  color-scheme: light;
+  --background: oklch(0.94 0.025 250);
+  --card: oklch(0.98 0.018 250 / 0.78);
+  --surface: oklch(0.9 0.025 250 / 0.72);
+  --popover: oklch(0.99 0.01 250);
+  --border: oklch(0.25 0.04 250 / 0.16);
+  --input: oklch(0.25 0.04 250 / 0.2);
+  --foreground: oklch(0.2 0.03 260);
+  --muted-foreground: oklch(0.45 0.025 260);
+  --secondary: oklch(0.88 0.03 250);
+  --accent: oklch(0.86 0.035 250);
+}
+[data-mode="scuro"] { color-scheme: dark; }
+
 [data-accent="rosso"] { --hue: 25; --chroma: 0.17; }
 [data-accent="ambra"] { --hue: 70; --chroma: 0.15; }
 [data-accent="viola"] { --hue: 300; --chroma: 0.15; }
@@ -130,6 +145,7 @@
   html { background: var(--color-background); -webkit-tap-highlight-color: transparent; }
   body {
     background-color: var(--color-background);
+    background-image: radial-gradient(circle at 12% -8%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 30%), radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 28%);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -142,12 +158,12 @@
 @utility safe-top { padding-top: env(safe-area-inset-top); }
 @utility safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
 @utility card-surface {
-  background: color-mix(in srgb, var(--color-card) 72%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-foreground) 12%, transparent);
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.12), transparent 42%), color-mix(in srgb, var(--color-card) 64%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-foreground) 20%, transparent);
   border-radius: var(--radius-xl);
-  box-shadow: 0 14px 36px oklch(0 0 0 / 0.12), inset 0 1px 0 oklch(1 0 0 / 0.08);
-  -webkit-backdrop-filter: blur(22px) saturate(145%);
-  backdrop-filter: blur(22px) saturate(145%);
+  box-shadow: 0 18px 42px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.18), inset 0 -1px 0 oklch(0 0 0 / 0.08);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  backdrop-filter: blur(26px) saturate(170%);
 }
 @utility no-scrollbar {
   scrollbar-width: none;
@@ -159,11 +175,11 @@
 }
 
 .glass-panel {
-  background: color-mix(in srgb, var(--color-background) 68%, transparent);
-  border-color: color-mix(in srgb, var(--color-foreground) 11%, transparent);
-  box-shadow: 0 10px 30px oklch(0 0 0 / 0.12), inset 0 1px 0 oklch(1 0 0 / 0.07);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  backdrop-filter: blur(24px) saturate(150%);
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.14), transparent 48%), color-mix(in srgb, var(--color-background) 62%, transparent);
+  border-color: color-mix(in srgb, var(--color-foreground) 18%, transparent);
+  box-shadow: 0 14px 34px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.16);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+  backdrop-filter: blur(30px) saturate(175%);
 }
 
 /* Badge dell’editor Lovable: non fa parte dell’interfaccia di VOTO. */

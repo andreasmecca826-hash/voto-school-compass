@@ -7,6 +7,7 @@ export const KEYS = {
   target: "voto.target",
   accent: "voto.accent",
   bg: "voto.bg",
+  mode: "voto.mode",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

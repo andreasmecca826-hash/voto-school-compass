@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
   const [subject, setSubject] = useState<string | null>(null);
 
-  const unread = v.data.notifications.filter((n) => !v.isRead(n.id, n.read)).length;
+  const unread = v.data.notifications.filter((n) => n.type !== "notice" && !v.isRead(n.id, n.read)).length;
   const dateLabel = v.ready ? v.now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) : "";
 
   return (

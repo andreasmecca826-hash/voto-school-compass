@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, Copy, Github, Loader2, RotateCcw, ShieldAlert } from "lucide-react";
+import { ChevronDown, Copy, Github, Loader2, Moon, RotateCcw, ShieldAlert, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
-import { useVoto, type Accent, type Bg } from "@/lib/voto/store";
+import { useVoto, type Accent, type Bg, type Mode } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/impostazioni")({
   head: () => ({
@@ -58,6 +58,10 @@ const BGS: { id: Bg; label: string; sw: string }[] = [
   { id: "prugna", label: "Prugna", sw: "oklch(0.15 0.035 315)" },
   { id: "carta", label: "Carta", sw: "oklch(0.95 0.025 75)" },
 ];
+const MODES: { id: Mode; label: string; description: string }[] = [
+  { id: "scuro", label: "Scuro", description: "Contrasto morbido e sfondo scuro" },
+  { id: "chiaro", label: "Chiaro", description: "Sfondo chiaro e testo scuro" },
+];
 
 function Settings() {
   const v = useVoto();
@@ -103,6 +107,15 @@ function Settings() {
       </section>
 
       <SectionTitle>Tema</SectionTitle>
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        {MODES.map((m) => {
+          const Icon = m.id === "chiaro" ? Sun : Moon;
+          return <button key={m.id} type="button" aria-pressed={v.mode === m.id} onClick={() => v.setMode(m.id)} className={cn("press card-surface flex items-center gap-3 p-3 text-left", v.mode === m.id && "border-primary")}>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-primary"><Icon className="h-4 w-4" /></span>
+            <span><span className="block text-xs font-semibold">{m.label}</span><span className="block text-[10px] text-muted-foreground">{m.description}</span></span>
+          </button>;
+        })}
+      </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {ACCENTS.slice(0, showMoreThemes ? ACCENTS.length : 6).map((a) => (
           <button key={a.id} type="button" aria-pressed={v.accent === a.id} onClick={() => v.setAccent(a.id)}

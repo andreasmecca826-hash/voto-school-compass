@@ -7,6 +7,7 @@ import type { DataSource, VotoData } from "./types";
 
 export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
 export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
+export type Mode = "chiaro" | "scuro";
 
 interface Ctx {
   ready: boolean;
@@ -19,6 +20,7 @@ interface Ctx {
   target: number;
   accent: Accent;
   bg: Bg;
+  mode: Mode;
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
   isRead: (id: string, remote: boolean) => boolean;
@@ -30,6 +32,7 @@ interface Ctx {
   setTarget: (n: number) => void;
   setAccent: (a: Accent) => void;
   setBg: (b: Bg) => void;
+  setMode: (m: Mode) => void;
   now: Date;
 }
 
@@ -56,6 +59,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [target, setTargetS] = useState(8);
   const [accent, setAccentS] = useState<Accent>("rosso");
   const [bg, setBgS] = useState<Bg>("nero");
+  const [mode, setModeS] = useState<Mode>("scuro");
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
 
@@ -97,6 +101,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setTargetS(load(KEYS.target, 8));
     setAccentS(load(KEYS.accent, "rosso"));
     setBgS(load(KEYS.bg, "nero"));
+    setModeS(load(KEYS.mode, "scuro"));
     setLastSync(load(KEYS.lastSync, null));
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
@@ -117,11 +122,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     root.dataset.accent = accent;
     root.dataset.bg = bg;
-  }, [accent, bg, ready]);
+    root.dataset.mode = mode;
+  }, [accent, bg, mode, ready]);
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, now,
+      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -178,8 +184,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setTarget: (n) => { setTargetS(n); save(KEYS.target, n); },
       setAccent: (a) => { setAccentS(a); save(KEYS.accent, a); },
       setBg: (b) => { setBgS(b); save(KEYS.bg, b); },
+      setMode: (m) => { setModeS(m); save(KEYS.mode, m); },
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, now, completions, readIds, refreshImpl],
+    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, now, completions, readIds, refreshImpl],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;
