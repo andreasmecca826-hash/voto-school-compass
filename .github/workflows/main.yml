@@ -30,8 +30,9 @@ jobs:
           echo "File generati:"
           find . -maxdepth 3 -type d \( -name dist -o -name build -o -name .output \) -print
 
-      -       - name: Carica file generati
+      -             - name: Carica file generati
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: VOTO-build-debug
           path: |
@@ -39,4 +40,4 @@ jobs:
             build/**
             .output/**
           include-hidden-files: true
-          if-no-files-found: error
+          if-no-files-found: warn
