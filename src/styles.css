@@ -154,3 +154,6 @@
   transition: transform 0.12s ease, background-color 0.2s ease, opacity 0.2s;
   &:active { transform: scale(0.97); }
 }
+
+/* Badge dell’editor Lovable: non fa parte dell’interfaccia di VOTO. */
+#lovable-badge, .lovable-badge, [id*="lovable-badge"] { display: none !important; }

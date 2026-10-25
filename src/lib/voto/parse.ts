@@ -86,6 +86,8 @@ export function parseVotoData(raw: unknown): VotoData {
       message: str(n.message),
       date: str(n.date),
       subject: str(n.subject),
+      attachmentUrl: str(n.attachmentUrl),
+      attachmentName: str(n.attachmentName),
       read: n.read === true,
     }));
 

@@ -158,6 +158,7 @@ function NotifItem({ id }: { id: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{n.title}</p>
         <p className="truncate text-[11px] text-muted-foreground">{M.label}{n.message ? ` · ${n.message}` : ""}</p>
+        {n.attachmentUrl && <a href={n.attachmentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full items-center rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri PDF{n.attachmentName ? ` · ${n.attachmentName}` : ""}</a>}
       </div>
       {read ? (
         <span className="text-[11px] text-muted-foreground">{fmtDate(n.date)}</span>

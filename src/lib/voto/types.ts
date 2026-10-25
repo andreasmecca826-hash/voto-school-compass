@@ -39,6 +39,8 @@ export interface AppNotification {
   message?: string;
   date?: string;
   subject?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
   read: boolean;
 }
 
