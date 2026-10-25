@@ -41,6 +41,8 @@ function Dashboard() {
   const showingDays = attendanceView === "days";
   const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
   const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
+  const isHomeModuleVisible = (id: string) => v.homeModules.find((module) => module.id === id)?.enabled ?? false;
+  const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
 
   const micro =
     avg === null ? "Nessun voto ancora: il primo arriverà presto."
@@ -63,6 +65,8 @@ function Dashboard() {
         </Link>
       )}
 
+      <div className="flex flex-col">
+      {isHomeModuleVisible("media") && <div style={{ order: homeOrder("media") }}>
       <section className="card-surface relative overflow-hidden p-5" aria-label="Media generale">
         <div className="flex items-start justify-between">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Media generale</p>
@@ -93,16 +97,18 @@ function Dashboard() {
           {v.error && v.source !== "demo" && <span className="text-danger"> · offline, dati salvati</span>}
         </p>
       </section>
+      </div>}
 
-      <button type="button" onClick={() => ui.openSimulator()} className="press card-surface mt-3 flex w-full items-center gap-3 p-4 text-left">
+      {isHomeModuleVisible("simulatore") && <div style={{ order: homeOrder("simulatore") }}><button type="button" onClick={() => ui.openSimulator()} className="press card-surface mt-3 flex w-full items-center gap-3 p-4 text-left">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary"><Calculator className="h-5 w-5" /></span>
         <span className="flex-1">
           <span className="block text-sm font-semibold">Che voto mi serve?</span>
           <span className="block text-xs text-muted-foreground">Simula la prossima verifica</span>
         </span>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-      </button>
+      </button></div>}
 
+      {isHomeModuleVisible("presenze") && <div style={{ order: homeOrder("presenze") }}>
       <SectionTitle>Presenze</SectionTitle>
       <section className="card-surface p-4">
         <div className="mb-4 grid grid-cols-2 rounded-xl border border-border bg-surface p-1">
@@ -127,22 +133,26 @@ function Dashboard() {
           <div className="rounded-xl bg-surface p-3"><p className="text-[11px] text-muted-foreground">Ritardi</p><p className="tabular text-xl font-semibold">{attendance.delays}</p><p className="text-[10px] text-muted-foreground">non conteggiati nelle ore</p></div>
           <div className="rounded-xl bg-surface p-3"><p className="text-[11px] text-muted-foreground">Uscite</p><p className="tabular text-xl font-semibold">{attendance.earlyExits}</p><p className="text-[10px] text-muted-foreground">non conteggiate nelle ore</p></div>
         </div>
-      </section>
+      </section></div>}
 
+      {isHomeModuleVisible("compiti") && <div style={{ order: homeOrder("compiti") }}>
       <SectionTitle action={<Link to="/compiti" className="text-xs font-medium text-primary">Compiti</Link>}>Oggi</SectionTitle>
       {today.length === 0 ? (
         <Empty icon={<CalendarCheck className="h-6 w-6" />} title="Niente in scadenza" text="Nessun compito per oggi o domani." />
       ) : (
         <ul className="space-y-2">{today.map((a) => <AssignmentRow key={a.id} a={a} />)}</ul>
-      )}
+      )}</div>}
 
+      {isHomeModuleVisible("note") && <div style={{ order: homeOrder("note") }}>
       <SectionTitle>Note</SectionTitle>
-      {notes.length === 0 ? <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" /> : <ul className="space-y-2">{notes.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
+      {notes.length === 0 ? <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" /> : <ul className="space-y-2">{notes.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}</div>}
 
+      {isHomeModuleVisible("bacheca") && <div style={{ order: homeOrder("bacheca") }}>
       <SectionTitle>Bacheca</SectionTitle>
-      {bulletin.length === 0 ? <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" /> : <ul className="space-y-2">{bulletin.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
+      {bulletin.length === 0 ? <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" /> : <ul className="space-y-2">{bulletin.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}</div>}
 
-      <GoalWidget avg={avg} />
+      {isHomeModuleVisible("obiettivo") && <div style={{ order: homeOrder("obiettivo") }}><GoalWidget avg={avg} /></div>}
+      </div>
     </div>
   );
 }

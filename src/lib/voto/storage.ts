@@ -10,6 +10,7 @@ export const KEYS = {
   mode: "voto.mode",
   glass: "voto.glass",
   theme: "voto.theme",
+  homeModules: "voto.homeModules",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

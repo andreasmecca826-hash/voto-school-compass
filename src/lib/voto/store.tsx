@@ -8,7 +8,34 @@ import type { DataSource, VotoData } from "./types";
 export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
 export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 export type Mode = "chiaro" | "scuro";
-export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k";
+export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k" | "primavera" | "estate" | "autunno" | "inverno";
+export type HomeModuleId = "media" | "simulatore" | "presenze" | "compiti" | "note" | "bacheca" | "obiettivo";
+export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
+
+export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
+  { id: "media", enabled: true },
+  { id: "simulatore", enabled: true },
+  { id: "presenze", enabled: true },
+  { id: "compiti", enabled: true },
+  { id: "note", enabled: true },
+  { id: "bacheca", enabled: true },
+  { id: "obiettivo", enabled: true },
+];
+
+function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
+  if (!Array.isArray(value)) return DEFAULT_HOME_MODULES;
+  const ids = new Set<HomeModuleId>();
+  const result: HomeModuleConfig[] = [];
+  value.forEach((item) => {
+    const id = typeof item === "string" ? item : (item as HomeModuleConfig)?.id;
+    if (typeof id === "string" && DEFAULT_HOME_MODULES.some((m) => m.id === id) && !ids.has(id as HomeModuleId)) {
+      ids.add(id as HomeModuleId);
+      result.push({ id: id as HomeModuleId, enabled: typeof item === "string" ? true : (item as HomeModuleConfig).enabled !== false });
+    }
+  });
+  DEFAULT_HOME_MODULES.forEach((m) => { if (!ids.has(m.id)) result.push(m); });
+  return result;
+}
 
 interface Ctx {
   ready: boolean;
@@ -24,6 +51,7 @@ interface Ctx {
   mode: Mode;
   glass: boolean;
   theme: Theme;
+  homeModules: HomeModuleConfig[];
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
   isRead: (id: string, remote: boolean) => boolean;
@@ -38,6 +66,9 @@ interface Ctx {
   setMode: (m: Mode) => void;
   setGlass: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
+  toggleHomeModule: (id: HomeModuleId) => void;
+  moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
+  resetHomeModules: () => void;
   now: Date;
 }
 
@@ -67,6 +98,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [mode, setModeS] = useState<Mode>("scuro");
   const [glass, setGlassS] = useState(true);
   const [theme, setThemeS] = useState<Theme>("original");
+  const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
 
@@ -111,6 +143,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setModeS(load(KEYS.mode, "scuro"));
     setGlassS(load(KEYS.glass, true));
     setThemeS(load(KEYS.theme, "original"));
+    setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
     setLastSync(load(KEYS.lastSync, null));
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
@@ -138,7 +171,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, now,
+      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -198,8 +231,23 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setMode: (m) => { setModeS(m); save(KEYS.mode, m); },
       setGlass: (enabled) => { setGlassS(enabled); save(KEYS.glass, enabled); },
       setTheme: (next) => { setThemeS(next); save(KEYS.theme, next); },
+      toggleHomeModule: (id) => setHomeModulesS((current) => {
+        const next = current.map((module) => module.id === id ? { ...module, enabled: !module.enabled } : module);
+        save(KEYS.homeModules, next);
+        return next;
+      }),
+      moveHomeModule: (id, direction) => setHomeModulesS((current) => {
+        const index = current.findIndex((module) => module.id === id);
+        const targetIndex = index + direction;
+        if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
+        const next = [...current];
+        [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+        save(KEYS.homeModules, next);
+        return next;
+      }),
+      resetHomeModules: () => { setHomeModulesS(DEFAULT_HOME_MODULES); save(KEYS.homeModules, DEFAULT_HOME_MODULES); },
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, now, completions, readIds, refreshImpl],
+    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, now, completions, readIds, refreshImpl],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;

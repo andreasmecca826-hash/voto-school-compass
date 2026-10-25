@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, Copy, Github, Loader2, Moon, RotateCcw, ShieldAlert, Sun } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Eye, EyeOff, Github, Loader2, Moon, RotateCcw, ShieldAlert, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
-import { useVoto, type Accent, type Bg, type Mode, type Theme } from "@/lib/voto/store";
+import { useVoto, type Accent, type Bg, type HomeModuleId, type Mode, type Theme } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/impostazioni")({
   head: () => ({
@@ -71,6 +71,19 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   { id: "dark-academia", label: "Dark Academia", description: "Carta, cuoio e atmosfera classica", sw: "linear-gradient(135deg,#201711,#c8a875)" },
   { id: "glassmorphism", label: "Glassmorphism", description: "Superfici morbide e iridescenti", sw: "linear-gradient(135deg,#24205b,#8ee7ff)" },
   { id: "y2k", label: "Y2K", description: "Cromato, rosa e azzurro", sw: "linear-gradient(135deg,#ff77c8,#76e6ff)" },
+  { id: "primavera", label: "Primavera", description: "Fiori, verde e colori freschi", sw: "linear-gradient(135deg,#214b3b,#f7a8c4)" },
+  { id: "estate", label: "Estate", description: "Sole, mare e colori vivaci", sw: "linear-gradient(135deg,#075985,#ffb84d)" },
+  { id: "autunno", label: "Autunno", description: "Foglie, rame e atmosfera calda", sw: "linear-gradient(135deg,#49251c,#d97932)" },
+  { id: "inverno", label: "Inverno", description: "Ghiaccio, neve e blu profondi", sw: "linear-gradient(135deg,#102a43,#bde7ff)" },
+];
+const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
+  { id: "media", label: "Media generale" },
+  { id: "simulatore", label: "Simulatore voto" },
+  { id: "presenze", label: "Presenze" },
+  { id: "compiti", label: "Compiti di oggi" },
+  { id: "note", label: "Note" },
+  { id: "bacheca", label: "Bacheca" },
+  { id: "obiettivo", label: "Obiettivo media" },
 ];
 
 function Settings() {
@@ -115,6 +128,25 @@ function Settings() {
           <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />
           Un repository pubblico rende i dati visibili a chiunque abbia l'URL. Evita nome completo, credenziali o dati personali: preferisci dati pseudonimizzati. Nessun token viene salvato nell'app.
         </div>
+      </section>
+
+      <SectionTitle>Home</SectionTitle>
+      <section className="card-surface overflow-hidden p-2">
+        <p className="px-2 pb-2 pt-1 text-[11px] text-muted-foreground">Attiva i moduli e usa le frecce per scegliere l’ordine nella Home.</p>
+        <div className="space-y-1">
+          {v.homeModules.map((module, index) => {
+            const meta = HOME_MODULE_META.find((item) => item.id === module.id)!;
+            return <div key={module.id} className={cn("flex items-center gap-2 rounded-xl p-2", !module.enabled && "opacity-50")}>
+              <button type="button" onClick={() => v.toggleHomeModule(module.id)} aria-label={module.enabled ? `Nascondi ${meta.label}` : `Mostra ${meta.label}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted-foreground">
+                {module.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </button>
+              <span className="min-w-0 flex-1 text-sm">{meta.label}</span>
+              <button type="button" disabled={index === 0} onClick={() => v.moveHomeModule(module.id, -1)} aria-label={`Sposta ${meta.label} su`} className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"><ChevronUp className="h-4 w-4" /></button>
+              <button type="button" disabled={index === v.homeModules.length - 1} onClick={() => v.moveHomeModule(module.id, 1)} aria-label={`Sposta ${meta.label} giù`} className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"><ChevronDown className="h-4 w-4" /></button>
+            </div>;
+          })}
+        </div>
+        <button type="button" onClick={v.resetHomeModules} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground"><RotateCcw className="h-3.5 w-3.5" /> Ripristina ordine Home</button>
       </section>
 
       <SectionTitle>Tema completo</SectionTitle>
