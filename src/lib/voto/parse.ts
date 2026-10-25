@@ -1,4 +1,4 @@
-import type { AppNotification, Assignment, Grade, GradeType, NotificationType, Subject, VotoData } from "./types";
+import type { AppNotification, Assignment, Attendance, Grade, GradeType, NotificationType, Subject, VotoData } from "./types";
 
 export class SchemaError extends Error {}
 
@@ -91,6 +91,15 @@ export function parseVotoData(raw: unknown): VotoData {
 
   const st = isObj(raw.student) ? raw.student : {};
   const prev = typeof raw.previousAverage === "number" && Number.isFinite(raw.previousAverage) ? raw.previousAverage : undefined;
+  const attendanceRaw = isObj(raw.attendance) ? raw.attendance : {};
+  const attendance: Attendance = {
+    absenceDays: typeof attendanceRaw.absenceDays === "number" ? attendanceRaw.absenceDays : 0,
+    absenceHours: typeof attendanceRaw.absenceHours === "number" ? attendanceRaw.absenceHours : 0,
+    delays: typeof attendanceRaw.delays === "number" ? attendanceRaw.delays : 0,
+    earlyExits: typeof attendanceRaw.earlyExits === "number" ? attendanceRaw.earlyExits : 0,
+    annualHours: typeof attendanceRaw.annualHours === "number" ? attendanceRaw.annualHours : 990,
+    absenceLimitHours: typeof attendanceRaw.absenceLimitHours === "number" ? attendanceRaw.absenceLimitHours : 247.5,
+  };
 
   return {
     student: { name: str(st.name), className: str(st.className), schoolYear: str(st.schoolYear) },
@@ -99,6 +108,7 @@ export function parseVotoData(raw: unknown): VotoData {
     subjects,
     assignments,
     notifications,
+    attendance,
   };
 }
 

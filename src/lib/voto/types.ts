@@ -42,6 +42,15 @@ export interface AppNotification {
   read: boolean;
 }
 
+export interface Attendance {
+  absenceDays: number;
+  absenceHours: number;
+  delays: number;
+  earlyExits: number;
+  annualHours: number;
+  absenceLimitHours: number;
+}
+
 export interface Student {
   name?: string;
   className?: string;
@@ -55,6 +64,7 @@ export interface VotoData {
   subjects: Subject[];
   assignments: Assignment[];
   notifications: AppNotification[];
+  attendance: Attendance;
 }
 
 export type DataSource = "demo" | "remote" | "cache";

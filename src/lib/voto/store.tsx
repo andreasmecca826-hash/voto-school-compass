@@ -35,7 +35,13 @@ interface Ctx {
 
 const VotoCtx = createContext<Ctx | null>(null);
 
-const EMPTY: VotoData = { student: {}, subjects: [], assignments: [], notifications: [] };
+const EMPTY: VotoData = {
+  student: {},
+  subjects: [],
+  assignments: [],
+  notifications: [],
+  attendance: { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 247.5 },
+};
 
 export function VotoProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);

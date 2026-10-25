@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Github, Minus, Target } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, ChevronRight, Clock3, Github, Megaphone, Minus, StickyNote } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
 import { NOTIF_META } from "@/components/voto/NotificationsSheet";
-import { Empty, GradePill, ProgressBar, SectionTitle, Sparkline, SubjectMark } from "@/components/voto/ui";
+import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
-import { average, averageHistory, fmt, neededGrade, overallAverage, subjectStats } from "@/lib/voto/calc";
+import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { daysBetween, fmtDate, fmtTime } from "@/lib/voto/dates";
 import { useVoto } from "@/lib/voto/store";
 
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard — VOTO." },
-      { name: "description", content: "Media generale, materie, compiti di oggi e attività recente." },
+      { name: "description", content: "Media generale, presenze, compiti e comunicazioni scolastiche." },
       { property: "og:title", content: "Dashboard — VOTO." },
       { property: "og:description", content: "La tua dashboard scolastica personale." },
     ],
@@ -32,15 +32,10 @@ function Dashboard() {
   const today = assignments
     .filter((a) => a.dueDate && daysBetween(v.now, a.dueDate) <= 1 && (daysBetween(v.now, a.dueDate) >= 0 || !v.isDone(a.id, a.completed)))
     .sort((a, b) => `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`));
-  const recentGrades = subjects
-    .flatMap((s) => s.grades.map((g) => ({ ...g, subject: s.name })))
-    .filter((g) => g.date && daysBetween(v.now, g.date) >= -14);
-  const activity = [
-    ...recentGrades.map((g) => ({ kind: "grade" as const, id: g.id, date: g.date, g })),
-    ...notifications.filter((n) => n.type !== "grade").map((n) => ({ kind: "notif" as const, id: n.id, date: n.date ?? "", n })),
-  ]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
+  const attendance = v.data.attendance ?? { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 247.5 };
+  const remainingHours = Math.max(0, attendance.absenceLimitHours - attendance.absenceHours);
+  const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
+  const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
 
   const micro =
     avg === null ? "Nessun voto ancora: il primo arriverà presto."
@@ -103,36 +98,24 @@ function Dashboard() {
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
       </button>
 
-      <SectionTitle action={<Link to="/voti" className="text-xs font-medium text-primary">Tutte</Link>}>Le tue materie</SectionTitle>
-      {subjects.length === 0 ? (
-        <Empty icon={<Target className="h-6 w-6" />} title="Nessuna materia" text="Il file JSON non contiene materie." />
-      ) : (
-        <ul className="card-surface divide-y divide-border">
-          {subjects.slice(0, 5).map((s) => {
-            const st = subjectStats(s);
-            return (
-              <li key={s.id}>
-                <button type="button" onClick={() => ui.openSubject(s.id)} className="press flex w-full items-center gap-3 p-3.5 text-left">
-                  <SubjectMark name={s.name} color={s.color} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-sm font-medium">{s.name}</p>
-                      {st.trend !== null && Math.abs(st.trend) > 0.01 && (
-                        st.trend > 0 ? <ArrowUpRight className="h-3.5 w-3.5 text-success" aria-label="in crescita" /> : <ArrowDownRight className="h-3.5 w-3.5 text-danger" aria-label="in calo" />
-                      )}
-                    </div>
-                    <p className="tabular mb-1.5 text-[11px] text-muted-foreground">
-                      {st.count} voti{st.max !== null && ` · max ${fmt(st.max, 1)} · min ${fmt(st.min!, 1)}`}
-                    </p>
-                    <ProgressBar value={((st.avg ?? 0) / 10) * 100} color={s.color} />
-                  </div>
-                  <GradePill value={st.avg} />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <SectionTitle>Presenze</SectionTitle>
+      <section className="card-surface p-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"><Clock3 className="h-5 w-5" /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Ore di assenza</p>
+            <p className="mt-1 tabular font-display text-3xl font-semibold">{fmt(attendance.absenceHours, 1)} <span className="text-sm font-normal text-muted-foreground">/ {fmt(attendance.absenceLimitHours, 1)} ore</span></p>
+            <p className={cn("mt-1 text-xs", attendance.absenceHours > attendance.absenceLimitHours ? "text-danger" : "text-muted-foreground")}>
+              {attendance.absenceHours > attendance.absenceLimitHours ? "Limite del 25% superato" : `Puoi ancora fare ${fmt(remainingHours, 1)} ore`}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4"><ProgressBar value={Math.min(100, (attendance.absenceHours / attendance.absenceLimitHours) * 100)} /></div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-surface p-3"><p className="text-[11px] text-muted-foreground">Ritardi</p><p className="tabular text-xl font-semibold">{attendance.delays}</p><p className="text-[10px] text-muted-foreground">non conteggiati nelle ore</p></div>
+          <div className="rounded-xl bg-surface p-3"><p className="text-[11px] text-muted-foreground">Uscite</p><p className="tabular text-xl font-semibold">{attendance.earlyExits}</p><p className="text-[10px] text-muted-foreground">non conteggiate nelle ore</p></div>
+        </div>
+      </section>
 
       <SectionTitle action={<Link to="/compiti" className="text-xs font-medium text-primary">Compiti</Link>}>Oggi</SectionTitle>
       {today.length === 0 ? (
@@ -141,27 +124,11 @@ function Dashboard() {
         <ul className="space-y-2">{today.map((a) => <AssignmentRow key={a.id} a={a} />)}</ul>
       )}
 
-      <SectionTitle>Attività recente</SectionTitle>
-      {activity.length === 0 ? (
-        <Empty icon={<CalendarCheck className="h-6 w-6" />} title="Nessuna attività recente" />
-      ) : (
-        <ul className="space-y-2">
-          {activity.map((it) =>
-            it.kind === "grade" ? (
-              <li key={it.id} className="card-surface flex items-center gap-3 p-3.5">
-                <GradePill value={it.g.value} label={it.g.label} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{it.g.subject}</p>
-                  <p className="truncate text-[11px] capitalize text-muted-foreground">{it.g.type}{it.g.comment ? ` · ${it.g.comment}` : ""}</p>
-                </div>
-                <span className="text-[11px] text-muted-foreground">{fmtDate(it.date)}</span>
-              </li>
-            ) : (
-              <NotifItem key={it.id} id={it.n.id} />
-            ),
-          )}
-        </ul>
-      )}
+      <SectionTitle>Note</SectionTitle>
+      {notes.length === 0 ? <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" /> : <ul className="space-y-2">{notes.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
+
+      <SectionTitle>Bacheca</SectionTitle>
+      {bulletin.length === 0 ? <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" /> : <ul className="space-y-2">{bulletin.map((n) => <NotifItem key={n.id} id={n.id} />)}</ul>}
 
       <GoalWidget avg={avg} />
     </div>
