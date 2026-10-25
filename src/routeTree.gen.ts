@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompitiRouteImport } from './routes/compiti'
+import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
+import { Route as VotiRouteImport } from './routes/voti'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompitiRoute = CompitiRouteImport.update({
+  id: '/compiti',
+  path: '/compiti',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpostazioniRoute = ImpostazioniRouteImport.update({
+  id: '/impostazioni',
+  path: '/impostazioni',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VotiRoute = VotiRouteImport.update({
+  id: '/voti',
+  path: '/voti',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/compiti': typeof CompitiRoute
+  '/impostazioni': typeof ImpostazioniRoute
+  '/voti': typeof VotiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compiti': typeof CompitiRoute
+  '/impostazioni': typeof ImpostazioniRoute
+  '/voti': typeof VotiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/compiti': typeof CompitiRoute
+  '/impostazioni': typeof ImpostazioniRoute
+  '/voti': typeof VotiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/compiti' | '/impostazioni' | '/voti'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/compiti' | '/impostazioni' | '/voti'
+  id: '__root__' | '/' | '/compiti' | '/impostazioni' | '/voti'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CompitiRoute: typeof CompitiRoute
+  ImpostazioniRoute: typeof ImpostazioniRoute
+  VotiRoute: typeof VotiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compiti': {
+      id: '/compiti'
+      path: '/compiti'
+      fullPath: '/compiti'
+      preLoaderRoute: typeof CompitiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impostazioni': {
+      id: '/impostazioni'
+      path: '/impostazioni'
+      fullPath: '/impostazioni'
+      preLoaderRoute: typeof ImpostazioniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/voti': {
+      id: '/voti'
+      path: '/voti'
+      fullPath: '/voti'
+      preLoaderRoute: typeof VotiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CompitiRoute: CompitiRoute,
+  ImpostazioniRoute: ImpostazioniRoute,
+  VotiRoute: VotiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
