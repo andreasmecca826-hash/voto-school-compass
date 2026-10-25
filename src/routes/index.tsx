@@ -29,8 +29,6 @@ function Dashboard() {
   const avg = overallAverage(subjects);
   const history = averageHistory(subjects);
   const delta = avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
-
-  const pending = assignments.filter((a) => !v.isDone(a.id, a.completed));
   const today = assignments
     .filter((a) => a.dueDate && daysBetween(v.now, a.dueDate) <= 1 && (daysBetween(v.now, a.dueDate) >= 0 || !v.isDone(a.id, a.completed)))
     .sort((a, b) => `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`));
@@ -95,12 +93,6 @@ function Dashboard() {
           {v.error && v.source !== "demo" && <span className="text-danger"> · offline, dati salvati</span>}
         </p>
       </section>
-
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        <Kpi label="Materie" value={subjects.length} />
-        <Kpi label="Voti 14 gg" value={recentGrades.length} />
-        <Link to="/compiti" className="press"><Kpi label="Da fare" value={pending.length} accent={pending.length > 0} /></Link>
-      </div>
 
       <button type="button" onClick={() => ui.openSimulator()} className="press card-surface mt-3 flex w-full items-center gap-3 p-4 text-left">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary"><Calculator className="h-5 w-5" /></span>
@@ -194,15 +186,6 @@ function NotifItem({ id }: { id: string }) {
         <button type="button" onClick={() => v.markRead([n.id])} className="press rounded-lg px-2 py-1 text-[11px] font-medium text-primary">Letto</button>
       )}
     </li>
-  );
-}
-
-function Kpi({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
-  return (
-    <div className="card-surface px-3.5 py-3">
-      <p className="text-[10.5px] text-muted-foreground">{label}</p>
-      <p className={cn("tabular font-display text-2xl font-semibold", accent && "text-primary")}>{value}</p>
-    </div>
   );
 }
 
