@@ -10,12 +10,10 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
   const subjects = v.data.subjects;
   const [sid, setSid] = useState(subjectId ?? subjects[0]?.id ?? "");
   const [target, setTarget] = useState(7);
-  const [weight, setWeight] = useState(1);
-  const [weighted, setWeighted] = useState(true);
   const [scenario, setScenario] = useState(7);
 
   const s = subjects.find((x) => x.id === sid) ?? subjects[0];
-  const current = s ? average(s.grades, weighted) : null;
+  const current = s ? average(s.grades) : null;
 
   useEffect(() => {
     if (!open) return;
@@ -34,9 +32,9 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
     );
   }
 
-  const res = neededGrade(s.grades, target, weight, weighted);
-  const scenarioGrades = [...s.grades, { id: "sim", value: scenario, label: "", date: "", type: "altro" as const, weight }];
-  const scenarioAvg = average(scenarioGrades, weighted);
+  const res = neededGrade(s.grades, target, 1, false);
+  const scenarioGrades = [...s.grades, { id: "sim", value: scenario, label: "", date: "", type: "altro" as const, weight: 1 }];
+  const scenarioAvg = average(scenarioGrades, false);
 
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title="Che voto mi serve?" description="Calcola il voto necessario alla prossima verifica.">
@@ -55,41 +53,6 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
         <span className="tabular font-display text-lg font-semibold">{fmt(target, 2)}</span>
       </div>
       <Slider className="mt-3" min={4} max={10} step={0.25} value={[target]} onValueChange={([x]) => setTarget(x)} aria-label="Media obiettivo" />
-
-      <div className="mt-5 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Peso del prossimo voto</span>
-        <span className="tabular font-display text-lg font-semibold">{fmt(weight * 100, 0)}%</span>
-      </div>
-      <Slider
-        className="mt-3"
-        min={0.25}
-        max={2}
-        step={0.25}
-        value={[weight]}
-        onValueChange={([x]) => setWeight(x)}
-        aria-label="Peso del prossimo voto"
-      />
-      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground" aria-hidden="true">
-        <span>25%</span>
-        <span>200%</span>
-      </div>
-
-      <div className="mt-5 flex items-center justify-between rounded-xl bg-card px-3.5 py-3">
-        <div>
-          <p className="text-xs font-medium">Usa pesi per i voti</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">Media ponderata</p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={weighted}
-          aria-label="Usa pesi per i voti"
-          onClick={() => setWeighted((current) => !current)}
-          className={cn("press relative h-6 w-11 rounded-full transition-colors", weighted ? "bg-primary" : "bg-muted")}
-        >
-          <span className={cn("absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", weighted ? "translate-x-6" : "translate-x-1")} />
-        </button>
-      </div>
 
       <div className={cn("mt-5 rounded-2xl border p-5 text-center", res.status === "impossible" ? "border-danger/30 bg-danger-soft" : res.status === "reached" ? "border-success/30 bg-success-soft" : "border-primary/30 bg-primary-soft")}>
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
