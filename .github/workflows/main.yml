@@ -23,9 +23,12 @@ jobs:
       - name: Compila VOTO
         run: bun run build
 
+      
       - name: Conserva la versione web compilata
         uses: actions/upload-artifact@v4
         with:
           name: VOTO-web-build
-          path: dist/
-          if-no-files-found: error
+          path: |
+            dist/
+            build/
+          if-no-files-found: warn
