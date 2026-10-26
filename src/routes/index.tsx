@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Calculator, CalendarCheck, CalendarDays, ChevronRight, Clock3, Github, Megaphone, Minus, StickyNote } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Bell, Calculator, CalendarCheck, CalendarDays, ChevronRight, Clock3, Github, ListChecks, Megaphone, Minus, StickyNote, TrendingUp, UserRound } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { daysBetween, fmtDate, fmtTime } from "@/lib/voto/dates";
 import { useVoto } from "@/lib/voto/store";
-import { useState } from "react";
+import { DAYS, loadSchedule } from "@/lib/voto/orario";
+import { useState, type ReactNode } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,6 +66,8 @@ function Dashboard() {
           <ChevronRight className="h-4 w-4 text-primary" />
         </Link>
       )}
+
+      <HomeWidgets v={v} avg={avg} history={history} />
 
       <div className="flex flex-col">
       {isHomeModuleVisible("media") && <div style={{ order: homeOrder("media") }}>
@@ -161,6 +164,40 @@ function Dashboard() {
       </div>
     </div>
   );
+}
+
+function HomeWidgets({ v, avg, history }: { v: ReturnType<typeof useVoto>; avg: number | null; history: number[] }) {
+  const latestGrades = v.data.subjects.flatMap((subject) => subject.grades.map((grade) => ({ ...grade, subject: subject.name }))).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
+  const upcoming = v.data.assignments.filter((item) => item.dueDate && !v.isDone(item.id, item.completed)).sort((a, b) => `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`)).slice(0, 2);
+  const unread = v.data.notifications.filter((item) => !v.isRead(item.id, item.read)).length;
+  const diary = v.data.diary.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+  const nextInterrogazione = v.interrogazioni.filter((item) => !item.completed).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const attendance = v.data.attendance;
+  const schedule = loadSchedule();
+  const today = new Date().getDay();
+  const todayIndex = today >= 1 && today <= 5 ? today - 1 : 0;
+  const nextLesson = (schedule[DAYS[todayIndex].id] ?? []).find((item) => item.trim());
+  const rising = history.length > 1 && history.at(-1)! >= history[0];
+
+  return <section className="mb-5" aria-label="Widget scolastici">
+    <div className="mb-3 flex items-center justify-between"><h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Widget</h2><span className="text-[10px] text-muted-foreground">Riepilogo rapido</span></div>
+    <div className="grid grid-cols-2 gap-2">
+      <WidgetCard icon={<TrendingUp className="h-4 w-4" />} title="Media" accent="bg-primary-soft text-primary"><strong className="font-display text-2xl">{avg === null ? "—" : fmt(avg)}</strong><span className="text-[10px] text-muted-foreground">/10 · {v.data.subjects.length} materie</span></WidgetCard>
+      <WidgetCard icon={<ListChecks className="h-4 w-4" />} title="Ultimi voti" accent="bg-success-soft text-success">{latestGrades.length ? <span className="flex gap-2">{latestGrades.map((grade) => <strong key={grade.id} className="font-display text-xl">{grade.label}<small className="ml-1 text-[10px] font-normal text-muted-foreground">{grade.subject.slice(0, 8)}</small></strong>)}</span> : <span className="text-xs text-muted-foreground">Nessun voto</span>}</WidgetCard>
+      <WidgetCard icon={<CalendarCheck className="h-4 w-4" />} title="Scadenze" accent="bg-warning/15 text-warning">{upcoming.length ? <div className="space-y-1">{upcoming.map((item) => <p key={item.id} className="truncate text-xs font-semibold">{item.title}</p>)}</div> : <span className="text-xs text-muted-foreground">Nessun compito</span>}</WidgetCard>
+      <WidgetCard icon={<ArrowUpRight className="h-4 w-4" />} title="Andamento" accent={rising ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}><Sparkline values={history} /><span className="text-xs text-muted-foreground">{avg === null ? "Dati insufficienti" : rising ? "In crescita" : "Da recuperare"}</span></WidgetCard>
+      <WidgetCard icon={<Clock3 className="h-4 w-4" />} title="Prossima lezione" accent="bg-primary-soft text-primary"><strong className="truncate text-sm">{nextLesson || "Configura l’orario"}</strong><span className="text-[10px] text-muted-foreground">{DAYS[todayIndex].label}</span></WidgetCard>
+      <WidgetCard icon={<Bell className="h-4 w-4" />} title="Notifiche" accent="bg-danger-soft text-danger"><strong className="font-display text-2xl">{unread}</strong><span className="text-[10px] text-muted-foreground">non lette</span></WidgetCard>
+      <WidgetCard icon={<Clock3 className="h-4 w-4" />} title="Presenze" accent="bg-warning/15 text-warning"><strong className="font-display text-2xl">{attendance.absenceDays}</strong><span className="text-[10px] text-muted-foreground">giorni · {attendance.delays} ritardi</span></WidgetCard>
+      <WidgetCard icon={<UserRound className="h-4 w-4" />} title="Diario" accent="bg-primary-soft text-primary"><strong className="truncate text-xs">{diary?.subject || "Nessuna attività"}</strong><span className="truncate text-[10px] text-muted-foreground">{diary?.activity || "Collega i dati reali"}</span></WidgetCard>
+      <WidgetCard icon={<CalendarDays className="h-4 w-4" />} title="Interrogazione" accent="bg-primary-soft text-primary"><strong className="truncate text-xs">{nextInterrogazione?.subject || "Nessuna in programma"}</strong><span className="text-[10px] text-muted-foreground">{nextInterrogazione ? fmtDate(nextInterrogazione.date) : ""}</span></WidgetCard>
+      <WidgetCard icon={<Calculator className="h-4 w-4" />} title="Obiettivo media" accent="bg-success-soft text-success"><strong className="font-display text-2xl">{fmt(v.target)}</strong><span className="text-[10px] text-muted-foreground">obiettivo personale</span></WidgetCard>
+    </div>
+  </section>;
+}
+
+function WidgetCard({ icon, title, accent, children }: { icon: ReactNode; title: string; accent: string; children: ReactNode }) {
+  return <article className="card-surface min-h-[112px] overflow-hidden p-3"><div className="mb-2 flex items-center gap-2"><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", accent)}>{icon}</span><span className="truncate text-[11px] font-semibold">{title}</span></div><div className="flex min-h-10 flex-col justify-center gap-0.5">{children}</div></article>;
 }
 
 function NotifItem({ id }: { id: string }) {
