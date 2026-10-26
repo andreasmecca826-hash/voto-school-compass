@@ -11,7 +11,8 @@ export const Route = createFileRoute("/assistente")({
       { title: "Assistente — VOTO." },
       {
         name: "description",
-        content: "Assistente locale per voti, orario, compiti, circolari e presenze.",
+        content:
+          "Assistente locale per voti, orario, interrogazioni, compiti, circolari e presenze.",
       },
     ],
   }),
@@ -29,6 +30,10 @@ const SUGGESTIONS = [
   "Qual è l’ultimo voto?",
   "Quali sono le nuove circolari di oggi?",
   "Quali sono le novità?",
+  "Quali sono le prossime interrogazioni?",
+  "Chi insegna Inglese?",
+  "Quali materie sono sotto il 6?",
+  "Quanto mi manca al limite delle assenze?",
   "Quante assenze ho?",
 ];
 
@@ -38,7 +43,7 @@ function Assistant() {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
     {
       role: "assistant",
-      text: "Ciao! Sono l’assistente locale di VOTO. Posso aiutarti con medie, voti, orario, scadenze, circolari, Diario, assenze e ritardi. I dati restano sul dispositivo.",
+      text: "Ciao! Sono l’assistente locale di VOTO. Posso aiutarti con medie, voti, orario, interrogazioni in agenda, docenti, scadenze, circolari, Diario, assenze e ritardi. I dati restano sul dispositivo.",
     },
   ]);
   const [pendingDay, setPendingDay] = useState<ReturnType<typeof scheduleDayToClear>>(null);
@@ -54,7 +59,7 @@ function Assistant() {
         role: "assistant",
         text: dayToClear
           ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
-          : answerQuestion(clean, v.data, loadSchedule()),
+          : answerQuestion(clean, v.data, loadSchedule(), v.now, v.interrogazioni),
       },
     ]);
     if (dayToClear) setPendingDay(dayToClear);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import type { Interrogazione } from "@/lib/voto/interrogazioni";
 import { emptySchedule } from "@/lib/voto/orario";
 import type { VotoData } from "@/lib/voto/types";
 
@@ -135,5 +136,62 @@ describe("Assistente locale", () => {
     const summary = answerQuestion("Quali sono le novità?", updateData, emptySchedule(), now);
     expect(summary).toContain("Ultimo voto");
     expect(summary).toContain("Assemblea di classe");
+  });
+
+  it("risponde sulle interrogazioni in agenda e sui docenti per materia", () => {
+    const now = new Date(2026, 9, 26, 12);
+    const interrogazioni: Interrogazione[] = [
+      {
+        id: "i1",
+        subject: "Matematica",
+        date: "2026-10-27",
+        hour: 2,
+        completed: false,
+        checklist: [],
+      },
+      {
+        id: "i2",
+        subject: "Storia",
+        date: "2026-10-20",
+        completed: false,
+        checklist: [],
+      },
+    ];
+    expect(
+      answerQuestion(
+        "Quali sono le prossime interrogazioni?",
+        data,
+        emptySchedule(),
+        now,
+        interrogazioni,
+      ),
+    ).toContain("Matematica");
+
+    const teacherData: VotoData = {
+      ...data,
+      subjects: data.subjects.map((subject) => ({ ...subject, teacher: "Prof.ssa Rossi" })),
+    };
+    expect(answerQuestion("Chi insegna Inglese?", teacherData)).toContain("Prof.ssa Rossi");
+  });
+
+  it("spiega materie sotto la sufficienza, andamento e ore residue di assenza", () => {
+    const lowSubjectData: VotoData = {
+      ...data,
+      subjects: [
+        ...data.subjects,
+        {
+          id: "latino",
+          name: "Latino",
+          grades: [
+            { id: "g3", value: 5, label: "5", date: "2026-10-05", type: "orale", weight: 1 },
+          ],
+        },
+      ],
+    };
+    expect(answerQuestion("Quali materie sono sotto il 6?", lowSubjectData)).toContain("Latino");
+    expect(answerQuestion("Sto migliorando?", data)).toContain("stabile");
+    expect(answerQuestion("Quanto mi manca al limite delle assenze?", data)).toContain(
+      "ti restano 252,00 ore",
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
+import type { Interrogazione } from "./interrogazioni";
 import type { Grade, VotoData } from "./types";
 
 const normalize = (value: string) =>
@@ -119,6 +120,7 @@ export function answerQuestion(
   data: VotoData,
   schedule: Schedule = emptySchedule(),
   now: Date = new Date(),
+  interrogazioni: Interrogazione[] = [],
 ): string {
   const normalized = normalize(query.trim());
   if (!normalized)
@@ -158,6 +160,35 @@ export function answerQuestion(
     return lessons.length
       ? `${label}: ${lessons.length} ${lessons.length === 1 ? "lezione" : "lezioni"}. ${lessons.join("; ")}.`
       : `Non hai lezioni inserite per ${label} nell’orario.`;
+  }
+
+  if (normalized.includes("interrogaz")) {
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const future = interrogazioni
+      .filter((item) => !item.completed && (daysUntil(item.date, now) ?? -1) >= 0)
+      .sort((a, b) => `${a.date}${a.hour ?? 0}`.localeCompare(`${b.date}${b.hour ?? 0}`));
+    const matches =
+      requestedDay === null
+        ? future
+        : future.filter((item) => daysUntil(item.date, now) === requestedDay);
+    if (!matches.length) {
+      if (requestedDay === 0) return "Non hai interrogazioni in agenda per oggi.";
+      if (requestedDay === 1) return "Non hai interrogazioni in agenda per domani.";
+      return "Non risultano interrogazioni future nella tua agenda locale. Puoi aggiungerle nella sezione Interrogazioni.";
+    }
+    const shown = matches.slice(0, requestedDay === null ? 3 : matches.length).map((item) => {
+      const date = displayDate(item.date) ?? item.date;
+      const hour = item.hour ? `, ${item.hour}ª ora` : item.time ? `, ${item.time}` : "";
+      const notes = item.notes ? ` — ${item.notes}` : "";
+      return `${item.subject} (${date}${hour})${notes}`;
+    });
+    const heading =
+      requestedDay === 0
+        ? "Interrogazioni di oggi"
+        : requestedDay === 1
+          ? "Interrogazioni di domani"
+          : "Prossime interrogazioni in agenda";
+    return `${heading}:\n${shown.map((item) => `• ${item}`).join("\n")}${matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : ""}`;
   }
 
   if (
@@ -208,6 +239,29 @@ export function answerQuestion(
   const subject = findSubject(query, data);
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
+  const asksTeacher =
+    normalized.includes("prof") || normalized.includes("docent") || normalized.includes("insegn");
+  const asksTeacherList =
+    normalized.includes("chi") ||
+    normalized.includes("quali") ||
+    normalized.includes("elenco") ||
+    normalized.includes("lista") ||
+    normalized === "professori" ||
+    normalized === "docenti";
+  if (asksTeacher && subject) {
+    const teacher = subject.teacher?.trim();
+    return teacher
+      ? `Il docente registrato per ${subject.name} è ${teacher}.`
+      : `Non ho il nome del docente di ${subject.name} nei dati sincronizzati.`;
+  }
+  if (asksTeacher && asksTeacherList) {
+    const teachers = data.subjects
+      .filter((item) => item.teacher?.trim())
+      .map((item) => `${item.name}: ${item.teacher?.trim()}`);
+    return teachers.length
+      ? `Docenti presenti nei dati sincronizzati:\n${teachers.map((item) => `• ${item}`).join("\n")}`
+      : "I nomi dei docenti non sono presenti nei dati sincronizzati.";
+  }
   if (
     !subject &&
     (normalized.includes("ultimo voto") ||
@@ -272,11 +326,43 @@ export function answerQuestion(
       : `Il voto più basso in ${subject.name} è ${number(lowest)}.`;
   }
 
+  const asksHighestGrade =
+    normalized.includes("voto piu alto") ||
+    normalized.includes("voto massimo") ||
+    normalized.includes("miglior voto");
+  const asksLowestGrade =
+    normalized.includes("voto piu basso") ||
+    normalized.includes("voto minimo") ||
+    normalized.includes("peggior voto");
+  if (!subject && (asksHighestGrade || asksLowestGrade)) {
+    const grades = data.subjects.flatMap((item) =>
+      item.grades.map((grade) => ({ subject: item, grade })),
+    );
+    const extreme = grades.sort((a, b) =>
+      asksHighestGrade ? b.grade.value - a.grade.value : a.grade.value - b.grade.value,
+    )[0];
+    if (!extreme) return "Non risultano voti registrati.";
+    return asksHighestGrade
+      ? `Il voto più alto registrato è ${extreme.grade.label} in ${extreme.subject.name}.`
+      : `Il voto più basso registrato è ${extreme.grade.label} in ${extreme.subject.name}.`;
+  }
+
   if (normalized.includes("ultimo voto") && subject) {
     const latest = [...subject.grades].sort((a, b) => b.date.localeCompare(a.date))[0];
     return latest
       ? `L’ultimo voto in ${subject.name} è ${latest.label}${latest.date ? ` del ${displayDate(latest.date) ?? latest.date}` : ""}.`
       : `In ${subject.name} non ci sono ancora voti.`;
+  }
+
+  if (
+    normalized.includes("quanti voti") ||
+    normalized.includes("numero di voti") ||
+    normalized.includes("quante valutazioni")
+  ) {
+    if (subject)
+      return `Hai ${subject.grades.length} ${subject.grades.length === 1 ? "voto" : "voti"} registrati in ${subject.name}.`;
+    const total = data.subjects.reduce((count, item) => count + item.grades.length, 0);
+    return `Hai ${total} ${total === 1 ? "voto" : "voti"} registrati in ${data.subjects.length} materie.`;
   }
 
   if (
@@ -317,6 +403,50 @@ export function answerQuestion(
       : "Non ci sono ancora voti sufficienti.";
   }
 
+  if (normalized.includes("media piu alta") || normalized.includes("materia migliore")) {
+    const ranked = data.subjects
+      .map((item) => ({ item, avg: average(item.grades) }))
+      .filter(
+        (entry): entry is { item: (typeof data.subjects)[number]; avg: number } =>
+          entry.avg !== null,
+      )
+      .sort((a, b) => b.avg - a.avg);
+    return ranked[0]
+      ? `La media più alta è ${number(ranked[0].avg)} in ${ranked[0].item.name}.`
+      : "Non ci sono ancora voti sufficienti.";
+  }
+
+  if (
+    normalized.includes("insufficient") ||
+    normalized.includes("sotto il 6") ||
+    normalized.includes("sotto la sufficienza")
+  ) {
+    const lowSubjects = data.subjects
+      .map((item) => ({ item, avg: average(item.grades) }))
+      .filter(
+        (entry): entry is { item: (typeof data.subjects)[number]; avg: number } =>
+          entry.avg !== null && entry.avg < 6,
+      );
+    return lowSubjects.length
+      ? `Materie sotto la sufficienza: ${lowSubjects.map(({ item, avg }) => `${item.name} (${number(avg)})`).join(", ")}.`
+      : "Non risultano materie sotto la sufficienza nei voti caricati.";
+  }
+
+  if (
+    normalized.includes("sto migliorando") ||
+    normalized.includes("andamento") ||
+    normalized.includes("trend")
+  ) {
+    const current = overallAverage(data.subjects);
+    if (current === null || data.previousAverage === undefined)
+      return "Non ho abbastanza dati per confrontare la media attuale con quella precedente.";
+    const delta = current - data.previousAverage;
+    if (Math.abs(delta) < 0.05)
+      return `La media generale è stabile: ${number(current)}, come il dato precedente (${number(data.previousAverage)}).`;
+    const direction = delta > 0 ? "aumentata" : "diminuita";
+    return `La media generale è ${number(current)}: è ${direction} di ${number(Math.abs(delta))} punti rispetto al dato precedente (${number(data.previousAverage)}).`;
+  }
+
   if (
     normalized.includes("media generale") ||
     normalized.includes("media complessiva") ||
@@ -326,6 +456,19 @@ export function answerQuestion(
     return current === null
       ? "Non ci sono ancora voti sufficienti per calcolare la media generale."
       : `La tua media generale è ${number(current)}.`;
+  }
+
+  if (
+    (normalized.includes("assenza") || normalized.includes("assenze")) &&
+    (normalized.includes("limite") || normalized.includes("ancora") || normalized.includes("manca"))
+  ) {
+    const { absenceHours, absenceLimitHours } = data.attendance;
+    const remaining = absenceLimitHours - absenceHours;
+    return remaining > 0
+      ? `Hai ${number(absenceHours)} ore di assenza su ${number(absenceLimitHours)}: ti restano ${number(remaining)} ore prima del limite.`
+      : remaining === 0
+        ? `Hai raggiunto il limite di ${number(absenceLimitHours)} ore di assenza.`
+        : `Hai superato il limite di ${number(absenceLimitHours)} ore di ${number(Math.abs(remaining))} ore.`;
   }
 
   if (normalized.includes("assenze") || normalized.includes("ritardi")) {
@@ -391,5 +534,5 @@ export function answerQuestion(
       : "Non ci sono ancora attività nel Diario.";
   }
 
-  return "Posso aiutarti con voti e medie, ultimo voto, orario, compiti e scadenze, circolari, Diario, assenze e ritardi. Prova: “Che lezioni ho oggi?” o “Qual è l’ultima circolare?”";
+  return "Posso aiutarti con medie, voti e andamento, materie insufficienti, docenti, orario, interrogazioni in agenda, compiti e scadenze, circolari, Diario e presenze. Prova: “Quali sono le prossime interrogazioni?” o “Quanto mi manca al limite delle assenze?”";
 }
