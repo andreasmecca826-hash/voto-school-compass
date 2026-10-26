@@ -27,7 +27,6 @@ const NAV = [
   { to: "/compiti", label: "Compiti", icon: CheckSquare },
   { to: "/interrogazioni", label: "Interrog.", icon: CalendarDays },
   { to: "/orario", label: "Orario", icon: CalendarClock },
-  { to: "/impostazioni", label: "Impostazioni", icon: Settings },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -87,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
-            <ul className="grid grid-cols-6">
+            <ul className="grid grid-cols-5">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = to === "/" ? path === "/" : path.startsWith(to);
               return (
