@@ -120,7 +120,7 @@ export function NotificationsSheet({
           onOpenChange={(open) => !open && setCircular(null)}
           title={circular.message ?? circular.title}
           fileName={circular.attachmentName}
-          url={circular.attachmentUrl}
+          url={circular.attachmentPath ? circular.attachmentUrl : undefined}
         />
       )}
     </BottomSheet>

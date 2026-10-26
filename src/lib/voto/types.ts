@@ -39,6 +39,9 @@ export interface AppNotification {
   message?: string | undefined;
   date?: string | undefined;
   subject?: string | undefined;
+  /** Percorso del PDF nel bucket Supabase Storage interno. */
+  attachmentPath?: string | undefined;
+  /** URL sorgente legacy usato solo dal backend per il mirroring. */
   attachmentUrl?: string | undefined;
   attachmentName?: string | undefined;
   read: boolean;
