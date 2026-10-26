@@ -21,7 +21,7 @@ Gli ultimi dati validi restano salvati sul dispositivo; i compiti completati son
 
 ## PDF delle circolari
 
-Il monitor DidUP scarica gli allegati usando la propria sessione autenticata e li carica direttamente nel bucket privato Supabase Storage. Nel JSON salva il percorso `attachmentPath`, non un link Argo da scaricare nuovamente. L'app apre il PDF tramite `/api/circulars/mirror`, che lo legge dal bucket con credenziali server-only e lo restituisce inline. Configura nell'ambiente server dell'app `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` (oppure `SUPABASE_KEY`) e crea il bucket privato `circulars`. Nel repository del monitor configura anche i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`; non usare mai la service-role key con prefisso `VITE_`.
+Il monitor DidUP acquisisce i PDF tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. Quando l'app apre una circolare con path interno, la Edge Function `mirror-circular` crea un URL firmato valido un'ora; la funzione accetta solo path PDF già presenti nel bucket e non scarica link esterni. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.
 
 ## APK Android (Capacitor)
 

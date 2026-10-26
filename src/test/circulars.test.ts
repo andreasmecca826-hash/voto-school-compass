@@ -23,7 +23,7 @@ const emptyData = (notifications: VotoData["notifications"]): VotoData => ({
 });
 
 describe("mirrorCirculars", () => {
-  it("does not call the deprecated function for an Argo source URL", async () => {
+  it("does not call Supabase for an Argo source URL without an internal path", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const sourceUrl = "https://example.org/circular.pdf";
@@ -44,8 +44,15 @@ describe("mirrorCirculars", () => {
     expect(result.notifications[0]?.attachmentPath).toBeUndefined();
   });
 
-  it("opens an internally uploaded PDF through the app endpoint without calling mirror-circular", async () => {
-    const fetchMock = vi.fn();
+  it("requests a short-lived URL only for an internally stored PDF", async () => {
+    const signedUrl =
+      "https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/circulars/circulars/file.pdf?token=test";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ path: `circulars/${"a".repeat(64)}.pdf`, signedUrl }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     const path = `circulars/${"a".repeat(64)}.pdf`;
     const data = emptyData([
@@ -60,10 +67,19 @@ describe("mirrorCirculars", () => {
 
     const result = await mirrorCirculars(data);
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://jmvxuhgjejzpezvawzfw.supabase.co/functions/v1/mirror-circular",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          apikey: "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1",
+        }),
+        body: JSON.stringify({ path }),
+      }),
+    );
     expect(result.notifications[0]).toMatchObject({
       attachmentPath: path,
-      attachmentUrl: `/api/circulars/mirror?path=${encodeURIComponent(path)}`,
+      attachmentUrl: signedUrl,
     });
   });
 });
