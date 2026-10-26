@@ -45,9 +45,11 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
     );
   }
 
-  const res = neededGrade(s.grades, target, 1, false);
-  const scenarioGrades = [...s.grades, { id: "sim", value: scenario, label: "", date: "", type: "altro" as const, weight: 1 }];
-  const scenarioAvg = stats ? (stats.count * (current ?? 0) + scenario) / (stats.count + 1) : null;
+  // Coerente con la media ponderata mostrata: stesso peso per il voto futuro.
+  const res = neededGrade(s.grades, target, 1, true);
+  const scenarioWeightSum = s.grades.reduce((acc, g) => acc + (g.weight > 0 ? g.weight : 1), 0);
+  const scenarioValueSum = s.grades.reduce((acc, g) => acc + g.value * (g.weight > 0 ? g.weight : 1), 0);
+  const scenarioAvg = scenarioWeightSum > 0 ? (scenarioValueSum + scenario) / (scenarioWeightSum + 1) : null;
 
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title="Che voto mi serve?" description="Calcola il voto necessario alla prossima verifica.">
