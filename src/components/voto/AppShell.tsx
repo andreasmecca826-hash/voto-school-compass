@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, ClipboardList, Clock3, GraduationCap, LayoutGrid, Menu, RefreshCw, Settings, Trophy, X } from "lucide-react";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useVoto } from "@/lib/voto/store";
@@ -43,6 +43,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [achievements, setAchievements] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
   const [subject, setSubject] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [path]);
 
   const dateLabel = v.ready ? v.now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) : "";
 
