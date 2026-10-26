@@ -123,9 +123,9 @@ function Dashboard() {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"><Clock3 className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">{showingDays ? "Giorni di assenza" : "Ore di assenza"}</p>
-            <p className="mt-1 tabular font-display text-3xl font-semibold">{fmt(showingDays ? attendance.absenceDays : attendance.absenceHours, showingDays ? 0 : 1)} <span className="text-sm font-normal text-muted-foreground">/ {fmt(showingDays ? absenceLimitDays : attendance.absenceLimitHours, showingDays ? 2 : 1)} {showingDays ? "giorni" : "ore"}</span></p>
+            <p className="mt-1 tabular font-display text-3xl font-semibold">{fmt(showingDays ? attendance.absenceDays : attendance.absenceHours, showingDays ? 0 : 1)} <span className="text-sm font-normal text-muted-foreground">/ {fmt(showingDays ? absenceLimitDays : attendance.absenceLimitHours, showingDays ? 0 : 1)} {showingDays ? "giorni" : "ore"}</span></p>
             <p className={cn("mt-1 text-xs", attendance.absenceHours > attendance.absenceLimitHours ? "text-danger" : "text-muted-foreground")}>
-              {attendance.absenceHours > attendance.absenceLimitHours ? "Limite del 25% superato" : `Puoi ancora fare ${fmt(showingDays ? remainingDays : remainingHours, showingDays ? 2 : 1)} ${showingDays ? "giorni" : "ore"}`}
+              {attendance.absenceHours > attendance.absenceLimitHours ? "Limite del 25% superato" : `Puoi ancora fare ${fmt(showingDays ? remainingDays : remainingHours, showingDays ? 0 : 1)} ${showingDays ? "giorni" : "ore"}`}
             </p>
           </div>
         </div>
