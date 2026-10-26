@@ -131,6 +131,7 @@
 [data-mode="chiaro"][data-bg="bosco"] { --background: oklch(0.91 0.035 155); --card: oklch(0.97 0.03 155 / 0.82); --surface: oklch(0.84 0.045 155 / 0.78); }
 [data-mode="chiaro"][data-bg="prugna"] { --background: oklch(0.92 0.035 315); --card: oklch(0.97 0.03 315 / 0.82); --surface: oklch(0.85 0.045 315 / 0.78); }
 [data-mode="chiaro"][data-bg="carta"] { --background: oklch(0.95 0.025 75); --card: oklch(0.99 0.01 85 / 0.86); --surface: oklch(0.91 0.035 75 / 0.8); }
+[data-mode="scuro"][data-bg="chiaro"], [data-mode="scuro"][data-bg="carta"] { color-scheme: light; --foreground: oklch(0.2 0.02 260); --muted-foreground: oklch(0.46 0.015 260); --popover: var(--card); --border: oklch(0.2 0.02 260 / 0.15); --input: oklch(0.2 0.02 260 / 0.2); --secondary: color-mix(in srgb, var(--card) 90%, black 10%); --accent: color-mix(in srgb, var(--card) 82%, black 18%); }
 
 [data-accent="rosso"] { --hue: 25; --chroma: 0.17; }
 [data-accent="ambra"] { --hue: 70; --chroma: 0.15; }
