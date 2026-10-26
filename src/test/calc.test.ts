@@ -1,8 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { average, neededGrade } from "@/lib/voto/calc";
+import { arithmeticMean, average, neededGrade } from "@/lib/voto/calc";
 import type { Grade } from "@/lib/voto/types";
 
-const g = (value: number, weight = 1): Grade => ({ id: `g${value}-${weight}`, value, label: String(value), date: "2026-10-01", type: "orale", weight });
+const g = (value: number, weight = 1): Grade => ({
+  id: `g${value}-${weight}`,
+  value,
+  label: String(value),
+  date: "2026-10-01",
+  type: "orale",
+  weight,
+});
+
+describe("Media aritmetica generica", () => {
+  it("calcola la media semplice dei numeri inseriti", () => {
+    expect(arithmeticMean([6, 7, 8])).toBe(7);
+  });
+
+  it("ignora i valori non finiti", () => {
+    expect(arithmeticMean([4, Number.NaN, 6, Number.POSITIVE_INFINITY])).toBe(5);
+  });
+
+  it("restituisce null senza valori validi", () => {
+    expect(arithmeticMean([])).toBeNull();
+  });
+});
 
 describe("Media ponderata e voto necessario", () => {
   it("la media ponderata pesa i voti secondo il peso", () => {
