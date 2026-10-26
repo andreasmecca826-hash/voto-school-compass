@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { fmtDate } from "@/lib/voto/dates";
 import { useVoto } from "@/lib/voto/store";
 import type { NotificationType } from "@/lib/voto/types";
+import { CircularViewer } from "./CircularViewer";
 import { BottomSheet, Chip, Empty } from "./ui";
 
 export const NOTIF_META: Record<NotificationType, { label: string; icon: typeof Bell }> = {
@@ -13,21 +14,37 @@ export const NOTIF_META: Record<NotificationType, { label: string; icon: typeof 
   notice: { label: "Avviso", icon: Megaphone },
 };
 
-export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+export function NotificationsSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const v = useVoto();
   const [filter, setFilter] = useState<NotificationType | "all">("all");
   const visibleNotifications = v.data.notifications;
+  const [circular, setCircular] = useState<(typeof visibleNotifications)[number] | null>(null);
   const list = [...visibleNotifications]
     .filter((n) => filter === "all" || n.type === filter)
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   const unreadIds = visibleNotifications.filter((n) => !v.isRead(n.id, n.read)).map((n) => n.id);
 
   return (
-    <BottomSheet open={open} onOpenChange={onOpenChange} title="Notifiche" description={`${unreadIds.length} non lette`}>
+    <BottomSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Notifiche"
+      description={`${unreadIds.length} non lette`}
+    >
       <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5">
-        <Chip active={filter === "all"} onClick={() => setFilter("all")}>Tutte</Chip>
+        <Chip active={filter === "all"} onClick={() => setFilter("all")}>
+          Tutte
+        </Chip>
         {(Object.keys(NOTIF_META) as NotificationType[]).map((t) => (
-          <Chip key={t} active={filter === t} onClick={() => setFilter(t)}>{NOTIF_META[t].label}</Chip>
+          <Chip key={t} active={filter === t} onClick={() => setFilter(t)}>
+            {NOTIF_META[t].label}
+          </Chip>
         ))}
       </div>
       <button
@@ -39,15 +56,27 @@ export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOp
         <CheckCheck className="h-4 w-4" /> Segna tutte come lette
       </button>
       {list.length === 0 ? (
-        <Empty icon={<Bell className="h-6 w-6" />} title="Nessuna notifica" text="Qui compariranno voti, note e promemoria." />
+        <Empty
+          icon={<Bell className="h-6 w-6" />}
+          title="Nessuna notifica"
+          text="Qui compariranno voti, note e promemoria."
+        />
       ) : (
         <ul className="space-y-2">
           {list.map((n) => {
             const read = v.isRead(n.id, n.read);
             const M = NOTIF_META[n.type];
             return (
-              <li key={n.id} className={cn("card-surface flex gap-3 p-3.5", !read && "border-primary/30")}>
-                <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface", !read && "text-primary")}>
+              <li
+                key={n.id}
+                className={cn("card-surface flex gap-3 p-3.5", !read && "border-primary/30")}
+              >
+                <span
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface",
+                    !read && "text-primary",
+                  )}
+                >
                   <M.icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -58,9 +87,24 @@ export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOp
                   </div>
                   <p className="mt-0.5 text-sm font-medium">{n.title}</p>
                   {n.message && <p className="mt-0.5 text-xs text-muted-foreground">{n.message}</p>}
-                  {n.type === "notice" && <a href="https://www.portaleargo.it/famiglia/" target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary">Apri DidUP</a>}
+                  {n.type === "notice" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCircular(n);
+                        if (!read) v.markRead([n.id]);
+                      }}
+                      className="press mt-2 inline-flex max-w-full rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary"
+                    >
+                      Apri circolare
+                    </button>
+                  )}
                   {!read && (
-                    <button type="button" onClick={() => v.markRead([n.id])} className="mt-2 text-xs font-medium text-primary">
+                    <button
+                      type="button"
+                      onClick={() => v.markRead([n.id])}
+                      className="mt-2 text-xs font-medium text-primary"
+                    >
                       Segna come letta
                     </button>
                   )}
@@ -69,6 +113,15 @@ export function NotificationsSheet({ open, onOpenChange }: { open: boolean; onOp
             );
           })}
         </ul>
+      )}
+      {circular && (
+        <CircularViewer
+          open={!!circular}
+          onOpenChange={(open) => !open && setCircular(null)}
+          title={circular.message ?? circular.title}
+          fileName={circular.attachmentName}
+          url={circular.attachmentUrl}
+        />
       )}
     </BottomSheet>
   );
