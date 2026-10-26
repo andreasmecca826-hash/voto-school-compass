@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, RefreshCw, Settings, Trophy } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, RefreshCw, Settings, Trophy } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
   const [subject, setSubject] = useState<string | null>(null);
 
-  const unread = v.data.notifications.filter((n) => !v.isRead(n.id, n.read)).length;
   const dateLabel = v.ready ? v.now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) : "";
 
   return (
@@ -65,19 +64,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button type="button" onClick={() => setAchievements(true)} className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Achievement">
                 <Trophy className="h-[18px] w-[18px]" />
               </button>
-              <button
-                type="button"
-                onClick={() => setNotif(true)}
-                className="press relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-                aria-label={`Notifiche, ${unread} non lette`}
-              >
-                <Bell className="h-[18px] w-[18px]" />
-                {unread > 0 && (
-                  <span className="tabular absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {unread}
-                  </span>
-                )}
-              </button>
+              <Link to="/impostazioni" className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Impostazioni">
+                <Settings className="h-[18px] w-[18px]" />
+              </Link>
               <button
                 type="button"
                 onClick={() => v.refresh()}
