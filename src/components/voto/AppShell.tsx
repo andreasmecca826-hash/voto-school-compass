@@ -203,6 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <li key={to}>
                   <Link
                     to={to}
+                    onClick={() => setMoreOpen(false)}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "press flex h-16 flex-col items-center justify-center gap-1 text-[10.5px] font-medium",
