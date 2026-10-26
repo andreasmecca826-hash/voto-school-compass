@@ -34,6 +34,7 @@ const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "blu", label: "Blu", sw: "oklch(0.68 0.16 250)" },
   { id: "verde", label: "Verde", sw: "oklch(0.68 0.14 145)" },
   { id: "azzurro", label: "Azzurro", sw: "oklch(0.68 0.15 205)" },
+  { id: "menta", label: "Menta", sw: "oklch(0.68 0.14 165)" },
   { id: "rosa", label: "Rosa", sw: "oklch(0.68 0.15 345)" },
   { id: "arancio", label: "Arancio", sw: "oklch(0.68 0.18 45)" },
   { id: "turchese", label: "Turchese", sw: "oklch(0.68 0.15 180)" },
@@ -48,6 +49,8 @@ const BGS: { id: Bg; label: string; sw: string }[] = [
   { id: "carbone", label: "Carbone", sw: "oklch(0.18 0.004 260)" },
   { id: "grafite", label: "Grafite", sw: "oklch(0.23 0.006 250)" },
   { id: "chiaro", label: "Chiaro", sw: "oklch(0.97 0.008 90)" },
+  { id: "rosso", label: "Rosso", sw: "oklch(0.14 0.045 25)" },
+  { id: "oceano", label: "Oceano", sw: "oklch(0.14 0.04 235)" },
   { id: "notteblu", label: "Notte blu", sw: "oklch(0.14 0.035 255)" },
   { id: "bosco", label: "Bosco", sw: "oklch(0.15 0.035 155)" },
   { id: "prugna", label: "Prugna", sw: "oklch(0.15 0.035 315)" },
@@ -65,6 +68,12 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     label: "Personalizzato",
     description: "Crea il tuo tema",
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
+  },
+  {
+    id: "tramonto",
+    label: "Tramonto",
+    description: "Caldo, tra corallo e ambra",
+    sw: "linear-gradient(135deg,#291622,#f08a60)",
   },
   {
     id: "lavender",
@@ -360,7 +369,7 @@ export function PersonalizationPanel() {
       <BackButton onClick={() => setView("menu")} title="Temi" />
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
-        {THEMES.slice(0, moreThemes ? THEMES.length : 4).map((theme) => (
+        {THEMES.slice(0, moreThemes ? THEMES.length : 5).map((theme) => (
           <button
             key={theme.id}
             type="button"
@@ -548,7 +557,7 @@ export function PersonalizationPanel() {
       {v.theme === "original" && (
         <>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {ACCENTS.slice(0, moreColors ? ACCENTS.length : 6).map((accent) => (
+            {ACCENTS.slice(0, moreColors ? ACCENTS.length : 7).map((accent) => (
               <button
                 key={accent.id}
                 type="button"
@@ -573,7 +582,7 @@ export function PersonalizationPanel() {
           </button>
           <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {BGS.slice(0, moreBackgrounds ? BGS.length : 4).map((bg) => (
+            {BGS.slice(0, moreBackgrounds ? BGS.length : 6).map((bg) => (
               <button
                 key={bg.id}
                 type="button"

@@ -29,9 +29,19 @@ export type Accent =
   | "lime"
   | "oro"
   | "corallo"
+  | "menta"
   | "mono";
 export type Bg =
-  "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
+  | "nero"
+  | "carbone"
+  | "grafite"
+  | "chiaro"
+  | "rosso"
+  | "oceano"
+  | "notteblu"
+  | "bosco"
+  | "prugna"
+  | "carta";
 export type Mode = "chiaro" | "scuro";
 export type Density = "standard" | "compact";
 export type Theme =
@@ -47,6 +57,7 @@ export type Theme =
   | "estate"
   | "autunno"
   | "inverno"
+  | "tramonto"
   | "custom";
 export type CustomFont = "sans" | "display" | "mono" | "serif";
 export type CustomTheme = {
