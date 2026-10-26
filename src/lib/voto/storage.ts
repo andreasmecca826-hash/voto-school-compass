@@ -1,6 +1,7 @@
 export const KEYS = {
   url: "voto.url",
   cache: "voto.cache",
+  demoData: "voto.demoData",
   lastSync: "voto.lastSync",
   completions: "voto.completions",
   read: "voto.read",

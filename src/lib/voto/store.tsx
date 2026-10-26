@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 import { makeDemoData } from "./demo";
 import { fetchVotoData } from "./parse";
@@ -6,22 +15,78 @@ import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 
-export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
-export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
+export type Accent =
+  | "rosso"
+  | "ambra"
+  | "viola"
+  | "blu"
+  | "verde"
+  | "azzurro"
+  | "rosa"
+  | "arancio"
+  | "turchese"
+  | "indaco"
+  | "lime"
+  | "oro"
+  | "corallo"
+  | "mono";
+export type Bg =
+  "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 export type Mode = "chiaro" | "scuro";
-export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k" | "primavera" | "estate" | "autunno" | "inverno" | "custom";
+export type Theme =
+  | "original"
+  | "lavender"
+  | "cybercore"
+  | "brutalist"
+  | "retro-os"
+  | "dark-academia"
+  | "glassmorphism"
+  | "y2k"
+  | "primavera"
+  | "estate"
+  | "autunno"
+  | "inverno"
+  | "custom";
 export type CustomFont = "sans" | "display" | "mono" | "serif";
 export type CustomTheme = {
-  bgDark: string; cardDark: string; surfaceDark: string; fgDark: string; mutedDark: string;
-  bgLight: string; cardLight: string; surfaceLight: string; fgLight: string; mutedLight: string;
-  primary: string; radius: number; font: CustomFont;
+  bgDark: string;
+  cardDark: string;
+  surfaceDark: string;
+  fgDark: string;
+  mutedDark: string;
+  bgLight: string;
+  cardLight: string;
+  surfaceLight: string;
+  fgLight: string;
+  mutedLight: string;
+  primary: string;
+  radius: number;
+  font: CustomFont;
 };
 export const DEFAULT_CUSTOM_THEME: CustomTheme = {
-  bgDark: "#12151c", cardDark: "#1d2330", surfaceDark: "#273246", fgDark: "#f5f7fb", mutedDark: "#aeb9cb",
-  bgLight: "#eef2f8", cardLight: "#ffffff", surfaceLight: "#dfe7f2", fgLight: "#172033", mutedLight: "#5c6a80",
-  primary: "#61a7ff", radius: 1, font: "sans",
+  bgDark: "#12151c",
+  cardDark: "#1d2330",
+  surfaceDark: "#273246",
+  fgDark: "#f5f7fb",
+  mutedDark: "#aeb9cb",
+  bgLight: "#eef2f8",
+  cardLight: "#ffffff",
+  surfaceLight: "#dfe7f2",
+  fgLight: "#172033",
+  mutedLight: "#5c6a80",
+  primary: "#61a7ff",
+  radius: 1,
+  font: "sans",
 };
-export type HomeModuleId = "media" | "simulatore" | "presenze" | "compiti" | "interrogazioni" | "note" | "bacheca" | "obiettivo";
+export type HomeModuleId =
+  | "media"
+  | "simulatore"
+  | "presenze"
+  | "compiti"
+  | "interrogazioni"
+  | "note"
+  | "bacheca"
+  | "obiettivo";
 export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
 
 export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
@@ -41,22 +106,42 @@ function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
   const result: HomeModuleConfig[] = [];
   value.forEach((item) => {
     const id = typeof item === "string" ? item : (item as HomeModuleConfig)?.id;
-    if (typeof id === "string" && DEFAULT_HOME_MODULES.some((m) => m.id === id) && !ids.has(id as HomeModuleId)) {
+    if (
+      typeof id === "string" &&
+      DEFAULT_HOME_MODULES.some((m) => m.id === id) &&
+      !ids.has(id as HomeModuleId)
+    ) {
       ids.add(id as HomeModuleId);
-      result.push({ id: id as HomeModuleId, enabled: typeof item === "string" ? true : (item as HomeModuleConfig).enabled !== false });
+      result.push({
+        id: id as HomeModuleId,
+        enabled: typeof item === "string" ? true : (item as HomeModuleConfig).enabled !== false,
+      });
     }
   });
-  DEFAULT_HOME_MODULES.forEach((m) => { if (!ids.has(m.id)) result.push(m); });
+  DEFAULT_HOME_MODULES.forEach((m) => {
+    if (!ids.has(m.id)) result.push(m);
+  });
   return result;
 }
 
 function normalizeInterrogazioni(value: unknown): Interrogazione[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is Interrogazione => !!item && typeof item === "object" && typeof item.id === "string" && typeof item.subject === "string" && typeof item.date === "string").map((item) => ({
-    ...item,
-    completed: item.completed === true,
-    checklist: Array.isArray(item.checklist) ? item.checklist : DEFAULT_PREPARATION.map((prep) => ({ ...prep })),
-  }));
+  return value
+    .filter(
+      (item): item is Interrogazione =>
+        !!item &&
+        typeof item === "object" &&
+        typeof item.id === "string" &&
+        typeof item.subject === "string" &&
+        typeof item.date === "string",
+    )
+    .map((item) => ({
+      ...item,
+      completed: item.completed === true,
+      checklist: Array.isArray(item.checklist)
+        ? item.checklist
+        : DEFAULT_PREPARATION.map((prep) => ({ ...prep })),
+    }));
 }
 
 interface Ctx {
@@ -84,6 +169,7 @@ interface Ctx {
   connect: (url: string) => Promise<boolean>;
   disconnect: () => void;
   resetDemo: () => void;
+  setDemoData: (data: VotoData) => void;
   setTarget: (n: number) => void;
   setAccent: (a: Accent) => void;
   setBg: (b: Bg) => void;
@@ -110,7 +196,14 @@ const EMPTY: VotoData = {
   assignments: [],
   notifications: [],
   diary: [],
-  attendance: { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 264 },
+  attendance: {
+    absenceDays: 0,
+    absenceHours: 0,
+    delays: 0,
+    earlyExits: 0,
+    annualHours: 990,
+    absenceLimitHours: 264,
+  },
 };
 
 export function VotoProvider({ children }: { children: ReactNode }) {
@@ -137,7 +230,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 
   const refreshImpl = useCallback(async (u: string, silent = false) => {
     if (!u) {
-      if (!silent) toast("Modalità demo", { description: "Collega un URL JSON nelle Impostazioni per dati reali." });
+      if (!silent)
+        toast("Modalità demo", {
+          description: "Collega un URL JSON nelle Impostazioni per dati reali.",
+        });
       return false;
     }
     setLoading(true);
@@ -176,13 +272,20 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setModeS(load(KEYS.mode, "scuro"));
     setGlassS(load(KEYS.glass, true));
     setThemeS(load(KEYS.theme, "original"));
-    setCustomThemeS({ ...DEFAULT_CUSTOM_THEME, ...load<Partial<CustomTheme>>(KEYS.customTheme, {}) });
+    setCustomThemeS({
+      ...DEFAULT_CUSTOM_THEME,
+      ...load<Partial<CustomTheme>>(KEYS.customTheme, {}),
+    });
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
+    const demoData = load<VotoData | null>(KEYS.demoData, null);
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
       setSource("cache");
+    } else if (!u && demoData && Array.isArray(demoData.subjects)) {
+      setData(demoData);
+      setSource("demo");
     } else {
       setData(makeDemoData());
       setSource("demo");
@@ -203,18 +306,49 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset.glass = glass ? "on" : "off";
     root.dataset.theme = theme;
     const custom: Record<string, string> = {
-      "--custom-bg-dark": customTheme.bgDark, "--custom-card-dark": customTheme.cardDark, "--custom-surface-dark": customTheme.surfaceDark,
-      "--custom-fg-dark": customTheme.fgDark, "--custom-muted-dark": customTheme.mutedDark, "--custom-bg-light": customTheme.bgLight,
-      "--custom-card-light": customTheme.cardLight, "--custom-surface-light": customTheme.surfaceLight, "--custom-fg-light": customTheme.fgLight,
-      "--custom-muted-light": customTheme.mutedLight, "--custom-primary": customTheme.primary, "--custom-radius": `${customTheme.radius}rem`,
-      "--custom-font": customTheme.font === "mono" ? '"JetBrains Mono", monospace' : customTheme.font === "serif" ? "Georgia, serif" : customTheme.font === "display" ? "Manrope, sans-serif" : "var(--font-sans)",
+      "--custom-bg-dark": customTheme.bgDark,
+      "--custom-card-dark": customTheme.cardDark,
+      "--custom-surface-dark": customTheme.surfaceDark,
+      "--custom-fg-dark": customTheme.fgDark,
+      "--custom-muted-dark": customTheme.mutedDark,
+      "--custom-bg-light": customTheme.bgLight,
+      "--custom-card-light": customTheme.cardLight,
+      "--custom-surface-light": customTheme.surfaceLight,
+      "--custom-fg-light": customTheme.fgLight,
+      "--custom-muted-light": customTheme.mutedLight,
+      "--custom-primary": customTheme.primary,
+      "--custom-radius": `${customTheme.radius}rem`,
+      "--custom-font":
+        customTheme.font === "mono"
+          ? '"JetBrains Mono", monospace'
+          : customTheme.font === "serif"
+            ? "Georgia, serif"
+            : customTheme.font === "display"
+              ? "Manrope, sans-serif"
+              : "var(--font-sans)",
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
   }, [accent, bg, mode, glass, theme, customTheme, ready]);
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, customTheme, homeModules, interrogazioni, now,
+      ready,
+      data,
+      source,
+      url,
+      lastSync,
+      loading,
+      error,
+      target,
+      accent,
+      bg,
+      mode,
+      glass,
+      theme,
+      customTheme,
+      homeModules,
+      interrogazioni,
+      now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -259,7 +393,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       resetDemo: () => {
         urlRef.current = "";
         setUrl("");
-        [KEYS.url, KEYS.cache, KEYS.lastSync, KEYS.completions, KEYS.read].forEach((k) => save(k, null));
+        [KEYS.url, KEYS.cache, KEYS.demoData, KEYS.lastSync, KEYS.completions, KEYS.read].forEach(
+          (k) => save(k, null),
+        );
         setCompletions({});
         setReadIds({});
         setLastSync(null);
@@ -268,55 +404,136 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setSource("demo");
         toast.success("Dati demo ripristinati");
       },
-      setTarget: (n) => { setTargetS(n); save(KEYS.target, n); },
-      setAccent: (a) => { setAccentS(a); save(KEYS.accent, a); },
-      setBg: (b) => { setBgS(b); save(KEYS.bg, b); },
-      setMode: (m) => { setModeS(m); save(KEYS.mode, m); },
-      setGlass: (enabled) => { setGlassS(enabled); save(KEYS.glass, enabled); },
-      setTheme: (next) => { setThemeS(next); save(KEYS.theme, next); },
-      setCustomTheme: (patch) => setCustomThemeS((current) => {
-        const next = { ...current, ...patch };
-        save(KEYS.customTheme, next);
-        return next;
-      }),
-      resetCustomTheme: () => { setCustomThemeS(DEFAULT_CUSTOM_THEME); save(KEYS.customTheme, DEFAULT_CUSTOM_THEME); },
-      toggleHomeModule: (id) => setHomeModulesS((current) => {
-        const next = current.map((module) => module.id === id ? { ...module, enabled: !module.enabled } : module);
-        save(KEYS.homeModules, next);
-        return next;
-      }),
-      moveHomeModule: (id, direction) => setHomeModulesS((current) => {
-        const index = current.findIndex((module) => module.id === id);
-        const targetIndex = index + direction;
-        if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
-        const next = [...current];
-        [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
-        save(KEYS.homeModules, next);
-        return next;
-      }),
-      resetHomeModules: () => { setHomeModulesS(DEFAULT_HOME_MODULES); save(KEYS.homeModules, DEFAULT_HOME_MODULES); },
-      addInterrogazione: (item) => setInterrogazioni((current) => {
-        const next = [{ ...item, id: crypto.randomUUID(), completed: false, checklist: DEFAULT_PREPARATION.map((prep) => ({ ...prep })) }, ...current];
-        save(KEYS.interrogazioni, next);
-        return next;
-      }),
-      toggleInterrogazione: (id) => setInterrogazioni((current) => {
-        const next = current.map((item) => item.id === id ? { ...item, completed: !item.completed } : item);
-        save(KEYS.interrogazioni, next);
-        return next;
-      }),
-      toggleInterrogazionePrep: (id, preparationId) => setInterrogazioni((current) => {
-        const next = current.map((item) => item.id === id ? { ...item, checklist: item.checklist.map((prep) => prep.id === preparationId ? { ...prep, done: !prep.done } : prep) } : item);
-        save(KEYS.interrogazioni, next);
-        return next;
-      }),
-      removeInterrogazione: (id) => setInterrogazioni((current) => {
-        const next = current.filter((item) => item.id !== id);
-        save(KEYS.interrogazioni, next);
-        return next;
-      }),
+      setDemoData: (next) => {
+        if (urlRef.current) return;
+        setData(next);
+        setSource("demo");
+        setError(null);
+        save(KEYS.demoData, next);
+        toast.success("Dati demo aggiornati");
+      },
+      setTarget: (n) => {
+        setTargetS(n);
+        save(KEYS.target, n);
+      },
+      setAccent: (a) => {
+        setAccentS(a);
+        save(KEYS.accent, a);
+      },
+      setBg: (b) => {
+        setBgS(b);
+        save(KEYS.bg, b);
+      },
+      setMode: (m) => {
+        setModeS(m);
+        save(KEYS.mode, m);
+      },
+      setGlass: (enabled) => {
+        setGlassS(enabled);
+        save(KEYS.glass, enabled);
+      },
+      setTheme: (next) => {
+        setThemeS(next);
+        save(KEYS.theme, next);
+      },
+      setCustomTheme: (patch) =>
+        setCustomThemeS((current) => {
+          const next = { ...current, ...patch };
+          save(KEYS.customTheme, next);
+          return next;
+        }),
+      resetCustomTheme: () => {
+        setCustomThemeS(DEFAULT_CUSTOM_THEME);
+        save(KEYS.customTheme, DEFAULT_CUSTOM_THEME);
+      },
+      toggleHomeModule: (id) =>
+        setHomeModulesS((current) => {
+          const next = current.map((module) =>
+            module.id === id ? { ...module, enabled: !module.enabled } : module,
+          );
+          save(KEYS.homeModules, next);
+          return next;
+        }),
+      moveHomeModule: (id, direction) =>
+        setHomeModulesS((current) => {
+          const index = current.findIndex((module) => module.id === id);
+          const targetIndex = index + direction;
+          if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
+          const next = [...current];
+          [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+          save(KEYS.homeModules, next);
+          return next;
+        }),
+      resetHomeModules: () => {
+        setHomeModulesS(DEFAULT_HOME_MODULES);
+        save(KEYS.homeModules, DEFAULT_HOME_MODULES);
+      },
+      addInterrogazione: (item) =>
+        setInterrogazioni((current) => {
+          const next = [
+            {
+              ...item,
+              id: crypto.randomUUID(),
+              completed: false,
+              checklist: DEFAULT_PREPARATION.map((prep) => ({ ...prep })),
+            },
+            ...current,
+          ];
+          save(KEYS.interrogazioni, next);
+          return next;
+        }),
+      toggleInterrogazione: (id) =>
+        setInterrogazioni((current) => {
+          const next = current.map((item) =>
+            item.id === id ? { ...item, completed: !item.completed } : item,
+          );
+          save(KEYS.interrogazioni, next);
+          return next;
+        }),
+      toggleInterrogazionePrep: (id, preparationId) =>
+        setInterrogazioni((current) => {
+          const next = current.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  checklist: item.checklist.map((prep) =>
+                    prep.id === preparationId ? { ...prep, done: !prep.done } : prep,
+                  ),
+                }
+              : item,
+          );
+          save(KEYS.interrogazioni, next);
+          return next;
+        }),
+      removeInterrogazione: (id) =>
+        setInterrogazioni((current) => {
+          const next = current.filter((item) => item.id !== id);
+          save(KEYS.interrogazioni, next);
+          return next;
+        }),
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, customTheme, homeModules, interrogazioni, now, completions, readIds, refreshImpl],
+    [
+      ready,
+      data,
+      source,
+      url,
+      lastSync,
+      loading,
+      error,
+      target,
+      accent,
+      bg,
+      mode,
+      glass,
+      theme,
+      customTheme,
+      homeModules,
+      interrogazioni,
+      now,
+      completions,
+      readIds,
+      refreshImpl,
+    ],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;
