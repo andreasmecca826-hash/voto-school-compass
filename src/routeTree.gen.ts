@@ -10,16 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as CompitiRouteImport } from './routes/compiti'
 import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
 import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
 import { Route as OrarioRouteImport } from './routes/orario'
+import { Route as PersonalizzaRouteImport } from './routes/personalizza'
 import { Route as VotiRouteImport } from './routes/voti'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistenteRoute = AssistenteRouteImport.update({
+  id: '/assistente',
+  path: '/assistente',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompitiRoute = CompitiRouteImport.update({
@@ -47,6 +54,11 @@ const OrarioRoute = OrarioRouteImport.update({
   path: '/orario',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PersonalizzaRoute = PersonalizzaRouteImport.update({
+  id: '/personalizza',
+  path: '/personalizza',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VotiRoute = VotiRouteImport.update({
   id: '/voti',
   path: '/voti',
@@ -55,69 +67,83 @@ const VotiRoute = VotiRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assistente': typeof AssistenteRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
   '/orario': typeof OrarioRoute
+  '/personalizza': typeof PersonalizzaRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assistente': typeof AssistenteRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
   '/orario': typeof OrarioRoute
+  '/personalizza': typeof PersonalizzaRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/assistente': typeof AssistenteRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
   '/orario': typeof OrarioRoute
+  '/personalizza': typeof PersonalizzaRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/assistente'
     | '/compiti'
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
     | '/orario'
+    | '/personalizza'
     | '/voti'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assistente'
     | '/compiti'
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
     | '/orario'
+    | '/personalizza'
     | '/voti'
   id:
     | '__root__'
     | '/'
+    | '/assistente'
     | '/compiti'
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
     | '/orario'
+    | '/personalizza'
     | '/voti'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AssistenteRoute: typeof AssistenteRoute
   CompitiRoute: typeof CompitiRoute
   DiarioRoute: typeof DiarioRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
   InterrogazioniRoute: typeof InterrogazioniRoute
   OrarioRoute: typeof OrarioRoute
+  PersonalizzaRoute: typeof PersonalizzaRoute
   VotiRoute: typeof VotiRoute
 }
 
@@ -128,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistente': {
+      id: '/assistente'
+      path: '/assistente'
+      fullPath: '/assistente'
+      preLoaderRoute: typeof AssistenteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compiti': {
@@ -165,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrarioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/personalizza': {
+      id: '/personalizza'
+      path: '/personalizza'
+      fullPath: '/personalizza'
+      preLoaderRoute: typeof PersonalizzaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/voti': {
       id: '/voti'
       path: '/voti'
@@ -177,11 +217,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AssistenteRoute: AssistenteRoute,
   CompitiRoute: CompitiRoute,
   DiarioRoute: DiarioRoute,
   ImpostazioniRoute: ImpostazioniRoute,
   InterrogazioniRoute: InterrogazioniRoute,
   OrarioRoute: OrarioRoute,
+  PersonalizzaRoute: PersonalizzaRoute,
   VotiRoute: VotiRoute,
 }
 export const routeTree = rootRouteImport
