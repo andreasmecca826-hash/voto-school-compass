@@ -47,14 +47,24 @@ export function CircularViewer({
           </div>
         )}
         {url && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="press mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
-          >
-            <ExternalLink className="h-4 w-4" /> Apri o scarica il PDF
-          </a>
+          <div className="mt-3 flex gap-2">
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="press inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
+            >
+              <ExternalLink className="h-4 w-4" /> Apri o scarica il PDF
+            </a>
+            <a
+              href="https://www.portaleargo.it/famiglia/"
+              target="_blank"
+              rel="noreferrer"
+              className="press inline-flex h-10 items-center justify-center rounded-xl border border-border px-3 text-[11px] font-semibold text-muted-foreground"
+            >
+              Fallback DidUP
+            </a>
+          </div>
         )}
         <button
           type="button"
