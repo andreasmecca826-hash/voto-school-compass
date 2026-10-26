@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { normalizeSupabaseUrl, supabaseAuthHeaders } from "@/lib/server/supabaseStorageAuth";
 
 const MAX_PDF_BYTES = 25 * 1024 * 1024;
 const DEFAULT_BUCKET = "circulars";
@@ -13,11 +14,9 @@ type SupabaseConfig = {
 
 function config(): SupabaseConfig {
   const rawUrl = process.env.SUPABASE_URL?.trim();
-  const url = rawUrl
-    ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}.supabase.co`).replace(/\/$/, "")
-    : undefined;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-  if (!url || !key) throw new Error("Supabase Storage non configurato sul backend.");
+  if (!rawUrl || !key) throw new Error("Supabase Storage non configurato sul backend.");
+  const url = normalizeSupabaseUrl(rawUrl);
   return { url, key, bucket: process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET };
 }
 
@@ -50,10 +49,7 @@ async function sha256(value: string) {
 
 async function readPrivatePdf(supabase: SupabaseConfig, path: string) {
   const response = await fetch(`${supabase.url}/storage/v1/object/${supabase.bucket}/${path}`, {
-    headers: {
-      authorization: `Bearer ${supabase.key}`,
-      apikey: supabase.key,
-    },
+    headers: supabaseAuthHeaders(supabase.key),
   });
   if (!response.ok) throw new Error("Supabase Storage ha negato l'accesso al PDF interno.");
   return new Response(response.body, {
@@ -81,8 +77,7 @@ async function mirror(sourceUrl: string, supabase: SupabaseConfig) {
   const upload = await fetch(`${supabase.url}/storage/v1/object/${supabase.bucket}/${path}`, {
     method: "POST",
     headers: {
-      authorization: `Bearer ${supabase.key}`,
-      apikey: supabase.key,
+      ...supabaseAuthHeaders(supabase.key),
       "content-type": "application/pdf",
       "cache-control": "public, max-age=31536000, immutable",
       "x-upsert": "true",
