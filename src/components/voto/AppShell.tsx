@@ -103,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [achievements, setAchievements] = useState(false);
-  const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
+  const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({ open: false });
   const [subject, setSubject] = useState<string | null>(null);
 
   useEffect(() => {

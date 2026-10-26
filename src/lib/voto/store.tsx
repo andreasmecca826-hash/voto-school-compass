@@ -300,11 +300,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     const root = document.documentElement;
-    root.dataset.accent = accent;
-    root.dataset.bg = bg;
-    root.dataset.mode = mode;
-    root.dataset.glass = glass ? "on" : "off";
-    root.dataset.theme = theme;
+    root.dataset["accent"] = accent;
+    root.dataset["bg"] = bg;
+    root.dataset["mode"] = mode;
+    root.dataset["glass"] = glass ? "on" : "off";
+    root.dataset["theme"] = theme;
     root.dataset["font"] = customTheme.font;
     const custom: Record<string, string> = {
       "--custom-bg-dark": customTheme.bgDark,
@@ -461,7 +461,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           const targetIndex = index + direction;
           if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
           const next = [...current];
-          [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+          const moved = next[index]!;
+          const swapped = next[targetIndex]!;
+          next[index] = swapped;
+          next[targetIndex] = moved;
           save(KEYS.homeModules, next);
           return next;
         }),

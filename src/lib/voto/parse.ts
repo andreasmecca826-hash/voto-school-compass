@@ -14,7 +14,7 @@ export function parseGradeValue(v: unknown): number | null {
   if (/^\d+(\.\d+)?\s*\+$/.test(s)) { delta = 0.25; s = s.replace("+", ""); }
   else if (/^\d+(\.\d+)?\s*-$/.test(s)) { delta = -0.25; s = s.replace("-", ""); }
   const range = s.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
-  const n = range ? (parseFloat(range[1]) + parseFloat(range[2])) / 2 : Number(s);
+  const n = range ? (parseFloat(range[1] ?? "0") + parseFloat(range[2] ?? "0")) / 2 : Number(s);
   if (!Number.isFinite(n)) return null;
   const r = n + delta;
   return r >= 0 && r <= 10 ? r : null;
@@ -40,84 +40,84 @@ const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u
 
 export function parseVotoData(raw: unknown): VotoData {
   if (!isObj(raw)) throw new SchemaError("Il file non contiene un oggetto JSON valido.");
-  if (!Array.isArray(raw.subjects)) throw new SchemaError('Campo "subjects" mancante o non è un array.');
+  if (!Array.isArray(raw["subjects"])) throw new SchemaError('Campo "subjects" mancante o non è un array.');
 
-  const subjects: Subject[] = raw.subjects.map((s, i) => {
-    if (!isObj(s)) throw new SchemaError(`subjects[${i}] non è un oggetto.`);
-    const name = str(s.name);
+  const subjects: Subject[] = (raw["subjects"] as unknown[]).map((sub, i) => {
+    if (!isObj(sub)) throw new SchemaError(`subjects[${i}] non è un oggetto.`);
+    const name = str(sub["name"]);
     if (!name) throw new SchemaError(`subjects[${i}] non ha un "name".`);
     const grades: Grade[] = [];
-    (Array.isArray(s.grades) ? s.grades : []).forEach((g, j) => {
-      if (!isObj(g)) return;
-      const value = parseGradeValue(g.value);
+    (Array.isArray(sub["grades"]) ? sub["grades"] : []).forEach((gr, j) => {
+      if (!isObj(gr)) return;
+      const value = parseGradeValue(gr["value"]);
       if (value === null) return; // voti non numerici (es. "giust.") ignorati
-      const w = typeof g.weight === "number" && g.weight > 0 ? g.weight : parseFloat(String(g.weight ?? "").replace(",", "."));
+      const w = typeof gr["weight"] === "number" && gr["weight"] > 0 ? gr["weight"] : parseFloat(String(gr["weight"] ?? "").replace(",", "."));
       grades.push({
-        id: str(g.id) ?? `${slug(name)}-${j}`,
+        id: str(gr["id"]) ?? `${slug(name)}-${j}`,
         value,
-        label: str(g.value) ?? String(value),
-        date: str(g.date) ?? "",
-        type: gradeType(g.type),
+        label: str(gr["value"]) ?? String(value),
+        date: str(gr["date"]) ?? "",
+        type: gradeType(gr["type"]),
         weight: Number.isFinite(w) && w > 0 ? w : 1,
-        comment: str(g.comment),
+        comment: str(gr["comment"]),
       });
     });
-    return { id: str(s.id) ?? slug(name), name, color: str(s.color), teacher: str(s.teacher), grades };
+    return { id: str(sub["id"]) ?? slug(name), name, color: str(sub["color"]), teacher: str(sub["teacher"]), grades };
   });
 
-  const assignments: Assignment[] = (Array.isArray(raw.assignments) ? raw.assignments : [])
+  const assignments: Assignment[] = (Array.isArray(raw["assignments"]) ? raw["assignments"] : [])
     .filter(isObj)
     .map((a, i) => ({
-      id: str(a.id) ?? `a-${i}`,
-      title: str(a.title) ?? "Compito",
-      subject: str(a.subject),
-      dueDate: str(a.dueDate),
-      dueTime: str(a.dueTime),
-      completed: a.completed === true,
-      details: str(a.details),
+      id: str(a["id"]) ?? `a-${i}`,
+      title: str(a["title"]) ?? "Compito",
+      subject: str(a["subject"]),
+      dueDate: str(a["dueDate"]),
+      dueTime: str(a["dueTime"]),
+      completed: a["completed"] === true,
+      details: str(a["details"]),
     }));
 
-  const notifications: AppNotification[] = (Array.isArray(raw.notifications) ? raw.notifications : [])
+  const notifications: AppNotification[] = (Array.isArray(raw["notifications"]) ? raw["notifications"] : [])
     .filter(isObj)
     .map((n, i) => ({
-      id: str(n.id) ?? `n-${i}`,
-      type: notifType(n.type),
-      title: str(n.title) ?? "Avviso",
-      message: str(n.message),
-      date: str(n.date),
-      subject: str(n.subject),
-      attachmentUrl: str(n.attachmentUrl),
-      attachmentName: str(n.attachmentName),
-      read: n.read === true,
+      id: str(n["id"]) ?? `n-${i}`,
+      type: notifType(n["type"]),
+      title: str(n["title"]) ?? "Avviso",
+      message: str(n["message"]),
+      date: str(n["date"]),
+      subject: str(n["subject"]),
+      attachmentUrl: str(n["attachmentUrl"]),
+      attachmentName: str(n["attachmentName"]),
+      read: n["read"] === true,
     }));
 
-  const diary: DiaryEntry[] = (Array.isArray(raw.diary) ? raw.diary : [])
+  const diary: DiaryEntry[] = (Array.isArray(raw["diary"]) ? raw["diary"] : [])
     .filter(isObj)
     .map((entry, i) => ({
-      id: str(entry.id) ?? `diary-${i}`,
-      date: str(entry.date) ?? "",
-      subject: str(entry.subject),
-      teacher: str(entry.teacher),
-      hour: str(entry.hour),
-      activity: str(entry.activity) ?? "Attività non specificata",
+      id: str(entry["id"]) ?? `diary-${i}`,
+      date: str(entry["date"]) ?? "",
+      subject: str(entry["subject"]),
+      teacher: str(entry["teacher"]),
+      hour: str(entry["hour"]),
+      activity: str(entry["activity"]) ?? "Attività non specificata",
     }))
     .filter((entry) => entry.date || entry.activity);
 
-  const st = isObj(raw.student) ? raw.student : {};
-  const prev = typeof raw.previousAverage === "number" && Number.isFinite(raw.previousAverage) ? raw.previousAverage : undefined;
-  const attendanceRaw = isObj(raw.attendance) ? raw.attendance : {};
+  const st = isObj(raw["student"]) ? raw["student"] : {};
+  const prev = typeof raw["previousAverage"] === "number" && Number.isFinite(raw["previousAverage"]) ? raw["previousAverage"] : undefined;
+  const attendanceRaw = isObj(raw["attendance"]) ? raw["attendance"] : {};
   const attendance: Attendance = {
-    absenceDays: typeof attendanceRaw.absenceDays === "number" ? attendanceRaw.absenceDays : 0,
-    absenceHours: typeof attendanceRaw.absenceHours === "number" ? attendanceRaw.absenceHours : 0,
-    delays: typeof attendanceRaw.delays === "number" ? attendanceRaw.delays : 0,
-    earlyExits: typeof attendanceRaw.earlyExits === "number" ? attendanceRaw.earlyExits : 0,
-    annualHours: typeof attendanceRaw.annualHours === "number" ? attendanceRaw.annualHours : 990,
-    absenceLimitHours: typeof attendanceRaw.absenceLimitHours === "number" ? attendanceRaw.absenceLimitHours : 264,
+    absenceDays: typeof attendanceRaw["absenceDays"] === "number" ? attendanceRaw["absenceDays"] : 0,
+    absenceHours: typeof attendanceRaw["absenceHours"] === "number" ? attendanceRaw["absenceHours"] : 0,
+    delays: typeof attendanceRaw["delays"] === "number" ? attendanceRaw["delays"] : 0,
+    earlyExits: typeof attendanceRaw["earlyExits"] === "number" ? attendanceRaw["earlyExits"] : 0,
+    annualHours: typeof attendanceRaw["annualHours"] === "number" ? attendanceRaw["annualHours"] : 990,
+    absenceLimitHours: typeof attendanceRaw["absenceLimitHours"] === "number" ? attendanceRaw["absenceLimitHours"] : 264,
   };
 
   return {
-    student: { name: str(st.name), className: str(st.className), schoolYear: str(st.schoolYear) },
-    updatedAt: str(raw.updatedAt),
+    student: { name: str(st["name"]), className: str(st["className"]), schoolYear: str(st["schoolYear"]) },
+    updatedAt: str(raw["updatedAt"]),
     previousAverage: prev,
     subjects,
     assignments,
