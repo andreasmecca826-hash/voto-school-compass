@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mirrorCirculars } from "@/lib/voto/circulars";
+import {
+  getCircularCheckStatus,
+  mirrorCirculars,
+  requestCircularCheck,
+} from "@/lib/voto/circulars";
 import type { VotoData } from "@/lib/voto/types";
 
 afterEach(() => {
@@ -81,5 +85,54 @@ describe("mirrorCirculars", () => {
       attachmentPath: path,
       attachmentUrl: signedUrl,
     });
+  });
+});
+
+describe("circular check trigger", () => {
+  it("starts a protected server-side check and returns its request time", async () => {
+    const requestedAt = "2026-10-26T22:00:00.000Z";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "started", requestedAt }), {
+        status: 202,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestCircularCheck()).resolves.toBe(requestedAt);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://jmvxuhgjejzpezvawzfw.supabase.co/functions/v1/request-circular-check",
+      expect.objectContaining({ method: "POST", body: "{}" }),
+    );
+  });
+
+  it("explains the shared cooldown instead of dispatching another run", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "recent", retryAfterSeconds: 70 }), {
+          status: 429,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(requestCircularCheck()).rejects.toThrow("Riprova tra circa 2 min");
+  });
+
+  it("reads the status for the run started by the button", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "completed", conclusion: "success" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getCircularCheckStatus("2026-10-26T22:00:00.000Z")).resolves.toEqual({
+      status: "completed",
+      conclusion: "success",
+    });
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("after=2026-10-26T22%3A00%3A00.000Z");
   });
 });

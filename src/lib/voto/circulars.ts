@@ -49,6 +49,96 @@ async function signedPdfUrl(path: string): Promise<string | null> {
   }
 }
 
+type CheckPayload = {
+  status?: unknown;
+  requestedAt?: unknown;
+  conclusion?: unknown;
+  error?: unknown;
+  retryAfterSeconds?: unknown;
+};
+
+export type CircularCheckStatus = {
+  status:
+    | "waiting"
+    | "queued"
+    | "requested"
+    | "waiting_for_review"
+    | "in_progress"
+    | "completed"
+    | "unknown";
+  conclusion?: string | null;
+};
+
+async function checkResponse(response: Response): Promise<CheckPayload> {
+  try {
+    return (await response.json()) as CheckPayload;
+  } catch {
+    throw new Error("Risposta non valida dal servizio di controllo.");
+  }
+}
+
+function checkRequestHeaders() {
+  const key = supabasePublishableKey();
+  return {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    "Content-Type": "application/json",
+  };
+}
+
+const CIRCULAR_CHECK_ENDPOINT = `${supabaseProjectUrl()}/functions/v1/request-circular-check`;
+
+export async function requestCircularCheck(): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(CIRCULAR_CHECK_ENDPOINT, {
+      method: "POST",
+      headers: checkRequestHeaders(),
+      body: "{}",
+    });
+  } catch {
+    throw new Error("Impossibile raggiungere il servizio di controllo.");
+  }
+
+  const body = await checkResponse(response);
+  if (response.status === 202 && typeof body.requestedAt === "string") return body.requestedAt;
+  if (response.status === 409) throw new Error("È già in corso un controllo delle circolari.");
+  if (response.status === 429) {
+    const seconds = typeof body.retryAfterSeconds === "number" ? body.retryAfterSeconds : 60;
+    const minutes = Math.max(1, Math.ceil(seconds / 60));
+    throw new Error(
+      `Il registro è stato controllato di recente. Riprova tra circa ${minutes} min.`,
+    );
+  }
+  if (response.status === 503) {
+    throw new Error("Il controllo manuale non è ancora configurato dal server.");
+  }
+  throw new Error(
+    typeof body.error === "string" ? body.error : "Non è stato possibile avviare il controllo.",
+  );
+}
+
+export async function getCircularCheckStatus(after: string): Promise<CircularCheckStatus> {
+  const url = new URL(CIRCULAR_CHECK_ENDPOINT);
+  url.searchParams.set("after", after);
+  let response: Response;
+  try {
+    response = await fetch(url, { headers: checkRequestHeaders(), cache: "no-store" });
+  } catch {
+    throw new Error("Impossibile leggere lo stato del controllo.");
+  }
+  const body = await checkResponse(response);
+  if (!response.ok || typeof body.status !== "string") {
+    throw new Error(
+      typeof body.error === "string" ? body.error : "Stato del controllo non disponibile.",
+    );
+  }
+  return {
+    status: body.status as CircularCheckStatus["status"],
+    conclusion: typeof body.conclusion === "string" ? body.conclusion : null,
+  };
+}
+
 /** Firma solo i path già caricati nello storage privato; non invia mai URL Argo al server. */
 export async function mirrorCirculars(data: VotoData): Promise<VotoData> {
   const notifications = await Promise.all(
