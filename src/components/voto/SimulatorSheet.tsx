@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { fmt, gradeTone, neededGrade, subjectStats } from "@/lib/voto/calc";
+import { fmt, neededGrade, subjectStats } from "@/lib/voto/calc";
 import { useVoto } from "@/lib/voto/store";
 import { GradePill, SubjectMark } from "./ui";
 import { BottomSheet } from "./ui";
