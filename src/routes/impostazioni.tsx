@@ -320,7 +320,7 @@ function Settings() {
         className="card-surface cursor-pointer p-4 text-xs text-muted-foreground"
       >
         <p>
-          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 1.0.0
+          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 2.0.0
         </p>
         <p className="mt-2">
           Installabile dal browser (Aggiungi a schermata Home). Per l'APK Android segui la guida
