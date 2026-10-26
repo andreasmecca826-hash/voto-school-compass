@@ -7,9 +7,10 @@ import { NOTIF_META } from "@/components/voto/NotificationsSheet";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
-import { daysBetween, fmtDate, fmtTime } from "@/lib/voto/dates";
+import { fmtDate, fmtTime } from "@/lib/voto/dates";
+import { selectDashboardAssignments, selectNotificationsByType, selectOpenInterrogazioni } from "@/lib/voto/selectors";
 import { useVoto } from "@/lib/voto/store";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,20 +29,18 @@ function Dashboard() {
   const ui = useUi();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
   const { subjects, assignments, notifications, previousAverage } = v.data;
-  const avg = overallAverage(subjects);
-  const history = averageHistory(subjects);
+  const avg = useMemo(() => overallAverage(subjects), [subjects]);
+  const history = useMemo(() => averageHistory(subjects), [subjects]);
   const delta = avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
-  const today = assignments
-    .filter((a) => a.dueDate && daysBetween(v.now, a.dueDate) <= 1 && (daysBetween(v.now, a.dueDate) >= 0 || !v.isDone(a.id, a.completed)))
-    .sort((a, b) => `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`));
+  const today = useMemo(() => selectDashboardAssignments(assignments, v.now, v.isDone), [assignments, v.now, v.isDone]);
   const attendance = v.data.attendance ?? { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 264 };
   const remainingHours = Math.max(0, attendance.absenceLimitHours - attendance.absenceHours);
   const absenceLimitDays = attendance.absenceLimitHours / 6;
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
   const showingDays = attendanceView === "days";
-  const notes = notifications.filter((n) => n.type === "note").slice(0, 3);
-  const bulletin = notifications.filter((n) => n.type === "notice").slice(0, 3);
-  const interrogazioni = v.interrogazioni.filter((item) => !item.completed).slice(0, 3);
+  const notes = useMemo(() => selectNotificationsByType(notifications, "note"), [notifications]);
+  const bulletin = useMemo(() => selectNotificationsByType(notifications, "notice"), [notifications]);
+  const interrogazioni = useMemo(() => selectOpenInterrogazioni(v.interrogazioni), [v.interrogazioni]);
   const isHomeModuleVisible = (id: string) => v.homeModules.find((module) => module.id === id)?.enabled ?? false;
   const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
 
