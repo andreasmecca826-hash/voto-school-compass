@@ -34,7 +34,7 @@ function Dashboard() {
   const today = assignments
     .filter((a) => a.dueDate && daysBetween(v.now, a.dueDate) <= 1 && (daysBetween(v.now, a.dueDate) >= 0 || !v.isDone(a.id, a.completed)))
     .sort((a, b) => `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`));
-  const attendance = v.data.attendance ?? { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 247.5 };
+  const attendance = v.data.attendance ?? { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 264 };
   const remainingHours = Math.max(0, attendance.absenceLimitHours - attendance.absenceHours);
   const absenceLimitDays = attendance.absenceLimitHours / 6;
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);

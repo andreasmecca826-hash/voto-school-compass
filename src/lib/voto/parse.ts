@@ -100,7 +100,7 @@ export function parseVotoData(raw: unknown): VotoData {
     delays: typeof attendanceRaw.delays === "number" ? attendanceRaw.delays : 0,
     earlyExits: typeof attendanceRaw.earlyExits === "number" ? attendanceRaw.earlyExits : 0,
     annualHours: typeof attendanceRaw.annualHours === "number" ? attendanceRaw.annualHours : 990,
-    absenceLimitHours: typeof attendanceRaw.absenceLimitHours === "number" ? attendanceRaw.absenceLimitHours : 247.5,
+    absenceLimitHours: typeof attendanceRaw.absenceLimitHours === "number" ? attendanceRaw.absenceLimitHours : 264,
   };
 
   return {

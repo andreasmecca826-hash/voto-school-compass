@@ -23,7 +23,7 @@ const SCHEMA = `{
   "student": {"name":"Studente","className":"4B","schoolYear":"2026/2027"},
   "updatedAt": "2026-10-25T08:30:00+02:00",
   "previousAverage": 7.35,
-  "attendance": {"absenceDays":14,"absenceHours":84,"delays":1,"earlyExits":0,"annualHours":990,"absenceLimitHours":247.5},
+  "attendance": {"absenceDays":14,"absenceHours":84,"delays":1,"earlyExits":0,"annualHours":990,"absenceLimitHours":264},
   "subjects": [
     {"id":"matematica","name":"Matematica","color":"#E85D5D",
      "grades":[{"id":"g1","value":7.5,"date":"2026-10-20","type":"scritto","weight":1,"comment":"Equazioni"}]}

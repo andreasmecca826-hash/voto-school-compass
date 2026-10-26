@@ -109,7 +109,7 @@ const EMPTY: VotoData = {
   subjects: [],
   assignments: [],
   notifications: [],
-  attendance: { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 247.5 },
+  attendance: { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 264 },
 };
 
 export function VotoProvider({ children }: { children: ReactNode }) {
