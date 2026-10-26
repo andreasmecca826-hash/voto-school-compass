@@ -12,8 +12,11 @@ type SupabaseConfig = {
 };
 
 function config(): SupabaseConfig {
-  const url = process.env.SUPABASE_URL?.replace(/\/$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const rawUrl = process.env.SUPABASE_URL?.trim();
+  const url = rawUrl
+    ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}.supabase.co`).replace(/\/$/, "")
+    : undefined;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
   if (!url || !key) throw new Error("Supabase Storage non configurato sul backend.");
   return { url, key, bucket: process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET };
 }

@@ -43,7 +43,7 @@ export function CircularViewer({
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
-            <p>Il PDF è in preparazione nello storage interno.</p>
+            <p>Il PDF non è disponibile nello storage interno.</p>
           </div>
         )}
         {url && (
