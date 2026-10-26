@@ -59,10 +59,19 @@ Deno.serve(async (request) => {
         sourceHeaders.Origin = ARGO_ORIGIN;
         sourceHeaders.Referer = `${ARGO_ORIGIN}/`;
       }
-      const source = await fetch(body.sourceUrl, { redirect: "follow", headers: sourceHeaders });
+      let source = await fetch(body.sourceUrl, { redirect: "follow", headers: sourceHeaders });
+      let fallbackHost: string | undefined;
+      if (!source.ok && sourceUrl.hostname === "s3.eu-south-1.amazonaws.com") {
+        await source.body?.cancel().catch(() => {});
+        const argoFileUrl = new URL(body.sourceUrl);
+        fallbackHost = new URL(ARGO_ORIGIN).host;
+        argoFileUrl.host = fallbackHost;
+        source = await fetch(argoFileUrl, { redirect: "follow", headers: sourceHeaders });
+      }
       if (!source.ok) {
         console.error("mirror-circular source fetch failed", {
-          host: new URL(body.sourceUrl).host,
+          host: sourceUrl.host,
+          fallbackHost,
           status: source.status,
         });
         return response({ error: `Sorgente PDF: HTTP ${source.status}` }, 502);
