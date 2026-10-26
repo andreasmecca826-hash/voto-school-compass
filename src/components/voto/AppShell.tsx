@@ -162,10 +162,11 @@ function MoreMenu({ v, currentPath, onClose, onNotifications, onAchievements, on
       <div className="grid grid-cols-2 gap-3">
         {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
           const active = to === "/" ? currentPath === "/" : currentPath.startsWith(to);
-          return <Link key={to} to={to} onClick={(event) => { if (active) event.preventDefault(); onClose(); }} className={cn("press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm", active && "border-primary")}>
-            <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl" style={{ backgroundColor: color }}><Icon className="h-7 w-7 text-white" /></span>
-            <span className="pr-1"><span className="block text-center text-base font-bold leading-tight">{label}</span><span className="mt-1 block text-center text-[10px] text-muted-foreground">{description}</span></span>
-          </Link>;
+          const cardContent = <><span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl" style={{ backgroundColor: color }}><Icon className="h-7 w-7 text-white" /></span>
+            <span className="pr-1"><span className="block text-center text-base font-bold leading-tight">{label}</span><span className="mt-1 block text-center text-[10px] text-muted-foreground">{description}</span></span></>;
+          return active
+            ? <button key={to} type="button" onClick={onClose} className="press relative flex min-h-40 w-full flex-col justify-end overflow-hidden rounded-2xl border border-primary bg-card p-4 text-left shadow-sm">{cardContent}</button>
+            : <Link key={to} to={to} onClick={onClose} className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-left shadow-sm">{cardContent}</Link>;
         })}
         <button type="button" onClick={() => { onNotifications(); onClose(); }} className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm">
           <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#f28f78]"><Bell className="h-7 w-7 text-white" /></span><span className="text-base font-bold">Notifiche</span><span className="mt-1 text-[10px] text-muted-foreground">Avvisi e comunicazioni</span>
