@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const BUCKET = "circulars";
 const MAX_BYTES = 25 * 1024 * 1024;
+const ARGO_ORIGIN =
+  "https://8d20da4763a95d7cbaab6bea4b5227.7c016d9f0e.files.eu-south-1.portaleargo.it";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -51,7 +53,13 @@ Deno.serve(async (request) => {
     if (validPath(body.path)) {
       path = body.path;
     } else if (validSourceUrl(body.sourceUrl)) {
-      const source = await fetch(body.sourceUrl, { redirect: "follow" });
+      const sourceUrl = new URL(body.sourceUrl);
+      const sourceHeaders: Record<string, string> = {};
+      if (sourceUrl.hostname === "s3.eu-south-1.amazonaws.com") {
+        sourceHeaders.Origin = ARGO_ORIGIN;
+        sourceHeaders.Referer = `${ARGO_ORIGIN}/`;
+      }
+      const source = await fetch(body.sourceUrl, { redirect: "follow", headers: sourceHeaders });
       if (!source.ok) {
         console.error("mirror-circular source fetch failed", {
           host: new URL(body.sourceUrl).host,
@@ -66,7 +74,9 @@ Deno.serve(async (request) => {
       }
       const bytes = new Uint8Array(await source.arrayBuffer());
       if (bytes.byteLength > MAX_BYTES) {
-        console.error("mirror-circular source exceeds size limit", { byteLength: bytes.byteLength });
+        console.error("mirror-circular source exceeds size limit", {
+          byteLength: bytes.byteLength,
+        });
         return response({ error: "PDF oltre 25 MB" }, 413);
       }
       if (new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-") {
