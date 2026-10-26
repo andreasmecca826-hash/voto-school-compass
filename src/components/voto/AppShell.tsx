@@ -69,9 +69,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button type="button" onClick={() => setAchievements(true)} className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Achievement">
                 <Trophy className="h-[18px] w-[18px]" />
               </button>
-              <Link to="/impostazioni" className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Impostazioni">
-                <Settings className="h-[18px] w-[18px]" />
-              </Link>
               <button
                 type="button"
                 onClick={() => v.refresh()}
