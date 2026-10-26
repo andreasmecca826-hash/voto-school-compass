@@ -23,7 +23,6 @@ jobs:
           version: latest
 
       - name: Deploy mirror-circular
-        run: supabase functions deploy mirror-circular --project-ref "$SUPABASE_PROJECT_ID"
+        run: supabase functions deploy mirror-circular --project-ref jmvxuhgjejzpezvawzfw
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
