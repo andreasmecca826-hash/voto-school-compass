@@ -18,7 +18,7 @@ export interface Interrogazione {
   hour?: number;
   /** Compatibilità con eventuali promemoria creati con la versione precedente. */
   time?: string;
-  notes?: string;
+  notes?: string | undefined;
   completed: boolean;
   checklist: PreparationItem[];
 }
