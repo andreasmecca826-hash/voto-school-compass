@@ -2,13 +2,22 @@ import type { AppNotification, VotoData } from "./types";
 
 type MirrorResponse = { path: string; signedUrl: string };
 
+const DEFAULT_SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
+// Publishable keys are intended for client use; never put a service-role key here.
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
+
 function supabaseFunctionUrl() {
   const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const key =
     (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
     (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);
-  if (!url || !key) return null;
-  return { url: `${url.replace(/\/$/, "")}/functions/v1/mirror-circular`, key };
+  if ((url && !key) || (!url && key)) return null;
+  const projectUrl = url ?? DEFAULT_SUPABASE_URL;
+  const publishableKey = key ?? DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+  return {
+    url: `${projectUrl.replace(/\/$/, "")}/functions/v1/mirror-circular`,
+    key: publishableKey,
+  };
 }
 
 async function postJson<T>(body: Record<string, string>): Promise<T | null> {
