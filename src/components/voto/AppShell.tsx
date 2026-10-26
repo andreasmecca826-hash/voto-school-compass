@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 px-5 pb-28">{v.ready ? (moreOpen ? <MoreMenu v={v} onClose={() => setMoreOpen(false)} onNotifications={() => setNotif(true)} onAchievements={() => setAchievements(true)} onSimulator={() => setSim({ open: true })} /> : children) : <ShellSkeleton />}</main>
+        <main className="flex-1 px-5 pb-28">{v.ready ? (moreOpen ? <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} onNotifications={() => setNotif(true)} onAchievements={() => setAchievements(true)} onSimulator={() => setSim({ open: true })} /> : children) : <ShellSkeleton />}</main>
 
         <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
@@ -151,7 +151,7 @@ function ShellSkeleton() {
   );
 }
 
-function MoreMenu({ v, onClose, onNotifications, onAchievements, onSimulator }: { v: ReturnType<typeof useVoto>; onClose: () => void; onNotifications: () => void; onAchievements: () => void; onSimulator: () => void }) {
+function MoreMenu({ v, currentPath, onClose, onNotifications, onAchievements, onSimulator }: { v: ReturnType<typeof useVoto>; currentPath: string; onClose: () => void; onNotifications: () => void; onAchievements: () => void; onSimulator: () => void }) {
   const studentName = v.data.student.name || "Studente";
   return (
     <section className="pt-4 pb-5" aria-label="Menu principale">
@@ -161,8 +161,8 @@ function MoreMenu({ v, onClose, onNotifications, onAchievements, onSimulator }: 
       </div>
       <div className="grid grid-cols-2 gap-3">
         {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
-          const active = to === "/" ? false : location.pathname.startsWith(to);
-          return <Link key={to} to={to} onClick={onClose} className={cn("press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm", active && "border-primary")}>
+          const active = to === "/" ? currentPath === "/" : currentPath.startsWith(to);
+          return <Link key={to} to={to} onClick={(event) => { if (active) event.preventDefault(); onClose(); }} className={cn("press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm", active && "border-primary")}>
             <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl" style={{ backgroundColor: color }}><Icon className="h-7 w-7 text-white" /></span>
             <span className="pr-1"><span className="block text-center text-base font-bold leading-tight">{label}</span><span className="mt-1 block text-center text-[10px] text-muted-foreground">{description}</span></span>
           </Link>;
