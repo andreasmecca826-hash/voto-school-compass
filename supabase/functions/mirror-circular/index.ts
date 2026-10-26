@@ -2,8 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const BUCKET = "circulars";
 const MAX_BYTES = 25 * 1024 * 1024;
-const ARGO_ORIGIN =
-  "https://8d20da4763a95d7cbaab6bea4b5227.7c016d9f0e.files.eu-south-1.portaleargo.it";
+const ARGO_ORIGIN = "https://7c016d9f0e.files.eu-south-1.portaleargo.it";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -116,7 +115,9 @@ Deno.serve(async (request) => {
     }
     return response({ path, signedUrl: data.signedUrl });
   } catch (error) {
-    console.error(error);
-    return response({ error: error instanceof Error ? error.message : "Errore interno" }, 500);
+    console.error("mirror-circular unexpected failure", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return response({ error: "Errore interno durante l'importazione" }, 500);
   }
 });
