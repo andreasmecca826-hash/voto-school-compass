@@ -73,7 +73,7 @@ describe("Assistente locale", () => {
     );
   });
 
-  it("trova l'ultima circolare e il voto più alto di una materia", () => {
+  it("trova l'ultima circolare, l'ultimo voto e il voto più alto di una materia", () => {
     const noticeData: VotoData = {
       ...data,
       notifications: [
@@ -90,6 +90,50 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è l'ultima circolare?", noticeData)).toContain(
       "Comunicazione elezioni",
     );
+    expect(answerQuestion("Qual è l'ultimo voto?", data)).toContain("Inglese");
     expect(answerQuestion("Qual è il voto più alto in Inglese?", data)).toContain("7,00");
+  });
+
+  it("filtra le circolari di oggi e compone un riepilogo delle novità", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const updateData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "today-1",
+          type: "notice",
+          title: "Assemblea di classe",
+          date: "2026-10-27",
+          read: false,
+        },
+        {
+          id: "today-2",
+          type: "notice",
+          title: "Uscita anticipata",
+          date: "2026-10-27",
+          read: true,
+        },
+        {
+          id: "yesterday",
+          type: "notice",
+          title: "Avviso precedente",
+          date: "2026-10-26",
+          read: false,
+        },
+      ],
+    };
+    const todaysCirculars = answerQuestion(
+      "Quali sono le nuove circolari di oggi?",
+      updateData,
+      emptySchedule(),
+      now,
+    );
+    expect(todaysCirculars).toContain("Assemblea di classe");
+    expect(todaysCirculars).toContain("Uscita anticipata");
+    expect(todaysCirculars).not.toContain("Avviso precedente");
+
+    const summary = answerQuestion("Quali sono le novità?", updateData, emptySchedule(), now);
+    expect(summary).toContain("Ultimo voto");
+    expect(summary).toContain("Assemblea di classe");
   });
 });

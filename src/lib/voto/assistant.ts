@@ -71,6 +71,35 @@ function displayDate(dateValue: string | undefined): string | null {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : null;
 }
 
+function localDateKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function latestGrade(data: VotoData) {
+  return (
+    data.subjects
+      .flatMap((subject) => subject.grades.map((grade) => ({ subject, grade })))
+      .sort((a, b) => b.grade.date.localeCompare(a.grade.date))[0] ?? null
+  );
+}
+
+function noticesByDate(data: VotoData) {
+  return data.notifications
+    .filter((notification) => notification.type === "notice")
+    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+}
+
+function noticeLabel(notification: VotoData["notifications"][number]): string {
+  const date = displayDate(notification.date);
+  const dateText = date ? ` (${date})` : "";
+  const attachment = notification.attachmentName
+    ? ` — allegato: ${notification.attachmentName}`
+    : "";
+  return `“${notification.title}”${dateText}${attachment}`;
+}
+
 export function scheduleDayToClear(query: string): DayId | null {
   const normalized = normalize(query);
   if (
@@ -95,6 +124,29 @@ export function answerQuestion(
   if (!normalized)
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
 
+  const notices = noticesByDate(data);
+  if (normalized.includes("novit") || normalized.includes("aggiornament")) {
+    const recentGrade = latestGrade(data);
+    const todayNotices = notices.filter(
+      (notification) => notification.date?.slice(0, 10) === localDateKey(now),
+    );
+    const lines: string[] = [];
+    if (recentGrade) {
+      const date = displayDate(recentGrade.grade.date);
+      lines.push(
+        `Ultimo voto: ${recentGrade.grade.label} in ${recentGrade.subject.name}${date ? ` (${date})` : ""}.`,
+      );
+    }
+    if (todayNotices.length) {
+      lines.push(`Circolari di oggi: ${todayNotices.map(noticeLabel).join("; ")}.`);
+    } else if (notices[0]) {
+      lines.push(`Ultima circolare: ${noticeLabel(notices[0])}.`);
+    }
+    return lines.length
+      ? lines.join("\n")
+      : "Non risultano nuovi voti o circolari nei dati caricati.";
+  }
+
   if (normalized.includes("orario") || normalized.includes("lezion")) {
     const day = dayFromQuery(query, now);
     if (!day)
@@ -109,23 +161,64 @@ export function answerQuestion(
   }
 
   if (
-    normalized.includes("circolare") ||
+    normalized.includes("circolar") ||
     normalized.includes("bacheca") ||
-    normalized.includes("avvisi")
+    normalized.includes("avvisi") ||
+    normalized.includes("notiz")
   ) {
-    const latest = [...data.notifications]
-      .filter((notification) => notification.type === "notice")
-      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))[0];
-    if (!latest) return "Non risultano circolari o avvisi nei dati caricati.";
-    const date = displayDate(latest.date);
-    const dateText = date ? ` (${date})` : "";
-    const attachment = latest.attachmentName ? ` Allegato: ${latest.attachmentName}.` : "";
-    return `L’ultima circolare è “${latest.title}”${dateText}.${attachment} La trovi nella sezione Novità.`;
+    const asksToday = normalized.includes("oggi");
+    const asksYesterday = normalized.includes("ieri");
+    const asksUnread = normalized.includes("non lett");
+    const asksNew = normalized.includes("nuov") || normalized.includes("recent");
+    let matches = notices;
+    if (asksToday)
+      matches = matches.filter(
+        (notification) => notification.date?.slice(0, 10) === localDateKey(now),
+      );
+    else if (asksYesterday) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      matches = matches.filter(
+        (notification) => notification.date?.slice(0, 10) === localDateKey(yesterday),
+      );
+    }
+    if (asksUnread || (asksNew && !asksToday && !asksYesterday))
+      matches = matches.filter((notification) => !notification.read);
+    if (!matches.length) {
+      if (asksToday) return "Oggi non risultano circolari nei dati caricati.";
+      if (asksYesterday) return "Ieri non risultano circolari nei dati caricati.";
+      if (asksUnread || asksNew) return "Non risultano circolari nuove o non lette.";
+      return "Non risultano circolari o avvisi nei dati caricati.";
+    }
+    const latestOnly =
+      normalized.includes("ultima circolare") || normalized.includes("ultimo avviso");
+    const shown = matches.slice(0, latestOnly ? 1 : 5);
+    const heading = asksToday
+      ? "Circolari di oggi"
+      : asksYesterday
+        ? "Circolari di ieri"
+        : asksUnread || asksNew
+          ? "Circolari nuove o non lette"
+          : "Circolari recenti";
+    const remainder =
+      matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
+    return `${heading}:\n${shown.map((notification) => `• ${noticeLabel(notification)}`).join("\n")}${remainder}\nLe trovi nella sezione Novità.`;
   }
 
   const subject = findSubject(query, data);
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
+  if (
+    !subject &&
+    (normalized.includes("ultimo voto") ||
+      normalized.includes("ultima valutazione") ||
+      normalized.includes("voto piu recente"))
+  ) {
+    const recent = latestGrade(data);
+    if (!recent) return "Non risultano voti registrati.";
+    const date = displayDate(recent.grade.date);
+    return `L’ultimo voto registrato è ${recent.grade.label} in ${recent.subject.name}${date ? ` (${date})` : ""}.`;
+  }
   if (
     (normalized.includes("previsione") ||
       normalized.includes("che media avro") ||

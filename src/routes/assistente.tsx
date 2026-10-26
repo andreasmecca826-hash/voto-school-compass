@@ -26,6 +26,9 @@ const SUGGESTIONS = [
   "Che lezioni ho oggi?",
   "Quali compiti scadono domani?",
   "Qual è l’ultima circolare?",
+  "Qual è l’ultimo voto?",
+  "Quali sono le nuove circolari di oggi?",
+  "Quali sono le novità?",
   "Quante assenze ho?",
 ];
 
