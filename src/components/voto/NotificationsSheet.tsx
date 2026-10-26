@@ -34,7 +34,7 @@ export function NotificationsSheet({
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title="Notifiche"
+      title="Novità"
       description={`${unreadIds.length} non lette`}
     >
       <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5">
@@ -58,7 +58,7 @@ export function NotificationsSheet({
       {list.length === 0 ? (
         <Empty
           icon={<Bell className="h-6 w-6" />}
-          title="Nessuna notifica"
+          title="Nessuna novità"
           text="Qui compariranno voti, note e promemoria."
         />
       ) : (

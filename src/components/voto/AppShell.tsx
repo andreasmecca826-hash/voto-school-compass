@@ -103,7 +103,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [achievements, setAchievements] = useState(false);
-  const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({ open: false });
+  const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
+    open: false,
+  });
   const [subject, setSubject] = useState<string | null>(null);
 
   useEffect(() => {
@@ -372,7 +374,7 @@ function MoreMenu({
           <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#f28f78]">
             <Bell className="h-7 w-7 text-white" />
           </span>
-          <span className="text-base font-bold">Notifiche</span>
+          <span className="text-base font-bold">Novità</span>
           <span className="mt-1 text-[10px] text-muted-foreground">Avvisi e comunicazioni</span>
         </button>
         <button
