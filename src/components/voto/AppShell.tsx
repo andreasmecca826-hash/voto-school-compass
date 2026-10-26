@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, RefreshCw, Settings, Trophy } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, Menu, RefreshCw, Settings, Trophy, X } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -23,16 +23,19 @@ export const useUi = () => {
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
-  { to: "/voti", label: "Voti", icon: BookOpen },
-  { to: "/compiti", label: "Compiti", icon: CheckSquare },
-  { to: "/interrogazioni", label: "Interrog.", icon: CalendarDays },
   { to: "/orario", label: "Orario", icon: CalendarClock },
+] as const;
+const MORE_NAV = [
+  { to: "/voti", label: "Voti", description: "Tutti i voti e le medie", icon: BookOpen },
+  { to: "/compiti", label: "Compiti", description: "Attività e scadenze", icon: CheckSquare },
+  { to: "/interrogazioni", label: "Interrogazioni", description: "Date e preparazione", icon: CalendarDays },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [notif, setNotif] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [achievements, setAchievements] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
   const [subject, setSubject] = useState<string | null>(null);
@@ -82,11 +85,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="flex-1 px-5 pb-28">{v.ready ? children : <ShellSkeleton />}</main>
 
+        {moreOpen && <button type="button" aria-label="Chiudi menu sezioni" onClick={() => setMoreOpen(false)} className="fixed inset-0 z-20 bg-black/20" />}
+        <div className={cn("fixed inset-x-0 bottom-[4.5rem] z-40 mx-auto w-full max-w-[480px] px-4 transition-all md:bottom-[8.5rem]", moreOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0")}>
+          <div className="glass-panel rounded-2xl border bg-background/95 p-2 shadow-2xl" role="menu" aria-label="Altre sezioni">
+            <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sezioni</p>
+            {MORE_NAV.map(({ to, label, description, icon: Icon }) => <Link key={to} to={to} onClick={() => setMoreOpen(false)} role="menuitem" className={cn("press flex items-center gap-3 rounded-xl p-3", path.startsWith(to) && "bg-primary-soft text-primary")}>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface"><Icon className="h-4 w-4" /></span>
+              <span><span className="block text-sm font-semibold">{label}</span><span className="block text-[11px] text-muted-foreground">{description}</span></span>
+            </Link>)}
+          </div>
+        </div>
+
         <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
-            <ul className="grid grid-cols-5">
+            <ul className="grid grid-cols-3">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = to === "/" ? path === "/" : path.startsWith(to);
               return (
@@ -107,6 +121,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </li>
               );
             })}
+            <li>
+              <button type="button" onClick={() => setMoreOpen((open) => !open)} aria-expanded={moreOpen} aria-label="Altre sezioni" className={cn("press flex h-16 w-full flex-col items-center justify-center gap-1 text-[10.5px] font-medium", moreOpen || MORE_NAV.some((item) => path.startsWith(item.to)) ? "text-foreground" : "text-muted-foreground")}>
+                <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", (moreOpen || MORE_NAV.some((item) => path.startsWith(item.to))) && "bg-primary-soft text-primary")}>
+                  {moreOpen ? <X className="h-[19px] w-[19px]" /> : <Menu className="h-[19px] w-[19px]" />}
+                </span>
+                Altro
+              </button>
+            </li>
           </ul>
         </nav>
       </div>
