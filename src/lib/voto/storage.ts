@@ -10,6 +10,7 @@ export const KEYS = {
   mode: "voto.mode",
   glass: "voto.glass",
   theme: "voto.theme",
+  customTheme: "voto.customTheme",
   homeModules: "voto.homeModules",
   interrogazioni: "voto.interrogazioni",
 } as const;

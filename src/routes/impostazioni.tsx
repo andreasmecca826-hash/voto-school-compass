@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
-import { useVoto, type Accent, type Bg, type HomeModuleId, type Mode, type Theme } from "@/lib/voto/store";
+import { useVoto, type Accent, type Bg, type CustomTheme, type HomeModuleId, type Mode, type Theme } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/impostazioni")({
   head: () => ({
@@ -75,6 +75,13 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   { id: "estate", label: "Estate", description: "Sole, mare e colori vivaci", sw: "linear-gradient(135deg,#075985,#ffb84d)" },
   { id: "autunno", label: "Autunno", description: "Foglie, rame e atmosfera calda", sw: "linear-gradient(135deg,#49251c,#d97932)" },
   { id: "inverno", label: "Inverno", description: "Ghiaccio, neve e blu profondi", sw: "linear-gradient(135deg,#102a43,#bde7ff)" },
+  { id: "custom", label: "Personalizzato", description: "Crea il tuo tema direttamente nell’app", sw: "linear-gradient(135deg,#12151c,#61a7ff)" },
+];
+const CUSTOM_COLORS: { key: keyof Pick<CustomTheme, "bgDark" | "cardDark" | "surfaceDark" | "fgDark" | "mutedDark" | "bgLight" | "cardLight" | "surfaceLight" | "fgLight" | "mutedLight" | "primary">; label: string }[] = [
+  { key: "bgDark", label: "Sfondo scuro" }, { key: "cardDark", label: "Schede scure" }, { key: "surfaceDark", label: "Superfici scure" },
+  { key: "fgDark", label: "Testo scuro" }, { key: "mutedDark", label: "Testo secondario scuro" },
+  { key: "bgLight", label: "Sfondo chiaro" }, { key: "cardLight", label: "Schede chiare" }, { key: "surfaceLight", label: "Superfici chiare" },
+  { key: "fgLight", label: "Testo chiaro" }, { key: "mutedLight", label: "Testo secondario chiaro" }, { key: "primary", label: "Colore principale" },
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
@@ -160,6 +167,31 @@ function Settings() {
       <button type="button" onClick={() => setShowMoreCompleteThemes((x) => !x)} className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground">
         {showMoreCompleteThemes ? "Mostra meno temi completi" : "Mostra tutti i temi completi"}<ChevronDown className={cn("h-4 w-4 transition-transform", showMoreCompleteThemes && "rotate-180")} />
       </button>
+
+      {v.theme === "custom" && (
+        <section className="card-surface mt-3 p-4">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div><h2 className="text-sm font-semibold">Il tuo tema</h2><p className="mt-1 text-[11px] text-muted-foreground">Le modifiche si applicano subito e vengono salvate su questo dispositivo.</p></div>
+            <button type="button" onClick={v.resetCustomTheme} className="press shrink-0 rounded-lg border border-border px-2.5 py-2 text-[11px] font-semibold text-muted-foreground">Ripristina</button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {CUSTOM_COLORS.map((field) => <label key={field.key} className="flex items-center gap-2 rounded-xl border border-border p-2 text-[11px] text-muted-foreground">
+              <input type="color" value={v.customTheme[field.key]} onChange={(e) => v.setCustomTheme({ [field.key]: e.target.value } as Partial<CustomTheme>)} className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0" aria-label={field.label} />
+              <span className="min-w-0"><span className="block truncate">{field.label}</span><span className="font-mono text-[10px] text-foreground">{v.customTheme[field.key]}</span></span>
+            </label>)}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <label className="text-[11px] text-muted-foreground">Arrotondamento <span className="font-mono text-foreground">{v.customTheme.radius.toFixed(2)}rem</span>
+              <input type="range" min="0" max="2" step="0.05" value={v.customTheme.radius} onChange={(e) => v.setCustomTheme({ radius: Number(e.target.value) })} className="mt-2 w-full accent-[var(--color-primary)]" />
+            </label>
+            <label className="text-[11px] text-muted-foreground">Carattere
+              <select value={v.customTheme.font} onChange={(e) => v.setCustomTheme({ font: e.target.value as CustomTheme["font"] })} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-2 text-xs text-foreground">
+                <option value="sans">Sans moderno</option><option value="display">Display morbido</option><option value="mono">Monospace</option><option value="serif">Serif classico</option>
+              </select>
+            </label>
+          </div>
+        </section>
+      )}
 
       <SectionTitle>Aspetto</SectionTitle>
       <div className="mb-4 grid grid-cols-2 gap-2">

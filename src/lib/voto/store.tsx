@@ -9,7 +9,18 @@ import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 export type Accent = "rosso" | "ambra" | "viola" | "blu" | "verde" | "azzurro" | "rosa" | "arancio" | "turchese" | "indaco" | "lime" | "oro" | "corallo" | "mono";
 export type Bg = "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 export type Mode = "chiaro" | "scuro";
-export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k" | "primavera" | "estate" | "autunno" | "inverno";
+export type Theme = "original" | "lavender" | "cybercore" | "brutalist" | "retro-os" | "dark-academia" | "glassmorphism" | "y2k" | "primavera" | "estate" | "autunno" | "inverno" | "custom";
+export type CustomFont = "sans" | "display" | "mono" | "serif";
+export type CustomTheme = {
+  bgDark: string; cardDark: string; surfaceDark: string; fgDark: string; mutedDark: string;
+  bgLight: string; cardLight: string; surfaceLight: string; fgLight: string; mutedLight: string;
+  primary: string; radius: number; font: CustomFont;
+};
+export const DEFAULT_CUSTOM_THEME: CustomTheme = {
+  bgDark: "#12151c", cardDark: "#1d2330", surfaceDark: "#273246", fgDark: "#f5f7fb", mutedDark: "#aeb9cb",
+  bgLight: "#eef2f8", cardLight: "#ffffff", surfaceLight: "#dfe7f2", fgLight: "#172033", mutedLight: "#5c6a80",
+  primary: "#61a7ff", radius: 1, font: "sans",
+};
 export type HomeModuleId = "media" | "simulatore" | "presenze" | "compiti" | "interrogazioni" | "note" | "bacheca" | "obiettivo";
 export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
 
@@ -62,6 +73,7 @@ interface Ctx {
   mode: Mode;
   glass: boolean;
   theme: Theme;
+  customTheme: CustomTheme;
   homeModules: HomeModuleConfig[];
   interrogazioni: Interrogazione[];
   isDone: (id: string, remote: boolean) => boolean;
@@ -78,6 +90,8 @@ interface Ctx {
   setMode: (m: Mode) => void;
   setGlass: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
+  setCustomTheme: (patch: Partial<CustomTheme>) => void;
+  resetCustomTheme: () => void;
   toggleHomeModule: (id: HomeModuleId) => void;
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
   resetHomeModules: () => void;
@@ -114,6 +128,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [mode, setModeS] = useState<Mode>("scuro");
   const [glass, setGlassS] = useState(true);
   const [theme, setThemeS] = useState<Theme>("original");
+  const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
   const [interrogazioni, setInterrogazioni] = useState<Interrogazione[]>([]);
   const [now, setNow] = useState(() => new Date(0));
@@ -160,6 +175,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setModeS(load(KEYS.mode, "scuro"));
     setGlassS(load(KEYS.glass, true));
     setThemeS(load(KEYS.theme, "original"));
+    setCustomThemeS({ ...DEFAULT_CUSTOM_THEME, ...load<Partial<CustomTheme>>(KEYS.customTheme, {}) });
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
@@ -185,11 +201,19 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset.mode = mode;
     root.dataset.glass = glass ? "on" : "off";
     root.dataset.theme = theme;
-  }, [accent, bg, mode, glass, theme, ready]);
+    const custom: Record<string, string> = {
+      "--custom-bg-dark": customTheme.bgDark, "--custom-card-dark": customTheme.cardDark, "--custom-surface-dark": customTheme.surfaceDark,
+      "--custom-fg-dark": customTheme.fgDark, "--custom-muted-dark": customTheme.mutedDark, "--custom-bg-light": customTheme.bgLight,
+      "--custom-card-light": customTheme.cardLight, "--custom-surface-light": customTheme.surfaceLight, "--custom-fg-light": customTheme.fgLight,
+      "--custom-muted-light": customTheme.mutedLight, "--custom-primary": customTheme.primary, "--custom-radius": `${customTheme.radius}rem`,
+      "--custom-font": customTheme.font === "mono" ? '"JetBrains Mono", monospace' : customTheme.font === "serif" ? "Georgia, serif" : customTheme.font === "display" ? "Manrope, sans-serif" : "var(--font-sans)",
+    };
+    Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
+  }, [accent, bg, mode, glass, theme, customTheme, ready]);
 
   const value: Ctx = useMemo(
     () => ({
-      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, interrogazioni, now,
+      ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, customTheme, homeModules, interrogazioni, now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -249,6 +273,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setMode: (m) => { setModeS(m); save(KEYS.mode, m); },
       setGlass: (enabled) => { setGlassS(enabled); save(KEYS.glass, enabled); },
       setTheme: (next) => { setThemeS(next); save(KEYS.theme, next); },
+      setCustomTheme: (patch) => setCustomThemeS((current) => {
+        const next = { ...current, ...patch };
+        save(KEYS.customTheme, next);
+        return next;
+      }),
+      resetCustomTheme: () => { setCustomThemeS(DEFAULT_CUSTOM_THEME); save(KEYS.customTheme, DEFAULT_CUSTOM_THEME); },
       toggleHomeModule: (id) => setHomeModulesS((current) => {
         const next = current.map((module) => module.id === id ? { ...module, enabled: !module.enabled } : module);
         save(KEYS.homeModules, next);
@@ -285,7 +315,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         return next;
       }),
     }),
-    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, homeModules, interrogazioni, now, completions, readIds, refreshImpl],
+    [ready, data, source, url, lastSync, loading, error, target, accent, bg, mode, glass, theme, customTheme, homeModules, interrogazioni, now, completions, readIds, refreshImpl],
   );
 
   return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;
