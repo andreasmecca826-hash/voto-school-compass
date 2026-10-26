@@ -160,6 +160,12 @@ const CUSTOM_COLORS: {
   { key: "mutedLight", label: "Testo secondario chiaro" },
   { key: "primary", label: "Colore principale" },
 ];
+const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
+  { id: "sans", label: "Sans moderno", sample: "Aa" },
+  { id: "display", label: "Display morbido", sample: "Aa" },
+  { id: "mono", label: "Monospace", sample: "01" },
+  { id: "serif", label: "Serif classico", sample: "Aa" },
+];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
   { id: "simulatore", label: "Simulatore voto" },
@@ -310,6 +316,38 @@ export function PersonalizationPanel() {
         {moreThemes ? "Mostra meno temi" : "Mostra tutti i temi"}
         <ChevronDown className={cn("h-4 w-4", moreThemes && "rotate-180")} />
       </button>
+      <SectionTitle>Font</SectionTitle>
+      <div className="grid grid-cols-2 gap-2">
+        {FONTS.map((font) => (
+          <button
+            key={font.id}
+            type="button"
+            aria-pressed={v.customTheme.font === font.id}
+            onClick={() => v.setCustomTheme({ font: font.id })}
+            className={cn(
+              "press card-surface flex items-center gap-3 p-3 text-left",
+              v.customTheme.font === font.id && "border-primary",
+            )}
+          >
+            <span
+              className="text-2xl text-primary"
+              style={{
+                fontFamily:
+                  font.id === "serif"
+                    ? "Georgia, serif"
+                    : font.id === "mono"
+                      ? '"JetBrains Mono", monospace'
+                      : font.id === "display"
+                        ? '"Space Grotesk", sans-serif'
+                        : '"Manrope", sans-serif',
+              }}
+            >
+              {font.sample}
+            </span>
+            <span className="text-xs font-semibold">{font.label}</span>
+          </button>
+        ))}
+      </div>
       {v.theme === "custom" && (
         <section className="card-surface mt-3 p-4">
           <div className="mb-3 flex items-start justify-between gap-3">
@@ -366,19 +404,6 @@ export function PersonalizationPanel() {
                 onChange={(e) => v.setCustomTheme({ radius: Number(e.target.value) })}
                 className="mt-2 w-full accent-[var(--color-primary)]"
               />
-            </label>
-            <label className="text-[11px] text-muted-foreground">
-              Carattere
-              <select
-                value={v.customTheme.font}
-                onChange={(e) => v.setCustomTheme({ font: e.target.value as CustomTheme["font"] })}
-                className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-2 text-xs text-foreground"
-              >
-                <option value="sans">Sans moderno</option>
-                <option value="display">Display morbido</option>
-                <option value="mono">Monospace</option>
-                <option value="serif">Serif classico</option>
-              </select>
             </label>
           </div>
         </section>

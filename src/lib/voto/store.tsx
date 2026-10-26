@@ -305,6 +305,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset.mode = mode;
     root.dataset.glass = glass ? "on" : "off";
     root.dataset.theme = theme;
+    root.dataset["font"] = customTheme.font;
     const custom: Record<string, string> = {
       "--custom-bg-dark": customTheme.bgDark,
       "--custom-card-dark": customTheme.cardDark,
