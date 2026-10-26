@@ -114,7 +114,7 @@ export function Sparkline({ values, className }: { values: number[]; className?:
   );
 }
 
-export function ProgressBar({ value, color }: { value: number; color?: string }) {
+export function ProgressBar({ value, color }: { value: number; color?: string | undefined }) {
   return (
     <div className="h-1 w-full overflow-hidden rounded-full bg-surface">
       <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: color }} />

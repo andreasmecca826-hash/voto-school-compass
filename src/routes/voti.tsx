@@ -50,7 +50,7 @@ function Voti() {
                 <p className="tabular mb-1.5 text-[11px] text-muted-foreground">
                   {st.count} voti{st.max !== null && ` · max ${fmt(st.max, 1)} · min ${fmt(st.min!, 1)}`}
                 </p>
-                <ProgressBar value={((st.avg ?? 0) / 10) * 100} color={s.color ?? undefined} />
+                <ProgressBar value={((st.avg ?? 0) / 10) * 100} color={s.color} />
               </div>
               <GradePill value={st.avg} />
             </button>
