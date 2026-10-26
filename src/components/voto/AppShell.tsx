@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  Bell,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -12,6 +11,7 @@ import {
   LayoutGrid,
   Menu,
   MessageCircle,
+  Newspaper,
   Palette,
   RefreshCw,
   Settings,
@@ -372,7 +372,7 @@ function MoreMenu({
           className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
         >
           <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#f28f78]">
-            <Bell className="h-7 w-7 text-white" />
+            <Newspaper className="h-7 w-7 text-white" />
           </span>
           <span className="text-base font-bold">Novità</span>
           <span className="mt-1 text-[10px] text-muted-foreground">Avvisi e comunicazioni</span>

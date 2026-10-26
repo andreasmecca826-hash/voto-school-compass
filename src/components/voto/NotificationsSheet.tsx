@@ -1,4 +1,12 @@
-import { AlertCircle, Bell, CheckCheck, Clock, GraduationCap, Megaphone } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCheck,
+  Clock,
+  GraduationCap,
+  Megaphone,
+  Newspaper,
+  type LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtDate } from "@/lib/voto/dates";
@@ -7,7 +15,7 @@ import type { NotificationType } from "@/lib/voto/types";
 import { CircularViewer } from "./CircularViewer";
 import { BottomSheet, Chip, Empty } from "./ui";
 
-export const NOTIF_META: Record<NotificationType, { label: string; icon: typeof Bell }> = {
+export const NOTIF_META: Record<NotificationType, { label: string; icon: LucideIcon }> = {
   note: { label: "Nota", icon: AlertCircle },
   grade: { label: "Voto", icon: GraduationCap },
   reminder: { label: "Promemoria", icon: Clock },
@@ -57,7 +65,7 @@ export function NotificationsSheet({
       </button>
       {list.length === 0 ? (
         <Empty
-          icon={<Bell className="h-6 w-6" />}
+          icon={<Newspaper className="h-6 w-6" />}
           title="Nessuna novità"
           text="Qui compariranno voti, note e promemoria."
         />
