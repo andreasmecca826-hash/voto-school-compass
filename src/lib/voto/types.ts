@@ -9,25 +9,25 @@ export interface Grade {
   date: string; // YYYY-MM-DD
   type: GradeType;
   weight: number; // default 1
-  comment?: string;
+  comment?: string | undefined;
 }
 
 export interface Subject {
   id: string;
   name: string;
-  color?: string;
-  teacher?: string;
+  color?: string | undefined;
+  teacher?: string | undefined;
   grades: Grade[];
 }
 
 export interface Assignment {
   id: string;
   title: string;
-  subject?: string;
-  dueDate?: string;
-  dueTime?: string;
+  subject?: string | undefined;
+  dueDate?: string | undefined;
+  dueTime?: string | undefined;
   completed: boolean;
-  details?: string;
+  details?: string | undefined;
 }
 
 export type NotificationType = "note" | "grade" | "reminder" | "notice";
@@ -36,11 +36,11 @@ export interface AppNotification {
   id: string;
   type: NotificationType;
   title: string;
-  message?: string;
-  date?: string;
-  subject?: string;
-  attachmentUrl?: string;
-  attachmentName?: string;
+  message?: string | undefined;
+  date?: string | undefined;
+  subject?: string | undefined;
+  attachmentUrl?: string | undefined;
+  attachmentName?: string | undefined;
   read: boolean;
 }
 
@@ -56,22 +56,22 @@ export interface Attendance {
 export interface DiaryEntry {
   id: string;
   date: string;
-  subject?: string;
-  teacher?: string;
-  hour?: string;
+  subject?: string | undefined;
+  teacher?: string | undefined;
+  hour?: string | undefined;
   activity: string;
 }
 
 export interface Student {
-  name?: string;
-  className?: string;
-  schoolYear?: string;
+  name?: string | undefined;
+  className?: string | undefined;
+  schoolYear?: string | undefined;
 }
 
 export interface VotoData {
   student: Student;
-  updatedAt?: string;
-  previousAverage?: number;
+  updatedAt?: string | undefined;
+  previousAverage?: number | undefined;
   subjects: Subject[];
   assignments: Assignment[];
   notifications: AppNotification[];

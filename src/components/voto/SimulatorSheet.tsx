@@ -17,7 +17,7 @@ function StepLabel({ n, children }: { n: number; children: string }) {
   );
 }
 
-export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolean; onOpenChange: (o: boolean) => void; subjectId?: string }) {
+export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolean; onOpenChange: (o: boolean) => void; subjectId?: string | undefined }) {
   const v = useVoto();
   const subjects = v.data.subjects;
   const [sid, setSid] = useState(subjectId ?? subjects[0]?.id ?? "");
@@ -89,7 +89,7 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
           <span className="text-xs text-muted-foreground">Media che vuoi raggiungere</span>
           <span className="tabular font-display text-2xl font-semibold">{fmt(target, 2)}</span>
         </div>
-        <Slider className="mt-3" min={4} max={10} step={0.25} value={[target]} onValueChange={([x]) => setTarget(x)} aria-label="Media obiettivo" />
+        <Slider className="mt-3" min={4} max={10} step={0.25} value={[target]} onValueChange={(v) => setTarget(v[0] ?? target)} aria-label="Media obiettivo" />
       </div>
 
       {/* 3 · Risultato */}
@@ -137,7 +137,7 @@ export function SimulatorSheet({ open, onOpenChange, subjectId }: { open: boolea
           <span className="text-xs text-muted-foreground">Voto ipotetico alla prossima verifica</span>
           <span className="tabular font-display text-base font-semibold">{fmt(scenario, 2)}</span>
         </div>
-        <Slider className="mt-3" min={1} max={10} step={0.25} value={[scenario]} onValueChange={([x]) => setScenario(x)} aria-label="Voto ipotetico" />
+        <Slider className="mt-3" min={1} max={10} step={0.25} value={[scenario]} onValueChange={(v) => setScenario(v[0] ?? scenario)} aria-label="Voto ipotetico" />
         {scenarioAvg !== null && current !== null && (
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs">
             <span className="text-muted-foreground">La media di {s.name} diventerebbe</span>

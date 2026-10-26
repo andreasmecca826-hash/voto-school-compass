@@ -5,7 +5,7 @@ export const toIso = (d: Date) => {
 
 export const parseIso = (s: string) => {
   const [y, m, d] = s.slice(0, 10).split("-").map(Number);
-  return new Date(y, (m || 1) - 1, d || 1);
+  return new Date(y || 1970, (m || 1) - 1, d || 1);
 };
 
 export const daysBetween = (from: Date, iso: string) =>

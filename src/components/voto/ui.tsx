@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { fmt, gradeTone } from "@/lib/voto/calc";
 
 export function BottomSheet({ open, onOpenChange, title, description, children }: {
-  open: boolean; onOpenChange: (o: boolean) => void; title: string; description?: string; children: ReactNode;
+  open: boolean; onOpenChange: (o: boolean) => void; title: string; description?: string | undefined; children: ReactNode;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -23,7 +23,7 @@ export function BottomSheet({ open, onOpenChange, title, description, children }
   );
 }
 
-export function SubjectMark({ name, color, size = 40 }: { name: string; color?: string; size?: number }) {
+export function SubjectMark({ name, color, size = 40 }: { name: string; color?: string | undefined; size?: number }) {
   const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <span
@@ -97,12 +97,17 @@ export function Sparkline({ values, className }: { values: number[]; className?:
   if (values.length < 2) return <div className={cn("h-12", className)} />;
   const w = 140, h = 48, p = 4;
   const min = Math.min(...values) - 0.2, max = Math.max(...values) + 0.2;
-  const pts = values.map((v, i) => [p + (i * (w - 2 * p)) / (values.length - 1), h - p - ((v - min) / (max - min)) * (h - 2 * p)]);
-  const d = pts.map((pt, i) => `${i ? "L" : "M"}${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(" ");
-  const last = pts[pts.length - 1];
+  const pts = values.map((v, i): [number, number] => {
+    const x = p + (i * (w - 2 * p)) / (values.length - 1);
+    const y = h - p - ((v - min) / (max - min)) * (h - 2 * p);
+    return [x, y];
+  });
+  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1]!;
+  const first = pts[0]!;
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className={cn("h-12 w-[140px] text-primary", className)} aria-hidden>
-      <path d={`${d} L${last[0]},${h} L${pts[0][0]},${h} Z`} fill="currentColor" opacity="0.08" />
+      <path d={`${d} L${last[0]},${h} L${first[0]},${h} Z`} fill="currentColor" opacity="0.08" />
       <path d={d} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={last[0]} cy={last[1]} r="3" fill="currentColor" />
     </svg>

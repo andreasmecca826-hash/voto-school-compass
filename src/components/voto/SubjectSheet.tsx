@@ -45,7 +45,7 @@ export function SubjectSheet({ id, onClose, onSimulate }: { id: string | null; o
           </div>
           <div className="no-scrollbar -mx-5 mt-5 flex gap-2 overflow-x-auto px-5">
             {TYPES.map((t) => (
-              <Chip key={t} active={type === t} onClick={() => setType(t)}>{t === "all" ? "Tutti" : t[0].toUpperCase() + t.slice(1)}</Chip>
+              <Chip key={t} active={type === t} onClick={() => setType(t)}>{t === "all" ? "Tutti" : t.charAt(0).toUpperCase() + t.slice(1)}</Chip>
             ))}
           </div>
           <ul className="mt-3 divide-y divide-border">
