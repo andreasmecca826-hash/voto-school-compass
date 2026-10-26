@@ -144,14 +144,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                   DEMO
                 </span>
               )}
-              <button
-                type="button"
-                onClick={() => setAchievements(true)}
+              <Link
+                to="/assistente"
                 className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-                aria-label="Achievement"
+                aria-label="Assistente"
               >
-                <Trophy className="h-[18px] w-[18px]" />
-              </button>
+                <MessageCircle className="h-[18px] w-[18px]" />
+              </Link>
               <button
                 type="button"
                 onClick={() => v.refresh()}
