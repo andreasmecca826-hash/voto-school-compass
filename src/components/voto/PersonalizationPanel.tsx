@@ -8,6 +8,7 @@ import {
   Moon,
   Palette,
   RotateCcw,
+  SlidersHorizontal,
   Sun,
 } from "lucide-react";
 import { useState } from "react";
@@ -18,12 +19,13 @@ import {
   type Accent,
   type Bg,
   type CustomTheme,
+  type Density,
   type HomeModuleId,
   type Mode,
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home";
+type View = "menu" | "themes" | "home" | "experience";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -176,6 +178,14 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];
+const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
+  { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
+  { id: "compact", label: "Compatto", description: "Schede più raccolte" },
+];
+const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
+  { id: false, label: "Normali", description: "Transizioni e animazioni" },
+  { id: true, label: "Ridotte", description: "Meno movimento nell’interfaccia" },
+];
 
 export function PersonalizationPanel() {
   const v = useVoto();
@@ -216,7 +226,70 @@ export function PersonalizationPanel() {
               Moduli e ordine della Home
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setView("experience")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <SlidersHorizontal className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Esperienza</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Formato e animazioni
+            </span>
+          </button>
         </div>
+      </div>
+    );
+
+  if (view === "experience")
+    return (
+      <div className="pt-3">
+        <BackButton onClick={() => setView("menu")} title="Esperienza" />
+        <SectionTitle>Formato delle schede</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          {DENSITY_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={v.density === option.id}
+              onClick={() => v.setDensity(option.id)}
+              className={cn(
+                "press card-surface p-3 text-left",
+                v.density === option.id && "border-primary",
+              )}
+            >
+              <span className="block text-xs font-semibold">{option.label}</span>
+              <span className="mt-1 block text-[10px] text-muted-foreground">
+                {option.description}
+              </span>
+            </button>
+          ))}
+        </div>
+        <SectionTitle>Movimento</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          {MOTION_OPTIONS.map((option) => (
+            <button
+              key={String(option.id)}
+              type="button"
+              aria-pressed={v.reduceMotion === option.id}
+              onClick={() => v.setReduceMotion(option.id)}
+              className={cn(
+                "press card-surface p-3 text-left",
+                v.reduceMotion === option.id && "border-primary",
+              )}
+            >
+              <span className="block text-xs font-semibold">{option.label}</span>
+              <span className="mt-1 block text-[10px] text-muted-foreground">
+                {option.description}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Le preferenze vengono salvate su questo dispositivo.
+        </p>
       </div>
     );
 

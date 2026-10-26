@@ -10,6 +10,8 @@ export const KEYS = {
   bg: "voto.bg",
   mode: "voto.mode",
   glass: "voto.glass",
+  density: "voto.density",
+  reduceMotion: "voto.reduceMotion",
   theme: "voto.theme",
   customTheme: "voto.customTheme",
   homeModules: "voto.homeModules",

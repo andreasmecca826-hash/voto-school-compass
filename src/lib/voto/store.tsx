@@ -33,6 +33,7 @@ export type Accent =
 export type Bg =
   "nero" | "carbone" | "grafite" | "chiaro" | "notteblu" | "bosco" | "prugna" | "carta";
 export type Mode = "chiaro" | "scuro";
+export type Density = "standard" | "compact";
 export type Theme =
   | "original"
   | "lavender"
@@ -157,6 +158,8 @@ interface Ctx {
   bg: Bg;
   mode: Mode;
   glass: boolean;
+  density: Density;
+  reduceMotion: boolean;
   theme: Theme;
   customTheme: CustomTheme;
   homeModules: HomeModuleConfig[];
@@ -175,6 +178,8 @@ interface Ctx {
   setBg: (b: Bg) => void;
   setMode: (m: Mode) => void;
   setGlass: (enabled: boolean) => void;
+  setDensity: (density: Density) => void;
+  setReduceMotion: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
   resetCustomTheme: () => void;
@@ -221,6 +226,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [bg, setBgS] = useState<Bg>("nero");
   const [mode, setModeS] = useState<Mode>("scuro");
   const [glass, setGlassS] = useState(true);
+  const [density, setDensityS] = useState<Density>("standard");
+  const [reduceMotion, setReduceMotionS] = useState(false);
   const [theme, setThemeS] = useState<Theme>("original");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
@@ -271,6 +278,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setBgS(load(KEYS.bg, "nero"));
     setModeS(load(KEYS.mode, "scuro"));
     setGlassS(load(KEYS.glass, true));
+    const savedDensity = load<Density>(KEYS.density, "standard");
+    setDensityS(savedDensity === "compact" ? "compact" : "standard");
+    setReduceMotionS(load(KEYS.reduceMotion, false));
     setThemeS(load(KEYS.theme, "original"));
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
@@ -304,6 +314,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["bg"] = bg;
     root.dataset["mode"] = mode;
     root.dataset["glass"] = glass ? "on" : "off";
+    root.dataset["density"] = density;
+    root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
     root.dataset["theme"] = theme;
     root.dataset["font"] = customTheme.font;
     const custom: Record<string, string> = {
@@ -329,11 +341,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
               : "var(--font-sans)",
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [accent, bg, mode, glass, theme, customTheme, ready]);
+  }, [accent, bg, mode, glass, density, reduceMotion, theme, customTheme, ready]);
 
   const value: Ctx = useMemo(
     () => ({
       ready,
+      density,
+      reduceMotion,
       data,
       source,
       url,
@@ -432,6 +446,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setGlass: (enabled) => {
         setGlassS(enabled);
         save(KEYS.glass, enabled);
+      },
+      setDensity: (next) => {
+        setDensityS(next);
+        save(KEYS.density, next);
+      },
+      setReduceMotion: (enabled) => {
+        setReduceMotionS(enabled);
+        save(KEYS.reduceMotion, enabled);
       },
       setTheme: (next) => {
         setThemeS(next);
@@ -536,6 +558,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       now,
       completions,
       readIds,
+      density,
+      reduceMotion,
       refreshImpl,
     ],
   );
