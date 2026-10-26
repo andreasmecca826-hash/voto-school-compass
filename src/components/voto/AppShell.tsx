@@ -44,13 +44,6 @@ const NAV = [
   { to: "/orario", label: "Orario", icon: CalendarClock },
 ] as const;
 const MORE_NAV = [
-  {
-    to: "/",
-    label: "Dashboard",
-    description: "Panoramica scolastica",
-    icon: LayoutGrid,
-    color: "#16a5b8",
-  },
   { to: "/voti", label: "Voti", description: "Voti e medie", icon: BookOpen, color: "#e56b5d" },
   {
     to: "/compiti",
@@ -65,13 +58,6 @@ const MORE_NAV = [
     description: "Date e preparazione",
     icon: CalendarDays,
     color: "#a66be1",
-  },
-  {
-    to: "/orario",
-    label: "Orario",
-    description: "Lezioni della settimana",
-    icon: Clock3,
-    color: "#ea8dae",
   },
   {
     to: "/diario",
