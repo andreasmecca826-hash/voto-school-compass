@@ -83,13 +83,6 @@ const MORE_NAV = [
     color: "#4f9bd9",
   },
   {
-    to: "/assistente",
-    label: "Assistente",
-    description: "Domande sui tuoi dati",
-    icon: MessageCircle,
-    color: "#8f6be8",
-  },
-  {
     to: "/personalizza",
     label: "Personalizza",
     description: "Temi e Home",
@@ -165,6 +158,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
               <button
                 type="button"
+                onClick={() => setNotif(true)}
+                className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+                aria-label="Novità"
+                title="Novità"
+              >
+                <Newspaper className="h-[18px] w-[18px]" />
+              </button>
+              <button
+                type="button"
                 onClick={() => v.refresh()}
                 disabled={v.loading}
                 className="press flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium disabled:opacity-70"
@@ -184,7 +186,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 v={v}
                 currentPath={path}
                 onClose={() => setMoreOpen(false)}
-                onNotifications={() => setNotif(true)}
                 onAchievements={() => setAchievements(true)}
                 onSimulator={() => setSim({ open: true })}
               />
@@ -300,14 +301,12 @@ function MoreMenu({
   v,
   currentPath,
   onClose,
-  onNotifications,
   onAchievements,
   onSimulator,
 }: {
   v: ReturnType<typeof useVoto>;
   currentPath: string;
   onClose: () => void;
-  onNotifications: () => void;
   onAchievements: () => void;
   onSimulator: () => void;
 }) {
@@ -371,20 +370,6 @@ function MoreMenu({
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => {
-            onNotifications();
-            onClose();
-          }}
-          className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
-        >
-          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#f28f78]">
-            <Newspaper className="h-7 w-7 text-white" />
-          </span>
-          <span className="text-base font-bold">Novità</span>
-          <span className="mt-1 text-[10px] text-muted-foreground">Avvisi e comunicazioni</span>
-        </button>
         <button
           type="button"
           onClick={() => {
