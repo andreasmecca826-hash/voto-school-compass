@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarClock, CalendarDays, CheckSquare, LayoutGrid, Menu, RefreshCw, Settings, Trophy, X } from "lucide-react";
+import { Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, ClipboardList, Clock3, GraduationCap, LayoutGrid, Menu, RefreshCw, Settings, Trophy, X } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -26,9 +26,12 @@ const NAV = [
   { to: "/orario", label: "Orario", icon: CalendarClock },
 ] as const;
 const MORE_NAV = [
-  { to: "/voti", label: "Voti", description: "Tutti i voti e le medie", icon: BookOpen },
-  { to: "/compiti", label: "Compiti", description: "Attività e scadenze", icon: CheckSquare },
-  { to: "/interrogazioni", label: "Interrogazioni", description: "Date e preparazione", icon: CalendarDays },
+  { to: "/", label: "Dashboard", description: "Panoramica scolastica", icon: LayoutGrid, color: "#16a5b8" },
+  { to: "/voti", label: "Voti", description: "Voti e medie", icon: BookOpen, color: "#e56b5d" },
+  { to: "/compiti", label: "Compiti assegnati", description: "Attività e scadenze", icon: CheckSquare, color: "#6675e8" },
+  { to: "/interrogazioni", label: "Interrogazioni", description: "Date e preparazione", icon: CalendarDays, color: "#a66be1" },
+  { to: "/orario", label: "Orario", description: "Lezioni della settimana", icon: Clock3, color: "#ea8dae" },
+  { to: "/impostazioni", label: "Impostazioni", description: "Personalizza VOTO.", icon: Settings, color: "#19aab6" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -83,18 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 px-5 pb-28">{v.ready ? children : <ShellSkeleton />}</main>
-
-        {moreOpen && <button type="button" aria-label="Chiudi menu sezioni" onClick={() => setMoreOpen(false)} className="fixed inset-0 z-20 bg-black/20" />}
-        <div className={cn("fixed inset-x-0 bottom-[4.5rem] z-40 mx-auto w-full max-w-[480px] px-4 transition-all md:bottom-[8.5rem]", moreOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0")}>
-          <div className="glass-panel rounded-2xl border bg-background/95 p-2 shadow-2xl" role="menu" aria-label="Altre sezioni">
-            <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sezioni</p>
-            {MORE_NAV.map(({ to, label, description, icon: Icon }) => <Link key={to} to={to} onClick={() => setMoreOpen(false)} role="menuitem" className={cn("press flex items-center gap-3 rounded-xl p-3", path.startsWith(to) && "bg-primary-soft text-primary")}>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface"><Icon className="h-4 w-4" /></span>
-              <span><span className="block text-sm font-semibold">{label}</span><span className="block text-[11px] text-muted-foreground">{description}</span></span>
-            </Link>)}
-          </div>
-        </div>
+        <main className="flex-1 px-5 pb-28">{v.ready ? (moreOpen ? <MoreMenu v={v} onClose={() => setMoreOpen(false)} onNotifications={() => setNotif(true)} onAchievements={() => setAchievements(true)} onSimulator={() => setSim({ open: true })} /> : children) : <ShellSkeleton />}</main>
 
         <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
@@ -122,8 +114,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
             <li>
-              <button type="button" onClick={() => setMoreOpen((open) => !open)} aria-expanded={moreOpen} aria-label="Altre sezioni" className={cn("press flex h-16 w-full flex-col items-center justify-center gap-1 text-[10.5px] font-medium", moreOpen || MORE_NAV.some((item) => path.startsWith(item.to)) ? "text-foreground" : "text-muted-foreground")}>
-                <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", (moreOpen || MORE_NAV.some((item) => path.startsWith(item.to))) && "bg-primary-soft text-primary")}>
+              <button type="button" onClick={() => setMoreOpen((open) => !open)} aria-expanded={moreOpen} aria-label="Menu Altro" className={cn("press flex h-16 w-full flex-col items-center justify-center gap-1 text-[10.5px] font-medium", moreOpen ? "text-foreground" : "text-muted-foreground")}>
+                <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", moreOpen && "bg-primary-soft text-primary")}>
                   {moreOpen ? <X className="h-[19px] w-[19px]" /> : <Menu className="h-[19px] w-[19px]" />}
                 </span>
                 Altro
@@ -154,5 +146,35 @@ function ShellSkeleton() {
       </div>
       {[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 rounded-2xl bg-card" />)}
     </div>
+  );
+}
+
+function MoreMenu({ v, onClose, onNotifications, onAchievements, onSimulator }: { v: ReturnType<typeof useVoto>; onClose: () => void; onNotifications: () => void; onAchievements: () => void; onSimulator: () => void }) {
+  const studentName = v.data.student.name || "Studente";
+  return (
+    <section className="pt-4 pb-5" aria-label="Menu principale">
+      <div className="mb-5 flex items-start justify-between">
+        <div><h1 className="font-display text-3xl font-light tracking-tight">Menu</h1><p className="mt-1 text-lg uppercase tracking-wide text-muted-foreground">{studentName}</p></div>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary"><GraduationCap className="h-7 w-7" /></span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
+          const active = to === "/" ? false : location.pathname.startsWith(to);
+          return <Link key={to} to={to} onClick={onClose} className={cn("press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm", active && "border-primary")}>
+            <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl" style={{ backgroundColor: color }}><Icon className="h-7 w-7 text-white" /></span>
+            <span className="pr-1"><span className="block text-center text-base font-bold leading-tight">{label}</span><span className="mt-1 block text-center text-[10px] text-muted-foreground">{description}</span></span>
+          </Link>;
+        })}
+        <button type="button" onClick={() => { onNotifications(); onClose(); }} className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm">
+          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#f28f78]"><Bell className="h-7 w-7 text-white" /></span><span className="text-base font-bold">Notifiche</span><span className="mt-1 text-[10px] text-muted-foreground">Avvisi e comunicazioni</span>
+        </button>
+        <button type="button" onClick={() => { onSimulator(); onClose(); }} className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm">
+          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#3998d7]"><ClipboardList className="h-7 w-7 text-white" /></span><span className="text-base font-bold">Simulatore</span><span className="mt-1 text-[10px] text-muted-foreground">Calcola il prossimo voto</span>
+        </button>
+        <button type="button" onClick={() => { onAchievements(); onClose(); }} className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm">
+          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#8fbe78]"><Trophy className="h-7 w-7 text-white" /></span><span className="text-base font-bold">Traguardi</span><span className="mt-1 text-[10px] text-muted-foreground">I tuoi achievement</span>
+        </button>
+      </div>
+    </section>
   );
 }
