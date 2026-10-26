@@ -2,7 +2,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const BUCKET = "circulars";
 const MAX_BYTES = 25 * 1024 * 1024;
-const ARGO_ORIGIN = "https://7c016d9f0e.files.eu-south-1.portaleargo.it";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -53,24 +52,10 @@ Deno.serve(async (request) => {
       path = body.path;
     } else if (validSourceUrl(body.sourceUrl)) {
       const sourceUrl = new URL(body.sourceUrl);
-      const sourceHeaders: Record<string, string> = {};
-      if (sourceUrl.hostname === "s3.eu-south-1.amazonaws.com") {
-        sourceHeaders.Origin = ARGO_ORIGIN;
-        sourceHeaders.Referer = `${ARGO_ORIGIN}/`;
-      }
-      let source = await fetch(body.sourceUrl, { redirect: "follow", headers: sourceHeaders });
-      let fallbackHost: string | undefined;
-      if (!source.ok && sourceUrl.hostname === "s3.eu-south-1.amazonaws.com") {
-        await source.body?.cancel().catch(() => {});
-        const argoFileUrl = new URL(body.sourceUrl);
-        fallbackHost = new URL(ARGO_ORIGIN).host;
-        argoFileUrl.host = fallbackHost;
-        source = await fetch(argoFileUrl, { redirect: "follow", headers: sourceHeaders });
-      }
+      const source = await fetch(body.sourceUrl, { redirect: "follow" });
       if (!source.ok) {
         console.error("mirror-circular source fetch failed", {
           host: sourceUrl.host,
-          fallbackHost,
           status: source.status,
         });
         return response({ error: `Sorgente PDF: HTTP ${source.status}` }, 502);
