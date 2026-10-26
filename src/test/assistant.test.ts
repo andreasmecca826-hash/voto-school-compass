@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import { emptySchedule } from "@/lib/voto/orario";
 import type { VotoData } from "@/lib/voto/types";
 
 const data: VotoData = {
@@ -46,5 +47,49 @@ describe("Assistente locale", () => {
       "passerebbe",
     );
     expect(scheduleDayToClear("Cancella tutto l'orario di lunedì")).toBe("lunedi");
+  });
+
+  it("risponde sull'orario del giorno e sulle scadenze dei compiti", () => {
+    const schedule = emptySchedule();
+    schedule.lunedi[0] = "Matematica";
+    schedule.lunedi[2] = "Inglese";
+    const now = new Date(2026, 9, 26, 12);
+    expect(answerQuestion("Che lezioni ho oggi?", data, schedule, now)).toContain(
+      "1ª ora: Matematica",
+    );
+    expect(answerQuestion("Che lezioni ho oggi?", data, schedule, now)).toContain(
+      "3ª ora: Inglese",
+    );
+
+    const dueData: VotoData = {
+      ...data,
+      assignments: [
+        { id: "a2", title: "Tema", completed: false, dueDate: "2026-10-27" },
+        { id: "a3", title: "Studio", completed: false, dueDate: "2026-10-29" },
+      ],
+    };
+    expect(answerQuestion("Quali compiti scadono domani?", dueData, schedule, now)).toContain(
+      "Tema",
+    );
+  });
+
+  it("trova l'ultima circolare e il voto più alto di una materia", () => {
+    const noticeData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "n1",
+          type: "notice",
+          title: "Comunicazione elezioni",
+          date: "2026-10-20",
+          attachmentName: "comunicazione.pdf",
+          read: false,
+        },
+      ],
+    };
+    expect(answerQuestion("Qual è l'ultima circolare?", noticeData)).toContain(
+      "Comunicazione elezioni",
+    );
+    expect(answerQuestion("Qual è il voto più alto in Inglese?", data)).toContain("7,00");
   });
 });

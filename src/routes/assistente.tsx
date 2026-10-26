@@ -9,7 +9,10 @@ export const Route = createFileRoute("/assistente")({
   head: () => ({
     meta: [
       { title: "Assistente — VOTO." },
-      { name: "description", content: "Assistente locale per voti, compiti, diario e presenze." },
+      {
+        name: "description",
+        content: "Assistente locale per voti, orario, compiti, circolari e presenze.",
+      },
     ],
   }),
   component: Assistant,
@@ -20,6 +23,9 @@ const SUGGESTIONS = [
   "Qual è la mia media generale?",
   "Qual è la materia con la media più bassa?",
   "Quanti compiti devo ancora fare?",
+  "Che lezioni ho oggi?",
+  "Quali compiti scadono domani?",
+  "Qual è l’ultima circolare?",
   "Quante assenze ho?",
 ];
 
@@ -29,7 +35,7 @@ function Assistant() {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
     {
       role: "assistant",
-      text: "Ciao! Sono l’assistente locale di VOTO. Posso aiutarti con medie, voti necessari, compiti, Diario, assenze e ritardi. I dati restano sul dispositivo.",
+      text: "Ciao! Sono l’assistente locale di VOTO. Posso aiutarti con medie, voti, orario, scadenze, circolari, Diario, assenze e ritardi. I dati restano sul dispositivo.",
     },
   ]);
   const [pendingDay, setPendingDay] = useState<ReturnType<typeof scheduleDayToClear>>(null);
@@ -45,7 +51,7 @@ function Assistant() {
         role: "assistant",
         text: dayToClear
           ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
-          : answerQuestion(clean, v.data),
+          : answerQuestion(clean, v.data, loadSchedule()),
       },
     ]);
     if (dayToClear) setPendingDay(dayToClear);

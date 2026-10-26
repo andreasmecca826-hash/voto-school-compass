@@ -1,7 +1,6 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
-import { DAYS, type DayId } from "./orario";
-import type { Grade } from "./types";
-import type { VotoData } from "./types";
+import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
+import type { Grade, VotoData } from "./types";
 
 const normalize = (value: string) =>
   value
@@ -13,7 +12,19 @@ const number = (value: number) => fmt(Math.round(value * 100) / 100, 2);
 
 function findSubject(query: string, data: VotoData) {
   const normalized = normalize(query);
-  return data.subjects.find((subject) => normalized.includes(normalize(subject.name)));
+  const exactMatches = data.subjects.filter((subject) =>
+    normalized.includes(normalize(subject.name)),
+  );
+  if (exactMatches.length === 1) return exactMatches[0];
+  if (exactMatches.length > 1) return undefined;
+
+  const partialMatches = data.subjects.filter((subject) =>
+    normalize(subject.name)
+      .split(/\s+/)
+      .filter((token) => token.length >= 4)
+      .some((token) => normalized.includes(token)),
+  );
+  return partialMatches.length === 1 ? partialMatches[0] : undefined;
 }
 
 function targetFrom(query: string) {
@@ -30,6 +41,36 @@ function gradeFrom(query: string) {
   return match?.[1] ? Number(match[1].replace(",", ".")) : null;
 }
 
+function dayFromQuery(query: string, now: Date): DayId | null {
+  const normalized = normalize(query);
+  const namedDay = DAYS.find((day) => normalized.includes(normalize(day.label)));
+  if (namedDay) return namedDay.id;
+
+  const date = new Date(now);
+  if (normalized.includes("domani")) date.setDate(date.getDate() + 1);
+  const weekday = date.getDay();
+  return weekday >= 1 && weekday <= 5 ? (DAYS[weekday - 1]?.id ?? null) : null;
+}
+
+function daysUntil(dateValue: string | undefined, now: Date): number | null {
+  if (!dateValue) return null;
+  const match = dateValue.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const due = new Date(Date.UTC(year, month - 1, day));
+  if (due.getUTCFullYear() !== year || due.getUTCMonth() !== month - 1 || due.getUTCDate() !== day)
+    return null;
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((due.getTime() - today) / 86_400_000);
+}
+
+function displayDate(dateValue: string | undefined): string | null {
+  const match = dateValue?.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : null;
+}
+
 export function scheduleDayToClear(query: string): DayId | null {
   const normalized = normalize(query);
   if (
@@ -44,10 +85,43 @@ export function scheduleDayToClear(query: string): DayId | null {
   return DAYS.find((day) => normalized.includes(normalize(day.label)))?.id ?? null;
 }
 
-export function answerQuestion(query: string, data: VotoData): string {
+export function answerQuestion(
+  query: string,
+  data: VotoData,
+  schedule: Schedule = emptySchedule(),
+  now: Date = new Date(),
+): string {
   const normalized = normalize(query.trim());
   if (!normalized)
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
+
+  if (normalized.includes("orario") || normalized.includes("lezion")) {
+    const day = dayFromQuery(query, now);
+    if (!day)
+      return "Il tuo orario copre dal lunedì al venerdì. Dimmi un giorno scolastico o chiedi “Che lezioni ho domani?”";
+    const lessons = (schedule[day] ?? [])
+      .map((subject, index) => (subject.trim() ? `${index + 1}ª ora: ${subject.trim()}` : null))
+      .filter((lesson): lesson is string => lesson !== null);
+    const label = DAYS.find((item) => item.id === day)?.label ?? day;
+    return lessons.length
+      ? `${label}: ${lessons.length} ${lessons.length === 1 ? "lezione" : "lezioni"}. ${lessons.join("; ")}.`
+      : `Non hai lezioni inserite per ${label} nell’orario.`;
+  }
+
+  if (
+    normalized.includes("circolare") ||
+    normalized.includes("bacheca") ||
+    normalized.includes("avvisi")
+  ) {
+    const latest = [...data.notifications]
+      .filter((notification) => notification.type === "notice")
+      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))[0];
+    if (!latest) return "Non risultano circolari o avvisi nei dati caricati.";
+    const date = displayDate(latest.date);
+    const dateText = date ? ` (${date})` : "";
+    const attachment = latest.attachmentName ? ` Allegato: ${latest.attachmentName}.` : "";
+    return `L’ultima circolare è “${latest.title}”${dateText}.${attachment} La trovi nella sezione Novità.`;
+  }
 
   const subject = findSubject(query, data);
   const target = targetFrom(query);
@@ -74,6 +148,44 @@ export function answerQuestion(query: string, data: VotoData): string {
       ? `In ${subject.name} non ci sono ancora voti sufficienti per fare la previsione.`
       : `Con un ${number(projectedGrade)} in ${subject.name}, la tua media passerebbe da ${number(current)} a circa ${number(nextAverage)}.`;
   }
+
+  if (
+    subject &&
+    (normalized.includes("voto piu alto") ||
+      normalized.includes("voto massimo") ||
+      normalized.includes("miglior voto"))
+  ) {
+    const best = subject.grades.reduce<number | null>(
+      (current, grade) => (current === null || grade.value > current ? grade.value : current),
+      null,
+    );
+    return best === null
+      ? `In ${subject.name} non ci sono ancora voti.`
+      : `Il voto più alto in ${subject.name} è ${number(best)}.`;
+  }
+
+  if (
+    subject &&
+    (normalized.includes("voto piu basso") ||
+      normalized.includes("voto minimo") ||
+      normalized.includes("peggior voto"))
+  ) {
+    const lowest = subject.grades.reduce<number | null>(
+      (current, grade) => (current === null || grade.value < current ? grade.value : current),
+      null,
+    );
+    return lowest === null
+      ? `In ${subject.name} non ci sono ancora voti.`
+      : `Il voto più basso in ${subject.name} è ${number(lowest)}.`;
+  }
+
+  if (normalized.includes("ultimo voto") && subject) {
+    const latest = [...subject.grades].sort((a, b) => b.date.localeCompare(a.date))[0];
+    return latest
+      ? `L’ultimo voto in ${subject.name} è ${latest.label}${latest.date ? ` del ${displayDate(latest.date) ?? latest.date}` : ""}.`
+      : `In ${subject.name} non ci sono ancora voti.`;
+  }
+
   if (
     (normalized.includes("quanto devo") ||
       normalized.includes("arrivare") ||
@@ -112,7 +224,11 @@ export function answerQuestion(query: string, data: VotoData): string {
       : "Non ci sono ancora voti sufficienti.";
   }
 
-  if (normalized.includes("media generale") || normalized === "media") {
+  if (
+    normalized.includes("media generale") ||
+    normalized.includes("media complessiva") ||
+    normalized === "media"
+  ) {
     const current = overallAverage(data.subjects);
     return current === null
       ? "Non ci sono ancora voti sufficienti per calcolare la media generale."
@@ -126,9 +242,47 @@ export function answerQuestion(query: string, data: VotoData): string {
 
   if (normalized.includes("compiti") || normalized.includes("scadenze")) {
     const open = data.assignments.filter((assignment) => !assignment.completed);
-    return open.length
-      ? `Hai ${open.length} compit${open.length === 1 ? "o" : "i"} ancora da completare. Il prossimo è: “${open[0]?.title}”.`
-      : "Non risultano compiti ancora da completare.";
+    if (!open.length) return "Non risultano compiti ancora da completare.";
+
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    if (requestedDay !== null) {
+      const due = open.filter((assignment) => daysUntil(assignment.dueDate, now) === requestedDay);
+      const label = requestedDay === 0 ? "oggi" : "domani";
+      return due.length
+        ? `Hai ${due.length} ${due.length === 1 ? "compito" : "compiti"} in scadenza ${label}: ${due.map((item) => item.title).join(", ")}.`
+        : `Non hai compiti aperti in scadenza ${label}.`;
+    }
+
+    if (normalized.includes("in ritardo") || normalized.includes("scaduti")) {
+      const overdue = open.filter((assignment) => (daysUntil(assignment.dueDate, now) ?? 0) < 0);
+      return overdue.length
+        ? `Hai ${overdue.length} compiti in ritardo: ${overdue.map((item) => item.title).join(", ")}.`
+        : "Non risultano compiti in ritardo.";
+    }
+
+    const sorted = [...open].sort((a, b) => {
+      const first = daysUntil(a.dueDate, now);
+      const second = daysUntil(b.dueDate, now);
+      if (first === null) return second === null ? a.title.localeCompare(b.title) : 1;
+      if (second === null) return -1;
+      return first - second;
+    });
+    const next = sorted.slice(0, 3).map((item) => {
+      const days = daysUntil(item.dueDate, now);
+      const date = displayDate(item.dueDate);
+      const timing =
+        days === null
+          ? ""
+          : days < 0
+            ? ` (scaduto il ${date})`
+            : days === 0
+              ? " (scade oggi)"
+              : days === 1
+                ? " (scade domani)"
+                : ` (scade il ${date})`;
+      return `${item.title}${timing}`;
+    });
+    return `Hai ${open.length} compit${open.length === 1 ? "o" : "i"} da completare. I prossimi: ${next.join("; ")}.`;
   }
 
   if (
@@ -144,5 +298,5 @@ export function answerQuestion(query: string, data: VotoData): string {
       : "Non ci sono ancora attività nel Diario.";
   }
 
-  return "Posso aiutarti con medie e voti necessari, voti per materia, materia più bassa, compiti, Diario, assenze e ritardi. Prova: “Quanto devo prendere in Inglese per arrivare a 8?”";
+  return "Posso aiutarti con voti e medie, ultimo voto, orario, compiti e scadenze, circolari, Diario, assenze e ritardi. Prova: “Che lezioni ho oggi?” o “Qual è l’ultima circolare?”";
 }
