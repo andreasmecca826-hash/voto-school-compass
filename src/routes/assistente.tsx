@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bot, Send, Sparkles, UserRound } from "lucide-react";
 import { useState } from "react";
-import { answerQuestion } from "@/lib/voto/assistant";
+import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
 import { useVoto } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/assistente")({
@@ -31,16 +32,35 @@ function Assistant() {
       text: "Ciao! Sono l’assistente locale di VOTO. Posso aiutarti con medie, voti necessari, compiti, Diario, assenze e ritardi. I dati restano sul dispositivo.",
     },
   ]);
+  const [pendingDay, setPendingDay] = useState<ReturnType<typeof scheduleDayToClear>>(null);
 
   const ask = (text = question) => {
     const clean = text.trim();
     if (!clean) return;
+    const dayToClear = scheduleDayToClear(clean);
     setMessages((current) => [
       ...current,
       { role: "user", text: clean },
-      { role: "assistant", text: answerQuestion(clean, v.data) },
+      {
+        role: "assistant",
+        text: dayToClear
+          ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
+          : answerQuestion(clean, v.data),
+      },
     ]);
+    if (dayToClear) setPendingDay(dayToClear);
     setQuestion("");
+  };
+
+  const confirmClearDay = () => {
+    if (!pendingDay) return;
+    clearScheduleDay(loadSchedule(), pendingDay);
+    const label = DAYS.find((day) => day.id === pendingDay)?.label;
+    setMessages((current) => [
+      ...current,
+      { role: "assistant", text: `Fatto: ho cancellato tutte le lezioni dell’orario di ${label}.` },
+    ]);
+    setPendingDay(null);
   };
 
   return (
@@ -91,6 +111,29 @@ function Assistant() {
           </div>
         ))}
       </div>
+
+      {pendingDay && (
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-warning/40 bg-warning/10 p-3 text-xs">
+          <span className="flex-1">
+            Confermi la cancellazione dell’orario di{" "}
+            <strong>{DAYS.find((day) => day.id === pendingDay)?.label}</strong>?
+          </span>
+          <button
+            type="button"
+            onClick={confirmClearDay}
+            className="press rounded-lg bg-danger px-3 py-2 font-semibold text-white"
+          >
+            Cancella
+          </button>
+          <button
+            type="button"
+            onClick={() => setPendingDay(null)}
+            className="press rounded-lg border border-border px-3 py-2 font-semibold"
+          >
+            Annulla
+          </button>
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         {SUGGESTIONS.map((suggestion) => (

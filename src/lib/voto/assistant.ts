@@ -1,4 +1,6 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
+import { DAYS, type DayId } from "./orario";
+import type { Grade } from "./types";
 import type { VotoData } from "./types";
 
 const normalize = (value: string) =>
@@ -21,6 +23,27 @@ function targetFrom(query: string) {
   return match?.[1] ? Number(match[1].replace(",", ".")) : null;
 }
 
+function gradeFrom(query: string) {
+  const match = normalize(query).match(
+    /(?:prendo|prendessi|prendero|con un nuovo voto|con un voto)[^0-9]{0,16}(10(?:[.,]0+)?|[0-9](?:[.,][0-9]+)?)/,
+  );
+  return match?.[1] ? Number(match[1].replace(",", ".")) : null;
+}
+
+export function scheduleDayToClear(query: string): DayId | null {
+  const normalized = normalize(query);
+  if (
+    !(
+      normalized.includes("cancella") ||
+      normalized.includes("elimina") ||
+      normalized.includes("svuota")
+    ) ||
+    !normalized.includes("orario")
+  )
+    return null;
+  return DAYS.find((day) => normalized.includes(normalize(day.label)))?.id ?? null;
+}
+
 export function answerQuestion(query: string, data: VotoData): string {
   const normalized = normalize(query.trim());
   if (!normalized)
@@ -28,6 +51,29 @@ export function answerQuestion(query: string, data: VotoData): string {
 
   const subject = findSubject(query, data);
   const target = targetFrom(query);
+  const projectedGrade = gradeFrom(query);
+  if (
+    (normalized.includes("previsione") ||
+      normalized.includes("che media avro") ||
+      normalized.includes("media avro") ||
+      normalized.includes("se prendo")) &&
+    subject &&
+    projectedGrade !== null
+  ) {
+    const projected: Grade = {
+      id: "assistant-preview",
+      value: projectedGrade,
+      label: String(projectedGrade),
+      date: "",
+      type: "altro",
+      weight: 1,
+    };
+    const nextAverage = average([...subject.grades, projected]);
+    const current = average(subject.grades);
+    return nextAverage === null || current === null
+      ? `In ${subject.name} non ci sono ancora voti sufficienti per fare la previsione.`
+      : `Con un ${number(projectedGrade)} in ${subject.name}, la tua media passerebbe da ${number(current)} a circa ${number(nextAverage)}.`;
+  }
   if (
     (normalized.includes("quanto devo") ||
       normalized.includes("arrivare") ||

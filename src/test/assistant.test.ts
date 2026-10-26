@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { answerQuestion } from "@/lib/voto/assistant";
+import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import type { VotoData } from "@/lib/voto/types";
 
 const data: VotoData = {
@@ -39,5 +39,12 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è la mia media generale?", data)).toContain("7,00");
     expect(answerQuestion("Quanti compiti devo fare?", data)).toContain("1 compito");
     expect(answerQuestion("Quante assenze ho?", data)).toContain("2 giorni");
+  });
+
+  it("calcola la previsione dopo un voto ipotetico e riconosce un'azione", () => {
+    expect(answerQuestion("Che previsione media avrò se prendo 8 in Inglese?", data)).toContain(
+      "passerebbe",
+    );
+    expect(scheduleDayToClear("Cancella tutto l'orario di lunedì")).toBe("lunedi");
   });
 });

@@ -13,18 +13,24 @@ const STORAGE_KEY = "voto.orario";
 const HOURS = 6;
 
 export function emptySchedule(): Schedule {
-  return Object.fromEntries(DAYS.map(({ id }) => [id, Array.from({ length: HOURS }, () => "")])) as Schedule;
+  return Object.fromEntries(
+    DAYS.map(({ id }) => [id, Array.from({ length: HOURS }, () => "")]),
+  ) as Schedule;
 }
 
 export function loadSchedule(): Schedule {
   const fallback = emptySchedule();
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") as Partial<Schedule> | null;
+    const parsed = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) ?? "null",
+    ) as Partial<Schedule> | null;
     if (!parsed || typeof parsed !== "object") return fallback;
     return Object.fromEntries(
       DAYS.map(({ id }) => [
         id,
-        Array.from({ length: HOURS }, (_, index) => typeof parsed[id]?.[index] === "string" ? parsed[id][index] : ""),
+        Array.from({ length: HOURS }, (_, index) =>
+          typeof parsed[id]?.[index] === "string" ? parsed[id][index] : "",
+        ),
       ]),
     ) as Schedule;
   } catch {
@@ -38,4 +44,10 @@ export function saveSchedule(schedule: Schedule) {
   } catch {
     /* storage pieno o non disponibile */
   }
+}
+
+export function clearScheduleDay(schedule: Schedule, day: DayId): Schedule {
+  const next = { ...schedule, [day]: Array.from({ length: HOURS }, () => "") };
+  saveSchedule(next);
+  return next;
 }
