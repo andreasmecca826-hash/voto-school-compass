@@ -64,6 +64,7 @@ const MODES: { id: Mode; label: string; description: string }[] = [
 ];
 const THEMES: { id: Theme; label: string; description: string; sw: string }[] = [
   { id: "original", label: "Originale", description: "Lo stile VOTO attuale", sw: "linear-gradient(135deg,#151515,#e85d5d)" },
+  { id: "custom", label: "Personalizzato", description: "Crea il tuo tema direttamente nell’app", sw: "linear-gradient(135deg,#12151c,#61a7ff)" },
   { id: "lavender", label: "Lavender", description: "Morbido, lilla e rilassato", sw: "linear-gradient(135deg,#211832,#c4a7ff)" },
   { id: "cybercore", label: "Cybercore", description: "Neon, terminale e futuristico", sw: "linear-gradient(135deg,#050b0f,#00f0c8)" },
   { id: "brutalist", label: "Brutalist", description: "Netto, forte e senza fronzoli", sw: "linear-gradient(135deg,#f4f000,#111)" },
@@ -75,7 +76,6 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   { id: "estate", label: "Estate", description: "Sole, mare e colori vivaci", sw: "linear-gradient(135deg,#075985,#ffb84d)" },
   { id: "autunno", label: "Autunno", description: "Foglie, rame e atmosfera calda", sw: "linear-gradient(135deg,#49251c,#d97932)" },
   { id: "inverno", label: "Inverno", description: "Ghiaccio, neve e blu profondi", sw: "linear-gradient(135deg,#102a43,#bde7ff)" },
-  { id: "custom", label: "Personalizzato", description: "Crea il tuo tema direttamente nell’app", sw: "linear-gradient(135deg,#12151c,#61a7ff)" },
 ];
 const CUSTOM_COLORS: { key: keyof Pick<CustomTheme, "bgDark" | "cardDark" | "surfaceDark" | "fgDark" | "mutedDark" | "bgLight" | "cardLight" | "surfaceLight" | "fgLight" | "mutedLight" | "primary">; label: string }[] = [
   { key: "bgDark", label: "Sfondo scuro" }, { key: "cardDark", label: "Schede scure" }, { key: "surfaceDark", label: "Superfici scure" },
