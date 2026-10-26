@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Calculator, Sigma } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { useState } from "react";
 import { useUi } from "@/components/voto/AppShell";
-import { GenericAverageSheet } from "@/components/voto/GenericAverageSheet";
 import { Chip, GradePill, ProgressBar, SubjectMark } from "@/components/voto/ui";
 import { fmt, subjectStats } from "@/lib/voto/calc";
 import { useVoto } from "@/lib/voto/store";
@@ -25,7 +24,6 @@ function Voti() {
   const v = useVoto();
   const ui = useUi();
   const [sort, setSort] = useState<Sort>("nome");
-  const [genericAverageOpen, setGenericAverageOpen] = useState(false);
   const list = v.data.subjects
     .map((s) => ({ s, st: subjectStats(s) }))
     .sort((a, b) =>
@@ -37,24 +35,15 @@ function Voti() {
     );
   return (
     <div className="pt-3">
-      <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="font-display text-2xl font-semibold">Voti</h1>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setGenericAverageOpen(true)}
-            className="press inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary-soft px-3 text-xs font-semibold text-primary"
-          >
-            <Sigma className="h-4 w-4" /> Media generica
-          </button>
-          <button
-            type="button"
-            onClick={() => ui.openSimulator()}
-            className="press inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground"
-          >
-            <Calculator className="h-4 w-4" /> Simulatore
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => ui.openSimulator()}
+          className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-soft px-3 text-xs font-medium text-primary"
+        >
+          <Calculator className="h-4 w-4" /> Simulatore
+        </button>
       </div>
       <div className="no-scrollbar mt-4 flex gap-2 overflow-x-auto">
         <Chip active={sort === "nome"} onClick={() => setSort("nome")}>
@@ -89,7 +78,6 @@ function Voti() {
           </li>
         ))}
       </ul>
-      <GenericAverageSheet open={genericAverageOpen} onOpenChange={setGenericAverageOpen} />
     </div>
   );
 }
