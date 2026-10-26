@@ -17,6 +17,7 @@ import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
 import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
 import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as PersonalizzaRouteImport } from './routes/personalizza'
+import { Route as ProfessoriRouteImport } from './routes/professori'
 import { Route as VotiRouteImport } from './routes/voti'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +60,11 @@ const PersonalizzaRoute = PersonalizzaRouteImport.update({
   path: '/personalizza',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfessoriRoute = ProfessoriRouteImport.update({
+  id: '/professori',
+  path: '/professori',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VotiRoute = VotiRouteImport.update({
   id: '/voti',
   path: '/voti',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/interrogazioni': typeof InterrogazioniRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
+  '/professori': typeof ProfessoriRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/interrogazioni': typeof InterrogazioniRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
+  '/professori': typeof ProfessoriRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/interrogazioni': typeof InterrogazioniRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
+  '/professori': typeof ProfessoriRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/interrogazioni'
     | '/orario'
     | '/personalizza'
+    | '/professori'
     | '/voti'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/interrogazioni'
     | '/orario'
     | '/personalizza'
+    | '/professori'
     | '/voti'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/interrogazioni'
     | '/orario'
     | '/personalizza'
+    | '/professori'
     | '/voti'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   InterrogazioniRoute: typeof InterrogazioniRoute
   OrarioRoute: typeof OrarioRoute
   PersonalizzaRoute: typeof PersonalizzaRoute
+  ProfessoriRoute: typeof ProfessoriRoute
   VotiRoute: typeof VotiRoute
 }
 
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonalizzaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/professori': {
+      id: '/professori'
+      path: '/professori'
+      fullPath: '/professori'
+      preLoaderRoute: typeof ProfessoriRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/voti': {
       id: '/voti'
       path: '/voti'
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   InterrogazioniRoute: InterrogazioniRoute,
   OrarioRoute: OrarioRoute,
   PersonalizzaRoute: PersonalizzaRoute,
+  ProfessoriRoute: ProfessoriRoute,
   VotiRoute: VotiRoute,
 }
 export const routeTree = rootRouteImport

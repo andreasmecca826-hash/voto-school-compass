@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Settings,
   Trophy,
+  UsersRound,
   X,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -65,6 +66,13 @@ const MORE_NAV = [
     description: "Attività svolte in classe",
     icon: ClipboardList,
     color: "#16a5b8",
+  },
+  {
+    to: "/professori",
+    label: "Professori",
+    description: "Docenti e materie",
+    icon: UsersRound,
+    color: "#4f9bd9",
   },
   {
     to: "/assistente",
@@ -316,7 +324,7 @@ function MoreMenu({
       </div>
       <div className="grid grid-cols-2 gap-3">
         {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
-          const active = to === "/" ? currentPath === "/" : currentPath.startsWith(to);
+          const active = currentPath.startsWith(to);
           const cardContent = (
             <>
               <span
