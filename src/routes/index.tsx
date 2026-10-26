@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
 import { CircularViewer } from "@/components/voto/CircularViewer";
+import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
 import { NOTIF_META } from "@/components/voto/NotificationsSheet";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
@@ -361,6 +362,7 @@ function Dashboard() {
         {isHomeModuleVisible("bacheca") && (
           <div style={{ order: homeOrder("bacheca") }}>
             <SectionTitle>Bacheca</SectionTitle>
+            <CircularCheckControl />
             {bulletin.length === 0 ? (
               <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" />
             ) : (
