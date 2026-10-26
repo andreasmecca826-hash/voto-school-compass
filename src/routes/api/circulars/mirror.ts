@@ -39,7 +39,7 @@ function validSourceUrl(value: unknown): value is string {
 }
 
 function validPath(value: unknown): value is string {
-  return typeof value === "string" && /^circulars\/[a-zA-Z0-9._/-]+\.pdf$/.test(value);
+  return typeof value === "string" && /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
 }
 
 async function sha256(value: string) {

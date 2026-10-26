@@ -21,7 +21,7 @@ Gli ultimi dati validi restano salvati sul dispositivo; i compiti completati son
 
 ## PDF delle circolari
 
-Le circolari possono continuare a ricevere `attachmentUrl` nel JSON come sorgente legacy. Al caricamento, il backend scarica il PDF, lo salva nel bucket privato Supabase Storage e usa il percorso interno `attachmentPath`; il visualizzatore passa dall'endpoint interno dell'app, che legge il file con le credenziali server-only e lo restituisce inline. In questo modo il browser non accede direttamente al bucket e non riceve errori `AccessDenied`. Configura sul server le variabili in `.env.example` e crea il bucket indicato come privato.
+Il monitor DidUP scarica gli allegati usando la propria sessione autenticata e li carica direttamente nel bucket privato Supabase Storage. Nel JSON salva il percorso `attachmentPath`, non un link Argo da scaricare nuovamente. L'app apre il PDF tramite `/api/circulars/mirror`, che lo legge dal bucket con credenziali server-only e lo restituisce inline. Configura nell'ambiente server dell'app `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` (oppure `SUPABASE_KEY`) e crea il bucket privato `circulars`. Nel repository del monitor configura anche i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`; non usare mai la service-role key con prefisso `VITE_`.
 
 ## APK Android (Capacitor)
 

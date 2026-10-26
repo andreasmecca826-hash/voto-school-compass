@@ -49,11 +49,18 @@ export async function mirrorCirculars(data: VotoData): Promise<VotoData> {
     data.notifications.map(async (notification): Promise<AppNotification> => {
       if (notification.type !== "notice") return notification;
 
-      const result = notification.attachmentPath
-        ? await postJson<MirrorResponse>({ path: notification.attachmentPath })
-        : notification.attachmentUrl
-          ? await postJson<MirrorResponse>({ sourceUrl: notification.attachmentUrl })
-          : null;
+      if (
+        notification.attachmentPath &&
+        /^circulars\/[a-f0-9]{64}\.pdf$/.test(notification.attachmentPath)
+      ) {
+        return {
+          ...notification,
+          attachmentUrl: `/api/circulars/mirror?path=${encodeURIComponent(notification.attachmentPath)}`,
+        };
+      }
+      const result = notification.attachmentUrl
+        ? await postJson<MirrorResponse>({ sourceUrl: notification.attachmentUrl })
+        : null;
 
       if (!result?.path || !result.signedUrl) return notification;
       return {
