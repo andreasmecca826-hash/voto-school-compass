@@ -20,7 +20,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Deploy mirror-circular
         run: supabase functions deploy mirror-circular --project-ref jmvxuhgjejzpezvawzfw
