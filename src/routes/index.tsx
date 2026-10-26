@@ -452,7 +452,7 @@ function GoalWidget({ avg }: { avg: number | null }) {
   if (avg !== null && gap !== null && graded.length) {
     if (gap <= 0) estimate = "Obiettivo raggiunto: mantieni il ritmo.";
     else {
-      const weakest = [...graded].sort((a, b) => average(a.grades)! - average(b.grades)!)[0];
+      const weakest = [...graded].sort((a, b) => average(a.grades)! - average(b.grades)!)[0]!;
       const sum = graded.reduce((t, s) => t + average(s.grades)!, 0);
       const needAvg = v.target * graded.length - sum + average(weakest.grades)!;
       const r = needAvg <= 10 ? neededGrade(weakest.grades, needAvg, 1) : null;
@@ -491,7 +491,7 @@ function GoalWidget({ avg }: { avg: number | null }) {
           max={10}
           step={0.25}
           value={[v.target]}
-          onValueChange={([x]) => v.setTarget(x)}
+          onValueChange={(val) => v.setTarget(val[0] ?? v.target)}
           aria-label="Obiettivo media generale"
         />
         <div className="mt-4">
