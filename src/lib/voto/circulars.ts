@@ -2,11 +2,24 @@ import type { AppNotification, VotoData } from "./types";
 
 type MirrorResponse = { path: string; signedUrl: string };
 
+function supabaseFunctionUrl() {
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const key =
+    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
+    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);
+  if (!url || !key) return null;
+  return { url: `${url.replace(/\/$/, "")}/functions/v1/mirror-circular`, key };
+}
+
 async function postJson<T>(body: Record<string, string>): Promise<T | null> {
   try {
-    const res = await fetch("/api/circulars/mirror", {
+    const supabase = supabaseFunctionUrl();
+    const res = await fetch(supabase?.url ?? "/api/circulars/mirror", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(supabase ? { apikey: supabase.key, Authorization: `Bearer ${supabase.key}` } : {}),
+      },
       body: JSON.stringify(body),
     });
     if (!res.ok) return null;
