@@ -52,12 +52,27 @@ Deno.serve(async (request) => {
       path = body.path;
     } else if (validSourceUrl(body.sourceUrl)) {
       const source = await fetch(body.sourceUrl, { redirect: "follow" });
-      if (!source.ok) return response({ error: `Sorgente PDF: HTTP ${source.status}` }, 502);
+      if (!source.ok) {
+        console.error("mirror-circular source fetch failed", {
+          host: new URL(body.sourceUrl).host,
+          status: source.status,
+        });
+        return response({ error: `Sorgente PDF: HTTP ${source.status}` }, 502);
+      }
       const contentLength = Number(source.headers.get("content-length") ?? 0);
-      if (contentLength > MAX_BYTES) return response({ error: "PDF oltre 25 MB" }, 413);
+      if (contentLength > MAX_BYTES) {
+        console.error("mirror-circular source exceeds size limit", { contentLength });
+        return response({ error: "PDF oltre 25 MB" }, 413);
+      }
       const bytes = new Uint8Array(await source.arrayBuffer());
-      if (bytes.byteLength > MAX_BYTES) return response({ error: "PDF oltre 25 MB" }, 413);
+      if (bytes.byteLength > MAX_BYTES) {
+        console.error("mirror-circular source exceeds size limit", { byteLength: bytes.byteLength });
+        return response({ error: "PDF oltre 25 MB" }, 413);
+      }
       if (new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-") {
+        console.error("mirror-circular source is not a PDF", {
+          contentType: source.headers.get("content-type"),
+        });
         return response({ error: "La risorsa non è un PDF valido" }, 400);
       }
 
@@ -67,13 +82,17 @@ Deno.serve(async (request) => {
         upsert: true,
         cacheControl: "31536000",
       });
-      if (error) return response({ error: `Upload Storage: ${error.message}` }, 502);
+      if (error) {
+        console.error("mirror-circular Storage upload failed", error.message);
+        return response({ error: `Upload Storage: ${error.message}` }, 502);
+      }
     } else {
       return response({ error: "sourceUrl o path non valido" }, 400);
     }
 
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
     if (error || !data?.signedUrl) {
+      console.error("mirror-circular signed URL failed", error?.message ?? "URL non disponibile");
       return response({ error: error?.message ?? "URL firmato non disponibile" }, 502);
     }
     return response({ path, signedUrl: data.signedUrl });
