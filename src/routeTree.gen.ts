@@ -15,6 +15,7 @@ import { Route as CompitiRouteImport } from './routes/compiti'
 import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
 import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
+import { Route as NoteRouteImport } from './routes/note'
 import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as PersonalizzaRouteImport } from './routes/personalizza'
 import { Route as ProfessoriRouteImport } from './routes/professori'
@@ -51,6 +52,11 @@ const InterrogazioniRoute = InterrogazioniRouteImport.update({
   path: '/interrogazioni',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NoteRoute = NoteRouteImport.update({
+  id: '/note',
+  path: '/note',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrarioRoute = OrarioRouteImport.update({
   id: '/orario',
   path: '/orario',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/note'
     | '/orario'
     | '/personalizza'
     | '/professori'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/note'
     | '/orario'
     | '/personalizza'
     | '/professori'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/note'
     | '/orario'
     | '/personalizza'
     | '/professori'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   DiarioRoute: typeof DiarioRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
   InterrogazioniRoute: typeof InterrogazioniRoute
+  NoteRoute: typeof NoteRoute
   OrarioRoute: typeof OrarioRoute
   PersonalizzaRoute: typeof PersonalizzaRoute
   ProfessoriRoute: typeof ProfessoriRoute
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterrogazioniRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/note': {
+      id: '/note'
+      path: '/note'
+      fullPath: '/note'
+      preLoaderRoute: typeof NoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orario': {
       id: '/orario'
       path: '/orario'
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiarioRoute: DiarioRoute,
   ImpostazioniRoute: ImpostazioniRoute,
   InterrogazioniRoute: InterrogazioniRoute,
+  NoteRoute: NoteRoute,
   OrarioRoute: OrarioRoute,
   PersonalizzaRoute: PersonalizzaRoute,
   ProfessoriRoute: ProfessoriRoute,

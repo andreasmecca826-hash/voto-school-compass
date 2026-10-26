@@ -15,6 +15,7 @@ import {
   Palette,
   RefreshCw,
   Settings,
+  StickyNote,
   Trophy,
   UsersRound,
   X,
@@ -66,6 +67,13 @@ const MORE_NAV = [
     description: "Attività svolte in classe",
     icon: ClipboardList,
     color: "#16a5b8",
+  },
+  {
+    to: "/note",
+    label: "Note",
+    description: "Note disciplinari",
+    icon: StickyNote,
+    color: "#f28f78",
   },
   {
     to: "/professori",
