@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, ClipboardList, Clock3, GraduationCap, LayoutGrid, Menu, RefreshCw, Settings, Trophy, X } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare, ClipboardList, Clock3, GraduationCap, LayoutGrid, Menu, RefreshCw, Settings, Trophy, X } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -154,7 +154,7 @@ function MoreMenu({ v, onClose, onNotifications, onAchievements, onSimulator }: 
   return (
     <section className="pt-4 pb-5" aria-label="Menu principale">
       <div className="mb-5 flex items-start justify-between">
-        <div><h1 className="font-display text-3xl font-light tracking-tight">Menu</h1><p className="mt-1 text-lg uppercase tracking-wide text-muted-foreground">{studentName}</p></div>
+        <div><button type="button" onClick={onClose} className="press mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Indietro</button><h1 className="font-display text-3xl font-light tracking-tight">Menu</h1><p className="mt-1 text-lg uppercase tracking-wide text-muted-foreground">{studentName}</p></div>
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary"><GraduationCap className="h-7 w-7" /></span>
       </div>
       <div className="grid grid-cols-2 gap-3">
