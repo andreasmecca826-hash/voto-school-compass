@@ -1,4 +1,4 @@
-import type { AppNotification, Assignment, Attendance, Grade, GradeType, NotificationType, Subject, VotoData } from "./types";
+import type { AppNotification, Assignment, Attendance, DiaryEntry, Grade, GradeType, NotificationType, Subject, VotoData } from "./types";
 
 export class SchemaError extends Error {}
 
@@ -91,6 +91,18 @@ export function parseVotoData(raw: unknown): VotoData {
       read: n.read === true,
     }));
 
+  const diary: DiaryEntry[] = (Array.isArray(raw.diary) ? raw.diary : [])
+    .filter(isObj)
+    .map((entry, i) => ({
+      id: str(entry.id) ?? `diary-${i}`,
+      date: str(entry.date) ?? "",
+      subject: str(entry.subject),
+      teacher: str(entry.teacher),
+      hour: str(entry.hour),
+      activity: str(entry.activity) ?? "Attività non specificata",
+    }))
+    .filter((entry) => entry.date || entry.activity);
+
   const st = isObj(raw.student) ? raw.student : {};
   const prev = typeof raw.previousAverage === "number" && Number.isFinite(raw.previousAverage) ? raw.previousAverage : undefined;
   const attendanceRaw = isObj(raw.attendance) ? raw.attendance : {};
@@ -110,6 +122,7 @@ export function parseVotoData(raw: unknown): VotoData {
     subjects,
     assignments,
     notifications,
+    diary,
     attendance,
   };
 }

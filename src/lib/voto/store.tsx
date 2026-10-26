@@ -109,6 +109,7 @@ const EMPTY: VotoData = {
   subjects: [],
   assignments: [],
   notifications: [],
+  diary: [],
   attendance: { absenceDays: 0, absenceHours: 0, delays: 0, earlyExits: 0, annualHours: 990, absenceLimitHours: 264 },
 };
 

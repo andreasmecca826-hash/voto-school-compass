@@ -53,6 +53,15 @@ export interface Attendance {
   absenceLimitHours: number;
 }
 
+export interface DiaryEntry {
+  id: string;
+  date: string;
+  subject?: string;
+  teacher?: string;
+  hour?: string;
+  activity: string;
+}
+
 export interface Student {
   name?: string;
   className?: string;
@@ -66,6 +75,7 @@ export interface VotoData {
   subjects: Subject[];
   assignments: Assignment[];
   notifications: AppNotification[];
+  diary: DiaryEntry[];
   attendance: Attendance;
 }
 

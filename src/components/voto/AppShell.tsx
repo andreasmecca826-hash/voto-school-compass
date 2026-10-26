@@ -31,6 +31,7 @@ const MORE_NAV = [
   { to: "/compiti", label: "Compiti assegnati", description: "Attività e scadenze", icon: CheckSquare, color: "#6675e8" },
   { to: "/interrogazioni", label: "Interrogazioni", description: "Date e preparazione", icon: CalendarDays, color: "#a66be1" },
   { to: "/orario", label: "Orario", description: "Lezioni della settimana", icon: Clock3, color: "#ea8dae" },
+  { to: "/diario", label: "Diario", description: "Attività svolte in classe", icon: ClipboardList, color: "#16a5b8" },
   { to: "/impostazioni", label: "Impostazioni", description: "Personalizza VOTO.", icon: Settings, color: "#19aab6" },
 ] as const;
 

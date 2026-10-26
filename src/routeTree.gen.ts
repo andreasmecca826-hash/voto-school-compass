@@ -11,7 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompitiRouteImport } from './routes/compiti'
+import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
+import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
+import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as VotiRouteImport } from './routes/voti'
 
 const IndexRoute = IndexRouteImport.update({
@@ -24,9 +27,24 @@ const CompitiRoute = CompitiRouteImport.update({
   path: '/compiti',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiarioRoute = DiarioRouteImport.update({
+  id: '/diario',
+  path: '/diario',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ImpostazioniRoute = ImpostazioniRouteImport.update({
   id: '/impostazioni',
   path: '/impostazioni',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterrogazioniRoute = InterrogazioniRouteImport.update({
+  id: '/interrogazioni',
+  path: '/interrogazioni',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrarioRoute = OrarioRouteImport.update({
+  id: '/orario',
+  path: '/orario',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VotiRoute = VotiRouteImport.update({
@@ -38,34 +56,68 @@ const VotiRoute = VotiRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compiti': typeof CompitiRoute
+  '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
+  '/interrogazioni': typeof InterrogazioniRoute
+  '/orario': typeof OrarioRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compiti': typeof CompitiRoute
+  '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
+  '/interrogazioni': typeof InterrogazioniRoute
+  '/orario': typeof OrarioRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/compiti': typeof CompitiRoute
+  '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
+  '/interrogazioni': typeof InterrogazioniRoute
+  '/orario': typeof OrarioRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/compiti' | '/impostazioni' | '/voti'
+  fullPaths:
+    | '/'
+    | '/compiti'
+    | '/diario'
+    | '/impostazioni'
+    | '/interrogazioni'
+    | '/orario'
+    | '/voti'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/compiti' | '/impostazioni' | '/voti'
-  id: '__root__' | '/' | '/compiti' | '/impostazioni' | '/voti'
+  to:
+    | '/'
+    | '/compiti'
+    | '/diario'
+    | '/impostazioni'
+    | '/interrogazioni'
+    | '/orario'
+    | '/voti'
+  id:
+    | '__root__'
+    | '/'
+    | '/compiti'
+    | '/diario'
+    | '/impostazioni'
+    | '/interrogazioni'
+    | '/orario'
+    | '/voti'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompitiRoute: typeof CompitiRoute
+  DiarioRoute: typeof DiarioRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
+  InterrogazioniRoute: typeof InterrogazioniRoute
+  OrarioRoute: typeof OrarioRoute
   VotiRoute: typeof VotiRoute
 }
 
@@ -85,11 +137,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompitiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/diario': {
+      id: '/diario'
+      path: '/diario'
+      fullPath: '/diario'
+      preLoaderRoute: typeof DiarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/impostazioni': {
       id: '/impostazioni'
       path: '/impostazioni'
       fullPath: '/impostazioni'
       preLoaderRoute: typeof ImpostazioniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interrogazioni': {
+      id: '/interrogazioni'
+      path: '/interrogazioni'
+      fullPath: '/interrogazioni'
+      preLoaderRoute: typeof InterrogazioniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orario': {
+      id: '/orario'
+      path: '/orario'
+      fullPath: '/orario'
+      preLoaderRoute: typeof OrarioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/voti': {
@@ -105,7 +178,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompitiRoute: CompitiRoute,
+  DiarioRoute: DiarioRoute,
   ImpostazioniRoute: ImpostazioniRoute,
+  InterrogazioniRoute: InterrogazioniRoute,
+  OrarioRoute: OrarioRoute,
   VotiRoute: VotiRoute,
 }
 export const routeTree = rootRouteImport
