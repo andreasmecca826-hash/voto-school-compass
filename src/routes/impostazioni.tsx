@@ -320,13 +320,10 @@ function Settings() {
         className="card-surface cursor-pointer p-4 text-xs text-muted-foreground"
       >
         <p>
-          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 2.1.0 ·
+          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 2.2.0 ·
           made by Andrew Smecca
         </p>
-        <p className="mt-2">
-          Installabile dal browser (Aggiungi a schermata Home). Per l'APK Android segui la guida
-          Capacitor nel README.
-        </p>
+        <p className="mt-2">Per l'APK Android segui la guida Capacitor nel README.</p>
       </section>
 
       {debugOpen && v.source === "demo" && (
