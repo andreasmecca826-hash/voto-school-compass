@@ -14,6 +14,14 @@ import { fetchVotoData } from "./parse";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
+import {
+  DEFAULT_HOME_MODULES,
+  normalizeHomeModules,
+  normalizeHomeScale,
+  type HomeModuleConfig,
+  type HomeModuleId,
+} from "./home-customization";
+export type { HomeModuleConfig, HomeModuleId } from "./home-customization";
 
 export type Accent =
   | "rosso"
@@ -90,54 +98,6 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
   radius: 1,
   font: "sans",
 };
-export type HomeModuleId =
-  | "media"
-  | "simulatore"
-  | "presenze"
-  | "compiti"
-  | "interrogazioni"
-  | "note"
-  | "promemoria"
-  | "bacheca"
-  | "obiettivo";
-export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
-
-export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
-  { id: "media", enabled: true },
-  { id: "simulatore", enabled: true },
-  { id: "presenze", enabled: true },
-  { id: "compiti", enabled: true },
-  { id: "interrogazioni", enabled: true },
-  { id: "note", enabled: true },
-  { id: "promemoria", enabled: true },
-  { id: "bacheca", enabled: true },
-  { id: "obiettivo", enabled: true },
-];
-
-function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
-  if (!Array.isArray(value)) return DEFAULT_HOME_MODULES;
-  const ids = new Set<HomeModuleId>();
-  const result: HomeModuleConfig[] = [];
-  value.forEach((item) => {
-    const id = typeof item === "string" ? item : (item as HomeModuleConfig)?.id;
-    if (
-      typeof id === "string" &&
-      DEFAULT_HOME_MODULES.some((m) => m.id === id) &&
-      !ids.has(id as HomeModuleId)
-    ) {
-      ids.add(id as HomeModuleId);
-      result.push({
-        id: id as HomeModuleId,
-        enabled: typeof item === "string" ? true : (item as HomeModuleConfig).enabled !== false,
-      });
-    }
-  });
-  DEFAULT_HOME_MODULES.forEach((m) => {
-    if (!ids.has(m.id)) result.push(m);
-  });
-  return result;
-}
-
 function normalizeInterrogazioni(value: unknown): Interrogazione[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -176,6 +136,7 @@ interface Ctx {
   theme: Theme;
   customTheme: CustomTheme;
   homeModules: HomeModuleConfig[];
+  homeScale: number;
   interrogazioni: Interrogazione[];
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
@@ -198,6 +159,8 @@ interface Ctx {
   resetCustomTheme: () => void;
   toggleHomeModule: (id: HomeModuleId) => void;
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
+  setHomeScale: (scale: number) => void;
+  setHomeModuleScale: (id: HomeModuleId, scale: number) => void;
   resetHomeModules: () => void;
   addInterrogazione: (item: Omit<Interrogazione, "id" | "completed" | "checklist">) => void;
   toggleInterrogazione: (id: string) => void;
@@ -244,6 +207,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeS] = useState<Theme>("original");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
+  const [homeScale, setHomeScaleS] = useState(100);
   const [interrogazioni, setInterrogazioni] = useState<Interrogazione[]>([]);
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
@@ -300,6 +264,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       ...load<Partial<CustomTheme>>(KEYS.customTheme, {}),
     });
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
+    setHomeScaleS(normalizeHomeScale(load(KEYS.homeScale, 100)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
     const demoData = load<VotoData | null>(KEYS.demoData, null);
@@ -375,6 +340,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       theme,
       customTheme,
       homeModules,
+      homeScale,
       interrogazioni,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
@@ -502,9 +468,24 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           save(KEYS.homeModules, next);
           return next;
         }),
+      setHomeScale: (scale) => {
+        const next = normalizeHomeScale(scale);
+        setHomeScaleS(next);
+        save(KEYS.homeScale, next);
+      },
+      setHomeModuleScale: (id, scale) =>
+        setHomeModulesS((current) => {
+          const next = current.map((module) =>
+            module.id === id ? { ...module, scale: normalizeHomeScale(scale) } : module,
+          );
+          save(KEYS.homeModules, next);
+          return next;
+        }),
       resetHomeModules: () => {
         setHomeModulesS(DEFAULT_HOME_MODULES);
         save(KEYS.homeModules, DEFAULT_HOME_MODULES);
+        setHomeScaleS(100);
+        save(KEYS.homeScale, 100);
       },
       addInterrogazione: (item) =>
         setInterrogazioni((current) => {
@@ -572,6 +553,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       density,
       reduceMotion,
       refreshImpl,
+      homeScale,
     ],
   );
 

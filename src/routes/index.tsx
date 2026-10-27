@@ -88,6 +88,8 @@ function Dashboard() {
   const isHomeModuleVisible = (id: string) =>
     v.homeModules.find((module) => module.id === id)?.enabled ?? false;
   const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
+  const homeModuleScale = (id: string) =>
+    (v.homeModules.find((module) => module.id === id)?.scale ?? 100) / 100;
 
   const micro =
     avg === null
@@ -103,7 +105,7 @@ function Dashboard() {
               : "Serve un recupero mirato: usa il simulatore.";
 
   return (
-    <div className="pt-3">
+    <div className="pt-3" style={{ zoom: v.homeScale / 100 }}>
       {v.source === "demo" && (
         <Link
           to="/impostazioni"
@@ -122,7 +124,7 @@ function Dashboard() {
 
       <div className="flex flex-col">
         {isHomeModuleVisible("media") && (
-          <div style={{ order: homeOrder("media") }}>
+          <div style={{ order: homeOrder("media"), zoom: homeModuleScale("media") }}>
             <section
               className="card-surface relative overflow-hidden p-5"
               aria-label="Media generale"
@@ -179,7 +181,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("simulatore") && (
-          <div style={{ order: homeOrder("simulatore") }}>
+          <div style={{ order: homeOrder("simulatore"), zoom: homeModuleScale("simulatore") }}>
             <button
               type="button"
               onClick={() => ui.openSimulator()}
@@ -200,7 +202,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("presenze") && (
-          <div style={{ order: homeOrder("presenze") }}>
+          <div style={{ order: homeOrder("presenze"), zoom: homeModuleScale("presenze") }}>
             <SectionTitle>Presenze</SectionTitle>
             <section className="card-surface p-4">
               <div className="mb-4 grid grid-cols-2 rounded-xl border border-border bg-surface p-1">
@@ -281,7 +283,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("compiti") && (
-          <div style={{ order: homeOrder("compiti") }}>
+          <div style={{ order: homeOrder("compiti"), zoom: homeModuleScale("compiti") }}>
             <SectionTitle
               action={
                 <Link to="/compiti" className="text-xs font-medium text-primary">
@@ -308,7 +310,9 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("interrogazioni") && (
-          <div style={{ order: homeOrder("interrogazioni") }}>
+          <div
+            style={{ order: homeOrder("interrogazioni"), zoom: homeModuleScale("interrogazioni") }}
+          >
             <SectionTitle
               action={
                 <Link to="/interrogazioni" className="text-xs font-medium text-primary">
@@ -351,7 +355,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("note") && (
-          <div style={{ order: homeOrder("note") }}>
+          <div style={{ order: homeOrder("note"), zoom: homeModuleScale("note") }}>
             <SectionTitle>Note</SectionTitle>
             {notes.length === 0 ? (
               <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" />
@@ -366,7 +370,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("promemoria") && (
-          <div style={{ order: homeOrder("promemoria") }}>
+          <div style={{ order: homeOrder("promemoria"), zoom: homeModuleScale("promemoria") }}>
             <SectionTitle
               action={
                 <Link to="/promemoria" className="text-xs font-medium text-primary">
@@ -393,7 +397,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("bacheca") && (
-          <div style={{ order: homeOrder("bacheca") }}>
+          <div style={{ order: homeOrder("bacheca"), zoom: homeModuleScale("bacheca") }}>
             <SectionTitle>Bacheca</SectionTitle>
             <CircularCheckControl />
             {bulletin.length === 0 ? (
@@ -409,7 +413,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("obiettivo") && (
-          <div style={{ order: homeOrder("obiettivo") }}>
+          <div style={{ order: homeOrder("obiettivo"), zoom: homeModuleScale("obiettivo") }}>
             <GoalWidget avg={avg} />
           </div>
         )}

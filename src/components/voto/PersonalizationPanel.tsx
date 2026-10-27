@@ -332,46 +332,111 @@ export function PersonalizationPanel() {
         <SectionTitle>Moduli Home</SectionTitle>
         <section className="card-surface overflow-hidden p-2">
           <p className="px-2 pb-2 pt-1 text-[11px] text-muted-foreground">
-            Attiva i moduli e usa le frecce per scegliere l’ordine.
+            Attiva i moduli, ridimensionali con i cursori e usa le frecce per riordinarli.
           </p>
+          <div className="mb-3 rounded-xl border border-border bg-surface/40 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="home-scale" className="text-xs font-semibold">
+                Dimensione generale Home
+              </label>
+              <output className="tabular text-xs font-semibold text-primary" htmlFor="home-scale">
+                {v.homeScale}%
+              </output>
+            </div>
+            <input
+              id="home-scale"
+              type="range"
+              min={80}
+              max={120}
+              step={5}
+              value={v.homeScale}
+              onChange={(event) => v.setHomeScale(Number(event.target.value))}
+              aria-label="Dimensione generale della Home"
+              className="mt-3 w-full accent-primary"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>80%</span>
+              <span>120%</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => v.setHomeScale(100)}
+              disabled={v.homeScale === 100}
+              className="mt-2 text-[11px] font-medium text-primary disabled:text-muted-foreground"
+            >
+              Ripristina 100%
+            </button>
+          </div>
           <div className="space-y-1">
             {v.homeModules.map((module, index) => {
               const meta = HOME_MODULE_META.find((item) => item.id === module.id)!;
               return (
                 <div
                   key={module.id}
-                  className={cn(
-                    "flex items-center gap-2 rounded-xl p-2",
-                    !module.enabled && "opacity-50",
-                  )}
+                  className={cn("rounded-xl p-2", !module.enabled && "opacity-50")}
                 >
-                  <button
-                    type="button"
-                    onClick={() => v.toggleHomeModule(module.id)}
-                    aria-label={module.enabled ? `Nascondi ${meta.label}` : `Mostra ${meta.label}`}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted-foreground"
-                  >
-                    {module.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                  <span className="min-w-0 flex-1 text-sm">{meta.label}</span>
-                  <button
-                    type="button"
-                    disabled={index === 0}
-                    onClick={() => v.moveHomeModule(module.id, -1)}
-                    aria-label={`Sposta ${meta.label} su`}
-                    className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === v.homeModules.length - 1}
-                    onClick={() => v.moveHomeModule(module.id, 1)}
-                    aria-label={`Sposta ${meta.label} giù`}
-                    className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => v.toggleHomeModule(module.id)}
+                      aria-label={
+                        module.enabled ? `Nascondi ${meta.label}` : `Mostra ${meta.label}`
+                      }
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted-foreground"
+                    >
+                      {module.enabled ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </button>
+                    <span className="min-w-0 flex-1 text-sm">{meta.label}</span>
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      onClick={() => v.moveHomeModule(module.id, -1)}
+                      aria-label={`Sposta ${meta.label} su`}
+                      className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === v.homeModules.length - 1}
+                      onClick={() => v.moveHomeModule(module.id, 1)}
+                      aria-label={`Sposta ${meta.label} giù`}
+                      className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 pl-11">
+                    <label
+                      htmlFor={`home-module-scale-${module.id}`}
+                      className="w-16 shrink-0 text-[10px] text-muted-foreground"
+                    >
+                      Dimensione
+                    </label>
+                    <input
+                      id={`home-module-scale-${module.id}`}
+                      type="range"
+                      min={80}
+                      max={120}
+                      step={5}
+                      value={module.scale}
+                      onChange={(event) =>
+                        v.setHomeModuleScale(module.id, Number(event.target.value))
+                      }
+                      aria-label={`Dimensione del modulo ${meta.label}`}
+                      className="min-w-0 flex-1 accent-primary"
+                    />
+                    <output
+                      className="tabular w-9 text-right text-[10px] font-semibold text-primary"
+                      htmlFor={`home-module-scale-${module.id}`}
+                    >
+                      {module.scale}%
+                    </output>
+                  </div>
                 </div>
               );
             })}
@@ -381,7 +446,7 @@ export function PersonalizationPanel() {
             onClick={v.resetHomeModules}
             className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground"
           >
-            <RotateCcw className="h-3.5 w-3.5" /> Ripristina ordine Home
+            <RotateCcw className="h-3.5 w-3.5" /> Ripristina la Home
           </button>
         </section>
       </div>
