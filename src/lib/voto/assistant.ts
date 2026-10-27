@@ -471,9 +471,16 @@ export function answerQuestion(
         : `Hai superato il limite di ${number(absenceLimitHours)} ore di ${number(Math.abs(remaining))} ore.`;
   }
 
-  if (normalized.includes("assenze") || normalized.includes("ritardi")) {
+  if (
+    normalized.includes("assenza") ||
+    normalized.includes("assenze") ||
+    normalized.includes("ritardo") ||
+    normalized.includes("ritardi")
+  ) {
     const { attendance } = data;
-    return `Hai ${attendance.absenceDays} giorni e ${number(attendance.absenceHours)} ore di assenza, con ${attendance.delays} ritardi. Il limite impostato è ${number(attendance.absenceLimitHours)} ore.`;
+    const daysLabel = attendance.absenceDays === 1 ? "giorno" : "giorni";
+    const delaysLabel = attendance.delays === 1 ? "ritardo" : "ritardi";
+    return `Hai ${attendance.absenceDays} ${daysLabel} e ${number(attendance.absenceHours)} ore di assenza, con ${attendance.delays} ${delaysLabel}. Il limite impostato è ${number(attendance.absenceLimitHours)} ore.`;
   }
 
   if (normalized.includes("compiti") || normalized.includes("scadenze")) {
@@ -534,5 +541,5 @@ export function answerQuestion(
       : "Non ci sono ancora attività nel Diario.";
   }
 
-  return "Posso aiutarti con medie, voti e andamento, materie insufficienti, docenti, orario, interrogazioni in agenda, compiti e scadenze, circolari, Diario e presenze. Prova: “Quali sono le prossime interrogazioni?” o “Quanto mi manca al limite delle assenze?”";
+  return "Non ho capito la domanda. Prova a riformularla o scegli uno dei suggerimenti qui sotto.";
 }

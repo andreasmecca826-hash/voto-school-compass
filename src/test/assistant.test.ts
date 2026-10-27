@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import type { Interrogazione } from "@/lib/voto/interrogazioni";
 import { emptySchedule } from "@/lib/voto/orario";
 import type { VotoData } from "@/lib/voto/types";
@@ -193,5 +194,21 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Quanto mi manca al limite delle assenze?", data)).toContain(
       "ti restano 252,00 ore",
     );
+    expect(answerQuestion("Quante ore di assenza ho?", data)).toContain("12,00 ore di assenza");
+    expect(answerQuestion("Quante ore di assenza ho?", data)).toContain("con 1 ritardo");
+  });
+
+  it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
+    const first = pickAssistantSuggestions(() => 0);
+    const second = pickAssistantSuggestions(() => 0.99);
+
+    expect(first).toHaveLength(2);
+    expect(new Set(first).size).toBe(2);
+    expect(second).toHaveLength(2);
+    expect(new Set(second).size).toBe(2);
+    expect(second).not.toEqual(first);
+    for (const suggestion of [...first, ...second]) {
+      expect(answerQuestion(suggestion, data)).not.toContain("Non ho capito la domanda");
+    }
   });
 });
