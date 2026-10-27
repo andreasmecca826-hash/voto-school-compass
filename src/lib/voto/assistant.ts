@@ -246,7 +246,10 @@ export function answerQuestion(
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
   const asksTeacher =
-    normalized.includes("prof") || normalized.includes("docent") || normalized.includes("insegn");
+    normalized.includes("prof") ||
+    normalized.includes("docent") ||
+    normalized.includes("insegn") ||
+    /\bchi (?:fa|tiene)\b/.test(normalized);
   const asksTeacherList =
     normalized.includes("chi") ||
     normalized.includes("quali") ||
@@ -260,14 +263,15 @@ export function answerQuestion(
       const names = questionTeachers.map(([name]) => name);
       return `Nella sezione Professori, per il laboratorio risult${names.length === 1 ? "a" : "ano"} ${names.join(", ")}.`;
     }
-    const teacher = subject.teacher?.trim();
-    if (teacher) return `Il docente registrato per ${subject.name} è ${teacher}.`;
     const classTeachers = (
       questionTeachers.length ? questionTeachers : teachersForSubject(subject.name)
     ).map(([name]) => name);
-    return classTeachers.length
-      ? `Nella sezione Professori, per ${subject.name} risulta${classTeachers.length === 1 ? "" : "no"} ${classTeachers.join(", ")}.`
-      : `Non ho il nome del docente di ${subject.name} nei dati sincronizzati o nella sezione Professori.`;
+    if (classTeachers.length) {
+      return `Nella sezione Professori, per ${subject.name} risulta${classTeachers.length === 1 ? "" : "no"} ${classTeachers.join(", ")}.`;
+    }
+    const teacher = subject.teacher?.trim();
+    if (teacher) return `Il docente registrato per ${subject.name} è ${teacher}.`;
+    return `Non ho il nome del docente di ${subject.name} nei dati sincronizzati o nella sezione Professori.`;
   }
   if (asksTeacher) {
     const classTeachers = teachersForSubjectQuestion(query).map(([name]) => name);
@@ -276,7 +280,11 @@ export function answerQuestion(
     }
   }
   if (asksTeacher && asksTeacherList) {
-    return `Docenti della sezione Professori:\n${getClassTeachers()
+    const teachers = getClassTeachers();
+    if (!teachers.length) {
+      return "Non hai ancora inserito professori. Vai in Professori e aggiungi nome e materia: poi potrò riconoscerli anche con domande come ‘chi fa inglese?’ o ‘prof di mate?’.";
+    }
+    return `Docenti della sezione Professori:\n${teachers
       .map(([name, subjects]) => `• ${subjects}: ${name}`)
       .join("\n")}`;
   }

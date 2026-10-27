@@ -36,8 +36,20 @@ const normalize = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const normalizeSubject = (value: string) =>
+  normalize(value)
+    .replace(/\b(?:english|ing|inglese)\b/g, "inglese")
+    .replace(/\b(?:mate|mat|matematica)\b/g, "matematica")
+    .replace(/\b(?:ita|italiano|letteratura)\b/g, "italiano")
+    .replace(/\b(?:fis|fisica)\b/g, "fisica")
+    .replace(/\b(?:chim|chimica)\b/g, "chimica")
+    .replace(/\b(?:scienza|scienze)\b/g, "scienze")
+    .replace(/\b(?:tec|tecnologia|tecnologie)\b/g, "tecnologie")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export function teachersForSubject(subject: string, teachers = getClassTeachers()) {
-  const normalizedSubject = normalize(subject);
+  const normalizedSubject = normalizeSubject(subject);
   if (!normalizedSubject) return [];
 
   const asksLab = asksForLaboratory(subject);
@@ -45,7 +57,7 @@ export function teachersForSubject(subject: string, teachers = getClassTeachers(
     const officialSubject = asksLab
       ? "laboratorio di disegno"
       : "tecnologie e tecniche di rappresentazione grafica";
-    return teachers.filter(([, subjects]) => normalize(subjects).includes(officialSubject));
+    return teachers.filter(([, subjects]) => normalizeSubject(subjects).includes(officialSubject));
   }
   const subjectCore = normalizedSubject
     .replace(/\b(?:laboratori|laboratorio|lab)\b/g, " ")
@@ -53,7 +65,7 @@ export function teachersForSubject(subject: string, teachers = getClassTeachers(
     .replace(/\s+/g, " ")
     .trim();
   const matches = teachers.filter(([, subjects]) => {
-    const normalizedSubjects = normalize(subjects);
+    const normalizedSubjects = normalizeSubject(subjects);
     return (
       normalizedSubjects.includes(normalizedSubject) ||
       (subjectCore.length > 0 && normalizedSubjects.includes(subjectCore))
@@ -70,10 +82,10 @@ export function asksForLaboratory(query: string) {
 }
 
 export function teachersForSubjectQuestion(question: string) {
-  const subject = normalize(question)
+  const subject = normalizeSubject(question)
     .replace(/[?!.,:;]/g, " ")
     .replace(
-      /^(?:chi insegna|quale (?:docente|professore|professoressa|prof) insegna|chi e (?:il|la) (?:docente|professore|professoressa|prof) di|(?:docente|professore|professoressa|prof) di)\s*/,
+      /^(?:chi (?:insegna|fa|tiene)|quale (?:docente|professore|professoressa|prof) insegna|chi e (?:il|la) (?:docente|professore|professoressa|prof) di|(?:docente|professore|professoressa|prof) di)\s*/,
       "",
     )
     .replace(/^(?:la|il|lo|i|gli|le|l)\s+/, "")
