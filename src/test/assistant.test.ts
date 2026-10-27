@@ -3,6 +3,7 @@ import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import type { Interrogazione } from "@/lib/voto/interrogazioni";
 import { emptySchedule } from "@/lib/voto/orario";
+import { saveClassTeachers } from "@/lib/voto/teachers";
 import type { VotoData } from "@/lib/voto/types";
 
 const data: VotoData = {
@@ -167,6 +168,19 @@ describe("Assistente locale", () => {
         interrogazioni,
       ),
     ).toContain("Matematica");
+
+    saveClassTeachers([
+      ["FASONE MARIANNA", "Inglese"],
+      ["RAPISARDA VANESSA MANUELA", "Matematica"],
+      ["FARACI ANNALISA", "Storia, Italiano"],
+      ["MAROTTA SALVATORE", "Scienze integrate – Fisica"],
+      ["GIAMMUSSO CLAUDIO STEFANO", "Laboratorio di fisica"],
+      ["DI ROCCO ALICE", "Scienze integrate – Chimica"],
+      ["ARDORE IVAN", "Laboratorio di chimica"],
+      ["RIMMAUDO GIOVANNI", "Tecnologie e tecniche di rappresentazione grafica"],
+      ["DI NOTO EMANUELE", "Laboratorio di disegno – TTRG"],
+      ["NICASTRO EMANUEL", "Laboratorio di disegno – TTRG"],
+    ]);
 
     const teacherData: VotoData = {
       ...data,

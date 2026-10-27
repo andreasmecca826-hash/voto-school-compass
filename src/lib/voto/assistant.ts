@@ -3,7 +3,7 @@ import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
 import {
   asksForLaboratory,
-  CLASS_TEACHERS,
+  getClassTeachers,
   teachersForSubject,
   teachersForSubjectQuestion,
 } from "./teachers";
@@ -276,7 +276,9 @@ export function answerQuestion(
     }
   }
   if (asksTeacher && asksTeacherList) {
-    return `Docenti della sezione Professori:\n${CLASS_TEACHERS.map(([name, subjects]) => `• ${subjects}: ${name}`).join("\n")}`;
+    return `Docenti della sezione Professori:\n${getClassTeachers()
+      .map(([name, subjects]) => `• ${subjects}: ${name}`)
+      .join("\n")}`;
   }
   if (
     !subject &&

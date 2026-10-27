@@ -1,21 +1,31 @@
-export const CLASS_TEACHERS = [
-  ["ALESSANDRA' AMANDA", "Sostegno"],
-  ["ARDORE IVAN", "Laboratorio di chimica"],
-  ["CALABRESE STEFANIA", "Scienze integrate – Scienze della Terra e Biologia"],
-  ["CALLERI GIUSI", "Diritto ed economia"],
-  ["D'ALESSANDRO FEDERICA", "Scienze e tecnologie applicate"],
-  ["DI NOTO EMANUELE", "Laboratorio di disegno – TTRG"],
-  ["DI ROCCO ALICE", "Scienze integrate – Chimica"],
-  ["FARACI ANNALISA (coord.)", "Storia, Italiano"],
-  ["FASONE MARIANNA", "Inglese"],
-  ["FIANDACA LORENA", "Scienze motorie e sportive"],
-  ["GIAMMUSSO CLAUDIO STEFANO", "Laboratorio di fisica"],
-  ["MAROTTA SALVATORE", "Scienze integrate – Fisica"],
-  ["NICASTRO EMANUEL", "Laboratorio di disegno – TTRG"],
-  ["RAPISARDA VANESSA MANUELA", "Matematica"],
-  ["RIMMAUDO GIOVANNI", "Tecnologie e tecniche di rappresentazione grafica"],
-  ["SAUNA CONCETTA GRAZIA", "Religione"],
-] as const;
+export type TeacherEntry = [name: string, subjects: string];
+
+export const TEACHERS_STORAGE_KEY = "voto.teachers";
+
+export function getClassTeachers(): TeacherEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(TEACHERS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (entry): entry is TeacherEntry =>
+        Array.isArray(entry) &&
+        entry.length === 2 &&
+        typeof entry[0] === "string" &&
+        typeof entry[1] === "string" &&
+        entry[0].trim().length > 0,
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveClassTeachers(teachers: TeacherEntry[]): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(TEACHERS_STORAGE_KEY, JSON.stringify(teachers));
+}
 
 const normalize = (value: string) =>
   value
@@ -26,7 +36,7 @@ const normalize = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-export function teachersForSubject(subject: string) {
+export function teachersForSubject(subject: string, teachers = getClassTeachers()) {
   const normalizedSubject = normalize(subject);
   if (!normalizedSubject) return [];
 
@@ -35,14 +45,14 @@ export function teachersForSubject(subject: string) {
     const officialSubject = asksLab
       ? "laboratorio di disegno"
       : "tecnologie e tecniche di rappresentazione grafica";
-    return CLASS_TEACHERS.filter(([, subjects]) => normalize(subjects).includes(officialSubject));
+    return teachers.filter(([, subjects]) => normalize(subjects).includes(officialSubject));
   }
   const subjectCore = normalizedSubject
     .replace(/\b(?:laboratori|laboratorio|lab)\b/g, " ")
     .replace(/\bdi\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  const matches = CLASS_TEACHERS.filter(([, subjects]) => {
+  const matches = teachers.filter(([, subjects]) => {
     const normalizedSubjects = normalize(subjects);
     return (
       normalizedSubjects.includes(normalizedSubject) ||
