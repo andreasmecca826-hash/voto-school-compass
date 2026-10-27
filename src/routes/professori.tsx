@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Search, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CLASS_TEACHERS } from "@/lib/voto/teachers";
 
 export const Route = createFileRoute("/professori")({
   head: () => ({
@@ -12,31 +13,12 @@ export const Route = createFileRoute("/professori")({
   component: Professori,
 });
 
-const TEACHERS = [
-  ["ALESSANDRA' AMANDA", "Sostegno"],
-  ["ARDORE IVAN", "Laboratorio di chimica"],
-  ["CALABRESE STEFANIA", "Scienze integrate – Scienze della Terra e Biologia"],
-  ["CALLERI GIUSI", "Diritto ed economia"],
-  ["D'ALESSANDRO FEDERICA", "Scienze e tecnologie applicate"],
-  ["DI NOTO EMANUELE", "Laboratorio di disegno – TTRG"],
-  ["DI ROCCO ALICE", "Scienze integrate – Chimica"],
-  ["FARACI ANNALISA (coord.)", "Storia, Italiano"],
-  ["FASONE MARIANNA", "Inglese"],
-  ["FIANDACA LORENA", "Scienze motorie e sportive"],
-  ["GIAMMUSSO CLAUDIO STEFANO", "Laboratorio di fisica"],
-  ["MAROTTA SALVATORE", "Scienze integrate – Fisica"],
-  ["NICASTRO EMANUEL", "Laboratorio di disegno – TTRG"],
-  ["RAPISARDA VANESSA MANUELA", "Matematica"],
-  ["RIMMAUDO GIOVANNI", "Tecnologie e tecniche di rappresentazione grafica"],
-  ["SAUNA CONCETTA GRAZIA", "Religione"],
-] as const;
-
 function Professori() {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("it-IT");
-    if (!normalized) return TEACHERS;
-    return TEACHERS.filter(([name, subjects]) =>
+    if (!normalized) return CLASS_TEACHERS;
+    return CLASS_TEACHERS.filter(([name, subjects]) =>
       `${name} ${subjects}`.toLocaleLowerCase("it-IT").includes(normalized),
     );
   }, [query]);

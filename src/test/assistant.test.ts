@@ -173,6 +173,10 @@ describe("Assistente locale", () => {
       subjects: data.subjects.map((subject) => ({ ...subject, teacher: "Prof.ssa Rossi" })),
     };
     expect(answerQuestion("Chi insegna Inglese?", teacherData)).toContain("Prof.ssa Rossi");
+    expect(answerQuestion("Chi insegna Inglese?", data)).toContain("FASONE MARIANNA");
+    expect(answerQuestion("Quali sono i professori?", data)).toContain(
+      "Docenti della sezione Professori",
+    );
   });
 
   it("spiega materie sotto la sufficienza, andamento e ore residue di assenza", () => {

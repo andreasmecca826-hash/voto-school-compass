@@ -1,6 +1,7 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
+import { CLASS_TEACHERS, teachersForSubject } from "./teachers";
 import type { Grade, VotoData } from "./types";
 
 const normalize = (value: string) =>
@@ -250,17 +251,14 @@ export function answerQuestion(
     normalized === "docenti";
   if (asksTeacher && subject) {
     const teacher = subject.teacher?.trim();
-    return teacher
-      ? `Il docente registrato per ${subject.name} è ${teacher}.`
-      : `Non ho il nome del docente di ${subject.name} nei dati sincronizzati.`;
+    if (teacher) return `Il docente registrato per ${subject.name} è ${teacher}.`;
+    const classTeachers = teachersForSubject(subject.name).map(([name]) => name);
+    return classTeachers.length
+      ? `Nella sezione Professori, per ${subject.name} risulta${classTeachers.length === 1 ? "" : "no"} ${classTeachers.join(", ")}.`
+      : `Non ho il nome del docente di ${subject.name} nei dati sincronizzati o nella sezione Professori.`;
   }
   if (asksTeacher && asksTeacherList) {
-    const teachers = data.subjects
-      .filter((item) => item.teacher?.trim())
-      .map((item) => `${item.name}: ${item.teacher?.trim()}`);
-    return teachers.length
-      ? `Docenti presenti nei dati sincronizzati:\n${teachers.map((item) => `• ${item}`).join("\n")}`
-      : "I nomi dei docenti non sono presenti nei dati sincronizzati.";
+    return `Docenti della sezione Professori:\n${CLASS_TEACHERS.map(([name, subjects]) => `• ${subjects}: ${name}`).join("\n")}`;
   }
   if (
     !subject &&
