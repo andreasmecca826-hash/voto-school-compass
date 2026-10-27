@@ -97,6 +97,7 @@ export type HomeModuleId =
   | "compiti"
   | "interrogazioni"
   | "note"
+  | "promemoria"
   | "bacheca"
   | "obiettivo";
 export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
@@ -108,6 +109,7 @@ export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
   { id: "compiti", enabled: true },
   { id: "interrogazioni", enabled: true },
   { id: "note", enabled: true },
+  { id: "promemoria", enabled: true },
   { id: "bacheca", enabled: true },
   { id: "obiettivo", enabled: true },
 ];

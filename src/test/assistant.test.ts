@@ -140,6 +140,42 @@ describe("Assistente locale", () => {
     expect(summary).toContain("Assemblea di classe");
   });
 
+  it("riconosce i promemoria DidUP e risponde per oggi e domani", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const reminderData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "reminder-today",
+          type: "reminder",
+          title: "Promemoria",
+          message: "Portare il libro",
+          subject: "Italiano",
+          date: "2026-10-27",
+          read: false,
+        },
+        {
+          id: "reminder-tomorrow",
+          type: "reminder",
+          title: "Promemoria",
+          message: "Verifica di algebra",
+          subject: "Matematica",
+          date: "2026-10-28",
+          read: false,
+        },
+      ],
+    };
+    expect(
+      answerQuestion("Quali promemoria ho oggi?", reminderData, emptySchedule(), now),
+    ).toContain("Portare il libro");
+    expect(
+      answerQuestion("Cosa devo ricordare domani?", reminderData, emptySchedule(), now),
+    ).toContain("Verifica di algebra");
+    expect(answerQuestion("Quali promemoria ho?", reminderData, emptySchedule(), now)).toContain(
+      "Promemoria DidUP",
+    );
+  });
+
   it("risponde sulle interrogazioni in agenda e sui docenti per materia", () => {
     const now = new Date(2026, 9, 26, 12);
     const interrogazioni: Interrogazione[] = [

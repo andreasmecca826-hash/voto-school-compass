@@ -72,6 +72,13 @@ function Dashboard() {
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
   const showingDays = attendanceView === "days";
   const notes = useMemo(() => selectNotificationsByType(notifications, "note"), [notifications]);
+  const reminders = useMemo(
+    () =>
+      selectNotificationsByType(notifications, "reminder", notifications.length)
+        .sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"))
+        .slice(0, 3),
+    [notifications],
+  );
   const bulletin = useMemo(
     () => selectNotificationsByType(notifications, "notice"),
     [notifications],
@@ -354,6 +361,33 @@ function Dashboard() {
               <ul className="space-y-2">
                 {notes.map((n) => (
                   <NotifItem key={n.id} id={n.id} />
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {isHomeModuleVisible("promemoria") && (
+          <div style={{ order: homeOrder("promemoria") }}>
+            <SectionTitle
+              action={
+                <Link to="/promemoria" className="text-xs font-medium text-primary">
+                  Vedi tutti
+                </Link>
+              }
+            >
+              Promemoria
+            </SectionTitle>
+            {reminders.length === 0 ? (
+              <Empty
+                icon={<Clock3 className="h-6 w-6" />}
+                title="Nessun promemoria"
+                text="I promemoria sincronizzati da DidUP compariranno qui."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {reminders.map((reminder) => (
+                  <NotifItem key={reminder.id} id={reminder.id} />
                 ))}
               </ul>
             )}

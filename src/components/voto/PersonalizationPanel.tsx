@@ -192,6 +192,7 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },
   { id: "note", label: "Note" },
+  { id: "promemoria", label: "Promemoria DidUP" },
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];

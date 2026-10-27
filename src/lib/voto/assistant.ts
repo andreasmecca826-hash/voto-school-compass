@@ -98,6 +98,12 @@ function noticesByDate(data: VotoData) {
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 }
 
+function remindersByDate(data: VotoData) {
+  return data.notifications
+    .filter((notification) => notification.type === "reminder")
+    .sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"));
+}
+
 function noticeLabel(notification: VotoData["notifications"][number]): string {
   const date = displayDate(notification.date);
   const dateText = date ? ` (${date})` : "";
@@ -105,6 +111,13 @@ function noticeLabel(notification: VotoData["notifications"][number]): string {
     ? ` — allegato: ${notification.attachmentName}`
     : "";
   return `“${notification.title}”${dateText}${attachment}`;
+}
+
+function reminderLabel(notification: VotoData["notifications"][number]): string {
+  const text = notification.message?.trim() || notification.title;
+  const date = displayDate(notification.date);
+  const subject = notification.subject ? ` — ${notification.subject}` : "";
+  return `${text}${subject}${date ? ` (${date})` : ""}`;
 }
 
 export function scheduleDayToClear(query: string): DayId | null {
@@ -133,6 +146,37 @@ export function answerQuestion(
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
 
   const notices = noticesByDate(data);
+  const reminders = remindersByDate(data);
+  const asksReminders =
+    normalized.includes("promemoria") ||
+    normalized.includes("promemorie") ||
+    (normalized.includes("ricord") &&
+      (normalized.includes("oggi") ||
+        normalized.includes("domani") ||
+        normalized.includes("cosa") ||
+        normalized.includes("quali") ||
+        normalized.includes("ho")));
+  if (asksReminders) {
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const matches = reminders.filter((item) =>
+      requestedDay === null ? true : daysUntil(item.date, now) === requestedDay,
+    );
+    if (!matches.length) {
+      if (requestedDay === 0) return "Non risultano promemoria DidUP per oggi.";
+      if (requestedDay === 1) return "Non risultano promemoria DidUP per domani.";
+      return "Non risultano promemoria DidUP nei dati sincronizzati.";
+    }
+    const shown = matches.slice(0, 5);
+    const heading =
+      requestedDay === 0
+        ? "Promemoria DidUP di oggi"
+        : requestedDay === 1
+          ? "Promemoria DidUP di domani"
+          : "Promemoria DidUP";
+    const remainder =
+      matches.length > shown.length ? `\nE altri ${matches.length - shown.length}.` : "";
+    return `${heading}:\n${shown.map((item) => `• ${reminderLabel(item)}`).join("\n")}${remainder}\nLi trovi nella sezione Promemoria.`;
+  }
   if (normalized.includes("novit") || normalized.includes("aggiornament")) {
     const recentGrade = latestGrade(data);
     const todayNotices = notices.filter(
@@ -150,9 +194,12 @@ export function answerQuestion(
     } else if (notices[0]) {
       lines.push(`Ultima circolare: ${noticeLabel(notices[0])}.`);
     }
+    const nextReminder =
+      reminders.find((item) => (daysUntil(item.date, now) ?? 0) >= 0) ?? reminders[0];
+    if (nextReminder) lines.push(`Promemoria: ${reminderLabel(nextReminder)}.`);
     return lines.length
       ? lines.join("\n")
-      : "Non risultano nuovi voti o circolari nei dati caricati.";
+      : "Non risultano nuovi voti, circolari o promemoria nei dati caricati.";
   }
 
   if (normalized.includes("orario") || normalized.includes("lezion")) {

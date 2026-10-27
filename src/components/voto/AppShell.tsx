@@ -78,6 +78,13 @@ const MORE_NAV = [
     color: "#f28f78",
   },
   {
+    to: "/promemoria",
+    label: "Promemoria",
+    description: "Promemoria dal registro DidUP",
+    icon: Clock3,
+    color: "#e1a642",
+  },
+  {
     to: "/professori",
     label: "Professori",
     description: "Docenti e materie",
@@ -146,10 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         openMusic: () => setMusicOpen(true),
       }}
     >
-      <MusicPanel
-        open={musicOpen}
-        onClose={() => setMusicOpen(false)}
-      />
+      <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
         <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
@@ -289,30 +293,33 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      {v.ready && (mounted.notifications || mounted.achievements || mounted.simulator || mounted.subject) && (
-        <>
-          {mounted.notifications && <NotificationsSheet open={notif} onOpenChange={setNotif} />}
-          {mounted.achievements && <AchievementsSheet open={achievements} onOpenChange={setAchievements} />}
-          {mounted.simulator && (
-            <SimulatorSheet
-              open={sim.open}
-              subjectId={sim.subjectId}
-              onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
-            />
-          )}
-          {mounted.subject && (
-            <SubjectSheet
-              id={subject}
-              onClose={() => setSubject(null)}
-              onSimulate={(id) => {
-                setSubject(null);
-                setMounted((current) => ({ ...current, simulator: true }));
-                setSim({ open: true, subjectId: id });
-              }}
-            />
-          )}
-        </>
-      )}
+      {v.ready &&
+        (mounted.notifications || mounted.achievements || mounted.simulator || mounted.subject) && (
+          <>
+            {mounted.notifications && <NotificationsSheet open={notif} onOpenChange={setNotif} />}
+            {mounted.achievements && (
+              <AchievementsSheet open={achievements} onOpenChange={setAchievements} />
+            )}
+            {mounted.simulator && (
+              <SimulatorSheet
+                open={sim.open}
+                subjectId={sim.subjectId}
+                onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
+              />
+            )}
+            {mounted.subject && (
+              <SubjectSheet
+                id={subject}
+                onClose={() => setSubject(null)}
+                onSimulate={(id) => {
+                  setSubject(null);
+                  setMounted((current) => ({ ...current, simulator: true }));
+                  setSim({ open: true, subjectId: id });
+                }}
+              />
+            )}
+          </>
+        )}
     </Ui.Provider>
   );
 }

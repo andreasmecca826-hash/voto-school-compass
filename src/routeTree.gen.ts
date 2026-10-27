@@ -19,6 +19,7 @@ import { Route as NoteRouteImport } from './routes/note'
 import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as PersonalizzaRouteImport } from './routes/personalizza'
 import { Route as ProfessoriRouteImport } from './routes/professori'
+import { Route as PromemoriaRouteImport } from './routes/promemoria'
 import { Route as VotiRouteImport } from './routes/voti'
 import { Route as ApiCircularsMirrorRouteImport } from './routes/api/circulars/mirror'
 
@@ -72,6 +73,11 @@ const ProfessoriRoute = ProfessoriRouteImport.update({
   path: '/professori',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PromemoriaRoute = PromemoriaRouteImport.update({
+  id: '/promemoria',
+  path: '/promemoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VotiRoute = VotiRouteImport.update({
   id: '/voti',
   path: '/voti',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
+  '/promemoria': typeof PromemoriaRoute
   '/voti': typeof VotiRoute
   '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
 }
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
+  '/promemoria': typeof PromemoriaRoute
   '/voti': typeof VotiRoute
   '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
+  '/promemoria': typeof PromemoriaRoute
   '/voti': typeof VotiRoute
   '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/orario'
     | '/personalizza'
     | '/professori'
+    | '/promemoria'
     | '/voti'
     | '/api/circulars/mirror'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/orario'
     | '/personalizza'
     | '/professori'
+    | '/promemoria'
     | '/voti'
     | '/api/circulars/mirror'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/orario'
     | '/personalizza'
     | '/professori'
+    | '/promemoria'
     | '/voti'
     | '/api/circulars/mirror'
   fileRoutesById: FileRoutesById
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   OrarioRoute: typeof OrarioRoute
   PersonalizzaRoute: typeof PersonalizzaRoute
   ProfessoriRoute: typeof ProfessoriRoute
+  PromemoriaRoute: typeof PromemoriaRoute
   VotiRoute: typeof VotiRoute
   ApiCircularsMirrorRoute: typeof ApiCircularsMirrorRoute
 }
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfessoriRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/promemoria': {
+      id: '/promemoria'
+      path: '/promemoria'
+      fullPath: '/promemoria'
+      preLoaderRoute: typeof PromemoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/voti': {
       id: '/voti'
       path: '/voti'
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrarioRoute: OrarioRoute,
   PersonalizzaRoute: PersonalizzaRoute,
   ProfessoriRoute: ProfessoriRoute,
+  PromemoriaRoute: PromemoriaRoute,
   VotiRoute: VotiRoute,
   ApiCircularsMirrorRoute: ApiCircularsMirrorRoute,
 }

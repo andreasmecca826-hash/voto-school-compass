@@ -5,6 +5,7 @@ const SUGGESTIONS = [
   "Che lezioni ho oggi?",
   "Qual è l’ultimo voto?",
   "Quali sono le novità?",
+  "Quali promemoria ho?",
   "Chi insegna Inglese?",
   "Quanto mi manca al limite delle assenze?",
   "Quali sono le prossime interrogazioni?",
