@@ -179,6 +179,15 @@ describe("Assistente locale", () => {
       "RAPISARDA VANESSA MANUELA",
     );
     expect(answerQuestion("Chi insegna Storia?", data)).toContain("FARACI ANNALISA");
+    const physics = answerQuestion("Chi insegna Fisica?", data);
+    expect(physics).toContain("MAROTTA SALVATORE");
+    expect(physics).not.toContain("GIAMMUSSO");
+    const physicsLab = answerQuestion("Chi insegna Fisica lab?", data);
+    expect(physicsLab).toContain("GIAMMUSSO CLAUDIO STEFANO");
+    expect(physicsLab).not.toContain("MAROTTA");
+    expect(answerQuestion("Chi insegna Laboratorio di fisica?", data)).toContain(
+      "GIAMMUSSO CLAUDIO STEFANO",
+    );
     expect(answerQuestion("Quali sono i professori?", data)).toContain(
       "Docenti della sezione Professori",
     );

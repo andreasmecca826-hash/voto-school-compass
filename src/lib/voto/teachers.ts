@@ -30,7 +30,27 @@ export function teachersForSubject(subject: string) {
   const normalizedSubject = normalize(subject);
   if (!normalizedSubject) return [];
 
-  return CLASS_TEACHERS.filter(([, subjects]) => normalize(subjects).includes(normalizedSubject));
+  const asksLab = asksForLaboratory(subject);
+  const subjectCore = normalizedSubject
+    .replace(/\b(?:laboratori|laboratorio|lab)\b/g, " ")
+    .replace(/\bdi\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const matches = CLASS_TEACHERS.filter(([, subjects]) => {
+    const normalizedSubjects = normalize(subjects);
+    return (
+      normalizedSubjects.includes(normalizedSubject) ||
+      (subjectCore.length > 0 && normalizedSubjects.includes(subjectCore))
+    );
+  });
+
+  if (asksLab) return matches.filter(([, subjects]) => asksForLaboratory(subjects));
+  const nonLabMatches = matches.filter(([, subjects]) => !asksForLaboratory(subjects));
+  return nonLabMatches.length ? nonLabMatches : matches;
+}
+
+export function asksForLaboratory(query: string) {
+  return /\b(?:lab|laboratorio|laboratori)\b/.test(normalize(query));
 }
 
 export function teachersForSubjectQuestion(question: string) {

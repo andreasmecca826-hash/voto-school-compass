@@ -1,7 +1,12 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
-import { CLASS_TEACHERS, teachersForSubject, teachersForSubjectQuestion } from "./teachers";
+import {
+  asksForLaboratory,
+  CLASS_TEACHERS,
+  teachersForSubject,
+  teachersForSubjectQuestion,
+} from "./teachers";
 import type { Grade, VotoData } from "./types";
 
 const normalize = (value: string) =>
@@ -250,9 +255,16 @@ export function answerQuestion(
     normalized === "professori" ||
     normalized === "docenti";
   if (asksTeacher && subject) {
+    const questionTeachers = teachersForSubjectQuestion(query);
+    if (asksForLaboratory(query) && questionTeachers.length) {
+      const names = questionTeachers.map(([name]) => name);
+      return `Nella sezione Professori, per il laboratorio risult${names.length === 1 ? "a" : "ano"} ${names.join(", ")}.`;
+    }
     const teacher = subject.teacher?.trim();
     if (teacher) return `Il docente registrato per ${subject.name} è ${teacher}.`;
-    const classTeachers = teachersForSubject(subject.name).map(([name]) => name);
+    const classTeachers = (
+      questionTeachers.length ? questionTeachers : teachersForSubject(subject.name)
+    ).map(([name]) => name);
     return classTeachers.length
       ? `Nella sezione Professori, per ${subject.name} risulta${classTeachers.length === 1 ? "" : "no"} ${classTeachers.join(", ")}.`
       : `Non ho il nome del docente di ${subject.name} nei dati sincronizzati o nella sezione Professori.`;
