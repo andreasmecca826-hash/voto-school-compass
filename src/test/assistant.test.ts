@@ -174,6 +174,11 @@ describe("Assistente locale", () => {
     };
     expect(answerQuestion("Chi insegna Inglese?", teacherData)).toContain("Prof.ssa Rossi");
     expect(answerQuestion("Chi insegna Inglese?", data)).toContain("FASONE MARIANNA");
+    expect(answerQuestion("Chi insegna Matematica?", data)).toContain("RAPISARDA VANESSA MANUELA");
+    expect(answerQuestion("Chi insegna la Matematica?", data)).toContain(
+      "RAPISARDA VANESSA MANUELA",
+    );
+    expect(answerQuestion("Chi insegna Storia?", data)).toContain("FARACI ANNALISA");
     expect(answerQuestion("Quali sono i professori?", data)).toContain(
       "Docenti della sezione Professori",
     );

@@ -32,3 +32,15 @@ export function teachersForSubject(subject: string) {
 
   return CLASS_TEACHERS.filter(([, subjects]) => normalize(subjects).includes(normalizedSubject));
 }
+
+export function teachersForSubjectQuestion(question: string) {
+  const subject = normalize(question)
+    .replace(/[?!.,:;]/g, " ")
+    .replace(
+      /^(?:chi insegna|quale (?:docente|professore|professoressa|prof) insegna|chi e (?:il|la) (?:docente|professore|professoressa|prof) di|(?:docente|professore|professoressa|prof) di)\s*/,
+      "",
+    )
+    .replace(/^(?:la|il|lo|i|gli|le|l)\s+/, "")
+    .trim();
+  return teachersForSubject(subject);
+}

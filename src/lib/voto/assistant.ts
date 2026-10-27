@@ -1,7 +1,7 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
-import { CLASS_TEACHERS, teachersForSubject } from "./teachers";
+import { CLASS_TEACHERS, teachersForSubject, teachersForSubjectQuestion } from "./teachers";
 import type { Grade, VotoData } from "./types";
 
 const normalize = (value: string) =>
@@ -256,6 +256,12 @@ export function answerQuestion(
     return classTeachers.length
       ? `Nella sezione Professori, per ${subject.name} risulta${classTeachers.length === 1 ? "" : "no"} ${classTeachers.join(", ")}.`
       : `Non ho il nome del docente di ${subject.name} nei dati sincronizzati o nella sezione Professori.`;
+  }
+  if (asksTeacher) {
+    const classTeachers = teachersForSubjectQuestion(query).map(([name]) => name);
+    if (classTeachers.length) {
+      return `Nella sezione Professori, per questa materia risulta${classTeachers.length === 1 ? "" : "no"} ${classTeachers.join(", ")}.`;
+    }
   }
   if (asksTeacher && asksTeacherList) {
     return `Docenti della sezione Professori:\n${CLASS_TEACHERS.map(([name, subjects]) => `• ${subjects}: ${name}`).join("\n")}`;
