@@ -17,6 +17,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
+import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
 import { parseVotoData } from "@/lib/voto/parse";
@@ -304,6 +305,8 @@ function Settings() {
           nell'app.
         </div>
       </section>
+
+      <AppPinLockSettings />
 
       <SectionTitle>Dati</SectionTitle>
       <button
