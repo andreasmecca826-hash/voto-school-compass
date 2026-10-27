@@ -19,8 +19,10 @@ import {
   Trophy,
   UsersRound,
   X,
+  Sparkles,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
@@ -219,10 +221,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   setMounted((current) => ({ ...current, achievements: true }));
                   setAchievements(true);
                 }}
-                onSimulator={() => {
-                  setMounted((current) => ({ ...current, simulator: true }));
-                  setSim({ open: true });
-                }}
               />
             ) : (
               children
@@ -345,13 +343,11 @@ function MoreMenu({
   currentPath,
   onClose,
   onAchievements,
-  onSimulator,
 }: {
   v: ReturnType<typeof useVoto>;
   currentPath: string;
   onClose: () => void;
   onAchievements: () => void;
-  onSimulator: () => void;
 }) {
   const studentName = v.data.student.name || "Studente";
   return (
@@ -374,6 +370,12 @@ function MoreMenu({
           <GraduationCap className="h-7 w-7" />
         </span>
       </div>
+      <Button asChild variant="outline" className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left">
+        <Link to="/studio" onClick={onClose}>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary"><Sparkles /></span>
+          <span className="min-w-0 flex-1"><span className="block font-display text-lg font-semibold">Studio Lab.</span><span className="mt-1 block text-xs text-muted-foreground">Pomodoro · Simulatore · Ruota · Flashcard · Media</span></span>
+        </Link>
+      </Button>
       <div className="grid grid-cols-2 gap-3">
         {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
           const active = currentPath.startsWith(to);
@@ -413,20 +415,6 @@ function MoreMenu({
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => {
-            onSimulator();
-            onClose();
-          }}
-          className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
-        >
-          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#3998d7]">
-            <ClipboardList className="h-7 w-7 text-white" />
-          </span>
-          <span className="text-base font-bold">Simulatore</span>
-          <span className="mt-1 text-[10px] text-muted-foreground">Calcola il prossimo voto</span>
-        </button>
         <button
           type="button"
           onClick={() => {

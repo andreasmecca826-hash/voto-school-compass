@@ -2,16 +2,17 @@ import { Calculator } from "lucide-react";
 import { useState } from "react";
 import { fmt, subjectStats } from "@/lib/voto/calc";
 import { fmtDate } from "@/lib/voto/dates";
-import { useVoto } from "@/lib/voto/store";
+import { useSchoolPeriods } from "@/lib/voto/periods-context";
+import { PeriodPicker } from "./PeriodPicker";
 import type { GradeType } from "@/lib/voto/types";
 import { BottomSheet, Chip, GradePill, Sparkline, SubjectMark } from "./ui";
 
 const TYPES: (GradeType | "all")[] = ["all", "scritto", "orale", "pratico"];
 
 export function SubjectSheet({ id, onClose, onSimulate }: { id: string | null; onClose: () => void; onSimulate: (id: string) => void }) {
-  const v = useVoto();
+  const { subjects } = useSchoolPeriods();
   const [type, setType] = useState<GradeType | "all">("all");
-  const s = v.data.subjects.find((x) => x.id === id);
+  const s = subjects.find((x) => x.id === id);
   const st = s ? subjectStats(s) : null;
   const grades = s ? [...s.grades].filter((g) => type === "all" || g.type === type).sort((a, b) => b.date.localeCompare(a.date)) : [];
   const history = s
@@ -25,6 +26,7 @@ export function SubjectSheet({ id, onClose, onSimulate }: { id: string | null; o
     <BottomSheet open={!!s} onOpenChange={(o) => !o && onClose()} title={s?.name ?? ""} description={s?.teacher}>
       {s && st && (
         <>
+          <PeriodPicker />
           <div className="card-surface flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <SubjectMark name={s.name} color={s.color} size={44} />

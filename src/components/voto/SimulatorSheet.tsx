@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { fmt, neededGrade, subjectStats } from "@/lib/voto/calc";
-import { useVoto } from "@/lib/voto/store";
-import { GenericAverageCalculator } from "./GenericAverageCalculator";
+import { PeriodPicker } from "./PeriodPicker";
+import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { BottomSheet, GradePill, SubjectMark } from "./ui";
 
-type SimulatorMode = "needed" | "average";
 
 function StepLabel({ n, children }: { n: number; children: string }) {
   return (
@@ -30,12 +29,10 @@ export function SimulatorSheet({
   onOpenChange: (open: boolean) => void;
   subjectId?: string | undefined;
 }) {
-  const v = useVoto();
-  const subjects = v.data.subjects;
+  const { subjects } = useSchoolPeriods();
   const [sid, setSid] = useState(subjectId ?? subjects[0]?.id ?? "");
   const [target, setTarget] = useState(7);
   const [scenario, setScenario] = useState(7);
-  const [mode, setMode] = useState<SimulatorMode>("needed");
 
   const s = subjects.find((x) => x.id === sid) ?? subjects[0];
   const stats = s ? subjectStats(s) : null;
@@ -66,42 +63,10 @@ export function SimulatorSheet({
       open={open}
       onOpenChange={onOpenChange}
       title="Simulatore"
-      description="Scegli cosa vuoi calcolare."
+      description="Che voto mi serve?"
     >
-      <div
-        role="group"
-        aria-label="Modalità del simulatore"
-        className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface p-1"
-      >
-        <button
-          type="button"
-          aria-pressed={mode === "needed"}
-          onClick={() => setMode("needed")}
-          className={cn(
-            "press min-h-9 rounded-lg px-2 text-[11px] font-semibold",
-            mode === "needed" ? "bg-primary-soft text-primary" : "text-muted-foreground",
-          )}
-        >
-          Che voto mi serve?
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "average"}
-          onClick={() => setMode("average")}
-          className={cn(
-            "press min-h-9 rounded-lg px-2 text-[11px] font-semibold",
-            mode === "average" ? "bg-primary-soft text-primary" : "text-muted-foreground",
-          )}
-        >
-          Media generica
-        </button>
-      </div>
-
-      <div hidden={mode !== "average"}>
-        <GenericAverageCalculator />
-      </div>
-
-      <div hidden={mode !== "needed"}>
+      <PeriodPicker />
+      <div>
         {!s ? (
           <p className="text-sm text-muted-foreground">
             Nessuna materia disponibile per simulare il prossimo voto.
@@ -135,7 +100,7 @@ export function SimulatorSheet({
                     {(stats?.max ?? null) !== null && (
                       <>
                         {" "}
-                        · min {fmt(stats!.min!, 1)} · max {fmt(stats!.max!, 1)}
+                        · min {fmt(stats?.min ?? 0, 1)} · max {fmt(stats?.max ?? 0, 1)}
                       </>
                     )}
                   </p>

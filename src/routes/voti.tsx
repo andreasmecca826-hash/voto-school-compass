@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useUi } from "@/components/voto/AppShell";
 import { Chip, GradePill, ProgressBar, SubjectMark } from "@/components/voto/ui";
 import { fmt, subjectStats } from "@/lib/voto/calc";
-import { useVoto } from "@/lib/voto/store";
+import { useSchoolPeriods } from "@/lib/voto/periods-context";
+import { PeriodPicker } from "@/components/voto/PeriodPicker";
 
 export const Route = createFileRoute("/voti")({
   head: () => ({
@@ -21,10 +22,10 @@ export const Route = createFileRoute("/voti")({
 type Sort = "nome" | "alta" | "bassa";
 
 function Voti() {
-  const v = useVoto();
+  const { subjects } = useSchoolPeriods();
   const ui = useUi();
   const [sort, setSort] = useState<Sort>("nome");
-  const list = v.data.subjects
+  const list = subjects
     .map((s) => ({ s, st: subjectStats(s) }))
     .sort((a, b) =>
       sort === "nome"
@@ -45,6 +46,7 @@ function Voti() {
           <Calculator className="h-4 w-4" /> Simulatore
         </button>
       </div>
+      <PeriodPicker />
       <div className="no-scrollbar mt-4 flex gap-2 overflow-x-auto">
         <Chip active={sort === "nome"} onClick={() => setSort("nome")}>
           A–Z
@@ -69,7 +71,7 @@ function Voti() {
                 <p className="text-sm font-medium">{s.name}</p>
                 <p className="tabular mb-1.5 text-[11px] text-muted-foreground">
                   {st.count} voti
-                  {st.max !== null && ` · max ${fmt(st.max, 1)} · min ${fmt(st.min!, 1)}`}
+                  {st.max !== null && ` · max ${fmt(st.max, 1)} · min ${fmt(st.min ?? 0, 1)}`}
                 </p>
                 <ProgressBar value={((st.avg ?? 0) / 10) * 100} color={s.color} />
               </div>
