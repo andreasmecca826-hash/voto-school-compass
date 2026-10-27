@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { makeDemoData } from "./demo";
+import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData } from "./parse";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
@@ -398,6 +398,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         toast("URL rimosso", { description: "Stai visualizzando i dati demo." });
       },
       resetDemo: () => {
+        if (!canResetDemoData(source, urlRef.current)) {
+          toast.error("Il ripristino è disponibile solo in modalità demo.");
+          return;
+        }
         urlRef.current = "";
         setUrl("");
         [KEYS.url, KEYS.cache, KEYS.demoData, KEYS.lastSync, KEYS.completions, KEYS.read].forEach(

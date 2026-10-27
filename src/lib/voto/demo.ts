@@ -1,5 +1,9 @@
 import { parseVotoData } from "./parse";
-import type { VotoData } from "./types";
+import type { DataSource, VotoData } from "./types";
+
+export function canResetDemoData(source: DataSource, url: string): boolean {
+  return source === "demo" && url.trim().length === 0;
+}
 
 const iso = (offset: number) => {
   const d = new Date();

@@ -20,6 +20,7 @@ import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
+import { canResetDemoData } from "@/lib/voto/demo";
 import { parseVotoData } from "@/lib/voto/parse";
 import {
   useVoto,
@@ -217,10 +218,16 @@ function Settings() {
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
-  useEffect(() => setInput(v.url), [v.url]);
+  useEffect(() => {
+    setInput(v.url);
+    if (!canResetDemoData(v.source, v.url)) {
+      setDebugOpen(false);
+      debugTaps.current = { count: 0, last: 0 };
+    }
+  }, [v.source, v.url]);
 
   const handleInfoTap = () => {
-    if (v.source !== "demo") return;
+    if (!canResetDemoData(v.source, v.url)) return;
     const now = Date.now();
     const nextCount = now - debugTaps.current.last < 900 ? debugTaps.current.count + 1 : 1;
     debugTaps.current = { count: nextCount, last: now };
@@ -308,14 +315,18 @@ function Settings() {
 
       <AppPinLockSettings />
 
-      <SectionTitle>Dati</SectionTitle>
-      <button
-        type="button"
-        onClick={v.resetDemo}
-        className="press card-surface flex w-full items-center gap-3 p-4 text-left text-sm"
-      >
-        <RotateCcw className="h-4 w-4 text-primary" /> Ripristina dati demo
-      </button>
+      {canResetDemoData(v.source, v.url) && (
+        <>
+          <SectionTitle>Dati</SectionTitle>
+          <button
+            type="button"
+            onClick={v.resetDemo}
+            className="press card-surface flex w-full items-center gap-3 p-4 text-left text-sm"
+          >
+            <RotateCcw className="h-4 w-4 text-primary" /> Ripristina dati demo
+          </button>
+        </>
+      )}
 
       <SectionTitle>Info app</SectionTitle>
       <section
@@ -328,7 +339,7 @@ function Settings() {
         </p>
       </section>
 
-      {debugOpen && v.source === "demo" && (
+      {debugOpen && canResetDemoData(v.source, v.url) && (
         <section className="card-surface mt-3 border-warning/40 p-4">
           <div className="flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-warning">
@@ -369,7 +380,7 @@ function Settings() {
         </section>
       )}
 
-      {v.source === "demo" && (
+      {canResetDemoData(v.source, v.url) && (
         <>
           <SectionTitle>Schema JSON</SectionTitle>
           <button
