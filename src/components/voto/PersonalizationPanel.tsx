@@ -20,8 +20,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SectionTitle } from "@/components/voto/ui";
-import { MusicPanel } from "@/components/voto/MusicPanel";
 import { cn } from "@/lib/utils";
+import { useUi } from "@/components/voto/AppShell";
 import {
   useVoto,
   type Accent,
@@ -33,7 +33,7 @@ import {
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience" | "music";
+type View = "menu" | "themes" | "home" | "experience";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -206,6 +206,7 @@ const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
 
 export function PersonalizationPanel() {
   const v = useVoto();
+  const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
   const hiddenThemeName = THEMES.slice(4).find((theme) => theme.id === v.theme)?.label;
@@ -258,7 +259,7 @@ export function PersonalizationPanel() {
           </button>
           <button
             type="button"
-            onClick={() => setView("music")}
+            onClick={openMusic}
             className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
           >
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
@@ -272,8 +273,6 @@ export function PersonalizationPanel() {
         </div>
       </div>
     );
-
-  if (view === "music") return <MusicPanel onBack={() => setView("menu")} />;
 
   if (view === "experience")
     return (

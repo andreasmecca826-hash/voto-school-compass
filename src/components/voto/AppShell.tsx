@@ -28,11 +28,13 @@ import { NotificationsSheet } from "./NotificationsSheet";
 import { AchievementsSheet } from "./AchievementsSheet";
 import { SimulatorSheet } from "./SimulatorSheet";
 import { SubjectSheet } from "./SubjectSheet";
+import { MusicPanel } from "./MusicPanel";
 
 interface UiCtx {
   openNotifications: () => void;
   openSimulator: (subjectId?: string) => void;
   openSubject: (id: string) => void;
+  openMusic: () => void;
 }
 const Ui = createContext<UiCtx | null>(null);
 export const useUi = () => {
@@ -108,6 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     open: false,
   });
   const [subject, setSubject] = useState<string | null>(null);
+  const [musicOpen, setMusicOpen] = useState(false);
 
   useEffect(() => {
     setMoreOpen(false);
@@ -126,8 +129,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           setSim({ open: true, subjectId });
         },
         openSubject: (id) => setSubject(id),
+        openMusic: () => setMusicOpen(true),
       }}
     >
+      <MusicPanel
+        open={musicOpen}
+        onClose={() => setMusicOpen(false)}
+        onOpen={() => setMusicOpen(true)}
+      />
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
         <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
