@@ -323,7 +323,6 @@ function Settings() {
           <span className="font-display font-semibold text-foreground">VOTO.</span> versione 2.2.0 ·
           made by Andrew Smecca
         </p>
-        <p className="mt-2">Per l'APK Android segui la guida Capacitor nel README.</p>
       </section>
 
       {debugOpen && v.source === "demo" && (
