@@ -14,6 +14,8 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { VotoProvider } from "@/lib/voto/store";
+import { SchoolPeriodsProvider } from "@/lib/voto/periods-context";
+import { StudyProvider } from "@/lib/voto/study-context";
 import { AppShell } from "@/components/voto/AppShell";
 import { AppPinLockProvider } from "@/components/voto/AppPinLockProvider";
 
@@ -113,9 +115,13 @@ function RootComponent() {
     <AppPinLockProvider>
       <QueryClientProvider client={queryClient}>
         <VotoProvider>
+          <SchoolPeriodsProvider>
+          <StudyProvider>
           <AppShell>
             <Outlet />
           </AppShell>
+          </StudyProvider>
+          </SchoolPeriodsProvider>
           <Toaster
             theme="dark"
             position="top-center"

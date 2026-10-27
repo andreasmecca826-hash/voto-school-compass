@@ -14,6 +14,6 @@ export function normalizeSupabaseUrl(rawUrl: string): string {
 export function supabaseAuthHeaders(key: string): Record<string, string> {
   const headers: Record<string, string> = { apikey: key };
   const isLegacyJwt = key.split(".").length === 3;
-  if (isLegacyJwt) headers.authorization = `Bearer ${key}`;
+  if (isLegacyJwt) headers["authorization"] = `Bearer ${key}`;
   return headers;
 }

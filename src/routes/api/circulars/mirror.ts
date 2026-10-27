@@ -10,11 +10,11 @@ type SupabaseConfig = {
 };
 
 function config(): SupabaseConfig {
-  const rawUrl = process.env.SUPABASE_URL?.trim();
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  const rawUrl = process.env["SUPABASE_URL"]?.trim();
+  const key = process.env["SUPABASE_SERVICE_ROLE_KEY"] || process.env["SUPABASE_KEY"];
   if (!rawUrl || !key) throw new Error("Supabase Storage non configurato sul backend.");
   const url = normalizeSupabaseUrl(rawUrl);
-  return { url, key, bucket: process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET };
+  return { url, key, bucket: process.env["SUPABASE_STORAGE_BUCKET"] || DEFAULT_BUCKET };
 }
 
 function json(body: unknown, status = 200) {

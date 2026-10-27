@@ -13,6 +13,8 @@ import {
   Minus,
   StickyNote,
 } from "lucide-react";
+import { PeriodPicker } from "@/components/voto/PeriodPicker";
+import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
@@ -53,10 +55,11 @@ function Dashboard() {
   const now = useClock();
   const ui = useUi();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
-  const { subjects, assignments, notifications, previousAverage } = v.data;
+  const { subjects, config } = useSchoolPeriods();
+  const { assignments, notifications, previousAverage } = v.data;
   const avg = useMemo(() => overallAverage(subjects), [subjects]);
   const history = useMemo(() => averageHistory(subjects), [subjects]);
-  const delta = avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
+  const delta = config.selection === "all" && avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
   const today = useMemo(
     () => selectDashboardAssignments(assignments, now, v.isDone),
     [assignments, now, v.isDone],
@@ -126,6 +129,7 @@ function Dashboard() {
         </Link>
       )}
 
+      <PeriodPicker />
       <div className="flex flex-col">
         {isHomeModuleVisible("media") && (
           <div style={{ order: homeOrder("media"), zoom: homeModuleScale("media") }}>
@@ -487,7 +491,7 @@ function NotifItem({ id }: { id: string }) {
 
 function GoalWidget({ avg }: { avg: number | null }) {
   const v = useVoto();
-  const { subjects } = v.data;
+  const { subjects } = useSchoolPeriods();
   const graded = subjects.filter((s) => average(s.grades) !== null);
   const gap = avg === null ? null : v.target - avg;
 
