@@ -12,6 +12,12 @@ import {
   Sun,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import {
@@ -199,9 +205,9 @@ const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
 export function PersonalizationPanel() {
   const v = useVoto();
   const [view, setView] = useState<View>("menu");
-  const [moreThemes, setMoreThemes] = useState(false);
-  const [moreColors, setMoreColors] = useState(false);
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
+  const hiddenThemeName = THEMES.slice(4).find((theme) => theme.id === v.theme)?.label;
+  const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
 
   if (view === "menu")
     return (
@@ -369,35 +375,37 @@ export function PersonalizationPanel() {
       <BackButton onClick={() => setView("menu")} title="Temi" />
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
-        {THEMES.slice(0, moreThemes ? THEMES.length : 5).map((theme) => (
-          <button
+        {THEMES.slice(0, 4).map((theme) => (
+          <ThemeOption
             key={theme.id}
-            type="button"
-            aria-pressed={v.theme === theme.id}
-            onClick={() => v.setTheme(theme.id)}
-            className={cn(
-              "press card-surface overflow-hidden p-0 text-left",
-              v.theme === theme.id && "border-primary",
-            )}
-          >
-            <span className="block h-16" style={{ background: theme.sw }} />
-            <span className="block p-3">
-              <span className="block text-xs font-semibold">{theme.label}</span>
-              <span className="mt-1 block text-[10px] text-muted-foreground">
-                {theme.description}
-              </span>
-            </span>
-          </button>
+            theme={theme}
+            selected={v.theme === theme.id}
+            onSelect={v.setTheme}
+          />
         ))}
       </div>
-      <button
-        type="button"
-        onClick={() => setMoreThemes((x) => !x)}
-        className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground"
-      >
-        {moreThemes ? "Mostra meno temi" : "Mostra tutti i temi"}
-        <ChevronDown className={cn("h-4 w-4", moreThemes && "rotate-180")} />
-      </button>
+      {THEMES.length > 4 && (
+        <Accordion type="single" collapsible className="mt-2 rounded-xl border border-border px-3">
+          <AccordionItem value="other-themes" className="border-0">
+            <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
+              Altri temi ({THEMES.length - 4})
+              {hiddenThemeName ? ` · attivo: ${hiddenThemeName}` : ""}
+            </AccordionTrigger>
+            <AccordionContent className="pb-2">
+              <div className="grid grid-cols-2 gap-2">
+                {THEMES.slice(4).map((theme) => (
+                  <ThemeOption
+                    key={theme.id}
+                    theme={theme}
+                    selected={v.theme === theme.id}
+                    onSelect={v.setTheme}
+                  />
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       {v.theme === "original" && (
         <>
           <SectionTitle>Font</SectionTitle>
@@ -557,29 +565,41 @@ export function PersonalizationPanel() {
       {v.theme === "original" && (
         <>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {ACCENTS.slice(0, moreColors ? ACCENTS.length : 7).map((accent) => (
-              <button
+            {ACCENTS.slice(0, 6).map((accent) => (
+              <AccentOption
                 key={accent.id}
-                type="button"
-                aria-pressed={v.accent === accent.id}
-                onClick={() => v.setAccent(accent.id)}
-                className={cn(
-                  "press card-surface flex flex-col items-center gap-2 p-3 text-[11px]",
-                  v.accent === accent.id && "border-primary",
-                )}
-              >
-                <span className="h-7 w-7 rounded-full" style={{ background: accent.sw }} />
-                {accent.label}
-              </button>
+                accent={accent}
+                selected={v.accent === accent.id}
+                onSelect={v.setAccent}
+              />
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setMoreColors((x) => !x)}
-            className="press mt-2 flex h-10 w-full items-center justify-center rounded-xl border border-border text-xs font-semibold text-muted-foreground"
-          >
-            {moreColors ? "Mostra meno colori" : "Mostra altri colori"}
-          </button>
+          {ACCENTS.length > 6 && (
+            <Accordion
+              type="single"
+              collapsible
+              className="mt-2 rounded-xl border border-border px-3"
+            >
+              <AccordionItem value="other-colors" className="border-0">
+                <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
+                  Altri colori ({ACCENTS.length - 6})
+                  {hiddenAccentName ? ` · attivo: ${hiddenAccentName}` : ""}
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {ACCENTS.slice(6).map((accent) => (
+                      <AccentOption
+                        key={accent.id}
+                        accent={accent}
+                        selected={v.accent === accent.id}
+                        onSelect={v.setAccent}
+                      />
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
           <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {BGS.slice(0, moreBackgrounds ? BGS.length : 6).map((bg) => (
@@ -608,6 +628,59 @@ export function PersonalizationPanel() {
         </>
       )}
     </div>
+  );
+}
+
+function ThemeOption({
+  theme,
+  selected,
+  onSelect,
+}: {
+  theme: (typeof THEMES)[number];
+  selected: boolean;
+  onSelect: (theme: Theme) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={() => onSelect(theme.id)}
+      className={cn(
+        "press card-surface overflow-hidden p-0 text-left",
+        selected && "border-primary",
+      )}
+    >
+      <span className="block h-16" style={{ background: theme.sw }} />
+      <span className="block p-3">
+        <span className="block text-xs font-semibold">{theme.label}</span>
+        <span className="mt-1 block text-[10px] text-muted-foreground">{theme.description}</span>
+      </span>
+    </button>
+  );
+}
+
+function AccentOption({
+  accent,
+  selected,
+  onSelect,
+}: {
+  accent: (typeof ACCENTS)[number];
+  selected: boolean;
+  onSelect: (accent: Accent) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={() => onSelect(accent.id)}
+      className={cn(
+        "press card-surface flex flex-col items-center gap-2 p-3 text-[11px]",
+        selected && "border-primary",
+      )}
+    >
+      <span className="h-7 w-7 rounded-full" style={{ background: accent.sw }} />
+      {accent.label}
+    </button>
   );
 }
 
