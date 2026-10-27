@@ -486,6 +486,88 @@ describe("Assistente locale", () => {
     expect(preparation).toContain("non modifica la checklist");
   });
 
+  it("riassume in un solo messaggio orario, compiti, diario, interrogazioni e promemoria", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const tomorrowData: VotoData = {
+      ...data,
+      assignments: [{ id: "a-tomorrow", title: "Tema", dueDate: "2026-10-28", completed: false }],
+      diary: [
+        { id: "d-tomorrow", date: "2026-10-28", subject: "Italiano", activity: "Consegna tema" },
+      ],
+      notifications: [
+        {
+          id: "r-tomorrow",
+          type: "reminder",
+          title: "Portare il libro",
+          date: "2026-10-28",
+          read: false,
+        },
+      ],
+    };
+    const schedule = emptySchedule();
+    schedule.mercoledi[0] = "Storia";
+    const agenda: Interrogazione[] = [
+      {
+        id: "i-tomorrow",
+        subject: "Matematica",
+        date: "2026-10-28",
+        completed: false,
+        checklist: [],
+      },
+    ];
+
+    const summary = answerQuestion(
+      "Fammi il riepilogo di domani",
+      tomorrowData,
+      schedule,
+      now,
+      agenda,
+    );
+    expect(summary).toContain("Storia");
+    expect(summary).toContain("Tema");
+    expect(summary).toContain("Consegna tema");
+    expect(summary).toContain("Matematica");
+    expect(summary).toContain("Portare il libro");
+  });
+
+  it("consulta profilo e strumenti Studio Lab senza inventare dati", () => {
+    const profileData: VotoData = {
+      ...data,
+      student: { name: "Giulia", className: "2A", schoolYear: "2026/2027" },
+    };
+    const context = {
+      flashcards: [
+        { id: "card-1", subject: "Inglese", question: "Come si dice mela?", answer: "Apple" },
+      ],
+      pomodoro: { mode: "focus", seconds: 90, running: true, completed: 2 },
+    };
+    expect(answerQuestion("In che classe sono?", profileData)).toContain("2A");
+    expect(answerQuestion("In che classe sono?", profileData)).toContain("Giulia");
+    expect(
+      answerQuestion(
+        "Mostrami le risposte delle flashcard di Inglese",
+        data,
+        emptySchedule(),
+        new Date(),
+        [],
+        context,
+      ),
+    ).toContain("Apple");
+    expect(
+      answerQuestion(
+        "Quante sessioni Pomodoro ho completato?",
+        data,
+        emptySchedule(),
+        new Date(),
+        [],
+        context,
+      ),
+    ).toContain("completato 2 sessioni");
+    expect(answerQuestion("Dove trovo il simulatore?", data)).toContain(
+      "Studio Lab > Calcolo media e simulatore voti",
+    );
+  });
+
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
     const first = pickAssistantSuggestions(() => 0);
     const second = pickAssistantSuggestions(() => 0.99);

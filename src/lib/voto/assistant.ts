@@ -1,6 +1,7 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
+import type { Flashcard } from "./study";
 import {
   asksForLaboratory,
   getClassTeachers,
@@ -25,6 +26,8 @@ export interface AssistantContext {
   interfaceScale?: number;
   homeScale?: number;
   homeModules?: Array<{ id: string; enabled: boolean }>;
+  flashcards?: Flashcard[];
+  pomodoro?: { mode: string; seconds: number; running: boolean; completed: number };
 }
 
 const normalize = (value: string) =>
@@ -179,7 +182,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: voti e medie, compiti e scadenze, presenze/assenze e ritardi, orario, interrogazioni, diario, note, promemoria, circolari e docenti. Posso anche riferire alcune impostazioni locali e guidarti nelle sezioni dell’app. Non accedo autonomamente a DidUP e non invio giustificazioni; per le modifiche locali chiedo conferma.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard e lo stato del Pomodoro della sessione Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico compiti o notifiche. L’unica modifica assistita è cancellare un giorno dell’orario, sempre dopo conferma.";
   }
 
   const asksWhereToFind =
@@ -202,13 +205,36 @@ export function answerQuestion(
       [["tema", "font", "personalizz", "sfondo"], "Personalizza"],
       [["musica", "brano"], "Personalizza > Musica"],
       [["impostazion", "sincronizz", "collegare i dati"], "Impostazioni"],
-      [["simulator", "voto necessario"], "Simulatore"],
+      [
+        ["simulator", "calcolo media", "voto necessario"],
+        "Studio Lab > Calcolo media e simulatore voti",
+      ],
+      [["studio lab", "pomodoro", "flashcard", "ruota del ripasso"], "Studio Lab"],
     ];
     const destination = destinations.find(([terms]) =>
       terms.some((term) => normalized.includes(term)),
     );
     if (destination)
       return `Trovi questa funzione in ${destination[1]}. Puoi aprirla dal menu dell’app.`;
+  }
+
+  if (
+    normalized.includes("come mi chiamo") ||
+    normalized.includes("qual e il mio nome") ||
+    normalized.includes("che classe faccio") ||
+    normalized.includes("in che classe sono") ||
+    normalized.includes("quale classe frequento") ||
+    normalized.includes("anno scolastico")
+  ) {
+    const profile = data.student;
+    const details = [
+      profile.name ? `nome: ${profile.name}` : null,
+      profile.className ? `classe: ${profile.className}` : null,
+      profile.schoolYear ? `anno scolastico: ${profile.schoolYear}` : null,
+    ].filter((value): value is string => Boolean(value));
+    return details.length
+      ? `Nel profilo scolastico risulta ${details.join("; ")}.`
+      : "Nel profilo scolastico caricato non sono presenti nome, classe o anno scolastico.";
   }
 
   if (
@@ -303,6 +329,55 @@ export function answerQuestion(
       if (context.homeScale) details.push(`scala Home ${context.homeScale}%`);
     }
     return `Preferenze locali attuali: ${details.join("; ")}. Puoi cambiarle in Personalizza; non sono impostazioni di DidUP.`;
+  }
+
+  if (
+    normalized.includes("flashcard") ||
+    normalized.includes("flash card") ||
+    normalized.includes("carte di ripasso")
+  ) {
+    const cards = context.flashcards ?? [];
+    if (!cards.length)
+      return "Non risultano flashcard caricate nella sessione Studio Lab. Puoi crearle o importarle in Studio Lab > Flashcard; restano dati della sessione e non vengono inviati online.";
+    const subject = findSubject(query, data);
+    const matches = subject
+      ? cards.filter((card) => normalize(card.subject).includes(normalize(subject.name)))
+      : cards;
+    if (!matches.length)
+      return `Non trovo flashcard per ${subject?.name ?? "questa richiesta"} nel mazzo della sessione.`;
+    const showAnswers =
+      normalized.includes("risposta") ||
+      normalized.includes("mostra") ||
+      normalized.includes("elenc");
+    const shown = matches
+      .slice(0, 8)
+      .map(
+        (card) =>
+          `• ${card.subject ? `${card.subject}: ` : ""}${card.question}${showAnswers ? ` → ${card.answer}` : ""}`,
+      );
+    return [
+      `${matches.length} ${matches.length === 1 ? "flashcard" : "flashcard"} nella sessione${subject ? ` per ${subject.name}` : ""}:`,
+      ...shown,
+      ...(matches.length > shown.length ? [`E altre ${matches.length - shown.length}.`] : []),
+    ].join("\n");
+  }
+
+  if (normalized.includes("pomodoro") || normalized.includes("timer studio")) {
+    const timer = context.pomodoro;
+    if (!timer)
+      return "Non ho lo stato del Pomodoro in questa risposta. Puoi aprire Studio Lab per controllare o avviare il timer.";
+    const minutes = Math.floor(timer.seconds / 60);
+    const seconds = timer.seconds % 60;
+    const time = `${minutes} minuti e ${seconds} secondi`;
+    if (
+      normalized.includes("quante") ||
+      normalized.includes("sessioni") ||
+      normalized.includes("completat")
+    )
+      return `In questa sessione Studio Lab hai completato ${timer.completed} ${timer.completed === 1 ? "sessione" : "sessioni"} di concentrazione.`;
+    return timer.running
+      ? `Il timer Pomodoro è in corso: restano ${time}. Hai completato ${timer.completed} ${timer.completed === 1 ? "sessione" : "sessioni"} di concentrazione.`
+      : `Il timer Pomodoro è fermo${timer.completed ? `; hai completato ${timer.completed} ${timer.completed === 1 ? "sessione" : "sessioni"} di concentrazione` : ""}. Lo trovi in Studio Lab.`;
   }
 
   const asksNotes =
@@ -612,6 +687,96 @@ export function answerQuestion(
     const remainder =
       matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
     return `${heading}:\n${shown.map((notification) => `• ${noticeLabel(notification)}`).join("\n")}${remainder}\nLe trovi nella sezione Novità.`;
+  }
+
+  const asksDailyOverview =
+    ((normalized.includes("riepilog") ||
+      normalized.includes("programma") ||
+      normalized.includes("agenda")) &&
+      (normalized.includes("oggi") || normalized.includes("domani"))) ||
+    /\bcosa (?:ho|devo fare|mi aspetta) (?:oggi|domani)\b/.test(normalized) ||
+    /\bche impegni ho (?:oggi|domani)\b/.test(normalized);
+  if (asksDailyOverview) {
+    const offset = normalized.includes("domani") ? 1 : 0;
+    const date = new Date(now);
+    date.setDate(date.getDate() + offset);
+    const dateKey = localDateKey(date);
+    const dateLabel = date.toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    const weekday = date.getDay();
+    const dayId = weekday >= 1 && weekday <= 5 ? DAYS[weekday - 1]?.id : null;
+    const sections: string[] = [];
+    const lessons = dayId
+      ? (schedule[dayId] ?? [])
+          .map((lesson, index) => (lesson.trim() ? `${index + 1}ª ${lesson.trim()}` : null))
+          .filter((lesson): lesson is string => lesson !== null)
+      : [];
+    if (lessons.length) sections.push(`Lezioni: ${lessons.join(", ")}`);
+    const assignments = data.assignments.filter(
+      (item) => !item.completed && item.dueDate?.slice(0, 10) === dateKey,
+    );
+    if (assignments.length)
+      sections.push(
+        `Compiti: ${assignments
+          .slice(0, 5)
+          .map(
+            (item) =>
+              `${item.title}${item.subject ? ` (${item.subject})` : ""}${item.details ? ` — ${item.details}` : ""}`,
+          )
+          .join("; ")}`,
+      );
+    const diary = data.diary.filter((item) => item.date.slice(0, 10) === dateKey);
+    if (diary.length)
+      sections.push(
+        `Diario: ${diary
+          .slice(0, 5)
+          .map(
+            (item) =>
+              `${item.hour ? `${item.hour}ª ora, ` : ""}${item.subject ? `${item.subject}: ` : ""}${item.activity}`,
+          )
+          .join("; ")}`,
+      );
+    const interrogations = interrogazioni.filter(
+      (item) => !item.completed && item.date.slice(0, 10) === dateKey,
+    );
+    if (interrogations.length)
+      sections.push(
+        `Interrogazioni in agenda: ${interrogations
+          .map(
+            (item) =>
+              `${item.subject}${item.hour ? `, ${item.hour}ª ora` : item.time ? `, ${item.time}` : ""}${item.notes ? ` — ${item.notes}` : ""}`,
+          )
+          .join("; ")}`,
+      );
+    const notifications = data.notifications.filter((item) => item.date?.slice(0, 10) === dateKey);
+    for (const [type, label] of [
+      ["reminder", "Promemoria"],
+      ["note", "Note"],
+      ["notice", "Circolari"],
+      ["grade", "Notifiche di voto"],
+    ] as const) {
+      const items = notifications.filter((item) => item.type === type);
+      if (items.length)
+        sections.push(
+          `${label}: ${items
+            .slice(0, 4)
+            .map(
+              (item) =>
+                `${item.title}${item.message && item.message !== item.title ? ` — ${item.message}` : ""}`,
+            )
+            .join("; ")}`,
+        );
+    }
+    return sections.length
+      ? [
+          `Riepilogo di ${offset ? "domani" : "oggi"} (${dateLabel}):`,
+          ...sections.map((section) => `• ${section}`),
+          "Riepilogo basato sui dati già caricati nell’app.",
+        ].join("\n")
+      : `Non trovo lezioni inserite né compiti, attività, interrogazioni o comunicazioni per ${offset ? "domani" : "oggi"} (${dateLabel}) nei dati caricati.`;
   }
 
   const subject = findSubject(query, data);

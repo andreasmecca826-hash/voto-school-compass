@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
+import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/assistente")({
@@ -12,8 +13,7 @@ export const Route = createFileRoute("/assistente")({
       { title: "Assistente — VOTO." },
       {
         name: "description",
-        content:
-          "Assistente locale per voti, orario, interrogazioni, compiti, circolari e presenze.",
+        content: "Assistente locale per dati scolastici, riepiloghi giornalieri e Studio Lab.",
       },
     ],
   }),
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/assistente")({
 
 function Assistant() {
   const v = useVoto();
+  const study = useStudy();
   const now = useClock();
   const [question, setQuestion] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -75,6 +76,13 @@ function Assistant() {
               interfaceScale: v.interfaceScale,
               homeScale: v.homeScale,
               homeModules: v.homeModules,
+              flashcards: study.cards,
+              pomodoro: {
+                mode: study.mode,
+                seconds: study.seconds,
+                running: study.running,
+                completed: study.completed,
+              },
             }),
       },
     ]);
