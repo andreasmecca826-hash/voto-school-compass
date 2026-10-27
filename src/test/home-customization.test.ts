@@ -3,6 +3,7 @@ import {
   DEFAULT_HOME_MODULES,
   normalizeHomeModules,
   normalizeHomeScale,
+  resolveHomeModuleScale,
 } from "@/lib/voto/home-customization";
 
 describe("Home customization sizing", () => {
@@ -12,6 +13,13 @@ describe("Home customization sizing", () => {
     expect(normalizeHomeScale(121)).toBe(120);
     expect(normalizeHomeScale(79)).toBe(80);
     expect(normalizeHomeScale(Number.NaN)).toBe(100);
+  });
+
+  it("keeps the combined module scale within 80–120%", () => {
+    expect(resolveHomeModuleScale(80, 80)).toBe(80);
+    expect(resolveHomeModuleScale(120, 120)).toBe(120);
+    expect(resolveHomeModuleScale(80, 120)).toBe(96);
+    expect(resolveHomeModuleScale(120, 80)).toBe(96);
   });
 
   it("adds standard sizing to saved modules from before per-module scaling", () => {

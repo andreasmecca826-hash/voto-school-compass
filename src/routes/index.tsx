@@ -20,6 +20,7 @@ import { CircularViewer } from "@/components/voto/CircularViewer";
 import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
 import { NOTIF_META } from "@/components/voto/NotificationsSheet";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
+import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
 import { cn } from "@/lib/utils";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { fmtDate, fmtTime } from "@/lib/voto/dates";
@@ -89,7 +90,10 @@ function Dashboard() {
     v.homeModules.find((module) => module.id === id)?.enabled ?? false;
   const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
   const homeModuleScale = (id: string) =>
-    (v.homeModules.find((module) => module.id === id)?.scale ?? 100) / 100;
+    resolveHomeModuleScale(
+      v.homeScale,
+      v.homeModules.find((module) => module.id === id)?.scale ?? 100,
+    ) / v.homeScale;
 
   const micro =
     avg === null

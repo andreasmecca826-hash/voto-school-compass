@@ -29,6 +29,10 @@ export function normalizeHomeScale(value: unknown): number {
   return Math.round(bounded / 5) * 5;
 }
 
+export function resolveHomeModuleScale(globalScale: number, moduleScale: number): number {
+  return Math.min(120, Math.max(80, (globalScale * moduleScale) / 100));
+}
+
 export function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
   if (!Array.isArray(value)) return DEFAULT_HOME_MODULES;
   const ids = new Set<HomeModuleId>();
