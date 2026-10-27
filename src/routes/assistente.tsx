@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bot, Send, Sparkles, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
 import { useVoto } from "@/lib/voto/store";
 
@@ -9,30 +10,31 @@ export const Route = createFileRoute("/assistente")({
   head: () => ({
     meta: [
       { title: "Assistente — VOTO." },
-      { name: "description", content: "Assistente locale per voti, compiti, diario e presenze." },
+      {
+        name: "description",
+        content:
+          "Assistente locale per voti, orario, interrogazioni, compiti, circolari e presenze.",
+      },
     ],
   }),
   component: Assistant,
 });
 
-const SUGGESTIONS = [
-  "Quanto devo prendere in Inglese per arrivare a 8?",
-  "Qual è la mia media generale?",
-  "Qual è la materia con la media più bassa?",
-  "Quanti compiti devo ancora fare?",
-  "Quante assenze ho?",
-];
-
 function Assistant() {
   const v = useVoto();
   const [question, setQuestion] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
     {
       role: "assistant",
-      text: "Ciao! Sono l’assistente locale di VOTO. Posso aiutarti con medie, voti necessari, compiti, Diario, assenze e ritardi. I dati restano sul dispositivo.",
+      text: "Ciao! Sono l’assistente locale di VOTO. Chiedimi informazioni sui tuoi dati scolastici: tutto resta su questo dispositivo.",
     },
   ]);
   const [pendingDay, setPendingDay] = useState<ReturnType<typeof scheduleDayToClear>>(null);
+
+  useEffect(() => {
+    setSuggestions(pickAssistantSuggestions());
+  }, []);
 
   const ask = (text = question) => {
     const clean = text.trim();
@@ -45,7 +47,7 @@ function Assistant() {
         role: "assistant",
         text: dayToClear
           ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
-          : answerQuestion(clean, v.data),
+          : answerQuestion(clean, v.data, loadSchedule(), v.now, v.interrogazioni),
       },
     ]);
     if (dayToClear) setPendingDay(dayToClear);
@@ -136,7 +138,7 @@ function Assistant() {
       )}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        {SUGGESTIONS.map((suggestion) => (
+        {suggestions.map((suggestion) => (
           <button
             key={suggestion}
             type="button"

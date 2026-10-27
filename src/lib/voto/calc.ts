@@ -5,6 +5,12 @@ export const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 export const fmt = (n: number, d = 2) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
 
+export function arithmeticMean(values: number[]): number | null {
+  const valid = values.filter(Number.isFinite);
+  if (!valid.length) return null;
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+}
+
 export function average(grades: Grade[], weighted = true): number | null {
   const valid = grades.filter((g) => Number.isFinite(g.value));
   if (!valid.length) return null;
@@ -48,7 +54,12 @@ export type NeededResult =
  * Non pesata: needed = target*(n+1) - somma
  * Pesata: needed = (target*(W+w) - somma(v*p)) / w
  */
-export function neededGrade(grades: Grade[], target: number, newWeight = 1, weighted = true): NeededResult {
+export function neededGrade(
+  grades: Grade[],
+  target: number,
+  newWeight = 1,
+  weighted = true,
+): NeededResult {
   const w = newWeight > 0 ? newWeight : 1;
   let needed: number;
   if (weighted) {
@@ -67,13 +78,18 @@ export function neededGrade(grades: Grade[], target: number, newWeight = 1, weig
 
 /** Andamento cronologico della media generale (per sparkline). */
 export function averageHistory(subjects: Subject[]): number[] {
-  const dates = [...new Set(subjects.flatMap((s) => s.grades.map((g) => g.date)).filter(Boolean))].sort();
+  const dates = [
+    ...new Set(subjects.flatMap((s) => s.grades.map((g) => g.date)).filter(Boolean)),
+  ].sort();
   const out: number[] = [];
   for (const d of dates) {
-    const a = overallAverage(subjects.map((s) => ({ ...s, grades: s.grades.filter((g) => g.date <= d) })));
+    const a = overallAverage(
+      subjects.map((s) => ({ ...s, grades: s.grades.filter((g) => g.date <= d) })),
+    );
     if (a !== null) out.push(a);
   }
   return out;
 }
 
-export const gradeTone = (v: number | null) => (v === null ? "muted" : v >= 6 ? (v >= 8 ? "good" : "ok") : "bad");
+export const gradeTone = (v: number | null) =>
+  v === null ? "muted" : v >= 6 ? (v >= 8 ? "good" : "ok") : "bad";

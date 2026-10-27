@@ -15,10 +15,12 @@ import { Route as CompitiRouteImport } from './routes/compiti'
 import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
 import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
+import { Route as NoteRouteImport } from './routes/note'
 import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as PersonalizzaRouteImport } from './routes/personalizza'
 import { Route as ProfessoriRouteImport } from './routes/professori'
 import { Route as VotiRouteImport } from './routes/voti'
+import { Route as ApiCircularsMirrorRouteImport } from './routes/api/circulars/mirror'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,6 +52,11 @@ const InterrogazioniRoute = InterrogazioniRouteImport.update({
   path: '/interrogazioni',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NoteRoute = NoteRouteImport.update({
+  id: '/note',
+  path: '/note',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrarioRoute = OrarioRouteImport.update({
   id: '/orario',
   path: '/orario',
@@ -70,6 +77,11 @@ const VotiRoute = VotiRouteImport.update({
   path: '/voti',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCircularsMirrorRoute = ApiCircularsMirrorRouteImport.update({
+  id: '/api/circulars/mirror',
+  path: '/api/circulars/mirror',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,10 +90,12 @@ export interface FileRoutesByFullPath {
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
   '/voti': typeof VotiRoute
+  '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,10 +104,12 @@ export interface FileRoutesByTo {
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
   '/voti': typeof VotiRoute
+  '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,10 +119,12 @@ export interface FileRoutesById {
   '/diario': typeof DiarioRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
   '/voti': typeof VotiRoute
+  '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,10 +135,12 @@ export interface FileRouteTypes {
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/note'
     | '/orario'
     | '/personalizza'
     | '/professori'
     | '/voti'
+    | '/api/circulars/mirror'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,10 +149,12 @@ export interface FileRouteTypes {
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/note'
     | '/orario'
     | '/personalizza'
     | '/professori'
     | '/voti'
+    | '/api/circulars/mirror'
   id:
     | '__root__'
     | '/'
@@ -141,10 +163,12 @@ export interface FileRouteTypes {
     | '/diario'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/note'
     | '/orario'
     | '/personalizza'
     | '/professori'
     | '/voti'
+    | '/api/circulars/mirror'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,10 +178,12 @@ export interface RootRouteChildren {
   DiarioRoute: typeof DiarioRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
   InterrogazioniRoute: typeof InterrogazioniRoute
+  NoteRoute: typeof NoteRoute
   OrarioRoute: typeof OrarioRoute
   PersonalizzaRoute: typeof PersonalizzaRoute
   ProfessoriRoute: typeof ProfessoriRoute
   VotiRoute: typeof VotiRoute
+  ApiCircularsMirrorRoute: typeof ApiCircularsMirrorRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterrogazioniRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/note': {
+      id: '/note'
+      path: '/note'
+      fullPath: '/note'
+      preLoaderRoute: typeof NoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orario': {
       id: '/orario'
       path: '/orario'
@@ -232,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VotiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/circulars/mirror': {
+      id: '/api/circulars/mirror'
+      path: '/api/circulars/mirror'
+      fullPath: '/api/circulars/mirror'
+      preLoaderRoute: typeof ApiCircularsMirrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -242,10 +282,12 @@ const rootRouteChildren: RootRouteChildren = {
   DiarioRoute: DiarioRoute,
   ImpostazioniRoute: ImpostazioniRoute,
   InterrogazioniRoute: InterrogazioniRoute,
+  NoteRoute: NoteRoute,
   OrarioRoute: OrarioRoute,
   PersonalizzaRoute: PersonalizzaRoute,
   ProfessoriRoute: ProfessoriRoute,
   VotiRoute: VotiRoute,
+  ApiCircularsMirrorRoute: ApiCircularsMirrorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

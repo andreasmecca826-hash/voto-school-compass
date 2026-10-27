@@ -133,6 +133,16 @@
   --secondary: oklch(0.92 0.012 90);
   --accent: oklch(0.9 0.015 90);
 }
+[data-bg="rosso"] {
+  --background: oklch(0.14 0.045 25);
+  --card: oklch(0.19 0.055 25);
+  --surface: oklch(0.24 0.065 25);
+}
+[data-bg="oceano"] {
+  --background: oklch(0.14 0.04 235);
+  --card: oklch(0.19 0.045 235);
+  --surface: oklch(0.24 0.055 235);
+}
 
 [data-mode="chiaro"] {
   color-scheme: light;
@@ -188,6 +198,16 @@
   --background: oklch(0.95 0.025 75);
   --card: oklch(0.99 0.01 85 / 0.86);
   --surface: oklch(0.91 0.035 75 / 0.8);
+}
+[data-mode="chiaro"][data-bg="rosso"] {
+  --background: oklch(0.93 0.03 25);
+  --card: oklch(0.99 0.02 25 / 0.86);
+  --surface: oklch(0.87 0.05 25 / 0.8);
+}
+[data-mode="chiaro"][data-bg="oceano"] {
+  --background: oklch(0.92 0.035 235);
+  --card: oklch(0.98 0.02 235 / 0.86);
+  --surface: oklch(0.85 0.05 235 / 0.8);
 }
 [data-mode="scuro"][data-bg="chiaro"],
 [data-mode="scuro"][data-bg="carta"] {
@@ -252,6 +272,10 @@
 [data-accent="corallo"] {
   --hue: 12;
   --chroma: 0.19;
+}
+[data-accent="menta"] {
+  --hue: 165;
+  --chroma: 0.14;
 }
 [data-accent="mono"] {
   --hue: 0;
@@ -438,6 +462,22 @@
   --theme-font-sans: Manrope, sans-serif;
   --theme-font-display: Manrope, sans-serif;
 }
+[data-theme="tramonto"] {
+  --theme-bg-dark: oklch(0.15 0.05 350);
+  --theme-card-dark: oklch(0.23 0.07 350);
+  --theme-surface-dark: oklch(0.3 0.08 25);
+  --theme-bg-light: oklch(0.95 0.035 35);
+  --theme-card-light: oklch(0.99 0.02 30);
+  --theme-surface-light: oklch(0.88 0.05 30);
+  --theme-fg-dark: oklch(0.97 0.02 25);
+  --theme-fg-light: oklch(0.24 0.04 20);
+  --theme-muted-dark: oklch(0.74 0.04 25);
+  --theme-muted-light: oklch(0.48 0.035 25);
+  --theme-primary: oklch(0.76 0.17 43);
+  --theme-radius: 1.15rem;
+  --theme-font-sans: "Manrope", sans-serif;
+  --theme-font-display: "Space Grotesk", sans-serif;
+}
 [data-theme="custom"] {
   --theme-bg-dark: var(--custom-bg-dark);
   --theme-card-dark: var(--custom-card-dark);
@@ -621,4 +661,17 @@
 .lovable-badge,
 [id*="lovable-badge"] {
   display: none !important;
+}
+
+:root[data-density="compact"] main .card-surface {
+  padding: 0.75rem;
+}
+
+:root[data-reduce-motion="on"] *,
+:root[data-reduce-motion="on"] *::before,
+:root[data-reduce-motion="on"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
 }

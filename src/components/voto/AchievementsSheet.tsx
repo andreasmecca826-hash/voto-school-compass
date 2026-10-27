@@ -19,11 +19,13 @@ export function AchievementsSheet({ open, onOpenChange }: { open: boolean; onOpe
   const avg = overallAverage(v.data.subjects);
   const comeback = v.data.subjects.some((subject) => {
     const gradesByDate = [...subject.grades].sort((a, b) => a.date.localeCompare(b.date));
-    return gradesByDate.length >= 2 && average(subject.grades)! > gradesByDate[0].value;
+    const first = gradesByDate[0]!.value;
+    return gradesByDate.length >= 2 && average(subject.grades)! > first;
   });
   const consistent = v.data.subjects.filter((subject) => {
     const gradesByDate = [...subject.grades].sort((a, b) => a.date.localeCompare(b.date));
-    return gradesByDate.length >= 2 && average(subject.grades)! > gradesByDate[0].value;
+    const first = gradesByDate[0]!.value;
+    return gradesByDate.length >= 2 && average(subject.grades)! > first;
   }).length >= 2;
   const weekStart = START_OF_WEEK(now);
   const weekEnd = new Date(weekStart);

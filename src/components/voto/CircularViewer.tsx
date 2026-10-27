@@ -43,7 +43,7 @@ export function CircularViewer({
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
-            <p>Il PDF di questa circolare non è disponibile nel JSON.</p>
+            <p>Il PDF non è disponibile nello storage interno.</p>
           </div>
         )}
         {url && (
@@ -55,14 +55,6 @@ export function CircularViewer({
               className="press inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
             >
               <ExternalLink className="h-4 w-4" /> Apri o scarica il PDF
-            </a>
-            <a
-              href="https://www.portaleargo.it/famiglia/"
-              target="_blank"
-              rel="noreferrer"
-              className="press inline-flex h-10 items-center justify-center rounded-xl border border-border px-3 text-[11px] font-semibold text-muted-foreground"
-            >
-              Fallback DidUP
             </a>
           </div>
         )}

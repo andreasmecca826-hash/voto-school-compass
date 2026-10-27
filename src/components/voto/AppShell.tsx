@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  Bell,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -12,9 +11,11 @@ import {
   LayoutGrid,
   Menu,
   MessageCircle,
+  Newspaper,
   Palette,
   RefreshCw,
   Settings,
+  StickyNote,
   Trophy,
   UsersRound,
   X,
@@ -27,11 +28,13 @@ import { NotificationsSheet } from "./NotificationsSheet";
 import { AchievementsSheet } from "./AchievementsSheet";
 import { SimulatorSheet } from "./SimulatorSheet";
 import { SubjectSheet } from "./SubjectSheet";
+import { MusicPanel } from "./MusicPanel";
 
 interface UiCtx {
   openNotifications: () => void;
   openSimulator: (subjectId?: string) => void;
   openSubject: (id: string) => void;
+  openMusic: () => void;
 }
 const Ui = createContext<UiCtx | null>(null);
 export const useUi = () => {
@@ -68,18 +71,18 @@ const MORE_NAV = [
     color: "#16a5b8",
   },
   {
+    to: "/note",
+    label: "Note",
+    description: "Note disciplinari",
+    icon: StickyNote,
+    color: "#f28f78",
+  },
+  {
     to: "/professori",
     label: "Professori",
     description: "Docenti e materie",
     icon: UsersRound,
     color: "#4f9bd9",
-  },
-  {
-    to: "/assistente",
-    label: "Assistente",
-    description: "Domande sui tuoi dati",
-    icon: MessageCircle,
-    color: "#8f6be8",
   },
   {
     to: "/personalizza",
@@ -104,7 +107,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [achievements, setAchievements] = useState(false);
-  const [sim, setSim] = useState<{ open: boolean; subjectId?: string }>({ open: false });
+  const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
+    open: false,
+  });
   const [subject, setSubject] = useState<string | null>(null);
   const [mounted, setMounted] = useState({
     notifications: false,
@@ -112,6 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     simulator: false,
     subject: false,
   });
+  const [musicOpen, setMusicOpen] = useState(false);
 
   useEffect(() => {
     setMoreOpen(false);
@@ -137,8 +143,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           setMounted((current) => ({ ...current, subject: true }));
           setSubject(id);
         },
+        openMusic: () => setMusicOpen(true),
       }}
     >
+      <MusicPanel
+        open={musicOpen}
+        onClose={() => setMusicOpen(false)}
+      />
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
         <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
@@ -169,6 +180,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
               <button
                 type="button"
+                onClick={() => {
+                  setMounted((current) => ({ ...current, notifications: true }));
+                  setNotif(true);
+                }}
+                className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+                aria-label="Novità"
+                title="Novità"
+              >
+                <Newspaper className="h-[18px] w-[18px]" />
+              </button>
+              <button
+                type="button"
                 onClick={() => v.refresh()}
                 disabled={v.loading}
                 className="press flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium disabled:opacity-70"
@@ -188,10 +211,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 v={v}
                 currentPath={path}
                 onClose={() => setMoreOpen(false)}
-                onNotifications={() => {
-                  setMounted((current) => ({ ...current, notifications: true }));
-                  setNotif(true);
-                }}
                 onAchievements={() => {
                   setMounted((current) => ({ ...current, achievements: true }));
                   setAchievements(true);
@@ -318,14 +337,12 @@ function MoreMenu({
   v,
   currentPath,
   onClose,
-  onNotifications,
   onAchievements,
   onSimulator,
 }: {
   v: ReturnType<typeof useVoto>;
   currentPath: string;
   onClose: () => void;
-  onNotifications: () => void;
   onAchievements: () => void;
   onSimulator: () => void;
 }) {
@@ -389,20 +406,6 @@ function MoreMenu({
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => {
-            onNotifications();
-            onClose();
-          }}
-          className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
-        >
-          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#f28f78]">
-            <Bell className="h-7 w-7 text-white" />
-          </span>
-          <span className="text-base font-bold">Notifiche</span>
-          <span className="mt-1 text-[10px] text-muted-foreground">Avvisi e comunicazioni</span>
-        </button>
         <button
           type="button"
           onClick={() => {

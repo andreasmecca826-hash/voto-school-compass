@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { useUi } from "@/components/voto/AppShell";
 import { CircularViewer } from "@/components/voto/CircularViewer";
+import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
 import { NOTIF_META } from "@/components/voto/NotificationsSheet";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
@@ -362,6 +363,7 @@ function Dashboard() {
         {isHomeModuleVisible("bacheca") && (
           <div style={{ order: homeOrder("bacheca") }}>
             <SectionTitle>Bacheca</SectionTitle>
+            <CircularCheckControl />
             {bulletin.length === 0 ? (
               <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" />
             ) : (
@@ -436,7 +438,7 @@ function NotifItem({ id }: { id: string }) {
           onOpenChange={setCircularOpen}
           title={n.message ?? n.title}
           fileName={n.attachmentName}
-          url={n.attachmentUrl}
+          url={n.attachmentPath ? n.attachmentUrl : undefined}
         />
       )}
     </li>
@@ -453,7 +455,7 @@ function GoalWidget({ avg }: { avg: number | null }) {
   if (avg !== null && gap !== null && graded.length) {
     if (gap <= 0) estimate = "Obiettivo raggiunto: mantieni il ritmo.";
     else {
-      const weakest = [...graded].sort((a, b) => average(a.grades)! - average(b.grades)!)[0];
+      const weakest = [...graded].sort((a, b) => average(a.grades)! - average(b.grades)!)[0]!;
       const sum = graded.reduce((t, s) => t + average(s.grades)!, 0);
       const needAvg = v.target * graded.length - sum + average(weakest.grades)!;
       const r = needAvg <= 10 ? neededGrade(weakest.grades, needAvg, 1) : null;
@@ -492,7 +494,7 @@ function GoalWidget({ avg }: { avg: number | null }) {
           max={10}
           step={0.25}
           value={[v.target]}
-          onValueChange={([x]) => v.setTarget(x)}
+          onValueChange={(val) => v.setTarget(val[0] ?? v.target)}
           aria-label="Obiettivo media generale"
         />
         <div className="mt-4">

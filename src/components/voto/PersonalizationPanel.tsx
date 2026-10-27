@@ -5,25 +5,35 @@ import {
   Eye,
   EyeOff,
   Home,
+  Music2,
   Moon,
   Palette,
   RotateCcw,
+  SlidersHorizontal,
   Sun,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
+import { useUi } from "@/components/voto/AppShell";
 import {
   useVoto,
   type Accent,
   type Bg,
   type CustomTheme,
+  type Density,
   type HomeModuleId,
   type Mode,
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home";
+type View = "menu" | "themes" | "home" | "experience";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -32,6 +42,7 @@ const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "blu", label: "Blu", sw: "oklch(0.68 0.16 250)" },
   { id: "verde", label: "Verde", sw: "oklch(0.68 0.14 145)" },
   { id: "azzurro", label: "Azzurro", sw: "oklch(0.68 0.15 205)" },
+  { id: "menta", label: "Menta", sw: "oklch(0.68 0.14 165)" },
   { id: "rosa", label: "Rosa", sw: "oklch(0.68 0.15 345)" },
   { id: "arancio", label: "Arancio", sw: "oklch(0.68 0.18 45)" },
   { id: "turchese", label: "Turchese", sw: "oklch(0.68 0.15 180)" },
@@ -46,6 +57,8 @@ const BGS: { id: Bg; label: string; sw: string }[] = [
   { id: "carbone", label: "Carbone", sw: "oklch(0.18 0.004 260)" },
   { id: "grafite", label: "Grafite", sw: "oklch(0.23 0.006 250)" },
   { id: "chiaro", label: "Chiaro", sw: "oklch(0.97 0.008 90)" },
+  { id: "rosso", label: "Rosso", sw: "oklch(0.14 0.045 25)" },
+  { id: "oceano", label: "Oceano", sw: "oklch(0.14 0.04 235)" },
   { id: "notteblu", label: "Notte blu", sw: "oklch(0.14 0.035 255)" },
   { id: "bosco", label: "Bosco", sw: "oklch(0.15 0.035 155)" },
   { id: "prugna", label: "Prugna", sw: "oklch(0.15 0.035 315)" },
@@ -63,6 +76,12 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     label: "Personalizzato",
     description: "Crea il tuo tema",
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
+  },
+  {
+    id: "tramonto",
+    label: "Tramonto",
+    description: "Caldo, tra corallo e ambra",
+    sw: "linear-gradient(135deg,#291622,#f08a60)",
   },
   {
     id: "lavender",
@@ -176,13 +195,22 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];
+const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
+  { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
+  { id: "compact", label: "Compatto", description: "Schede più raccolte" },
+];
+const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
+  { id: false, label: "Normali", description: "Transizioni e animazioni" },
+  { id: true, label: "Ridotte", description: "Meno movimento nell’interfaccia" },
+];
 
 export function PersonalizationPanel() {
   const v = useVoto();
+  const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
-  const [moreThemes, setMoreThemes] = useState(false);
-  const [moreColors, setMoreColors] = useState(false);
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
+  const hiddenThemeName = THEMES.slice(4).find((theme) => theme.id === v.theme)?.label;
+  const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
 
   if (view === "menu")
     return (
@@ -216,7 +244,83 @@ export function PersonalizationPanel() {
               Moduli e ordine della Home
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setView("experience")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <SlidersHorizontal className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Esperienza</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Formato e animazioni
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={openMusic}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Music2 className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Musica</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Brani dal dispositivo o da URL
+            </span>
+          </button>
         </div>
+      </div>
+    );
+
+  if (view === "experience")
+    return (
+      <div className="pt-3">
+        <BackButton onClick={() => setView("menu")} title="Esperienza" />
+        <SectionTitle>Formato delle schede</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          {DENSITY_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={v.density === option.id}
+              onClick={() => v.setDensity(option.id)}
+              className={cn(
+                "press card-surface p-3 text-left",
+                v.density === option.id && "border-primary",
+              )}
+            >
+              <span className="block text-xs font-semibold">{option.label}</span>
+              <span className="mt-1 block text-[10px] text-muted-foreground">
+                {option.description}
+              </span>
+            </button>
+          ))}
+        </div>
+        <SectionTitle>Movimento</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          {MOTION_OPTIONS.map((option) => (
+            <button
+              key={String(option.id)}
+              type="button"
+              aria-pressed={v.reduceMotion === option.id}
+              onClick={() => v.setReduceMotion(option.id)}
+              className={cn(
+                "press card-surface p-3 text-left",
+                v.reduceMotion === option.id && "border-primary",
+              )}
+            >
+              <span className="block text-xs font-semibold">{option.label}</span>
+              <span className="mt-1 block text-[10px] text-muted-foreground">
+                {option.description}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Le preferenze vengono salvate su questo dispositivo.
+        </p>
       </div>
     );
 
@@ -287,35 +391,37 @@ export function PersonalizationPanel() {
       <BackButton onClick={() => setView("menu")} title="Temi" />
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
-        {THEMES.slice(0, moreThemes ? THEMES.length : 4).map((theme) => (
-          <button
+        {THEMES.slice(0, 4).map((theme) => (
+          <ThemeOption
             key={theme.id}
-            type="button"
-            aria-pressed={v.theme === theme.id}
-            onClick={() => v.setTheme(theme.id)}
-            className={cn(
-              "press card-surface overflow-hidden p-0 text-left",
-              v.theme === theme.id && "border-primary",
-            )}
-          >
-            <span className="block h-16" style={{ background: theme.sw }} />
-            <span className="block p-3">
-              <span className="block text-xs font-semibold">{theme.label}</span>
-              <span className="mt-1 block text-[10px] text-muted-foreground">
-                {theme.description}
-              </span>
-            </span>
-          </button>
+            theme={theme}
+            selected={v.theme === theme.id}
+            onSelect={v.setTheme}
+          />
         ))}
       </div>
-      <button
-        type="button"
-        onClick={() => setMoreThemes((x) => !x)}
-        className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground"
-      >
-        {moreThemes ? "Mostra meno temi" : "Mostra tutti i temi"}
-        <ChevronDown className={cn("h-4 w-4", moreThemes && "rotate-180")} />
-      </button>
+      {THEMES.length > 4 && (
+        <Accordion type="single" collapsible className="mt-2 rounded-xl border border-border px-3">
+          <AccordionItem value="other-themes" className="border-0">
+            <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
+              Altri temi ({THEMES.length - 4})
+              {hiddenThemeName ? ` · attivo: ${hiddenThemeName}` : ""}
+            </AccordionTrigger>
+            <AccordionContent className="pb-2">
+              <div className="grid grid-cols-2 gap-2">
+                {THEMES.slice(4).map((theme) => (
+                  <ThemeOption
+                    key={theme.id}
+                    theme={theme}
+                    selected={v.theme === theme.id}
+                    onSelect={v.setTheme}
+                  />
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       {v.theme === "original" && (
         <>
           <SectionTitle>Font</SectionTitle>
@@ -475,32 +581,44 @@ export function PersonalizationPanel() {
       {v.theme === "original" && (
         <>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {ACCENTS.slice(0, moreColors ? ACCENTS.length : 6).map((accent) => (
-              <button
+            {ACCENTS.slice(0, 6).map((accent) => (
+              <AccentOption
                 key={accent.id}
-                type="button"
-                aria-pressed={v.accent === accent.id}
-                onClick={() => v.setAccent(accent.id)}
-                className={cn(
-                  "press card-surface flex flex-col items-center gap-2 p-3 text-[11px]",
-                  v.accent === accent.id && "border-primary",
-                )}
-              >
-                <span className="h-7 w-7 rounded-full" style={{ background: accent.sw }} />
-                {accent.label}
-              </button>
+                accent={accent}
+                selected={v.accent === accent.id}
+                onSelect={v.setAccent}
+              />
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setMoreColors((x) => !x)}
-            className="press mt-2 flex h-10 w-full items-center justify-center rounded-xl border border-border text-xs font-semibold text-muted-foreground"
-          >
-            {moreColors ? "Mostra meno colori" : "Mostra altri colori"}
-          </button>
+          {ACCENTS.length > 6 && (
+            <Accordion
+              type="single"
+              collapsible
+              className="mt-2 rounded-xl border border-border px-3"
+            >
+              <AccordionItem value="other-colors" className="border-0">
+                <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
+                  Altri colori ({ACCENTS.length - 6})
+                  {hiddenAccentName ? ` · attivo: ${hiddenAccentName}` : ""}
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {ACCENTS.slice(6).map((accent) => (
+                      <AccentOption
+                        key={accent.id}
+                        accent={accent}
+                        selected={v.accent === accent.id}
+                        onSelect={v.setAccent}
+                      />
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
           <p className="mb-2 mt-4 text-xs text-muted-foreground">Sfondo</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {BGS.slice(0, moreBackgrounds ? BGS.length : 4).map((bg) => (
+            {BGS.slice(0, moreBackgrounds ? BGS.length : 6).map((bg) => (
               <button
                 key={bg.id}
                 type="button"
@@ -526,6 +644,59 @@ export function PersonalizationPanel() {
         </>
       )}
     </div>
+  );
+}
+
+function ThemeOption({
+  theme,
+  selected,
+  onSelect,
+}: {
+  theme: (typeof THEMES)[number];
+  selected: boolean;
+  onSelect: (theme: Theme) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={() => onSelect(theme.id)}
+      className={cn(
+        "press card-surface overflow-hidden p-0 text-left",
+        selected && "border-primary",
+      )}
+    >
+      <span className="block h-16" style={{ background: theme.sw }} />
+      <span className="block p-3">
+        <span className="block text-xs font-semibold">{theme.label}</span>
+        <span className="mt-1 block text-[10px] text-muted-foreground">{theme.description}</span>
+      </span>
+    </button>
+  );
+}
+
+function AccentOption({
+  accent,
+  selected,
+  onSelect,
+}: {
+  accent: (typeof ACCENTS)[number];
+  selected: boolean;
+  onSelect: (accent: Accent) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={() => onSelect(accent.id)}
+      className={cn(
+        "press card-surface flex flex-col items-center gap-2 p-3 text-[11px]",
+        selected && "border-primary",
+      )}
+    >
+      <span className="h-7 w-7 rounded-full" style={{ background: accent.sw }} />
+      {accent.label}
+    </button>
   );
 }
 
