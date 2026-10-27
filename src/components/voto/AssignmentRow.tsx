@@ -1,13 +1,14 @@
 import { Check, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { daysBetween, relDay } from "@/lib/voto/dates";
-import { useVoto } from "@/lib/voto/store";
+import { useClock, useVoto } from "@/lib/voto/store";
 import type { Assignment } from "@/lib/voto/types";
 
 export function AssignmentRow({ a }: { a: Assignment }) {
   const v = useVoto();
+  const now = useClock();
   const done = v.isDone(a.id, a.completed);
-  const diff = a.dueDate ? daysBetween(v.now, a.dueDate) : null;
+  const diff = a.dueDate ? daysBetween(now, a.dueDate) : null;
   const overdue = !done && diff !== null && diff < 0;
   const urgent = !done && diff !== null && diff >= 0 && diff <= 1;
 
@@ -33,7 +34,7 @@ export function AssignmentRow({ a }: { a: Assignment }) {
           {a.subject && <span className="rounded-md bg-surface px-1.5 py-0.5">{a.subject}</span>}
           <span className={cn("inline-flex items-center gap-1 rounded-md px-1.5 py-0.5", overdue ? "bg-danger-soft text-danger" : urgent ? "bg-primary-soft text-primary" : "bg-surface")}>
             <Clock className="h-3 w-3" />
-            {overdue ? "Scaduto · " : ""}{relDay(v.now, a.dueDate)}{a.dueTime ? ` · ${a.dueTime}` : ""}
+            {overdue ? "Scaduto · " : ""}{relDay(now, a.dueDate)}{a.dueTime ? ` · ${a.dueTime}` : ""}
           </span>
           {done && <span className="text-success">Completato</span>}
         </div>

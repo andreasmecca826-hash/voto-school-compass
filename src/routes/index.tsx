@@ -27,7 +27,7 @@ import {
   selectNotificationsByType,
   selectOpenInterrogazioni,
 } from "@/lib/voto/selectors";
-import { useVoto } from "@/lib/voto/store";
+import { useClock, useVoto } from "@/lib/voto/store";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
@@ -47,6 +47,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const v = useVoto();
+  const now = useClock();
   const ui = useUi();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
   const { subjects, assignments, notifications, previousAverage } = v.data;
@@ -54,8 +55,8 @@ function Dashboard() {
   const history = useMemo(() => averageHistory(subjects), [subjects]);
   const delta = avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
   const today = useMemo(
-    () => selectDashboardAssignments(assignments, v.now, v.isDone),
-    [assignments, v.now, v.isDone],
+    () => selectDashboardAssignments(assignments, now, v.isDone),
+    [assignments, now, v.isDone],
   );
   const attendance = v.data.attendance ?? {
     absenceDays: 0,

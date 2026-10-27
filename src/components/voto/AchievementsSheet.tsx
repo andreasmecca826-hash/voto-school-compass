@@ -1,7 +1,7 @@
 import { Trophy } from "lucide-react";
 import { BottomSheet, Empty } from "./ui";
 import { average, overallAverage } from "@/lib/voto/calc";
-import { useVoto } from "@/lib/voto/store";
+import { useClock, useVoto } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
 
 const START_OF_WEEK = (date: Date) => {
@@ -14,6 +14,7 @@ const START_OF_WEEK = (date: Date) => {
 
 export function AchievementsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const v = useVoto();
+  const now = useClock();
   const grades = v.data.subjects.flatMap((subject) => subject.grades);
   const avg = overallAverage(v.data.subjects);
   const comeback = v.data.subjects.some((subject) => {
@@ -24,7 +25,7 @@ export function AchievementsSheet({ open, onOpenChange }: { open: boolean; onOpe
     const gradesByDate = [...subject.grades].sort((a, b) => a.date.localeCompare(b.date));
     return gradesByDate.length >= 2 && average(subject.grades)! > gradesByDate[0].value;
   }).length >= 2;
-  const weekStart = START_OF_WEEK(v.now);
+  const weekStart = START_OF_WEEK(now);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
   const weeklyAssignments = v.data.assignments.filter((assignment) => {

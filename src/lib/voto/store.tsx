@@ -185,10 +185,10 @@ interface Ctx {
   toggleInterrogazione: (id: string) => void;
   toggleInterrogazionePrep: (id: string, preparationId: string) => void;
   removeInterrogazione: (id: string) => void;
-  now: Date;
 }
 
 const VotoCtx = createContext<Ctx | null>(null);
+const ClockCtx = createContext<Date | null>(null);
 
 const EMPTY: VotoData = {
   student: {},
@@ -349,7 +349,6 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       customTheme,
       homeModules,
       interrogazioni,
-      now,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
         setCompletions((c) => {
@@ -530,18 +529,27 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       customTheme,
       homeModules,
       interrogazioni,
-      now,
       completions,
       readIds,
       refreshImpl,
     ],
   );
 
-  return <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>;
+  return (
+    <ClockCtx.Provider value={now}>
+      <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>
+    </ClockCtx.Provider>
+  );
 }
 
 export function useVoto() {
   const c = useContext(VotoCtx);
   if (!c) throw new Error("useVoto fuori dal provider");
   return c;
+}
+
+export function useClock() {
+  const now = useContext(ClockCtx);
+  if (!now) throw new Error("useClock fuori dal provider");
+  return now;
 }

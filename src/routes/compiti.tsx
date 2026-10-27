@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { Chip, Empty, SectionTitle } from "@/components/voto/ui";
 import { daysBetween } from "@/lib/voto/dates";
-import { useVoto } from "@/lib/voto/store";
+import { useClock, useVoto } from "@/lib/voto/store";
 import type { Assignment } from "@/lib/voto/types";
 
 export const Route = createFileRoute("/compiti")({
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/compiti")({
 
 function Compiti() {
   const v = useVoto();
+  const now = useClock();
   const [subj, setSubj] = useState<string>("all");
   const subjects = [...new Set(v.data.assignments.map((a) => a.subject).filter(Boolean))] as string[];
   const all = v.data.assignments
@@ -28,8 +29,8 @@ function Compiti() {
     .sort((a, b) => `${a.dueDate ?? "9"}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate ?? "9"}${b.dueTime ?? ""}`));
   const done = all.filter((a) => v.isDone(a.id, a.completed));
   const open = all.filter((a) => !v.isDone(a.id, a.completed));
-  const today = open.filter((a) => a.dueDate && daysBetween(v.now, a.dueDate) <= 0);
-  const next = open.filter((a) => !a.dueDate || daysBetween(v.now, a.dueDate) > 0);
+  const today = open.filter((a) => a.dueDate && daysBetween(now, a.dueDate) <= 0);
+  const next = open.filter((a) => !a.dueDate || daysBetween(now, a.dueDate) > 0);
 
   const group = (title: string, items: Assignment[]) => (
     <>
