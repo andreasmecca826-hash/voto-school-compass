@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Calculator } from "lucide-react";
-import { useState } from "react";
 import { useUi } from "@/components/voto/AppShell";
+import { useState } from "react";
 import { Chip, GradePill, ProgressBar, SubjectMark } from "@/components/voto/ui";
 import { fmt, subjectStats } from "@/lib/voto/calc";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
@@ -38,13 +38,12 @@ function Voti() {
     <div className="pt-3">
       <div className="flex items-center justify-between gap-2">
         <h1 className="font-display text-2xl font-semibold">Voti</h1>
-        <button
-          type="button"
-          onClick={() => ui.openSimulator()}
+        <Link
+          to="/studio"
           className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-soft px-3 text-xs font-medium text-primary"
         >
-          <Calculator className="h-4 w-4" /> Simulatore
-        </button>
+          <Calculator className="h-4 w-4" /> Studio Lab
+        </Link>
       </div>
       <PeriodPicker />
       <div className="no-scrollbar mt-4 flex gap-2 overflow-x-auto">

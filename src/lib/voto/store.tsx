@@ -169,6 +169,7 @@ interface Ctx {
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
   setHomeScale: (scale: number) => void;
   setHomeModuleScale: (id: HomeModuleId, scale: number) => void;
+  setHomeCustomization: (settings: { homeScale: number; homeModules: HomeModuleConfig[] }) => void;
   resetHomeModules: () => void;
   addInterrogazione: (item: Omit<Interrogazione, "id" | "completed" | "checklist">) => void;
   toggleInterrogazione: (id: string) => void;
@@ -504,6 +505,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           save(KEYS.homeModules, next);
           return next;
         }),
+      setHomeCustomization: (settings) => {
+        const modules = normalizeHomeModules(settings.homeModules);
+        const scale = normalizeHomeScale(settings.homeScale);
+        setHomeModulesS(modules);
+        save(KEYS.homeModules, modules);
+        setHomeScaleS(scale);
+        save(KEYS.homeScale, scale);
+      },
       resetHomeModules: () => {
         setHomeModulesS(DEFAULT_HOME_MODULES);
         save(KEYS.homeModules, DEFAULT_HOME_MODULES);

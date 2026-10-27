@@ -198,7 +198,7 @@ const CUSTOM_COLORS: {
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
-  { id: "simulatore", label: "Simulatore voto" },
+  { id: "simulatore", label: "Studio Lab" },
   { id: "presenze", label: "Presenze" },
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },

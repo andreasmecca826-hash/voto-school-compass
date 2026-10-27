@@ -17,7 +17,6 @@ import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
-import { useUi } from "@/components/voto/AppShell";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
 import { NOTIF_META } from "@/components/voto/NotificationsSheet";
@@ -53,13 +52,15 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const v = useVoto();
   const now = useClock();
-  const ui = useUi();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
   const { subjects, config } = useSchoolPeriods();
   const { assignments, notifications, previousAverage } = v.data;
   const avg = useMemo(() => overallAverage(subjects), [subjects]);
   const history = useMemo(() => averageHistory(subjects), [subjects]);
-  const delta = config.selection === "all" && avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
+  const delta =
+    config.selection === "all" && avg !== null && previousAverage !== undefined
+      ? avg - previousAverage
+      : null;
   const today = useMemo(
     () => selectDashboardAssignments(assignments, now, v.isDone),
     [assignments, now, v.isDone],
@@ -190,22 +191,21 @@ function Dashboard() {
 
         {isHomeModuleVisible("simulatore") && (
           <div style={{ order: homeOrder("simulatore"), zoom: homeModuleScale("simulatore") }}>
-            <button
-              type="button"
-              onClick={() => ui.openSimulator()}
+            <Link
+              to="/studio"
               className="press card-surface mt-3 flex w-full items-center gap-3 p-4 text-left"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                 <Calculator className="h-5 w-5" />
               </span>
               <span className="flex-1">
-                <span className="block text-sm font-semibold">Che voto mi serve?</span>
+                <span className="block text-sm font-semibold">Studio Lab</span>
                 <span className="block text-xs text-muted-foreground">
-                  Simula la prossima verifica
+                  Calcolo media e simulatore voti
                 </span>
               </span>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </button>
+            </Link>
           </div>
         )}
 

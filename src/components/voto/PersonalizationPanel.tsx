@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Download,
   Eye,
   EyeOff,
   Home,
@@ -12,8 +13,10 @@ import {
   SlidersHorizontal,
   Sun,
   Type,
+  Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
@@ -23,6 +26,7 @@ import {
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
+import { createHomeSettingsFile, parseHomeSettingsFile } from "@/lib/voto/home-settings-file";
 import {
   useVoto,
   type Accent,
@@ -189,7 +193,7 @@ const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
-  { id: "simulatore", label: "Simulatore voto" },
+  { id: "simulatore", label: "Studio Lab" },
   { id: "presenze", label: "Presenze" },
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },
@@ -212,6 +216,7 @@ export function PersonalizationPanel() {
   const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
+  const homeSettingsInput = useRef<HTMLInputElement>(null);
   const hiddenThemeName = THEMES.slice(4).find((theme) => theme.id === v.theme)?.label;
   const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
 
@@ -552,6 +557,64 @@ export function PersonalizationPanel() {
           >
             <RotateCcw className="h-3.5 w-3.5" /> Ripristina la Home
           </button>
+        </section>
+        <SectionTitle>Trasferisci impostazioni Home</SectionTitle>
+        <section className="card-surface p-4">
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            Esporta o importa ordine, visibilità e dimensioni dei moduli. Il file non contiene voti
+            o altri dati personali.
+          </p>
+          <input
+            ref={homeSettingsInput}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            aria-label="Seleziona file JSON delle impostazioni Home"
+            onChange={async (event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (!file) return;
+              try {
+                const settings = parseHomeSettingsFile(await file.text());
+                v.setHomeCustomization(settings);
+                toast.success("Impostazioni Home importate");
+              } catch (error) {
+                toast.error("Importazione non riuscita", {
+                  description: error instanceof Error ? error.message : "Controlla il file JSON.",
+                });
+              }
+            }}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const contents = createHomeSettingsFile({
+                  homeScale: v.homeScale,
+                  homeModules: v.homeModules,
+                });
+                const url = URL.createObjectURL(
+                  new Blob([contents], { type: "application/json;charset=utf-8" }),
+                );
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = "voto-home-impostazioni.json";
+                anchor.click();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                toast.success("File JSON esportato");
+              }}
+              className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-xs font-semibold"
+            >
+              <Download className="h-4 w-4" /> Esporta JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => homeSettingsInput.current?.click()}
+              className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground"
+            >
+              <Upload className="h-4 w-4" /> Importa JSON
+            </button>
+          </div>
         </section>
       </div>
     );

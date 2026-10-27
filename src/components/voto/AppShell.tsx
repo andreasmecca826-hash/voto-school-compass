@@ -370,10 +370,21 @@ function MoreMenu({
           <GraduationCap className="h-7 w-7" />
         </span>
       </div>
-      <Button asChild variant="outline" className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left">
+      <Button
+        asChild
+        variant="outline"
+        className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left"
+      >
         <Link to="/studio" onClick={onClose}>
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary"><Sparkles /></span>
-          <span className="min-w-0 flex-1"><span className="block font-display text-lg font-semibold">Studio Lab.</span><span className="mt-1 block text-xs text-muted-foreground">Pomodoro · Simulatore · Ruota · Flashcard · Media</span></span>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+            <Sparkles />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-lg font-semibold">Studio Lab.</span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Pomodoro · Calcolo media e simulatore · Ruota · Flashcard
+            </span>
+          </span>
         </Link>
       </Button>
       <div className="grid grid-cols-2 gap-3">
