@@ -5,6 +5,7 @@ import {
   Eye,
   EyeOff,
   Home,
+  Music2,
   Moon,
   Palette,
   RotateCcw,
@@ -19,6 +20,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SectionTitle } from "@/components/voto/ui";
+import { MusicPanel } from "@/components/voto/MusicPanel";
 import { cn } from "@/lib/utils";
 import {
   useVoto,
@@ -31,7 +33,7 @@ import {
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience";
+type View = "menu" | "themes" | "home" | "experience" | "music";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -254,9 +256,24 @@ export function PersonalizationPanel() {
               Formato e animazioni
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setView("music")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Music2 className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Musica</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Brani dal dispositivo o da URL
+            </span>
+          </button>
         </div>
       </div>
     );
+
+  if (view === "music") return <MusicPanel onBack={() => setView("menu")} />;
 
   if (view === "experience")
     return (
