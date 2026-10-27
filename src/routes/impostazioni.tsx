@@ -369,36 +369,43 @@ function Settings() {
         </section>
       )}
 
-      <SectionTitle>Schema JSON</SectionTitle>
-      <button
-        type="button"
-        onClick={() => setShowSchema((x) => !x)}
-        className="press flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
-      >
-        {showSchema ? "Nascondi schema JSON" : "Visualizza schema JSON"}
-        <ChevronDown className={cn("h-4 w-4 transition-transform", showSchema && "rotate-180")} />
-      </button>
-      {showSchema && (
-        <div className="mt-2">
+      {v.source === "demo" && (
+        <>
+          <SectionTitle>Schema JSON</SectionTitle>
           <button
             type="button"
-            onClick={() =>
-              navigator.clipboard.writeText(SCHEMA).then(
-                () => toast.success("Schema copiato"),
-                () => toast.error("Copia non riuscita"),
-              )
-            }
-            className="press mb-2 inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-primary"
+            onClick={() => setShowSchema((x) => !x)}
+            className="press flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
           >
-            <Copy className="h-3.5 w-3.5" /> Copia schema
+            {showSchema ? "Nascondi schema JSON" : "Visualizza schema JSON"}
+            <ChevronDown
+              className={cn("h-4 w-4 transition-transform", showSchema && "rotate-180")}
+            />
           </button>
-          <pre className="card-surface no-scrollbar overflow-x-auto p-4 font-mono text-[10.5px] leading-relaxed text-muted-foreground">
-            {SCHEMA}
-          </pre>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            Voti non numerici vengono ignorati; "7+" = 7,25 e "7-" = 6,75. Il peso predefinito è 1.
-          </p>
-        </div>
+          {showSchema && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() =>
+                  navigator.clipboard.writeText(SCHEMA).then(
+                    () => toast.success("Schema copiato"),
+                    () => toast.error("Copia non riuscita"),
+                  )
+                }
+                className="press mb-2 inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-primary"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copia schema
+              </button>
+              <pre className="card-surface no-scrollbar overflow-x-auto p-4 font-mono text-[10.5px] leading-relaxed text-muted-foreground">
+                {SCHEMA}
+              </pre>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Voti non numerici vengono ignorati; "7+" = 7,25 e "7-" = 6,75. Il peso predefinito è
+                1.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
