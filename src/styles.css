@@ -579,19 +579,19 @@
   --secondary: color-mix(in srgb, var(--theme-card-dark) 90%, white 10%);
   --accent: color-mix(in srgb, var(--theme-card-dark) 82%, white 18%);
 }
-[data-theme="original"][data-font="sans"] {
+:root[data-font="sans"] {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
-[data-theme="original"][data-font="display"] {
+:root[data-font="display"] {
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
-[data-theme="original"][data-font="mono"] {
+:root[data-font="mono"] {
   --font-sans: "JetBrains Mono", ui-monospace, monospace;
   --font-display: "JetBrains Mono", ui-monospace, monospace;
 }
-[data-theme="original"][data-font="serif"] {
+:root[data-font="serif"] {
   --font-sans: Georgia, "Times New Roman", serif;
   --font-display: Georgia, "Times New Roman", serif;
 }

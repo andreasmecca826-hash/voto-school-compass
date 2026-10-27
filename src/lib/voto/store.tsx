@@ -67,7 +67,7 @@ export type Theme =
   | "inverno"
   | "tramonto"
   | "custom";
-export type CustomFont = "sans" | "display" | "mono" | "serif";
+export type CustomFont = "theme" | "sans" | "display" | "mono" | "serif";
 export type CustomTheme = {
   bgDark: string;
   cardDark: string;
@@ -96,8 +96,14 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
   mutedLight: "#5c6a80",
   primary: "#61a7ff",
   radius: 1,
-  font: "sans",
+  font: "theme",
 };
+
+function normalizeInterfaceScale(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 100;
+  return Math.round(Math.min(120, Math.max(80, value)) / 5) * 5;
+}
+
 function normalizeInterrogazioni(value: unknown): Interrogazione[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -135,6 +141,7 @@ interface Ctx {
   reduceMotion: boolean;
   theme: Theme;
   customTheme: CustomTheme;
+  interfaceScale: number;
   homeModules: HomeModuleConfig[];
   homeScale: number;
   interrogazioni: Interrogazione[];
@@ -156,6 +163,7 @@ interface Ctx {
   setReduceMotion: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
+  setInterfaceScale: (scale: number) => void;
   resetCustomTheme: () => void;
   toggleHomeModule: (id: HomeModuleId) => void;
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
@@ -206,6 +214,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [reduceMotion, setReduceMotionS] = useState(false);
   const [theme, setThemeS] = useState<Theme>("original");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
+  const [interfaceScale, setInterfaceScaleS] = useState(100);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
   const [homeScale, setHomeScaleS] = useState(100);
   const [interrogazioni, setInterrogazioni] = useState<Interrogazione[]>([]);
@@ -259,10 +268,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
     setReduceMotionS(load(KEYS.reduceMotion, false));
     setThemeS(load(KEYS.theme, "original"));
+    const savedCustomTheme = load<Partial<CustomTheme>>(KEYS.customTheme, {});
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
-      ...load<Partial<CustomTheme>>(KEYS.customTheme, {}),
+      ...savedCustomTheme,
+      font: savedCustomTheme.font === "sans" ? "theme" : (savedCustomTheme.font ?? "theme"),
     });
+    setInterfaceScaleS(normalizeInterfaceScale(load(KEYS.interfaceScale, 100)));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
     setHomeScaleS(normalizeHomeScale(load(KEYS.homeScale, 100)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
@@ -296,6 +308,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
     root.dataset["theme"] = theme;
     root.dataset["font"] = customTheme.font;
+    root.style.fontSize = `${interfaceScale}%`;
     const custom: Record<string, string> = {
       "--custom-bg-dark": customTheme.bgDark,
       "--custom-card-dark": customTheme.cardDark,
@@ -315,11 +328,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           : customTheme.font === "serif"
             ? "Georgia, serif"
             : customTheme.font === "display"
-              ? "Manrope, sans-serif"
-              : "var(--font-sans)",
+              ? '"Space Grotesk", sans-serif'
+              : '"Manrope", sans-serif',
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [accent, bg, mode, glass, density, reduceMotion, theme, customTheme, ready]);
+  }, [accent, bg, mode, glass, density, reduceMotion, theme, customTheme, interfaceScale, ready]);
 
   const value: Ctx = useMemo(
     () => ({
@@ -339,6 +352,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       glass,
       theme,
       customTheme,
+      interfaceScale,
       homeModules,
       homeScale,
       interrogazioni,
@@ -443,6 +457,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           save(KEYS.customTheme, next);
           return next;
         }),
+      setInterfaceScale: (scale) => {
+        const next = normalizeInterfaceScale(scale);
+        setInterfaceScaleS(next);
+        save(KEYS.interfaceScale, next);
+      },
       resetCustomTheme: () => {
         setCustomThemeS(DEFAULT_CUSTOM_THEME);
         save(KEYS.customTheme, DEFAULT_CUSTOM_THEME);
@@ -554,6 +573,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       reduceMotion,
       refreshImpl,
       homeScale,
+      interfaceScale,
     ],
   );
 

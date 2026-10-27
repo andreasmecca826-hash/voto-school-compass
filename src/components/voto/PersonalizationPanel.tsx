@@ -11,6 +11,7 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Sun,
+  Type,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -33,7 +34,7 @@ import {
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience";
+type View = "menu" | "themes" | "home" | "experience" | "typography";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -180,6 +181,7 @@ const CUSTOM_COLORS: {
   { key: "primary", label: "Colore principale" },
 ];
 const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
+  { id: "theme", label: "Come il tema", sample: "Aa" },
   { id: "sans", label: "Sans moderno", sample: "Aa" },
   { id: "display", label: "Display morbido", sample: "Aa" },
   { id: "mono", label: "Monospace", sample: "01" },
@@ -260,6 +262,19 @@ export function PersonalizationPanel() {
           </button>
           <button
             type="button"
+            onClick={() => setView("typography")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Type className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Tipografia</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Font e dimensione dell’interfaccia
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={openMusic}
             className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
           >
@@ -272,6 +287,95 @@ export function PersonalizationPanel() {
             </span>
           </button>
         </div>
+      </div>
+    );
+
+  if (view === "typography")
+    return (
+      <div className="pt-3">
+        <BackButton onClick={() => setView("menu")} title="Tipografia" />
+        <SectionTitle>Font dell’app</SectionTitle>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          Il font scelto si applica a tutti i temi. “Come il tema” ripristina lo stile tipografico
+          previsto da ciascun tema.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {FONTS.map((font) => (
+            <button
+              key={font.id}
+              type="button"
+              aria-pressed={v.customTheme.font === font.id}
+              onClick={() => v.setCustomTheme({ font: font.id })}
+              className={cn(
+                "press card-surface flex items-center gap-3 p-3 text-left",
+                v.customTheme.font === font.id && "border-primary",
+              )}
+            >
+              <span
+                className="text-2xl text-primary"
+                style={{
+                  fontFamily:
+                    font.id === "theme"
+                      ? "inherit"
+                      : font.id === "serif"
+                        ? "Georgia, serif"
+                        : font.id === "mono"
+                          ? '"JetBrains Mono", monospace'
+                          : font.id === "display"
+                            ? '"Space Grotesk", sans-serif'
+                            : '"Manrope", sans-serif',
+                }}
+              >
+                {font.sample}
+              </span>
+              <span className="text-xs font-semibold">{font.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <SectionTitle>Dimensione interfaccia</SectionTitle>
+        <section className="card-surface p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="interface-scale" className="text-xs font-semibold">
+              Scala generale
+            </label>
+            <output
+              className="tabular text-xs font-semibold text-primary"
+              htmlFor="interface-scale"
+            >
+              {v.interfaceScale}%
+            </output>
+          </div>
+          <input
+            id="interface-scale"
+            type="range"
+            min={80}
+            max={120}
+            step={5}
+            value={v.interfaceScale}
+            onChange={(event) => v.setInterfaceScale(Number(event.target.value))}
+            aria-label="Dimensione generale dell’interfaccia"
+            className="mt-3 w-full accent-primary"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>80%</span>
+            <span>120%</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              v.setCustomTheme({ font: "theme" });
+              v.setInterfaceScale(100);
+            }}
+            disabled={v.customTheme.font === "theme" && v.interfaceScale === 100}
+            className="mt-3 text-[11px] font-medium text-primary disabled:text-muted-foreground"
+          >
+            Ripristina tipografia
+          </button>
+        </section>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Le preferenze vengono salvate su questo dispositivo.
+        </p>
       </div>
     );
 
@@ -487,42 +591,6 @@ export function PersonalizationPanel() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-      )}
-      {v.theme === "original" && (
-        <>
-          <SectionTitle>Font</SectionTitle>
-          <div className="grid grid-cols-2 gap-2">
-            {FONTS.map((font) => (
-              <button
-                key={font.id}
-                type="button"
-                aria-pressed={v.customTheme.font === font.id}
-                onClick={() => v.setCustomTheme({ font: font.id })}
-                className={cn(
-                  "press card-surface flex items-center gap-3 p-3 text-left",
-                  v.customTheme.font === font.id && "border-primary",
-                )}
-              >
-                <span
-                  className="text-2xl text-primary"
-                  style={{
-                    fontFamily:
-                      font.id === "serif"
-                        ? "Georgia, serif"
-                        : font.id === "mono"
-                          ? '"JetBrains Mono", monospace'
-                          : font.id === "display"
-                            ? '"Space Grotesk", sans-serif'
-                            : '"Manrope", sans-serif',
-                  }}
-                >
-                  {font.sample}
-                </span>
-                <span className="text-xs font-semibold">{font.label}</span>
-              </button>
-            ))}
-          </div>
-        </>
       )}
       {v.theme === "custom" && (
         <section className="card-surface mt-3 p-4">
