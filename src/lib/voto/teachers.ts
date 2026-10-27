@@ -31,6 +31,12 @@ export function teachersForSubject(subject: string) {
   if (!normalizedSubject) return [];
 
   const asksLab = asksForLaboratory(subject);
+  if (normalizedSubject.includes("disegno tecnico")) {
+    const officialSubject = asksLab
+      ? "laboratorio di disegno"
+      : "tecnologie e tecniche di rappresentazione grafica";
+    return CLASS_TEACHERS.filter(([, subjects]) => normalize(subjects).includes(officialSubject));
+  }
   const subjectCore = normalizedSubject
     .replace(/\b(?:laboratori|laboratorio|lab)\b/g, " ")
     .replace(/\bdi\b/g, " ")
