@@ -407,6 +407,85 @@ describe("Assistente locale", () => {
     expect(justification).toContain("DidUP Famiglia");
   });
 
+  it("filtra notifiche di voto e promemoria non letti senza modificarne lo stato", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const notificationData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "grade-notice",
+          type: "grade",
+          title: "Nuovo voto di Inglese",
+          message: "È stato pubblicato un voto",
+          subject: "Inglese",
+          date: "2026-10-27",
+          read: false,
+        },
+        {
+          id: "reminder-read",
+          type: "reminder",
+          title: "Già letto",
+          date: "2026-10-28",
+          read: true,
+        },
+        {
+          id: "reminder-unread",
+          type: "reminder",
+          title: "Da leggere",
+          date: "2026-10-28",
+          read: false,
+        },
+      ],
+    };
+    expect(
+      answerQuestion("Quali notifiche di voto ho?", notificationData, emptySchedule(), now),
+    ).toContain("Nuovo voto di Inglese");
+    const reminders = answerQuestion(
+      "Quali promemoria non letti ho?",
+      notificationData,
+      emptySchedule(),
+      now,
+    );
+    expect(reminders).toContain("Da leggere");
+    expect(reminders).not.toContain("Già letto");
+  });
+
+  it("consulta lo storico interrogazioni e la checklist senza spuntarla", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const agenda: Interrogazione[] = [
+      {
+        id: "past",
+        subject: "Storia",
+        date: "2026-10-20",
+        completed: true,
+        checklist: [],
+      },
+      {
+        id: "future",
+        subject: "Inglese",
+        date: "2026-10-29",
+        completed: false,
+        checklist: [
+          { id: "appunti", label: "Ripassare gli appunti", done: true },
+          { id: "argomenti", label: "Studiare gli argomenti", done: false },
+        ],
+      },
+    ];
+    expect(
+      answerQuestion("Quali interrogazioni ho completato?", data, emptySchedule(), now, agenda),
+    ).toContain("Storia");
+    const preparation = answerQuestion(
+      "Cosa devo preparare per la prossima interrogazione?",
+      data,
+      emptySchedule(),
+      now,
+      agenda,
+    );
+    expect(preparation).toContain("Fatto: Ripassare gli appunti");
+    expect(preparation).toContain("Da fare: Studiare gli argomenti");
+    expect(preparation).toContain("non modifica la checklist");
+  });
+
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
     const first = pickAssistantSuggestions(() => 0);
     const second = pickAssistantSuggestions(() => 0.99);

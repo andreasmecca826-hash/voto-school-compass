@@ -14,6 +14,8 @@ const SUGGESTIONS = [
   "Cosa ho fatto oggi nel Diario?",
   "Quali compiti ho completato?",
   "Che tema sto usando?",
+  "Quali notifiche di voto ho?",
+  "Cosa devo preparare per la prossima interrogazione?",
 ];
 
 export function pickAssistantSuggestions(random: () => number = Math.random): string[] {

@@ -387,6 +387,7 @@ export function answerQuestion(
       normalized.includes("scadut") ||
       normalized.includes("ieri") ||
       (normalized.includes("ultim") && normalized.includes("giorn"));
+    const asksUnread = normalized.includes("non lett") || normalized.includes("nuov");
     const matches = reminders
       .filter((item) => {
         const days = daysUntil(item.date, now);
@@ -394,6 +395,7 @@ export function answerQuestion(
         if (requestedDay !== null) return days === requestedDay;
         return days === null || days >= 0;
       })
+      .filter((item) => !asksUnread || !item.read)
       .sort((a, b) =>
         asksPastReminders
           ? (b.date ?? "").localeCompare(a.date ?? "")
@@ -402,21 +404,65 @@ export function answerQuestion(
     if (!matches.length) {
       if (requestedDay === 0) return "Non risultano promemoria DidUP per oggi.";
       if (requestedDay === 1) return "Non risultano promemoria DidUP per domani.";
+      if (asksUnread) return "Non risultano promemoria non letti nei dati caricati.";
       if (asksPastReminders) return "Non risultano promemoria passati negli ultimi 30 giorni.";
       return "Non risultano promemoria DidUP nei dati sincronizzati.";
     }
     const shown = matches.slice(0, 5);
     const heading = asksPastReminders
       ? "Promemoria passati negli ultimi 30 giorni"
-      : requestedDay === 0
-        ? "Promemoria DidUP di oggi"
-        : requestedDay === 1
-          ? "Promemoria DidUP di domani"
-          : "Promemoria DidUP";
+      : asksUnread
+        ? "Promemoria non letti"
+        : requestedDay === 0
+          ? "Promemoria DidUP di oggi"
+          : requestedDay === 1
+            ? "Promemoria DidUP di domani"
+            : "Promemoria DidUP";
     const remainder =
       matches.length > shown.length ? `\nE altri ${matches.length - shown.length}.` : "";
     return `${heading}:\n${shown.map((item) => `• ${reminderLabel(item)}`).join("\n")}${remainder}\nLi trovi nella sezione Promemoria.`;
   }
+
+  const asksNotificationListing =
+    normalized.includes("notific") &&
+    !normalized.includes("promemoria") &&
+    !normalized.includes("note") &&
+    !normalized.includes("circolar") &&
+    !normalized.includes("bacheca") &&
+    !normalized.includes("avviso");
+  if (asksNotificationListing) {
+    const requestedType =
+      normalized.includes("vot") || normalized.includes("valutaz") ? "grade" : undefined;
+    const unreadOnly = normalized.includes("non lett") || normalized.includes("nuov");
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const labels: Record<string, string> = {
+      note: "Nota",
+      grade: "Voto",
+      reminder: "Promemoria",
+      notice: "Avviso",
+    };
+    const matches = data.notifications
+      .filter((item) => !requestedType || item.type === requestedType)
+      .filter((item) => !unreadOnly || !item.read)
+      .filter((item) => (requestedDay === null ? true : daysUntil(item.date, now) === requestedDay))
+      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    if (!matches.length)
+      return requestedType
+        ? "Non risultano notifiche di voto nei dati caricati."
+        : "Non risultano notifiche che corrispondono alla richiesta nei dati caricati.";
+    const shown = matches.slice(0, 8).map((item) => {
+      const date = displayDate(item.date);
+      const message = item.message?.trim();
+      const detail = message && message !== item.title ? ` — ${message}` : "";
+      const subject = item.subject ? `, ${item.subject}` : "";
+      const attachment = item.attachmentName ? `, allegato: ${item.attachmentName}` : "";
+      return `• ${labels[item.type] ?? "Notifica"}: ${item.title}${detail}${subject}${date ? ` (${date})` : ""}${attachment}${item.read ? "" : " — non letta"}`;
+    });
+    const remainder =
+      matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
+    return `Notifiche${requestedType ? " di voto" : ""}${unreadOnly ? " non lette" : ""}:\n${shown.join("\n")}${remainder}\nLa lettura qui non modifica il loro stato.`;
+  }
+
   if (normalized.includes("novit") || normalized.includes("aggiornament")) {
     const recentGrade = latestGrade(data);
     const todayNotices = notices.filter(
@@ -452,6 +498,46 @@ export function answerQuestion(
     return lessons.length
       ? `${label}: ${lessons.length} ${lessons.length === 1 ? "lezione" : "lezioni"}. ${lessons.join("; ")}.`
       : `Non hai lezioni inserite per ${label} nell’orario.`;
+  }
+
+  const asksInterrogationPreparation =
+    normalized.includes("checklist") ||
+    normalized.includes("prepar") ||
+    normalized.includes("ripassare") ||
+    normalized.includes("cosa devo studiare");
+  if (normalized.includes("interrogaz") && asksInterrogationPreparation) {
+    const subject = findSubject(query, data);
+    const upcoming = interrogazioni
+      .filter((item) => !item.completed && (daysUntil(item.date, now) ?? -1) >= 0)
+      .filter((item) => !subject || normalize(item.subject).includes(normalize(subject.name)))
+      .sort((a, b) => `${a.date}${a.hour ?? 0}`.localeCompare(`${b.date}${b.hour ?? 0}`));
+    const item = upcoming[0];
+    if (!item)
+      return "Non trovo un’interrogazione futura corrispondente nell’agenda locale. Puoi controllare la sezione Interrogazioni.";
+    const date = displayDate(item.date) ?? item.date;
+    const preparation = item.checklist.length
+      ? item.checklist
+          .map((step) => `• ${step.done ? "Fatto" : "Da fare"}: ${step.label}`)
+          .join("\n")
+      : "Nessun punto di preparazione inserito.";
+    return `Preparazione per ${item.subject} (${date}):\n${preparation}\nLa consultazione non modifica la checklist.`;
+  }
+
+  if (
+    normalized.includes("interrogaz") &&
+    (normalized.includes("completat") ||
+      normalized.includes("passat") ||
+      normalized.includes("gia fatt"))
+  ) {
+    const completed = interrogazioni
+      .filter((item) => item.completed)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (!completed.length) return "Non risultano interrogazioni completate nell’agenda locale.";
+    const shown = completed.slice(0, 8).map((item) => {
+      const date = displayDate(item.date) ?? item.date;
+      return `• ${item.subject} (${date})${item.notes ? ` — ${item.notes}` : ""}`;
+    });
+    return `Interrogazioni completate:\n${shown.join("\n")}${completed.length > shown.length ? `\nE altre ${completed.length - shown.length}.` : ""}`;
   }
 
   if (normalized.includes("interrogaz")) {
