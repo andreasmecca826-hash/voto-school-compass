@@ -6,7 +6,6 @@ import {
   Calculator,
   CircleDot,
   Layers,
-  SlidersHorizontal,
   Sparkles,
   Timer,
 } from "lucide-react";
@@ -23,7 +22,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Pomodoro, flashcard, ruota di ripasso, simulatore dei voti e calcolo media in un unico spazio.",
+          "Pomodoro, flashcard, ruota di ripasso, calcolo media e simulatore dei voti in un unico spazio.",
       },
       { property: "og:title", content: "Studio Lab — VOTO." },
       {
@@ -46,10 +45,10 @@ const TOOLS = [
     tone: "text-primary bg-primary-soft",
   },
   {
-    id: "simulator",
-    title: "Simulatore voti",
-    subtitle: "Che voto mi serve?",
-    icon: SlidersHorizontal,
+    id: "grade-tools",
+    title: "Calcolo media e simulatore voti",
+    subtitle: "Due strumenti per capire e pianificare i tuoi voti",
+    icon: Calculator,
     tone: "text-success bg-success-soft",
   },
   {
@@ -66,17 +65,13 @@ const TOOLS = [
     icon: Layers,
     tone: "text-success bg-success-soft",
   },
-  {
-    id: "average",
-    title: "Calcolo media",
-    subtitle: "I tuoi numeri, una media",
-    icon: Calculator,
-    tone: "text-primary bg-primary-soft",
-  },
 ] as const;
+
+type GradeToolTab = "average" | "simulator";
 
 function Studio() {
   const [tool, setTool] = useState<string | null>(null);
+  const [gradeToolTab, setGradeToolTab] = useState<GradeToolTab>("average");
   const selected = TOOLS.find((item) => item.id === tool);
 
   return (
@@ -98,17 +93,73 @@ function Studio() {
           <Button variant="ghost" size="sm" onClick={() => setTool(null)} className="mb-4 pl-0">
             <ArrowLeft /> Tutti gli strumenti
           </Button>
-          <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
-          {tool === "pomodoro" && <PomodoroTool />}
-          {tool === "simulator" && (
+          {tool === "grade-tools" ? (
             <>
-              <PeriodPicker />
-              <SimulatorTool />
+              <h2 className="mb-4 font-display text-xl font-semibold">
+                Calcolo media e simulatore voti
+              </h2>
+              <div
+                role="tablist"
+                aria-label="Strumenti per i voti"
+                className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface p-1"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  id="tab-average"
+                  aria-selected={gradeToolTab === "average"}
+                  aria-controls="panel-average"
+                  onClick={() => setGradeToolTab("average")}
+                  className={`press min-h-10 rounded-lg px-2 text-xs font-semibold ${
+                    gradeToolTab === "average"
+                      ? "bg-primary-soft text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Calcolo media
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="tab-simulator"
+                  aria-selected={gradeToolTab === "simulator"}
+                  aria-controls="panel-simulator"
+                  onClick={() => setGradeToolTab("simulator")}
+                  className={`press min-h-10 rounded-lg px-2 text-xs font-semibold ${
+                    gradeToolTab === "simulator"
+                      ? "bg-primary-soft text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Simulatore voti
+                </button>
+              </div>
+              <section
+                id="panel-average"
+                role="tabpanel"
+                aria-labelledby="tab-average"
+                hidden={gradeToolTab !== "average"}
+              >
+                <GenericAverageCalculator />
+              </section>
+              <section
+                id="panel-simulator"
+                role="tabpanel"
+                aria-labelledby="tab-simulator"
+                hidden={gradeToolTab !== "simulator"}
+              >
+                <PeriodPicker />
+                <SimulatorTool />
+              </section>
+            </>
+          ) : (
+            <>
+              <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
+              {tool === "pomodoro" && <PomodoroTool />}
+              {tool === "wheel" && <WheelTool />}
+              {tool === "flashcards" && <FlashcardsTool />}
             </>
           )}
-          {tool === "average" && <GenericAverageCalculator />}
-          {tool === "wheel" && <WheelTool />}
-          {tool === "flashcards" && <FlashcardsTool />}
         </>
       ) : (
         <div className="space-y-3">
