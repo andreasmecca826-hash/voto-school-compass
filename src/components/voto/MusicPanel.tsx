@@ -25,6 +25,23 @@ function fileLabel(file: File | Blob): string {
   return file instanceof File && file.name ? file.name : "Brano salvato sul dispositivo";
 }
 
+function youtubeVideoId(value: string): string | null {
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname === "youtu.be") return parsed.pathname.slice(1) || null;
+    if (
+      parsed.hostname === "youtube.com" ||
+      parsed.hostname === "www.youtube.com" ||
+      parsed.hostname === "music.youtube.com"
+    ) {
+      return parsed.searchParams.get("v");
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export function MusicPanel({ onBack }: { onBack: () => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -42,6 +59,10 @@ export function MusicPanel({ onBack }: { onBack: () => void }) {
   const [loop, setLoop] = useState(() => load<boolean>(MUSIC_LOOP_KEY, false));
   const [autoplay, setAutoplay] = useState(() => load<boolean>(MUSIC_AUTOPLAY_KEY, false));
   const [loading, setLoading] = useState(true);
+  const youtubeId = source ? youtubeVideoId(source) : null;
+  const youtubeEmbedUrl = youtubeId
+    ? `https://www.youtube.com/embed/${encodeURIComponent(youtubeId)}?controls=1&rel=0${autoplay ? "&autoplay=1" : ""}${loop ? `&loop=1&playlist=${encodeURIComponent(youtubeId)}` : ""}`
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -146,6 +167,10 @@ export function MusicPanel({ onBack }: { onBack: () => void }) {
   };
 
   const togglePlayback = async () => {
+    if (youtubeId) {
+      toast("Usa i controlli del player YouTube per avviare o mettere in pausa.");
+      return;
+    }
     const audio = audioRef.current;
     if (!audio || !source) {
       toast("Scegli prima un file o un URL audio.");
@@ -225,9 +250,20 @@ export function MusicPanel({ onBack }: { onBack: () => void }) {
 
       <SectionTitle>Lettore</SectionTitle>
       <section className="card-surface p-4">
+        {youtubeEmbedUrl && (
+          <div className="overflow-hidden rounded-xl bg-black">
+            <iframe
+              src={youtubeEmbedUrl}
+              title="Player YouTube Music"
+              className="aspect-video w-full"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
         <audio
           ref={audioRef}
-          src={source ?? undefined}
+          src={youtubeId ? undefined : source ?? undefined}
           preload="metadata"
           onLoadedMetadata={(event) => {
             setDuration(event.currentTarget.duration || 0);
@@ -241,6 +277,8 @@ export function MusicPanel({ onBack }: { onBack: () => void }) {
           onEnded={() => setIsPlaying(false)}
           className="hidden"
         />
+        {!youtubeId && (
+          <>
         <div className="flex items-center gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
             <Music2 className="h-5 w-5" />
@@ -292,6 +330,8 @@ export function MusicPanel({ onBack }: { onBack: () => void }) {
             aria-label="Volume"
           />
         </div>
+          </>
+        )}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -324,7 +364,9 @@ export function MusicPanel({ onBack }: { onBack: () => void }) {
         </button>
       </section>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        L’avvio automatico può essere bloccato dal browser finché non premi Play almeno una volta.
+        {youtubeId
+          ? "Link YouTube Music riconosciuto: usa i controlli del player incorporato."
+          : "L’avvio automatico può essere bloccato dal browser finché non premi Play almeno una volta."}
       </p>
     </div>
   );
