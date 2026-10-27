@@ -45,11 +45,9 @@ function youtubeVideoId(value: string): string | null {
 export function MusicPanel({
   open,
   onClose,
-  onOpen,
 }: {
   open: boolean;
   onClose: () => void;
-  onOpen: () => void;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -209,23 +207,6 @@ export function MusicPanel({
 
   return (
     <>
-      {!open && source && (
-        <div className="fixed bottom-4 left-1/2 z-40 flex w-[min(448px,calc(100vw-2rem))] -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-card/95 p-3 shadow-2xl backdrop-blur">
-          <Music2 className="h-4 w-4 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1 truncate text-xs font-semibold">{trackName}</span>
-          <button
-            type="button"
-            onClick={togglePlayback}
-            className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-            aria-label={isPlaying ? "Metti in pausa" : "Riproduci"}
-          >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
-          </button>
-          <button type="button" onClick={onOpen} className="text-[10px] text-muted-foreground">
-            Configura
-          </button>
-        </div>
-      )}
       <div className={open ? "fixed inset-0 z-50 overflow-y-auto bg-background px-5 pb-8 pt-5" : "pointer-events-none fixed -left-[9999px] top-0 h-px w-px overflow-hidden opacity-0"}>
       <div className="pt-3">
       <button type="button" onClick={onClose} className="mb-5 text-sm font-semibold text-primary">

@@ -135,7 +135,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <MusicPanel
         open={musicOpen}
         onClose={() => setMusicOpen(false)}
-        onOpen={() => setMusicOpen(true)}
       />
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
         <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
