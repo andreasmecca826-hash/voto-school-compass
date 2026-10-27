@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
+import { getQuestSnapshot } from "@/lib/voto/quest-system";
 import type { Interrogazione } from "@/lib/voto/interrogazioni";
 import { emptySchedule } from "@/lib/voto/orario";
 import { saveClassTeachers } from "@/lib/voto/teachers";
@@ -566,6 +567,27 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Dove trovo il simulatore?", data)).toContain(
       "Studio Lab > Calcolo media e simulatore voti",
     );
+  });
+
+  it("spiega livello, missioni e requisiti dei temi ricompensa", () => {
+    const quests = getQuestSnapshot(
+      { events: [], claimed: [], xp: 255 },
+      new Date(2026, 9, 27, 12),
+    );
+    const context = { quests };
+    expect(
+      answerQuestion("A che livello sono?", data, emptySchedule(), new Date(), [], context),
+    ).toContain("livello 3 con 255 XP");
+    expect(
+      answerQuestion(
+        "Come sblocco il tema Diamante?",
+        data,
+        emptySchedule(),
+        new Date(),
+        [],
+        context,
+      ),
+    ).toContain("ti servono ancora 645 XP");
   });
 
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {

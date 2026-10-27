@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
+import { useQuestProgress } from "@/lib/voto/quest-system";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
 
@@ -24,6 +25,7 @@ function Assistant() {
   const v = useVoto();
   const study = useStudy();
   const now = useClock();
+  const quests = useQuestProgress(now);
   const [question, setQuestion] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
@@ -83,6 +85,7 @@ function Assistant() {
                 running: study.running,
                 completed: study.completed,
               },
+              quests,
             }),
       },
     ]);

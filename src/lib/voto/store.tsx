@@ -14,6 +14,7 @@ import { fetchVotoData } from "./parse";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
+import { canSelectTheme, readQuestLedger } from "./quest-system";
 import {
   DEFAULT_HOME_MODULES,
   normalizeHomeModules,
@@ -66,6 +67,8 @@ export type Theme =
   | "autunno"
   | "inverno"
   | "tramonto"
+  | "oro"
+  | "diamante"
   | "custom";
 export type CustomFont = "theme" | "sans" | "display" | "mono" | "serif";
 export type CustomTheme = {
@@ -268,7 +271,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const savedDensity = load<Density>(KEYS.density, "standard");
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
     setReduceMotionS(load(KEYS.reduceMotion, false));
-    setThemeS(load(KEYS.theme, "original"));
+    const savedTheme = load<Theme>(KEYS.theme, "original");
+    setThemeS(canSelectTheme(savedTheme, readQuestLedger().xp) ? savedTheme : "original");
     const savedCustomTheme = load<Partial<CustomTheme>>(KEYS.customTheme, {});
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
@@ -453,6 +457,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         save(KEYS.reduceMotion, enabled);
       },
       setTheme: (next) => {
+        if (!canSelectTheme(next, readQuestLedger().xp)) return;
         setThemeS(next);
         save(KEYS.theme, next);
       },

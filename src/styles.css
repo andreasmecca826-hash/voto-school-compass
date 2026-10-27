@@ -542,6 +542,46 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: "Space Grotesk", sans-serif;
 }
+[data-theme="oro"] {
+  --theme-bg-dark: oklch(0.13 0.025 78);
+  --theme-card-dark: oklch(0.2 0.035 76);
+  --theme-surface-dark: oklch(0.28 0.05 78);
+  --theme-bg-light: oklch(0.96 0.03 88);
+  --theme-card-light: oklch(0.995 0.018 88);
+  --theme-surface-light: oklch(0.89 0.06 84);
+  --theme-fg-dark: oklch(0.96 0.025 88);
+  --theme-fg-light: oklch(0.24 0.04 68);
+  --theme-muted-dark: oklch(0.73 0.045 82);
+  --theme-muted-light: oklch(0.47 0.04 70);
+  --theme-primary: oklch(0.78 0.16 82);
+  --theme-radius: 0.9rem;
+  --theme-font-sans: "Manrope", sans-serif;
+  --theme-font-display: "Space Grotesk", sans-serif;
+}
+[data-theme="oro"] .card-surface {
+  border-color: color-mix(in srgb, var(--theme-primary) 32%, transparent);
+  box-shadow: 0 2px 20px -14px color-mix(in srgb, var(--theme-primary) 65%, transparent);
+}
+[data-theme="diamante"] {
+  --theme-bg-dark: oklch(0.13 0.04 252);
+  --theme-card-dark: oklch(0.2 0.055 248);
+  --theme-surface-dark: oklch(0.28 0.075 232);
+  --theme-bg-light: oklch(0.95 0.035 225);
+  --theme-card-light: oklch(0.995 0.018 220);
+  --theme-surface-light: oklch(0.87 0.065 218);
+  --theme-fg-dark: oklch(0.97 0.02 220);
+  --theme-fg-light: oklch(0.19 0.05 248);
+  --theme-muted-dark: oklch(0.72 0.055 225);
+  --theme-muted-light: oklch(0.44 0.05 240);
+  --theme-primary: oklch(0.79 0.13 220);
+  --theme-radius: 1.2rem;
+  --theme-font-sans: "Manrope", sans-serif;
+  --theme-font-display: "Space Grotesk", sans-serif;
+}
+[data-theme="diamante"] .card-surface {
+  border-color: color-mix(in srgb, var(--theme-primary) 34%, transparent);
+  box-shadow: 0 2px 22px -14px color-mix(in srgb, var(--theme-primary) 72%, transparent);
+}
 [data-theme="custom"] {
   --theme-bg-dark: var(--custom-bg-dark);
   --theme-card-dark: var(--custom-card-dark);

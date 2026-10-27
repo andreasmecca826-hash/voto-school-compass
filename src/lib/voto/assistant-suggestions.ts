@@ -20,6 +20,8 @@ const SUGGESTIONS = [
   "Quante flashcard ho nella sessione?",
   "Quanto manca al Pomodoro?",
   "Dove trovo il simulatore dei voti?",
+  "A che livello sono e quali missioni ho completato?",
+  "Quanto mi manca per sbloccare il tema Oro?",
 ];
 
 export function pickAssistantSuggestions(random: () => number = Math.random): string[] {
