@@ -106,11 +106,11 @@ export function MusicPanel({
     };
   }, []);
 
-  const setAudioSource = (nextSource: string | null, name: string) => {
+  const setAudioSource = (nextSource: string | null, name: string, ownsObjectUrl = false) => {
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
     }
+    objectUrlRef.current = ownsObjectUrl ? nextSource : null;
     setSource(nextSource);
     setTrackName(name);
     setCurrentTime(0);
@@ -128,8 +128,7 @@ export function MusicPanel({
       await saveLocalTrack(file);
       setLocalTrack(file);
       const nextUrl = URL.createObjectURL(file);
-      objectUrlRef.current = nextUrl;
-      setAudioSource(nextUrl, file.name);
+      setAudioSource(nextUrl, file.name, true);
       toast.success("Brano salvato sul dispositivo");
     } catch {
       toast.error("Non è stato possibile salvare il brano.");
@@ -158,8 +157,7 @@ export function MusicPanel({
   const useLocalTrack = () => {
     if (!localTrack) return;
     const nextUrl = URL.createObjectURL(localTrack);
-    objectUrlRef.current = nextUrl;
-    setAudioSource(nextUrl, fileLabel(localTrack));
+    setAudioSource(nextUrl, fileLabel(localTrack), true);
   };
 
   const clearAll = async () => {
