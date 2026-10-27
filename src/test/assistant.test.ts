@@ -176,6 +176,39 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("separa i promemoria futuri da quelli passati e limita l’archivio a 30 giorni", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const datedReminders: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "old-31",
+          type: "reminder",
+          title: "Troppo vecchio",
+          date: "2026-09-26",
+          read: false,
+        },
+        { id: "old-30", type: "reminder", title: "Ultimo mese", date: "2026-09-27", read: false },
+        { id: "today", type: "reminder", title: "Oggi", date: "2026-10-27", read: false },
+        { id: "future", type: "reminder", title: "Domani", date: "2026-10-28", read: false },
+      ],
+    };
+    const upcoming = answerQuestion("Quali promemoria ho?", datedReminders, emptySchedule(), now);
+    expect(upcoming).toContain("Oggi");
+    expect(upcoming).toContain("Domani");
+    expect(upcoming).not.toContain("Ultimo mese");
+
+    const past = answerQuestion(
+      "Quali promemoria passati ho?",
+      datedReminders,
+      emptySchedule(),
+      now,
+    );
+    expect(past).toContain("Ultimo mese");
+    expect(past).not.toContain("Troppo vecchio");
+    expect(past).not.toContain("Domani");
+  });
+
   it("risponde sulle interrogazioni in agenda e sui docenti per materia", () => {
     const now = new Date(2026, 9, 26, 12);
     const interrogazioni: Interrogazione[] = [

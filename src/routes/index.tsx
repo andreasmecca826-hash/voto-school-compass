@@ -27,6 +27,7 @@ import {
   selectDashboardAssignments,
   selectNotificationsByType,
   selectOpenInterrogazioni,
+  selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { useMemo, useState } from "react";
@@ -73,11 +74,8 @@ function Dashboard() {
   const showingDays = attendanceView === "days";
   const notes = useMemo(() => selectNotificationsByType(notifications, "note"), [notifications]);
   const reminders = useMemo(
-    () =>
-      selectNotificationsByType(notifications, "reminder", notifications.length)
-        .sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"))
-        .slice(0, 3),
-    [notifications],
+    () => selectUpcomingReminders(notifications, now).slice(0, 3),
+    [notifications, now],
   );
   const bulletin = useMemo(
     () => selectNotificationsByType(notifications, "notice"),

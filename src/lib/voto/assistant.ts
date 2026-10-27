@@ -158,17 +158,35 @@ export function answerQuestion(
         normalized.includes("ho")));
   if (asksReminders) {
     const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
-    const matches = reminders.filter((item) =>
-      requestedDay === null ? true : daysUntil(item.date, now) === requestedDay,
-    );
+    const asksPastReminders =
+      normalized.includes("scors") ||
+      normalized.includes("passat") ||
+      normalized.includes("precedent") ||
+      normalized.includes("scadut") ||
+      normalized.includes("ieri") ||
+      (normalized.includes("ultim") && normalized.includes("giorn"));
+    const matches = reminders
+      .filter((item) => {
+        const days = daysUntil(item.date, now);
+        if (asksPastReminders) return days !== null && days < 0 && days >= -30;
+        if (requestedDay !== null) return days === requestedDay;
+        return days === null || days >= 0;
+      })
+      .sort((a, b) =>
+        asksPastReminders
+          ? (b.date ?? "").localeCompare(a.date ?? "")
+          : (a.date ?? "9999").localeCompare(b.date ?? "9999"),
+      );
     if (!matches.length) {
       if (requestedDay === 0) return "Non risultano promemoria DidUP per oggi.";
       if (requestedDay === 1) return "Non risultano promemoria DidUP per domani.";
+      if (asksPastReminders) return "Non risultano promemoria passati negli ultimi 30 giorni.";
       return "Non risultano promemoria DidUP nei dati sincronizzati.";
     }
     const shown = matches.slice(0, 5);
-    const heading =
-      requestedDay === 0
+    const heading = asksPastReminders
+      ? "Promemoria passati negli ultimi 30 giorni"
+      : requestedDay === 0
         ? "Promemoria DidUP di oggi"
         : requestedDay === 1
           ? "Promemoria DidUP di domani"
@@ -194,8 +212,7 @@ export function answerQuestion(
     } else if (notices[0]) {
       lines.push(`Ultima circolare: ${noticeLabel(notices[0])}.`);
     }
-    const nextReminder =
-      reminders.find((item) => (daysUntil(item.date, now) ?? 0) >= 0) ?? reminders[0];
+    const nextReminder = reminders.find((item) => (daysUntil(item.date, now) ?? 0) >= 0);
     if (nextReminder) lines.push(`Promemoria: ${reminderLabel(nextReminder)}.`);
     return lines.length
       ? lines.join("\n")

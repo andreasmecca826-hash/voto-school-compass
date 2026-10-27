@@ -3,6 +3,8 @@ import {
   selectDashboardAssignments,
   selectNotificationsByType,
   selectOpenInterrogazioni,
+  selectPastReminders,
+  selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 
 describe("Dashboard selectors", () => {
@@ -49,5 +51,36 @@ describe("Dashboard selectors", () => {
 
     expect(selectNotificationsByType(notifications, "note")).toHaveLength(1);
     expect(selectOpenInterrogazioni(interrogazioni)).toEqual([interrogazioni[0]]);
+  });
+
+  it("seleziona i promemoria futuri e limita quelli passati agli ultimi 30 giorni", () => {
+    const now = new Date(2026, 9, 27);
+    const notifications = [
+      {
+        id: "old-31",
+        type: "reminder" as const,
+        title: "Vecchio",
+        date: "2026-09-26",
+        read: false,
+      },
+      {
+        id: "old-30",
+        type: "reminder" as const,
+        title: "Ultimo mese",
+        date: "2026-09-27",
+        read: false,
+      },
+      { id: "today", type: "reminder" as const, title: "Oggi", date: "2026-10-27", read: false },
+      { id: "future", type: "reminder" as const, title: "Domani", date: "2026-10-28", read: false },
+      { id: "unknown", type: "reminder" as const, title: "Senza data", read: false },
+    ];
+
+    expect(selectUpcomingReminders(notifications, now).map((item) => item.id)).toEqual([
+      "today",
+      "future",
+      "unknown",
+    ]);
+    expect(selectPastReminders(notifications, now).map((item) => item.id)).toEqual(["old-30"]);
+    expect(selectPastReminders(notifications, now, 365).map((item) => item.id)).toEqual(["old-30"]);
   });
 });
