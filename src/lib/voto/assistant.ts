@@ -9,6 +9,24 @@ import {
 } from "./teachers";
 import type { Grade, VotoData } from "./types";
 
+export interface AssistantContext {
+  source?: "demo" | "remote" | "cache";
+  lastSync?: string | null;
+  syncError?: string | null;
+  hasRemoteUrl?: boolean;
+  target?: number;
+  theme?: string;
+  mode?: string;
+  accent?: string;
+  background?: string;
+  density?: string;
+  reduceMotion?: boolean;
+  customFont?: string;
+  interfaceScale?: number;
+  homeScale?: number;
+  homeModules?: Array<{ id: string; enabled: boolean }>;
+}
+
 const normalize = (value: string) =>
   value
     .toLowerCase()
@@ -140,10 +158,214 @@ export function answerQuestion(
   schedule: Schedule = emptySchedule(),
   now: Date = new Date(),
   interrogazioni: Interrogazione[] = [],
+  context: AssistantContext = {},
 ): string {
   const normalized = normalize(query.trim());
   if (!normalized)
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
+
+  if (
+    normalized.includes("giustific") &&
+    (normalized.includes("assenza") || normalized.includes("assenze"))
+  ) {
+    return "Posso consultare i conteggi delle assenze presenti nei dati caricati, ma non inviare una giustificazione. Per giustificare un’assenza usa DidUP Famiglia con l’account genitore, se la funzione è abilitata dalla scuola.";
+  }
+
+  if (
+    normalized.includes("cosa sai fare") ||
+    normalized.includes("cosa puoi fare") ||
+    normalized.includes("cosa posso chiederti") ||
+    normalized.includes("quali funzioni") ||
+    normalized.includes("cosa offre l app") ||
+    normalized.includes("tutto quello che puoi controllare")
+  ) {
+    return "Posso consultare i dati già caricati: voti e medie, compiti e scadenze, presenze/assenze e ritardi, orario, interrogazioni, diario, note, promemoria, circolari e docenti. Posso anche riferire alcune impostazioni locali e guidarti nelle sezioni dell’app. Non accedo autonomamente a DidUP e non invio giustificazioni; per le modifiche locali chiedo conferma.";
+  }
+
+  const asksWhereToFind =
+    normalized.includes("dove trovo") ||
+    normalized.includes("dove si trova") ||
+    normalized.includes("in quale sezione") ||
+    normalized.includes("come apro");
+  if (asksWhereToFind) {
+    const destinations: [string[], string][] = [
+      [["voto", "materia"], "Voti"],
+      [["compit", "scadenz"], "Compiti"],
+      [["assenza", "presenz", "ritardo"], "Dashboard, modulo Presenze"],
+      [["orario", "lezion"], "Orario"],
+      [["interrogaz"], "Interrogazioni"],
+      [["diario", "attivita"], "Diario"],
+      [["nota"], "Note"],
+      [["promemoria"], "Promemoria"],
+      [["circolar", "bacheca", "avviso"], "Novità"],
+      [["professor", "docent"], "Professori"],
+      [["tema", "font", "personalizz", "sfondo"], "Personalizza"],
+      [["musica", "brano"], "Personalizza > Musica"],
+      [["impostazion", "sincronizz", "collegare i dati"], "Impostazioni"],
+      [["simulator", "voto necessario"], "Simulatore"],
+    ];
+    const destination = destinations.find(([terms]) =>
+      terms.some((term) => normalized.includes(term)),
+    );
+    if (destination)
+      return `Trovi questa funzione in ${destination[1]}. Puoi aprirla dal menu dell’app.`;
+  }
+
+  if (
+    normalized.includes("sincron") ||
+    normalized.includes("connession") ||
+    normalized.includes("sorgente dati") ||
+    normalized.includes("dati demo") ||
+    normalized.includes("ultimo aggiornamento dati")
+  ) {
+    if (!context.source)
+      return "Non ho lo stato della sorgente in questa risposta. Puoi controllare la connessione e l’ultimo caricamento in Impostazioni.";
+    const sourceLabel =
+      context.source === "remote"
+        ? "sorgente remota configurata"
+        : context.source === "cache"
+          ? "copia in cache dell’ultima sorgente remota"
+          : "dati demo locali";
+    const syncDate = context.lastSync
+      ? new Date(context.lastSync).toLocaleString("it-IT")
+      : "nessun caricamento riuscito registrato";
+    const errorText = context.syncError ? " È presente un errore nell’ultimo aggiornamento." : "";
+    const connectionText = context.hasRemoteUrl
+      ? "Un URL sorgente è configurato."
+      : "Nessun URL sorgente è configurato.";
+    return `Stai usando ${sourceLabel}. ${connectionText} Ultimo caricamento riuscito: ${syncDate}.${errorText} Questo indica quando l’app ha letto i dati, non quando la scuola li ha aggiornati.`;
+  }
+
+  const asksThemeSetting =
+    normalized.includes("tema") &&
+    [
+      "che tema",
+      "quale tema",
+      "mio tema",
+      "tema attuale",
+      "tema impostato",
+      "tema selezionato",
+      "sto usando",
+    ].some((term) => normalized.includes(term));
+  if (
+    asksThemeSetting ||
+    normalized.includes("font") ||
+    normalized.includes("carattere") ||
+    normalized.includes("personalizz") ||
+    normalized.includes("densita") ||
+    normalized.includes("movimento") ||
+    normalized.includes("dimensione interfaccia") ||
+    normalized.includes("moduli della home")
+  ) {
+    if (!context.theme)
+      return "Non ho lo stato delle preferenze in questa risposta. Puoi vedere o modificare tema, font e Home in Personalizza.";
+    const themeLabel =
+      context.theme === "original"
+        ? "Originale"
+        : context.theme === "custom"
+          ? "Personalizzato"
+          : context.theme.replaceAll("-", " ");
+    const fontLabels: Record<string, string> = {
+      theme: "quello del tema",
+      sans: "Sans",
+      display: "Display",
+      mono: "Monospace",
+      serif: "Serif",
+    };
+    const details = [`tema ${themeLabel}`];
+    if (context.mode) details.push(`modalità ${context.mode}`);
+    if (context.customFont)
+      details.push(`font ${fontLabels[context.customFont] ?? context.customFont}`);
+    if (context.interfaceScale) details.push(`dimensione interfaccia ${context.interfaceScale}%`);
+    if (context.density)
+      details.push(`densità ${context.density === "compact" ? "compatta" : "standard"}`);
+    if (context.reduceMotion !== undefined)
+      details.push(`movimento ${context.reduceMotion ? "ridotto" : "normale"}`);
+    if (context.accent) details.push(`colore accento ${context.accent}`);
+    if (context.background) details.push(`sfondo ${context.background}`);
+    if (normalized.includes("home") || normalized.includes("moduli")) {
+      const labels: Record<string, string> = {
+        media: "Media",
+        simulatore: "Simulatore",
+        presenze: "Presenze",
+        compiti: "Compiti",
+        interrogazioni: "Interrogazioni",
+        note: "Note",
+        promemoria: "Promemoria",
+        bacheca: "Bacheca",
+        obiettivo: "Obiettivo",
+      };
+      const enabled =
+        context.homeModules
+          ?.filter((module) => module.enabled)
+          .map((module) => labels[module.id] ?? module.id) ?? [];
+      if (enabled.length) details.push(`moduli Home attivi: ${enabled.join(", ")}`);
+      if (context.homeScale) details.push(`scala Home ${context.homeScale}%`);
+    }
+    return `Preferenze locali attuali: ${details.join("; ")}. Puoi cambiarle in Personalizza; non sono impostazioni di DidUP.`;
+  }
+
+  const asksNotes =
+    normalized.includes("note") ||
+    normalized.includes("annotazion") ||
+    normalized.includes("nota disciplinare");
+  if (asksNotes) {
+    const asksUnread = normalized.includes("non lett") || normalized.includes("nuov");
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const subject = findSubject(query, data);
+    const matches = data.notifications
+      .filter((item) => item.type === "note")
+      .filter((item) => !asksUnread || !item.read)
+      .filter((item) => !subject || normalize(item.subject ?? "").includes(normalize(subject.name)))
+      .filter((item) => (requestedDay === null ? true : daysUntil(item.date, now) === requestedDay))
+      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    if (!matches.length) {
+      if (asksUnread) return "Non risultano note nuove o non lette nei dati caricati.";
+      if (requestedDay === 0) return "Non risultano note registrate per oggi.";
+      if (requestedDay === 1) return "Non risultano note registrate per domani.";
+      return "Non risultano note disciplinari nei dati caricati.";
+    }
+    const shown = matches.slice(0, 5).map((item) => {
+      const date = displayDate(item.date);
+      const subjectLabel = item.subject ? ` — ${item.subject}` : "";
+      const title = item.title.trim();
+      const message = item.message?.trim();
+      const text = message && message !== title ? `${title}: ${message}` : title;
+      return `• ${text}${subjectLabel}${date ? ` (${date})` : ""}${item.read ? "" : " — nuova"}`;
+    });
+    const remainder =
+      matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
+    return `Note${asksUnread ? " nuove/non lette" : " disciplinari"}:\n${shown.join("\n")}${remainder}\nLe trovi nella sezione Note.`;
+  }
+
+  const asksDiary = normalized.includes("diario") || normalized.includes("attivita");
+  if (asksDiary) {
+    const subject = findSubject(query, data);
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const matches = data.diary
+      .filter(
+        (entry) => !subject || normalize(entry.subject ?? "").includes(normalize(subject.name)),
+      )
+      .filter((entry) =>
+        requestedDay === null ? true : daysUntil(entry.date, now) === requestedDay,
+      )
+      .sort((a, b) => `${b.date}${b.hour ?? ""}`.localeCompare(`${a.date}${a.hour ?? ""}`));
+    if (!matches.length) {
+      if (requestedDay === 0) return "Non risultano attività nel Diario per oggi.";
+      if (requestedDay === 1) return "Non risultano attività nel Diario per domani.";
+      return "Non ci sono attività nel Diario che corrispondono alla richiesta.";
+    }
+    const shown = matches.slice(0, 8).map((entry) => {
+      const date = displayDate(entry.date) ?? entry.date;
+      const details = [entry.subject, entry.hour, entry.teacher]
+        .filter((value): value is string => Boolean(value?.trim()))
+        .join(", ");
+      return `• ${date}${details ? ` — ${details}` : ""}: ${entry.activity}`;
+    });
+    const remainder =
+      matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
+    return `Attività del Diario:\n${shown.join("\n")}${remainder}\nI dati provengono dal Diario caricato nell’app.`;
+  }
 
   const notices = noticesByDate(data);
   const reminders = remindersByDate(data);
@@ -309,6 +531,56 @@ export function answerQuestion(
   const subject = findSubject(query, data);
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
+  const asksGradeList =
+    (normalized.includes("voti") || normalized.includes("valutazion")) &&
+    ["quali", "elenc", "lista", "mostra", "tutti", "vedere"].some((term) =>
+      normalized.includes(term),
+    );
+  if (asksGradeList) {
+    let grades = data.subjects.flatMap((item) =>
+      item.grades.map((grade) => ({ subject: item, grade })),
+    );
+    if (subject) grades = grades.filter((entry) => entry.subject.id === subject.id);
+    const typeTerms: Record<string, string[]> = {
+      orale: ["oral"],
+      scritto: ["scritt"],
+      pratico: ["pratic"],
+      altro: ["altro"],
+    };
+    const requestedType = Object.entries(typeTerms).find(([, terms]) =>
+      terms.some((term) => normalized.includes(term)),
+    )?.[0];
+    if (requestedType) grades = grades.filter((entry) => entry.grade.type === requestedType);
+    grades.sort((a, b) => b.grade.date.localeCompare(a.grade.date));
+    if (!grades.length)
+      return subject
+        ? `Non risultano voti${requestedType ? ` di tipo ${requestedType}` : ""} in ${subject.name}.`
+        : "Non risultano voti nei dati caricati.";
+    const shown = grades.slice(0, 12).map(({ subject: item, grade }) => {
+      const date = displayDate(grade.date);
+      const weight = grade.weight !== 1 ? `, peso ${number(grade.weight)}` : "";
+      const comment = grade.comment?.trim() ? ` — ${grade.comment.trim()}` : "";
+      return `• ${item.name}: ${grade.label} (${grade.type}${date ? `, ${date}` : ""}${weight})${comment}`;
+    });
+    const remainder =
+      grades.length > shown.length ? `\nE altri ${grades.length - shown.length} voti.` : "";
+    return `Voti${subject ? ` in ${subject.name}` : " registrati"}${requestedType ? ` (${requestedType})` : ""}:\n${shown.join("\n")}${remainder}`;
+  }
+
+  if (
+    !subject &&
+    (normalized.includes("mio obiettivo") ||
+      normalized.includes("mio target") ||
+      normalized.includes("target impostato") ||
+      normalized.includes("obiettivo impostato") ||
+      normalized.includes("qual e il target") ||
+      normalized.includes("qual e il mio obiettivo"))
+  ) {
+    return context.target === undefined
+      ? "Non ho il valore dell’obiettivo in questa risposta. Puoi verificarlo nel modulo Obiettivo della Dashboard."
+      : `L’obiettivo della media generale impostato nella Dashboard è ${number(context.target)} su 10. I calcoli dell’assistente sui voti necessari riguardano invece una singola materia.`;
+  }
+
   const asksTeacher =
     normalized.includes("prof") ||
     normalized.includes("docent") ||
@@ -565,6 +837,14 @@ export function answerQuestion(
   }
 
   if (
+    normalized.includes("uscit") &&
+    (normalized.includes("anticip") || normalized.includes("uscite"))
+  ) {
+    const count = data.attendance.earlyExits;
+    return `Nei dati caricati risult${count === 1 ? "a" : "ano"} ${count} ${count === 1 ? "uscita anticipata" : "uscite anticipate"}.`;
+  }
+
+  if (
     normalized.includes("assenza") ||
     normalized.includes("assenze") ||
     normalized.includes("ritardo") ||
@@ -574,6 +854,50 @@ export function answerQuestion(
     const daysLabel = attendance.absenceDays === 1 ? "giorno" : "giorni";
     const delaysLabel = attendance.delays === 1 ? "ritardo" : "ritardi";
     return `Hai ${attendance.absenceDays} ${daysLabel} e ${number(attendance.absenceHours)} ore di assenza, con ${attendance.delays} ${delaysLabel}. Il limite impostato è ${number(attendance.absenceLimitHours)} ore.`;
+  }
+
+  const asksCompletedAssignments =
+    normalized.includes("completat") ||
+    normalized.includes("svolti") ||
+    normalized.includes("finiti") ||
+    normalized.includes("fatti");
+  if (
+    (normalized.includes("compit") || normalized.includes("scadenz")) &&
+    (asksCompletedAssignments || subject)
+  ) {
+    let matches = data.assignments.filter((item) =>
+      asksCompletedAssignments ? item.completed : !item.completed,
+    );
+    if (subject)
+      matches = matches.filter((item) =>
+        normalize(item.subject ?? "").includes(normalize(subject.name)),
+      );
+    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    if (requestedDay !== null)
+      matches = matches.filter((item) => daysUntil(item.dueDate, now) === requestedDay);
+    matches.sort((a, b) => {
+      const first = daysUntil(a.dueDate, now);
+      const second = daysUntil(b.dueDate, now);
+      if (first === null) return second === null ? a.title.localeCompare(b.title) : 1;
+      if (second === null) return -1;
+      return first - second || (a.dueTime ?? "").localeCompare(b.dueTime ?? "");
+    });
+    if (!matches.length) {
+      const state = asksCompletedAssignments ? "completati" : "aperti";
+      const scope = subject ? ` di ${subject.name}` : "";
+      return `Non risultano compiti ${state}${scope}${requestedDay === null ? "" : requestedDay === 0 ? " per oggi" : " per domani"} nei dati caricati.`;
+    }
+    const shown = matches.slice(0, 8).map((item) => {
+      const dueDate = displayDate(item.dueDate);
+      const due = dueDate ? `, ${dueDate}${item.dueTime ? ` alle ${item.dueTime}` : ""}` : "";
+      const itemSubject = item.subject ? ` — ${item.subject}` : "";
+      const details = item.details?.trim() ? `: ${item.details.trim()}` : "";
+      return `• ${item.title}${itemSubject}${due}${details}`;
+    });
+    const remainder =
+      matches.length > shown.length ? `\nE altri ${matches.length - shown.length}.` : "";
+    const heading = asksCompletedAssignments ? "Compiti completati" : "Compiti aperti";
+    return `${heading}${subject ? ` di ${subject.name}` : ""}:\n${shown.join("\n")}${remainder}`;
   }
 
   if (normalized.includes("compiti") || normalized.includes("scadenze")) {
@@ -621,11 +945,7 @@ export function answerQuestion(
     return `Hai ${open.length} compit${open.length === 1 ? "o" : "i"} da completare. I prossimi: ${next.join("; ")}.`;
   }
 
-  if (
-    normalized.includes("diario") ||
-    normalized.includes("professori") ||
-    normalized.includes("attivita")
-  ) {
+  if (normalized.includes("diario") || normalized.includes("attivita")) {
     const latest = [...data.diary].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
     return latest.length
       ? latest

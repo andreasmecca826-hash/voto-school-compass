@@ -10,6 +10,10 @@ const SUGGESTIONS = [
   "Quanto mi manca al limite delle assenze?",
   "Quali sono le prossime interrogazioni?",
   "Quali materie sono sotto il 6?",
+  "Quali note disciplinari ho?",
+  "Cosa ho fatto oggi nel Diario?",
+  "Quali compiti ho completato?",
+  "Che tema sto usando?",
 ];
 
 export function pickAssistantSuggestions(random: () => number = Math.random): string[] {

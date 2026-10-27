@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
-import { useVoto } from "@/lib/voto/store";
+import { useClock, useVoto } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/assistente")({
 
 function Assistant() {
   const v = useVoto();
+  const now = useClock();
   const [question, setQuestion] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
@@ -40,6 +41,17 @@ function Assistant() {
     const clean = text.trim();
     if (!clean) return;
     const dayToClear = scheduleDayToClear(clean);
+    const assistantData = {
+      ...v.data,
+      assignments: v.data.assignments.map((item) => ({
+        ...item,
+        completed: v.isDone(item.id, item.completed),
+      })),
+      notifications: v.data.notifications.map((item) => ({
+        ...item,
+        read: v.isRead(item.id, item.read),
+      })),
+    };
     setMessages((current) => [
       ...current,
       { role: "user", text: clean },
@@ -47,7 +59,23 @@ function Assistant() {
         role: "assistant",
         text: dayToClear
           ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
-          : answerQuestion(clean, v.data, loadSchedule(), v.now, v.interrogazioni),
+          : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+              source: v.source,
+              lastSync: v.lastSync,
+              syncError: v.error,
+              hasRemoteUrl: Boolean(v.url),
+              target: v.target,
+              theme: v.theme,
+              mode: v.mode,
+              accent: v.accent,
+              background: v.bg,
+              density: v.density,
+              reduceMotion: v.reduceMotion,
+              customFont: v.customTheme.font,
+              interfaceScale: v.interfaceScale,
+              homeScale: v.homeScale,
+              homeModules: v.homeModules,
+            }),
       },
     ]);
     if (dayToClear) setPendingDay(dayToClear);

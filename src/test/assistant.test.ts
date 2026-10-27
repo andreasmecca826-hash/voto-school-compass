@@ -310,6 +310,103 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Quante ore di assenza ho?", data)).toContain("con 1 ritardo");
   });
 
+  it("consulta note e Diario con i campi presenti nei dati caricati", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const schoolData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "note-1",
+          type: "note",
+          title: "Materiale dimenticato",
+          message: "Mancava il quaderno",
+          subject: "Inglese",
+          date: "2026-10-27",
+          read: false,
+        },
+        { id: "notice-1", type: "notice", title: "Assemblea", read: false },
+      ],
+      diary: [
+        {
+          id: "diary-1",
+          date: "2026-10-27",
+          subject: "Inglese",
+          teacher: "Prof.ssa Rossi",
+          hour: "2",
+          activity: "Verifica dei vocaboli",
+        },
+      ],
+    };
+
+    const notes = answerQuestion("Quali note disciplinari ho?", schoolData, emptySchedule(), now);
+    expect(notes).toContain("Materiale dimenticato");
+    expect(notes).toContain("nuova");
+    expect(notes).not.toContain("Assemblea");
+    expect(
+      answerQuestion("Cosa ho fatto oggi nel Diario?", schoolData, emptySchedule(), now),
+    ).toContain("Verifica dei vocaboli");
+  });
+
+  it("consulta compiti completati e voti filtrati per materia e tipo", () => {
+    const schoolData: VotoData = {
+      ...data,
+      assignments: [
+        {
+          id: "done-1",
+          title: "Esercizi svolti",
+          subject: "Inglese",
+          dueDate: "2026-10-20",
+          dueTime: "10:00",
+          completed: true,
+          details: "Unità 3",
+        },
+      ],
+    };
+    expect(answerQuestion("Quali compiti ho completato?", schoolData)).toContain("Unità 3");
+    const grades = answerQuestion("Quali voti orali ho in Inglese?", data);
+    expect(grades).toContain("orale");
+    expect(grades).not.toContain("scritto");
+  });
+
+  it("riporta uscite anticipate, preferenze e stato di sincronizzazione senza scrivere dati", () => {
+    const context = {
+      source: "remote" as const,
+      lastSync: "2026-10-27T08:30:00.000Z",
+      hasRemoteUrl: true,
+      target: 8.5,
+      theme: "original",
+      mode: "scuro",
+      customFont: "sans",
+      interfaceScale: 110,
+      homeScale: 100,
+      homeModules: [{ id: "note", enabled: true }],
+    };
+    expect(answerQuestion("Quante uscite anticipate ho?", data)).toContain("0 uscite anticipate");
+    expect(
+      answerQuestion("Qual è il mio obiettivo?", data, emptySchedule(), new Date(), [], context),
+    ).toContain("8,50");
+    expect(
+      answerQuestion("Che tema sto usando?", data, emptySchedule(), new Date(), [], context),
+    ).toContain("font Sans");
+    expect(
+      answerQuestion(
+        "Qual è lo stato della sincronizzazione?",
+        data,
+        emptySchedule(),
+        new Date(),
+        [],
+        context,
+      ),
+    ).toContain("sorgente remota configurata");
+  });
+
+  it("spiega cosa sa consultare e chiarisce che non invia giustificazioni", () => {
+    expect(answerQuestion("Cosa sai fare?", data)).toContain("note");
+    const justification = answerQuestion("Come giustifico un'assenza?", data);
+    expect(justification).toContain("non inviare una giustificazione");
+    expect(justification).toContain("DidUP Famiglia");
+  });
+
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
     const first = pickAssistantSuggestions(() => 0);
     const second = pickAssistantSuggestions(() => 0.99);
