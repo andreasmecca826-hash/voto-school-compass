@@ -2,7 +2,6 @@ import { average, fmt, neededGrade, overallAverage } from "./calc";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
 import type { Flashcard } from "./study";
-import type { QuestSnapshot } from "./quest-system";
 import {
   asksForLaboratory,
   getClassTeachers,
@@ -29,7 +28,6 @@ export interface AssistantContext {
   homeModules?: Array<{ id: string; enabled: boolean }>;
   flashcards?: Flashcard[];
   pomodoro?: { mode: string; seconds: number; running: boolean; completed: number };
-  quests?: QuestSnapshot;
 }
 
 const normalize = (value: string) =>
@@ -184,7 +182,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere flashcard e Pomodoro di Studio Lab, progressi delle missioni giornaliere/settimanali e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico compiti o notifiche. L’unica modifica assistita è cancellare un giorno dell’orario, sempre dopo conferma.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere flashcard, Pomodoro di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico compiti o notifiche. L’unica modifica assistita è cancellare un giorno dell’orario, sempre dopo conferma.";
   }
 
   const asksWhereToFind =
@@ -204,10 +202,10 @@ export function answerQuestion(
       [["promemoria"], "Promemoria"],
       [["circolar", "bacheca", "avviso"], "Novità"],
       [["professor", "docent"], "Professori"],
+      [["tema oro", "tema dorato", "tema diamante"], "Personalizza > Temi > Altri temi"],
       [["tema", "font", "personalizz", "sfondo"], "Personalizza"],
       [["musica", "brano"], "Personalizza > Musica"],
       [["impostazion", "sincronizz", "collegare i dati"], "Impostazioni"],
-      [["achievement", "missioni", "quest", "livello"], "Achievement"],
       [
         ["simulator", "calcolo media", "voto necessario"],
         "Studio Lab > Calcolo media e simulatore voti",
@@ -240,37 +238,13 @@ export function answerQuestion(
       : "Nel profilo scolastico caricato non sono presenti nome, classe o anno scolastico.";
   }
 
-  const asksQuestProgress =
-    normalized.includes("quest") ||
-    normalized.includes("missioni") ||
-    normalized.includes("livello attuale") ||
-    normalized.includes("a che livello") ||
-    normalized.includes("punti esperienza") ||
-    normalized.includes("quanti xp") ||
-    normalized.includes("tema oro") ||
-    normalized.includes("tema diamante");
-  if (asksQuestProgress) {
-    const quest = context.quests;
-    if (!quest)
-      return "Puoi vedere livello, missioni giornaliere e settimanali nella sezione Achievement.";
-    const theme = normalized.includes("diamante")
-      ? "Diamante"
-      : normalized.includes("oro")
-        ? "Oro"
-        : null;
-    if (theme) {
-      const requiredLevel = theme === "Oro" ? 5 : 10;
-      const requiredXp = (requiredLevel - 1) * 100;
-      return quest.level >= requiredLevel
-        ? `Il tema completo ${theme} è sbloccato al livello ${requiredLevel}.`
-        : `Per sbloccare il tema completo ${theme} devi raggiungere il livello ${requiredLevel}. Sei al livello ${quest.level} con ${quest.xp} XP: ti servono ancora ${Math.max(0, requiredXp - quest.xp)} XP.`;
-    }
-    const doneDaily = quest.daily.filter((item) => item.complete).length;
-    const doneWeekly = quest.weekly.filter((item) => item.complete).length;
-    const oroStatus = quest.level >= 5 ? "sbloccato" : "da sbloccare al livello 5";
-    const diamondStatus = quest.level >= 10 ? "sbloccato" : "da sbloccare al livello 10";
-    return `Sei al livello ${quest.level} con ${quest.xp} XP. Missioni di oggi: ${doneDaily}/${quest.daily.length} completate; questa settimana: ${doneWeekly}/${quest.weekly.length}. Tema Oro: ${oroStatus}; tema Diamante: ${diamondStatus}. Trovi i dettagli in Achievement.`;
-  }
+  const asksCompleteTheme =
+    (normalized.includes("oro") ||
+      normalized.includes("diamante") ||
+      normalized.includes("dorato")) &&
+    ["sblocc", "livello", "scelg", "scegli", "attiv"].some((term) => normalized.includes(term));
+  if (asksCompleteTheme)
+    return "I temi completi Oro e Diamante sono già selezionabili in Personalizza > Temi > Altri temi.";
 
   if (
     normalized.includes("sincron") ||

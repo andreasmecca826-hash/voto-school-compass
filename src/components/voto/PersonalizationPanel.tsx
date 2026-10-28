@@ -29,7 +29,6 @@ import { useUi } from "@/components/voto/AppShell";
 import { createHomeSettingsFile, parseHomeSettingsFile } from "@/lib/voto/home-settings-file";
 import {
   useVoto,
-  useClock,
   type Accent,
   type Bg,
   type CustomTheme,
@@ -38,7 +37,6 @@ import {
   type Mode,
   type Theme,
 } from "@/lib/voto/store";
-import { useQuestProgress } from "@/lib/voto/quest-system";
 
 type View = "menu" | "themes" | "home" | "experience" | "typography";
 
@@ -83,6 +81,18 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     label: "Personalizzato",
     description: "Crea il tuo tema",
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
+  },
+  {
+    id: "oro",
+    label: "Oro",
+    description: "Tema completo dorato e luminoso",
+    sw: "linear-gradient(135deg,#211b0d,#f2c14e,#fff0a6)",
+  },
+  {
+    id: "diamante",
+    label: "Diamante",
+    description: "Tema completo cristallino e luminoso",
+    sw: "linear-gradient(135deg,#101d35,#80cfff,#effbff)",
   },
   {
     id: "tramonto",
@@ -156,18 +166,6 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     description: "Ghiaccio e blu profondi",
     sw: "linear-gradient(135deg,#102a43,#bde7ff)",
   },
-  {
-    id: "oro",
-    label: "Oro",
-    description: "Tema completo dorato · livello 5",
-    sw: "linear-gradient(135deg,#211b0d,#f2c14e,#fff0a6)",
-  },
-  {
-    id: "diamante",
-    label: "Diamante",
-    description: "Tema completo cristallino · livello 10",
-    sw: "linear-gradient(135deg,#101d35,#80cfff,#effbff)",
-  },
 ];
 const CUSTOM_COLORS: {
   key: keyof Pick<
@@ -227,16 +225,11 @@ const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
 
 export function PersonalizationPanel() {
   const v = useVoto();
-  const now = useClock();
-  const quest = useQuestProgress(now);
   const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
   const homeSettingsInput = useRef<HTMLInputElement>(null);
-  const availableThemes = THEMES.filter(
-    (theme) =>
-      (theme.id !== "oro" || quest.level >= 5) && (theme.id !== "diamante" || quest.level >= 10),
-  );
+  const availableThemes = THEMES;
   const hiddenThemeName = availableThemes.slice(4).find((theme) => theme.id === v.theme)?.label;
   const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
 

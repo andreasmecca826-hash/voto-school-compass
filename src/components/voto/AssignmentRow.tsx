@@ -1,7 +1,6 @@
 import { Check, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { daysBetween, relDay } from "@/lib/voto/dates";
-import { recordQuestActivity } from "@/lib/voto/quest-system";
 import { useClock, useVoto } from "@/lib/voto/store";
 import type { Assignment } from "@/lib/voto/types";
 
@@ -25,10 +24,7 @@ export function AssignmentRow({ a }: { a: Assignment }) {
         role="checkbox"
         aria-checked={done}
         aria-label={`Segna "${a.title}" come ${done ? "da fare" : "completato"}`}
-        onClick={() => {
-          if (!done) recordQuestActivity("assignment_completed");
-          v.toggleDone(a.id, a.completed);
-        }}
+        onClick={() => v.toggleDone(a.id, a.completed)}
         className={cn(
           "press mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2",
           done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40",

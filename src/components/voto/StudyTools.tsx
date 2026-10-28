@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { recordQuestActivity } from "@/lib/voto/quest-system";
 import { useStudy } from "@/lib/voto/study-context";
 import { parseFlashcards, wheelIndex, type PomodoroMode } from "@/lib/voto/study";
 import { useVoto } from "@/lib/voto/store";
@@ -304,7 +303,6 @@ export function FlashcardsTool() {
             </Button>
             <Button
               onClick={() => {
-                recordQuestActivity("flashcard_reviewed");
                 setKnown([...known, card.id]);
                 setFlipped(false);
               }}

@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { nextPomodoro, POMODORO_SECONDS, type Flashcard, type PomodoroMode } from "./study";
-import { recordQuestActivity } from "./quest-system";
 
 function useStudyState() {
   const [mode, setMode] = useState<PomodoroMode>("focus");
@@ -16,7 +15,6 @@ function useStudyState() {
       const remaining = Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
       setSeconds(remaining);
       if (remaining === 0) {
-        if (mode === "focus") recordQuestActivity("focus_session");
         const next = nextPomodoro(mode, completed);
         setCompleted(next.completed);
         setMode(next.mode);

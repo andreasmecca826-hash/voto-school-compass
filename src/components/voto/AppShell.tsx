@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Settings,
   StickyNote,
-  Trophy,
   UsersRound,
   X,
   Sparkles,
@@ -37,9 +36,6 @@ import { useClock, useVoto } from "@/lib/voto/store";
 
 const NotificationsSheet = lazy(() =>
   import("./NotificationsSheet").then((module) => ({ default: module.NotificationsSheet })),
-);
-const AchievementsSheet = lazy(() =>
-  import("./AchievementsSheet").then((module) => ({ default: module.AchievementsSheet })),
 );
 const SimulatorSheet = lazy(() =>
   import("./SimulatorSheet").then((module) => ({ default: module.SimulatorSheet })),
@@ -134,14 +130,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [achievements, setAchievements] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
     open: false,
   });
   const [subject, setSubject] = useState<string | null>(null);
   const [mounted, setMounted] = useState({
     notifications: false,
-    achievements: false,
     simulator: false,
     subject: false,
   });
@@ -240,15 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 px-5 pb-28">
           {v.ready ? (
             moreOpen ? (
-              <MoreMenu
-                v={v}
-                currentPath={path}
-                onClose={() => setMoreOpen(false)}
-                onAchievements={() => {
-                  setMounted((current) => ({ ...current, achievements: true }));
-                  setAchievements(true);
-                }}
-              />
+              <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />
             ) : (
               children
             )
@@ -318,43 +304,37 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      {v.ready &&
-        (mounted.notifications || mounted.achievements || mounted.simulator || mounted.subject) && (
-          <>
-            {mounted.notifications && (
-              <Suspense fallback={<PanelLoading label="Novità" />}>
-                <NotificationsSheet open={notif} onOpenChange={setNotif} />
-              </Suspense>
-            )}
-            {mounted.achievements && (
-              <Suspense fallback={<PanelLoading label="Achievement" />}>
-                <AchievementsSheet open={achievements} onOpenChange={setAchievements} />
-              </Suspense>
-            )}
-            {mounted.simulator && (
-              <Suspense fallback={<PanelLoading label="Simulatore" />}>
-                <SimulatorSheet
-                  open={sim.open}
-                  subjectId={sim.subjectId}
-                  onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
-                />
-              </Suspense>
-            )}
-            {mounted.subject && (
-              <Suspense fallback={<PanelLoading label="Materia" />}>
-                <SubjectSheet
-                  id={subject}
-                  onClose={() => setSubject(null)}
-                  onSimulate={(id) => {
-                    setSubject(null);
-                    setMounted((current) => ({ ...current, simulator: true }));
-                    setSim({ open: true, subjectId: id });
-                  }}
-                />
-              </Suspense>
-            )}
-          </>
-        )}
+      {v.ready && (mounted.notifications || mounted.simulator || mounted.subject) && (
+        <>
+          {mounted.notifications && (
+            <Suspense fallback={<PanelLoading label="Novità" />}>
+              <NotificationsSheet open={notif} onOpenChange={setNotif} />
+            </Suspense>
+          )}
+          {mounted.simulator && (
+            <Suspense fallback={<PanelLoading label="Simulatore" />}>
+              <SimulatorSheet
+                open={sim.open}
+                subjectId={sim.subjectId}
+                onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
+              />
+            </Suspense>
+          )}
+          {mounted.subject && (
+            <Suspense fallback={<PanelLoading label="Materia" />}>
+              <SubjectSheet
+                id={subject}
+                onClose={() => setSubject(null)}
+                onSimulate={(id) => {
+                  setSubject(null);
+                  setMounted((current) => ({ ...current, simulator: true }));
+                  setSim({ open: true, subjectId: id });
+                }}
+              />
+            </Suspense>
+          )}
+        </>
+      )}
     </Ui.Provider>
   );
 }
@@ -390,12 +370,10 @@ function MoreMenu({
   v,
   currentPath,
   onClose,
-  onAchievements,
 }: {
   v: ReturnType<typeof useVoto>;
   currentPath: string;
   onClose: () => void;
-  onAchievements: () => void;
 }) {
   const studentName = v.data.student.name || "Studente";
   return (
@@ -474,20 +452,6 @@ function MoreMenu({
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => {
-            onAchievements();
-            onClose();
-          }}
-          className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
-        >
-          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#8fbe78]">
-            <Trophy className="h-7 w-7 text-white" />
-          </span>
-          <span className="text-base font-bold">Traguardi</span>
-          <span className="mt-1 text-[10px] text-muted-foreground">I tuoi achievement</span>
-        </button>
       </div>
     </section>
   );
