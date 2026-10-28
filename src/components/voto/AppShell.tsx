@@ -67,6 +67,13 @@ const NAV = [
 const MORE_NAV = [
   { to: "/voti", label: "Voti", description: "Voti e medie", icon: BookOpen, color: "#e56b5d" },
   {
+    to: "/scrutini-infraperiodali",
+    label: "Scrutini infraperiodali",
+    description: "Crea una pagella manuale",
+    icon: GraduationCap,
+    color: "#3c9b88",
+  },
+  {
     to: "/compiti",
     label: "Compiti assegnati",
     description: "Attività e scadenze",

@@ -18,6 +18,7 @@ export const KEYS = {
   homeScale: "voto.homeScale",
   interfaceScale: "voto.interfaceScale",
   interrogazioni: "voto.interrogazioni",
+  infraperiodalReports: "voto.infraperiodalReports",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

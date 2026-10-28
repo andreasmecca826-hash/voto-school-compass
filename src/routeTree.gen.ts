@@ -20,6 +20,7 @@ import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as PersonalizzaRouteImport } from './routes/personalizza'
 import { Route as ProfessoriRouteImport } from './routes/professori'
 import { Route as PromemoriaRouteImport } from './routes/promemoria'
+import { Route as ScrutiniInfraperiodaliRouteImport } from './routes/scrutini-infraperiodali'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as VotiRouteImport } from './routes/voti'
 import { Route as ApiCircularsMirrorRouteImport } from './routes/api/circulars/mirror'
@@ -79,6 +80,11 @@ const PromemoriaRoute = PromemoriaRouteImport.update({
   path: '/promemoria',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScrutiniInfraperiodaliRoute = ScrutiniInfraperiodaliRouteImport.update({
+  id: '/scrutini-infraperiodali',
+  path: '/scrutini-infraperiodali',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudioRoute = StudioRouteImport.update({
   id: '/studio',
   path: '/studio',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
   '/promemoria': typeof PromemoriaRoute
+  '/scrutini-infraperiodali': typeof ScrutiniInfraperiodaliRoute
   '/studio': typeof StudioRoute
   '/voti': typeof VotiRoute
   '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
   '/promemoria': typeof PromemoriaRoute
+  '/scrutini-infraperiodali': typeof ScrutiniInfraperiodaliRoute
   '/studio': typeof StudioRoute
   '/voti': typeof VotiRoute
   '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/personalizza': typeof PersonalizzaRoute
   '/professori': typeof ProfessoriRoute
   '/promemoria': typeof PromemoriaRoute
+  '/scrutini-infraperiodali': typeof ScrutiniInfraperiodaliRoute
   '/studio': typeof StudioRoute
   '/voti': typeof VotiRoute
   '/api/circulars/mirror': typeof ApiCircularsMirrorRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/personalizza'
     | '/professori'
     | '/promemoria'
+    | '/scrutini-infraperiodali'
     | '/studio'
     | '/voti'
     | '/api/circulars/mirror'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/personalizza'
     | '/professori'
     | '/promemoria'
+    | '/scrutini-infraperiodali'
     | '/studio'
     | '/voti'
     | '/api/circulars/mirror'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/personalizza'
     | '/professori'
     | '/promemoria'
+    | '/scrutini-infraperiodali'
     | '/studio'
     | '/voti'
     | '/api/circulars/mirror'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   PersonalizzaRoute: typeof PersonalizzaRoute
   ProfessoriRoute: typeof ProfessoriRoute
   PromemoriaRoute: typeof PromemoriaRoute
+  ScrutiniInfraperiodaliRoute: typeof ScrutiniInfraperiodaliRoute
   StudioRoute: typeof StudioRoute
   VotiRoute: typeof VotiRoute
   ApiCircularsMirrorRoute: typeof ApiCircularsMirrorRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PromemoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scrutini-infraperiodali': {
+      id: '/scrutini-infraperiodali'
+      path: '/scrutini-infraperiodali'
+      fullPath: '/scrutini-infraperiodali'
+      preLoaderRoute: typeof ScrutiniInfraperiodaliRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/studio': {
       id: '/studio'
       path: '/studio'
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalizzaRoute: PersonalizzaRoute,
   ProfessoriRoute: ProfessoriRoute,
   PromemoriaRoute: PromemoriaRoute,
+  ScrutiniInfraperiodaliRoute: ScrutiniInfraperiodaliRoute,
   StudioRoute: StudioRoute,
   VotiRoute: VotiRoute,
   ApiCircularsMirrorRoute: ApiCircularsMirrorRoute,
