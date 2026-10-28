@@ -18,7 +18,7 @@ const SUGGESTIONS = [
   "Cosa devo preparare per la prossima interrogazione?",
   "Fammi un riepilogo di oggi.",
   "Quante flashcard ho nella sessione?",
-  "Quanto manca al Pomodoro?",
+  "Mostrami le flashcard di Inglese.",
   "Dove trovo il simulatore dei voti?",
   "Come scelgo il tema Oro?",
   "Dove trovo il tema Diamante?",

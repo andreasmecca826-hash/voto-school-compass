@@ -27,7 +27,6 @@ export interface AssistantContext {
   homeScale?: number;
   homeModules?: Array<{ id: string; enabled: boolean }>;
   flashcards?: Flashcard[];
-  pomodoro?: { mode: string; seconds: number; running: boolean; completed: number };
 }
 
 const normalize = (value: string) =>
@@ -182,7 +181,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere flashcard, Pomodoro di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico compiti o notifiche. L’unica modifica assistita è cancellare un giorno dell’orario, sempre dopo conferma.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico compiti o notifiche. L’unica modifica assistita è cancellare un giorno dell’orario, sempre dopo conferma.";
   }
 
   const asksWhereToFind =
@@ -202,7 +201,7 @@ export function answerQuestion(
       [["promemoria"], "Promemoria"],
       [["circolar", "bacheca", "avviso"], "Novità"],
       [["professor", "docent"], "Professori"],
-      [["tema oro", "tema dorato", "tema diamante"], "Personalizza > Temi > Altri temi"],
+      [["tema oro", "tema dorato", "tema diamante"], "Personalizza > Temi"],
       [["tema", "font", "personalizz", "sfondo"], "Personalizza"],
       [["musica", "brano"], "Personalizza > Musica"],
       [["impostazion", "sincronizz", "collegare i dati"], "Impostazioni"],
@@ -210,7 +209,7 @@ export function answerQuestion(
         ["simulator", "calcolo media", "voto necessario"],
         "Studio Lab > Calcolo media e simulatore voti",
       ],
-      [["studio lab", "pomodoro", "flashcard", "ruota del ripasso"], "Studio Lab"],
+      [["studio lab", "flashcard", "ruota del ripasso"], "Studio Lab"],
     ];
     const destination = destinations.find(([terms]) =>
       terms.some((term) => normalized.includes(term)),
@@ -244,7 +243,7 @@ export function answerQuestion(
       normalized.includes("dorato")) &&
     ["sblocc", "livello", "scelg", "scegli", "attiv"].some((term) => normalized.includes(term));
   if (asksCompleteTheme)
-    return "I temi completi Oro e Diamante sono già selezionabili in Personalizza > Temi > Altri temi.";
+    return "I temi completi Oro e Diamante sono già selezionabili in Personalizza > Temi.";
 
   if (
     normalized.includes("sincron") ||
@@ -369,24 +368,6 @@ export function answerQuestion(
       ...shown,
       ...(matches.length > shown.length ? [`E altre ${matches.length - shown.length}.`] : []),
     ].join("\n");
-  }
-
-  if (normalized.includes("pomodoro") || normalized.includes("timer studio")) {
-    const timer = context.pomodoro;
-    if (!timer)
-      return "Non ho lo stato del Pomodoro in questa risposta. Puoi aprire Studio Lab per controllare o avviare il timer.";
-    const minutes = Math.floor(timer.seconds / 60);
-    const seconds = timer.seconds % 60;
-    const time = `${minutes} minuti e ${seconds} secondi`;
-    if (
-      normalized.includes("quante") ||
-      normalized.includes("sessioni") ||
-      normalized.includes("completat")
-    )
-      return `In questa sessione Studio Lab hai completato ${timer.completed} ${timer.completed === 1 ? "sessione" : "sessioni"} di concentrazione.`;
-    return timer.running
-      ? `Il timer Pomodoro è in corso: restano ${time}. Hai completato ${timer.completed} ${timer.completed === 1 ? "sessione" : "sessioni"} di concentrazione.`
-      : `Il timer Pomodoro è fermo${timer.completed ? `; hai completato ${timer.completed} ${timer.completed === 1 ? "sessione" : "sessioni"} di concentrazione` : ""}. Lo trovi in Studio Lab.`;
   }
 
   const asksNotes =

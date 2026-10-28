@@ -539,7 +539,6 @@ describe("Assistente locale", () => {
       flashcards: [
         { id: "card-1", subject: "Inglese", question: "Come si dice mela?", answer: "Apple" },
       ],
-      pomodoro: { mode: "focus", seconds: 90, running: true, completed: 2 },
     };
     expect(answerQuestion("In che classe sono?", profileData)).toContain("2A");
     expect(answerQuestion("In che classe sono?", profileData)).toContain("Giulia");
@@ -553,16 +552,6 @@ describe("Assistente locale", () => {
         context,
       ),
     ).toContain("Apple");
-    expect(
-      answerQuestion(
-        "Quante sessioni Pomodoro ho completato?",
-        data,
-        emptySchedule(),
-        new Date(),
-        [],
-        context,
-      ),
-    ).toContain("completato 2 sessioni");
     expect(answerQuestion("Dove trovo il simulatore?", data)).toContain(
       "Studio Lab > Calcolo media e simulatore voti",
     );
@@ -572,9 +561,7 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Come sblocco il tema Diamante?", data)).toContain(
       "sono già selezionabili",
     );
-    expect(answerQuestion("Dove trovo il tema Oro?", data)).toContain(
-      "Personalizza > Temi > Altri temi",
-    );
+    expect(answerQuestion("Dove trovo il tema Oro?", data)).toContain("Personalizza > Temi");
   });
 
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {

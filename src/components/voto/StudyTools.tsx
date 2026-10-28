@@ -1,76 +1,12 @@
 import { useRef, useState } from "react";
-import {
-  Download,
-  FlipHorizontal2,
-  Pause,
-  Play,
-  Plus,
-  RotateCcw,
-  Shuffle,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { Download, FlipHorizontal2, Plus, RotateCcw, Shuffle, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudy } from "@/lib/voto/study-context";
-import { parseFlashcards, wheelIndex, type PomodoroMode } from "@/lib/voto/study";
+import { parseFlashcards, wheelIndex } from "@/lib/voto/study";
 import { useVoto } from "@/lib/voto/store";
 
 const FIELD = "h-11 w-full rounded-lg border border-input bg-card px-3 text-sm";
-
-export function PomodoroTool() {
-  const timer = useStudy();
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-1" role="group" aria-label="Fase Pomodoro">
-        {(
-          [
-            ["focus", "Studio"],
-            ["short", "Pausa breve"],
-            ["long", "Pausa lunga"],
-          ] as const
-        ).map(([mode, label]) => (
-          <Button
-            key={mode}
-            variant={timer.mode === mode ? "default" : "secondary"}
-            className="px-1 text-xs"
-            onClick={() => timer.selectMode(mode as PomodoroMode)}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
-      <div className="relative mx-auto flex aspect-square w-60 max-w-full flex-col items-center justify-center rounded-full border-8 border-primary-soft">
-        <span className="text-xs font-semibold uppercase text-muted-foreground">
-          {timer.mode === "focus" ? "Concentrazione" : "Pausa"}
-        </span>
-        <span role="timer" className="tabular my-3 font-display text-5xl font-semibold">
-          {String(Math.floor(timer.seconds / 60)).padStart(2, "0")}:
-          {String(timer.seconds % 60).padStart(2, "0")}
-        </span>
-        <span className="text-xs text-primary">{timer.completed} sessioni completate</span>
-      </div>
-      <div className="flex justify-center gap-2">
-        <Button onClick={timer.toggle}>
-          {timer.running ? <Pause /> : <Play />}
-          {timer.running ? "Pausa" : "Avvia"}
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Azzera timer"
-          title="Azzera timer"
-          onClick={timer.reset}
-        >
-          <RotateCcw />
-        </Button>
-      </div>
-      <p className="text-center text-xs text-muted-foreground">
-        25 min studio · 5 min pausa · 15 min ogni 4 sessioni
-      </p>
-    </div>
-  );
-}
 
 export function WheelTool() {
   const { data } = useVoto();

@@ -77,12 +77,6 @@ function Assistant() {
               homeScale: v.homeScale,
               homeModules: v.homeModules,
               flashcards: study.cards,
-              pomodoro: {
-                mode: study.mode,
-                seconds: study.seconds,
-                running: study.running,
-                completed: study.completed,
-              },
             }),
       },
     ]);

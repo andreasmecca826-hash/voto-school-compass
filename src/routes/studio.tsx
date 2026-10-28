@@ -1,19 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calculator,
-  CircleDot,
-  Layers,
-  Sparkles,
-  Timer,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Calculator, CircleDot, Layers, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
 import { SimulatorTool } from "@/components/voto/SimulatorTool";
-import { FlashcardsTool, PomodoroTool, WheelTool } from "@/components/voto/StudyTools";
+import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -22,7 +14,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Pomodoro, flashcard, ruota di ripasso, calcolo media e simulatore dei voti in un unico spazio.",
+          "Flashcard, ruota di ripasso, calcolo media e simulatore dei voti in un unico spazio.",
       },
       { property: "og:title", content: "Studio Lab — VOTO." },
       {
@@ -37,13 +29,6 @@ export const Route = createFileRoute("/studio")({
 });
 
 const TOOLS = [
-  {
-    id: "pomodoro",
-    title: "Pomodoro",
-    subtitle: "Un passo alla volta",
-    icon: Timer,
-    tone: "text-primary bg-primary-soft",
-  },
   {
     id: "grade-tools",
     title: "Calcolo media e simulatore voti",
@@ -155,7 +140,6 @@ function Studio() {
           ) : (
             <>
               <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
-              {tool === "pomodoro" && <PomodoroTool />}
               {tool === "wheel" && <WheelTool />}
               {tool === "flashcards" && <FlashcardsTool />}
             </>

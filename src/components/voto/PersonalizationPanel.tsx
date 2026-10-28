@@ -206,6 +206,7 @@ const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
   { id: "simulatore", label: "Studio Lab" },
+  { id: "prossima-lezione", label: "Prossima lezione" },
   { id: "presenze", label: "Presenze" },
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },

@@ -408,7 +408,7 @@ function MoreMenu({
           <span className="min-w-0 flex-1">
             <span className="block font-display text-lg font-semibold">Studio Lab.</span>
             <span className="mt-1 block text-xs text-muted-foreground">
-              Pomodoro · Calcolo media e simulatore · Ruota · Flashcard
+              Calcolo media e simulatore · Ruota · Flashcard
             </span>
           </span>
         </Link>

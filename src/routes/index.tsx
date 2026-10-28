@@ -3,6 +3,7 @@ import {
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
+  BookOpen,
   Calculator,
   CalendarCheck,
   CalendarDays,
@@ -22,6 +23,8 @@ import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
 import { NOTIF_META } from "@/lib/voto/notification-meta";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
 import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
+import { emptySchedule, loadSchedule, type Schedule } from "@/lib/voto/orario";
+import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { fmtDate, fmtTime } from "@/lib/voto/dates";
@@ -32,7 +35,7 @@ import {
   selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,8 +54,10 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const v = useVoto();
+  const { isDone } = v;
   const now = useClock();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
+  const [schedule, setSchedule] = useState<Schedule>(() => emptySchedule());
   const { subjects, config } = useSchoolPeriods();
   const { assignments, notifications, previousAverage } = v.data;
   const avg = useMemo(() => overallAverage(subjects), [subjects]);
@@ -90,6 +95,25 @@ function Dashboard() {
     () => selectOpenInterrogazioni(v.interrogazioni),
     [v.interrogazioni],
   );
+  useEffect(() => setSchedule(loadSchedule()), []);
+  const nextLesson = useMemo(() => getNextScheduledLesson(schedule, now), [schedule, now]);
+  const lessonPreparation = useMemo(() => {
+    if (!nextLesson) return null;
+    const normalizedSubject = nextLesson.subject.trim().toLocaleLowerCase("it-IT");
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return assignments
+      .filter((assignment) => {
+        const subject = assignment.subject?.trim().toLocaleLowerCase("it-IT");
+        const dueDate = assignment.dueDate;
+        return (
+          subject === normalizedSubject &&
+          dueDate !== undefined &&
+          dueDate >= todayKey &&
+          !isDone(assignment.id, assignment.completed)
+        );
+      })
+      .sort((left, right) => (left.dueDate ?? "").localeCompare(right.dueDate ?? ""))[0];
+  }, [nextLesson, assignments, isDone, now]);
   const isHomeModuleVisible = (id: string) =>
     v.homeModules.find((module) => module.id === id)?.enabled ?? false;
   const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
@@ -206,6 +230,58 @@ function Dashboard() {
               </span>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </Link>
+          </div>
+        )}
+
+        {isHomeModuleVisible("prossima-lezione") && (
+          <div
+            style={{
+              order: homeOrder("prossima-lezione"),
+              zoom: homeModuleScale("prossima-lezione"),
+            }}
+          >
+            <SectionTitle
+              action={
+                <Link to="/orario" className="text-xs font-medium text-primary">
+                  Modifica orario
+                </Link>
+              }
+            >
+              Prossima lezione
+            </SectionTitle>
+            {nextLesson ? (
+              <section className="card-surface flex items-start gap-3 p-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <BookOpen className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    {nextLesson.isToday ? "Oggi" : nextLesson.dayLabel} · {nextLesson.hour}ª ora
+                  </p>
+                  <h3 className="mt-1 truncate text-base font-semibold">{nextLesson.subject}</h3>
+                  {lessonPreparation ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Da preparare:</span>{" "}
+                      {lessonPreparation.title}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Nessun compito aperto registrato per questa materia.
+                    </p>
+                  )}
+                  <p className="mt-2 text-[10px] text-muted-foreground">
+                    Le lezioni sono mostrate nell’ordine inserito: gli orari delle campanelle non
+                    sono configurati nell’app.
+                  </p>
+                </div>
+              </section>
+            ) : (
+              <Empty
+                icon={<BookOpen className="h-6 w-6" />}
+                title="Completa il tuo orario"
+                text="Inserisci le materie per vedere qui la prossima lezione."
+              />
+            )}
           </div>
         )}
 

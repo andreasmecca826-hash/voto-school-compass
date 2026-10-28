@@ -15,6 +15,7 @@ import {
   Save,
   ShieldAlert,
   Sun,
+  Upload,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
 import { canResetDemoData } from "@/lib/voto/demo";
 import { createCalendarIcs } from "@/lib/voto/calendar-export";
+import { createPreferencesBackup, parsePreferencesBackup } from "@/lib/voto/preferences-backup";
 import { parseVotoData } from "@/lib/voto/parse";
 import {
   useVoto,
@@ -202,6 +204,7 @@ const CUSTOM_COLORS: {
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
   { id: "simulatore", label: "Studio Lab" },
+  { id: "prossima-lezione", label: "Prossima lezione" },
   { id: "presenze", label: "Presenze" },
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },
@@ -234,6 +237,7 @@ function Settings() {
     interrogazioni: true,
     reminders: true,
   });
+  const preferencesInput = useRef<HTMLInputElement>(null);
   const [testing, setTesting] = useState(false);
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
@@ -402,6 +406,95 @@ function Settings() {
       <AppPinLockSettings />
 
       <SectionTitle>Dati</SectionTitle>
+      <section className="card-surface mb-3 space-y-4 p-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <Save className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Backup personalizzazione</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Salva o ripristina temi, font, colori, dimensioni, impostazioni Home e obiettivo
+              media. Il file non contiene voti, dati scolastici o l’URL di connessione.
+            </p>
+          </div>
+        </div>
+        <input
+          ref={preferencesInput}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          aria-label="Seleziona backup delle preferenze VOTO"
+          onChange={async (event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (!file) return;
+            try {
+              const backup = parsePreferencesBackup(await file.text());
+              v.setTarget(backup.target);
+              v.setAccent(backup.accent);
+              v.setBg(backup.bg);
+              v.setMode(backup.mode);
+              v.setGlass(backup.glass);
+              v.setDensity(backup.density);
+              v.setReduceMotion(backup.reduceMotion);
+              v.setTheme(backup.theme);
+              v.setCustomTheme(backup.customTheme);
+              v.setInterfaceScale(backup.interfaceScale);
+              v.setHomeCustomization({
+                homeModules: backup.homeModules,
+                homeScale: backup.homeScale,
+              });
+              toast.success("Personalizzazione ripristinata");
+            } catch (error) {
+              toast.error("Importazione non riuscita", {
+                description:
+                  error instanceof Error ? error.message : "Controlla il file JSON selezionato.",
+              });
+            }
+          }}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const contents = createPreferencesBackup({
+                target: v.target,
+                accent: v.accent,
+                bg: v.bg,
+                mode: v.mode,
+                glass: v.glass,
+                density: v.density,
+                reduceMotion: v.reduceMotion,
+                theme: v.theme,
+                customTheme: v.customTheme,
+                interfaceScale: v.interfaceScale,
+                homeModules: v.homeModules,
+                homeScale: v.homeScale,
+              });
+              const url = URL.createObjectURL(
+                new Blob([contents], { type: "application/json;charset=utf-8" }),
+              );
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.download = "voto-backup-personalizzazione.json";
+              anchor.click();
+              window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+              toast.success("Backup preferenze esportato");
+            }}
+            className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-xs font-semibold"
+          >
+            <Download className="h-4 w-4" /> Esporta backup
+          </button>
+          <button
+            type="button"
+            onClick={() => preferencesInput.current?.click()}
+            className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground"
+          >
+            <Upload className="h-4 w-4" /> Importa backup
+          </button>
+        </div>
+      </section>
       <section className="card-surface space-y-4 p-4">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
