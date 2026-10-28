@@ -102,6 +102,7 @@ export async function requestCircularCheck(): Promise<string> {
 
   const body = await checkResponse(response);
   if (response.status === 202 && typeof body.requestedAt === "string") return body.requestedAt;
+  if (response.status === 409 && typeof body.requestedAt === "string") return body.requestedAt;
   if (response.status === 409) throw new Error("È già in corso un controllo delle circolari.");
   if (response.status === 429) {
     const seconds = typeof body.retryAfterSeconds === "number" ? body.retryAfterSeconds : 60;

@@ -120,6 +120,21 @@ describe("circular check trigger", () => {
     await expect(requestCircularCheck()).rejects.toThrow("Riprova tra circa 2 min");
   });
 
+  it("joins an already running update when the server returns its start time", async () => {
+    const requestedAt = "2026-10-26T22:00:00.000Z";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ status: "started", requestedAt, joinedExisting: true }), {
+          status: 202,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(requestCircularCheck()).resolves.toBe(requestedAt);
+  });
+
   it("reads the status for the run started by the button", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ status: "completed", conclusion: "success" }), {

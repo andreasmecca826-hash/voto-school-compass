@@ -7,7 +7,7 @@ const corsHeaders = {
 const repository = "andreasmecca826-hash/didup-monitor";
 const workflow = "check.yml";
 const branch = "main";
-const cooldownMs = 15 * 60 * 1000;
+const cooldownMs = 3 * 60 * 1000;
 const githubApi = "https://api.github.com";
 let dispatchInProgress = false;
 let localCooldownUntil = 0;
@@ -130,8 +130,13 @@ Deno.serve(async (request: Request) => {
   dispatchInProgress = true;
   try {
     const runs = await listRuns(token);
-    if (activeRun(runs)) {
-      return jsonResponse({ error: "È già in corso un controllo.", retryAfterSeconds: 60 }, 409);
+    const running = activeRun(runs);
+    if (running) {
+      const createdAt = running.created_at ? Date.parse(running.created_at) : Number.NaN;
+      const requestedAt = Number.isFinite(createdAt)
+        ? new Date(createdAt - 10_000).toISOString()
+        : new Date(Date.now() - 10_000).toISOString();
+      return jsonResponse({ status: "started", requestedAt, joinedExisting: true }, 202);
     }
 
     const latest = runs.find(

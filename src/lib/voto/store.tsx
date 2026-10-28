@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData } from "./parse";
+import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
@@ -300,6 +301,48 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
   }, [refreshImpl]);
+
+  useEffect(() => {
+    if (!ready || !url) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, ms);
+      });
+
+    void (async () => {
+      let requestedAt: string;
+      try {
+        requestedAt = await requestCircularCheck();
+      } catch {
+        // Un controllo recente (cooldown 3 minuti) non blocca l'apertura né la cache.
+        return;
+      }
+
+      const deadline = Date.now() + 10 * 60 * 1000;
+      while (!cancelled && Date.now() < deadline) {
+        await wait(5_000);
+        if (cancelled) return;
+        try {
+          const status = await getCircularCheckStatus(requestedAt);
+          if (status.status === "completed") {
+            if (status.conclusion === "success" && !cancelled) {
+              await refreshImpl(urlRef.current, true);
+            }
+            return;
+          }
+        } catch {
+          // Problemi momentanei di polling: il prossimo controllo farà un nuovo tentativo.
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [ready, url, refreshImpl]);
 
   useEffect(() => {
     if (!ready) return;
