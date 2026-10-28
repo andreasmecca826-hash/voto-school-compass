@@ -19,7 +19,7 @@ import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
-import { NOTIF_META } from "@/components/voto/NotificationsSheet";
+import { NOTIF_META } from "@/lib/voto/notification-meta";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
 import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
 import { cn } from "@/lib/utils";

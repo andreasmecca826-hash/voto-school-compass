@@ -21,16 +21,35 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
-import { NotificationsSheet } from "./NotificationsSheet";
-import { AchievementsSheet } from "./AchievementsSheet";
-import { SimulatorSheet } from "./SimulatorSheet";
-import { SubjectSheet } from "./SubjectSheet";
-import { MusicPanel } from "./MusicPanel";
+
+const NotificationsSheet = lazy(() =>
+  import("./NotificationsSheet").then((module) => ({ default: module.NotificationsSheet })),
+);
+const AchievementsSheet = lazy(() =>
+  import("./AchievementsSheet").then((module) => ({ default: module.AchievementsSheet })),
+);
+const SimulatorSheet = lazy(() =>
+  import("./SimulatorSheet").then((module) => ({ default: module.SimulatorSheet })),
+);
+const SubjectSheet = lazy(() =>
+  import("./SubjectSheet").then((module) => ({ default: module.SubjectSheet })),
+);
+const MusicPanel = lazy(() =>
+  import("./MusicPanel").then((module) => ({ default: module.MusicPanel })),
+);
 
 interface UiCtx {
   openNotifications: () => void;
@@ -126,6 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     simulator: false,
     subject: false,
   });
+  const [musicMounted, setMusicMounted] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
 
   useEffect(() => {
@@ -152,10 +172,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           setMounted((current) => ({ ...current, subject: true }));
           setSubject(id);
         },
-        openMusic: () => setMusicOpen(true),
+        openMusic: () => {
+          setMusicMounted(true);
+          setMusicOpen(true);
+        },
       }}
     >
-      <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
+      {musicMounted && (
+        <Suspense fallback={<PanelLoading label="Musica" />}>
+          <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
+        </Suspense>
+      )}
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
         <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
@@ -294,31 +321,52 @@ export function AppShell({ children }: { children: ReactNode }) {
       {v.ready &&
         (mounted.notifications || mounted.achievements || mounted.simulator || mounted.subject) && (
           <>
-            {mounted.notifications && <NotificationsSheet open={notif} onOpenChange={setNotif} />}
+            {mounted.notifications && (
+              <Suspense fallback={<PanelLoading label="Novità" />}>
+                <NotificationsSheet open={notif} onOpenChange={setNotif} />
+              </Suspense>
+            )}
             {mounted.achievements && (
-              <AchievementsSheet open={achievements} onOpenChange={setAchievements} />
+              <Suspense fallback={<PanelLoading label="Achievement" />}>
+                <AchievementsSheet open={achievements} onOpenChange={setAchievements} />
+              </Suspense>
             )}
             {mounted.simulator && (
-              <SimulatorSheet
-                open={sim.open}
-                subjectId={sim.subjectId}
-                onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
-              />
+              <Suspense fallback={<PanelLoading label="Simulatore" />}>
+                <SimulatorSheet
+                  open={sim.open}
+                  subjectId={sim.subjectId}
+                  onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
+                />
+              </Suspense>
             )}
             {mounted.subject && (
-              <SubjectSheet
-                id={subject}
-                onClose={() => setSubject(null)}
-                onSimulate={(id) => {
-                  setSubject(null);
-                  setMounted((current) => ({ ...current, simulator: true }));
-                  setSim({ open: true, subjectId: id });
-                }}
-              />
+              <Suspense fallback={<PanelLoading label="Materia" />}>
+                <SubjectSheet
+                  id={subject}
+                  onClose={() => setSubject(null)}
+                  onSimulate={(id) => {
+                    setSubject(null);
+                    setMounted((current) => ({ ...current, simulator: true }));
+                    setSim({ open: true, subjectId: id });
+                  }}
+                />
+              </Suspense>
             )}
           </>
         )}
     </Ui.Provider>
+  );
+}
+
+function PanelLoading({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      className="fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 rounded-xl border border-border bg-popover px-4 py-3 text-xs font-medium text-foreground shadow-lg"
+    >
+      Caricamento {label}…
+    </div>
   );
 }
 
