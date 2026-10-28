@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Bug,
+  CalendarDays,
   ChevronDown,
   ChevronUp,
   Copy,
+  Download,
   Eye,
   EyeOff,
   Github,
@@ -21,6 +23,7 @@ import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
 import { canResetDemoData } from "@/lib/voto/demo";
+import { createCalendarIcs } from "@/lib/voto/calendar-export";
 import { parseVotoData } from "@/lib/voto/parse";
 import {
   useVoto,
@@ -207,9 +210,30 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "obiettivo", label: "Obiettivo media" },
 ];
 
+function localDateValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToDateValue(value: string, days: number): string {
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  return localDateValue(new Date(year, month - 1, day + days));
+}
+
 function Settings() {
   const v = useVoto();
   const [input, setInput] = useState(v.url);
+  const [calendarFrom, setCalendarFrom] = useState("");
+  const [calendarTo, setCalendarTo] = useState("");
+  const [calendarInclude, setCalendarInclude] = useState({
+    assignments: true,
+    interrogazioni: true,
+    reminders: true,
+  });
   const [testing, setTesting] = useState(false);
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
@@ -225,6 +249,12 @@ function Settings() {
       debugTaps.current = { count: 0, last: 0 };
     }
   }, [v.source, v.url]);
+
+  useEffect(() => {
+    const today = localDateValue(new Date());
+    setCalendarFrom(today);
+    setCalendarTo(addDaysToDateValue(today, 90));
+  }, []);
 
   const handleInfoTap = () => {
     if (!canResetDemoData(v.source, v.url)) return;
@@ -252,6 +282,62 @@ function Settings() {
   };
 
   const status = !v.url ? "Non connesso · dati demo" : v.error ? `Errore: ${v.error}` : "Connesso";
+  const calendarCategories = [
+    { key: "assignments", label: "Compiti non completati" },
+    { key: "interrogazioni", label: "Interrogazioni da fare" },
+    { key: "reminders", label: "Promemoria DidUP" },
+  ] as const;
+
+  const exportCalendar = () => {
+    if (!calendarFrom || !calendarTo || calendarFrom > calendarTo) {
+      toast.error("Intervallo di date non valido", {
+        description: "Controlla le date selezionate.",
+      });
+      return;
+    }
+    if (!Object.values(calendarInclude).some(Boolean)) {
+      toast.error("Seleziona almeno un tipo di evento.");
+      return;
+    }
+
+    try {
+      const { content, eventCount } = createCalendarIcs(
+        {
+          assignments: v.data.assignments,
+          interrogazioni: v.interrogazioni,
+          notifications: v.data.notifications,
+        },
+        {
+          from: calendarFrom,
+          to: calendarTo,
+          include: calendarInclude,
+          isAssignmentDone: v.isDone,
+        },
+      );
+      if (eventCount === 0) {
+        toast("Nessun evento da esportare", {
+          description: "Nel periodo scelto non ci sono eventi aperti delle categorie selezionate.",
+        });
+        return;
+      }
+
+      const fileUrl = URL.createObjectURL(
+        new Blob([content], { type: "text/calendar;charset=utf-8" }),
+      );
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = `voto-calendario-${calendarFrom}-${calendarTo}.ics`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
+      toast.success(`Calendario esportato: ${eventCount} eventi`);
+    } catch (error) {
+      toast.error("Esportazione non riuscita", {
+        description: error instanceof Error ? error.message : "Riprova tra poco.",
+      });
+    }
+  };
 
   return (
     <div className="pt-3">
@@ -315,9 +401,78 @@ function Settings() {
 
       <AppPinLockSettings />
 
+      <SectionTitle>Dati</SectionTitle>
+      <section className="card-surface space-y-4 p-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <CalendarDays className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Esporta calendario</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Scarica un file .ics importabile nel calendario del telefono. L’esportazione non si
+              aggiorna automaticamente.
+            </p>
+          </div>
+        </div>
+
+        <fieldset className="space-y-2">
+          <legend className="text-xs font-medium text-muted-foreground">Eventi da includere</legend>
+          {calendarCategories.map(({ key, label }) => (
+            <label
+              key={key}
+              className="flex min-h-10 items-center gap-3 rounded-xl bg-surface px-3 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={calendarInclude[key]}
+                onChange={(event) =>
+                  setCalendarInclude((current) => ({ ...current, [key]: event.target.checked }))
+                }
+                className="h-4 w-4 accent-primary"
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="space-y-1 text-xs text-muted-foreground">
+            Dal
+            <input
+              type="date"
+              value={calendarFrom}
+              onChange={(event) => setCalendarFrom(event.target.value)}
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+            />
+          </label>
+          <label className="space-y-1 text-xs text-muted-foreground">
+            Al
+            <input
+              type="date"
+              value={calendarTo}
+              min={calendarFrom || undefined}
+              onChange={(event) => setCalendarTo(event.target.value)}
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+            />
+          </label>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Intervallo predefinito: da oggi ai prossimi 90 giorni. Gli eventi senza orario vengono
+          esportati come giornate intere.
+        </p>
+        <button
+          type="button"
+          onClick={exportCalendar}
+          disabled={!calendarFrom || !calendarTo}
+          className="press flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" /> Esporta file .ics
+        </button>
+      </section>
+
       {canResetDemoData(v.source, v.url) && (
-        <>
-          <SectionTitle>Dati</SectionTitle>
+        <div className="mt-3">
           <button
             type="button"
             onClick={v.resetDemo}
@@ -325,7 +480,7 @@ function Settings() {
           >
             <RotateCcw className="h-4 w-4 text-primary" /> Ripristina dati demo
           </button>
-        </>
+        </div>
       )}
 
       <SectionTitle>Info app</SectionTitle>
