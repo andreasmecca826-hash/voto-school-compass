@@ -209,6 +209,65 @@ describe("Assistente locale", () => {
     expect(past).not.toContain("Domani");
   });
 
+  it("interpreta ieri e dopodomani come date precise nei riepiloghi e nei promemoria", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const datedData: VotoData = {
+      ...data,
+      assignments: [
+        { id: "yesterday-task", title: "Consegna ieri", dueDate: "2026-10-26", completed: false },
+        { id: "tomorrow-task", title: "Consegna domani", dueDate: "2026-10-28", completed: false },
+        { id: "after-task", title: "Verifica dopodomani", dueDate: "2026-10-29", completed: false },
+      ],
+      notifications: [
+        {
+          id: "yesterday-reminder",
+          type: "reminder",
+          title: "Promemoria ieri",
+          date: "2026-10-26",
+          read: false,
+        },
+        {
+          id: "after-reminder",
+          type: "reminder",
+          title: "Promemoria dopo",
+          date: "2026-10-29",
+          read: false,
+        },
+      ],
+    };
+
+    expect(answerQuestion("Quali promemoria ho ieri?", datedData, emptySchedule(), now)).toContain(
+      "Promemoria ieri",
+    );
+    const overview = answerQuestion(
+      "Fammi il riepilogo di dopodomani",
+      datedData,
+      emptySchedule(),
+      now,
+    );
+    expect(overview).toContain("Verifica dopodomani");
+    expect(overview).not.toContain("Consegna domani");
+    expect(overview).toContain("Promemoria dopo");
+    const dueTasks = answerQuestion(
+      "Quali compiti scadono dopodomani?",
+      datedData,
+      emptySchedule(),
+      now,
+    );
+    expect(dueTasks).toContain("Verifica dopodomani");
+    expect(dueTasks).not.toContain("Consegna domani");
+  });
+
+  it("non trasforma una richiesta informativa sui compiti completati in un comando", () => {
+    const completedData: VotoData = {
+      ...data,
+      assignments: [{ id: "done", title: "Esercizi svolti", completed: true }],
+    };
+    expect(answerQuestion("Quali compiti ho completato?", completedData)).toContain(
+      "Esercizi svolti",
+    );
+  });
+
   it("risponde sulle interrogazioni in agenda e sui docenti per materia", () => {
     const now = new Date(2026, 9, 26, 12);
     const interrogazioni: Interrogazione[] = [
@@ -345,6 +404,9 @@ describe("Assistente locale", () => {
     expect(
       answerQuestion("Cosa ho fatto oggi nel Diario?", schoolData, emptySchedule(), now),
     ).toContain("Verifica dei vocaboli");
+    expect(
+      answerQuestion("Quali note non lette ho ieri?", schoolData, emptySchedule(), now),
+    ).toContain("per ieri");
   });
 
   it("consulta compiti completati e voti filtrati per materia e tipo", () => {

@@ -74,7 +74,8 @@ function dayFromQuery(query: string, now: Date): DayId | null {
   if (namedDay) return namedDay.id;
 
   const date = new Date(now);
-  if (normalized.includes("domani")) date.setDate(date.getDate() + 1);
+  const offset = relativeDayOffset(normalized);
+  if (offset !== null) date.setDate(date.getDate() + offset);
   const weekday = date.getDay();
   return weekday >= 1 && weekday <= 5 ? (DAYS[weekday - 1]?.id ?? null) : null;
 }
@@ -96,6 +97,24 @@ function daysUntil(dateValue: string | undefined, now: Date): number | null {
 function displayDate(dateValue: string | undefined): string | null {
   const match = dateValue?.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return match ? `${match[3]}/${match[2]}/${match[1]}` : null;
+}
+
+function relativeDayOffset(normalizedQuery: string): number | null {
+  if (normalizedQuery.includes("dopodomani")) return 2;
+  if (normalizedQuery.includes("altro ieri") || normalizedQuery.includes("ieri l altro")) return -2;
+  if (normalizedQuery.includes("ieri")) return -1;
+  if (normalizedQuery.includes("domani")) return 1;
+  if (normalizedQuery.includes("oggi")) return 0;
+  return null;
+}
+
+function relativeDayLabel(offset: number): string {
+  if (offset === -2) return "l’altro ieri";
+  if (offset === -1) return "ieri";
+  if (offset === 0) return "oggi";
+  if (offset === 1) return "domani";
+  if (offset === 2) return "dopodomani";
+  return "nel giorno richiesto";
 }
 
 function localDateKey(date: Date): string {
@@ -181,7 +200,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, oltre a calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   const asksWhereToFind =
@@ -376,7 +395,7 @@ export function answerQuestion(
     normalized.includes("nota disciplinare");
   if (asksNotes) {
     const asksUnread = normalized.includes("non lett") || normalized.includes("nuov");
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     const subject = findSubject(query, data);
     const matches = data.notifications
       .filter((item) => item.type === "note")
@@ -385,9 +404,9 @@ export function answerQuestion(
       .filter((item) => (requestedDay === null ? true : daysUntil(item.date, now) === requestedDay))
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     if (!matches.length) {
+      if (requestedDay !== null)
+        return `Non risultano note${asksUnread ? " nuove o non lette" : ""} per ${relativeDayLabel(requestedDay)} nei dati caricati.`;
       if (asksUnread) return "Non risultano note nuove o non lette nei dati caricati.";
-      if (requestedDay === 0) return "Non risultano note registrate per oggi.";
-      if (requestedDay === 1) return "Non risultano note registrate per domani.";
       return "Non risultano note disciplinari nei dati caricati.";
     }
     const shown = matches.slice(0, 5).map((item) => {
@@ -406,7 +425,7 @@ export function answerQuestion(
   const asksDiary = normalized.includes("diario") || normalized.includes("attivita");
   if (asksDiary) {
     const subject = findSubject(query, data);
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     const matches = data.diary
       .filter(
         (entry) => !subject || normalize(entry.subject ?? "").includes(normalize(subject.name)),
@@ -416,8 +435,8 @@ export function answerQuestion(
       )
       .sort((a, b) => `${b.date}${b.hour ?? ""}`.localeCompare(`${a.date}${a.hour ?? ""}`));
     if (!matches.length) {
-      if (requestedDay === 0) return "Non risultano attività nel Diario per oggi.";
-      if (requestedDay === 1) return "Non risultano attività nel Diario per domani.";
+      if (requestedDay !== null)
+        return `Non risultano attività nel Diario per ${relativeDayLabel(requestedDay)}.`;
       return "Non ci sono attività nel Diario che corrispondono alla richiesta.";
     }
     const shown = matches.slice(0, 8).map((entry) => {
@@ -444,20 +463,19 @@ export function answerQuestion(
         normalized.includes("quali") ||
         normalized.includes("ho")));
   if (asksReminders) {
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     const asksPastReminders =
       normalized.includes("scors") ||
       normalized.includes("passat") ||
       normalized.includes("precedent") ||
       normalized.includes("scadut") ||
-      normalized.includes("ieri") ||
       (normalized.includes("ultim") && normalized.includes("giorn"));
     const asksUnread = normalized.includes("non lett") || normalized.includes("nuov");
     const matches = reminders
       .filter((item) => {
         const days = daysUntil(item.date, now);
-        if (asksPastReminders) return days !== null && days < 0 && days >= -30;
         if (requestedDay !== null) return days === requestedDay;
+        if (asksPastReminders) return days !== null && days < 0 && days >= -30;
         return days === null || days >= 0;
       })
       .filter((item) => !asksUnread || !item.read)
@@ -467,21 +485,20 @@ export function answerQuestion(
           : (a.date ?? "9999").localeCompare(b.date ?? "9999"),
       );
     if (!matches.length) {
-      if (requestedDay === 0) return "Non risultano promemoria DidUP per oggi.";
-      if (requestedDay === 1) return "Non risultano promemoria DidUP per domani.";
+      if (requestedDay !== null)
+        return `Non risultano promemoria DidUP per ${relativeDayLabel(requestedDay)}.`;
       if (asksUnread) return "Non risultano promemoria non letti nei dati caricati.";
       if (asksPastReminders) return "Non risultano promemoria passati negli ultimi 30 giorni.";
       return "Non risultano promemoria DidUP nei dati sincronizzati.";
     }
     const shown = matches.slice(0, 5);
-    const heading = asksPastReminders
-      ? "Promemoria passati negli ultimi 30 giorni"
-      : asksUnread
-        ? "Promemoria non letti"
-        : requestedDay === 0
-          ? "Promemoria DidUP di oggi"
-          : requestedDay === 1
-            ? "Promemoria DidUP di domani"
+    const heading =
+      requestedDay !== null
+        ? `Promemoria DidUP di ${relativeDayLabel(requestedDay)}`
+        : asksPastReminders
+          ? "Promemoria passati negli ultimi 30 giorni"
+          : asksUnread
+            ? "Promemoria non letti"
             : "Promemoria DidUP";
     const remainder =
       matches.length > shown.length ? `\nE altri ${matches.length - shown.length}.` : "";
@@ -499,7 +516,7 @@ export function answerQuestion(
     const requestedType =
       normalized.includes("vot") || normalized.includes("valutaz") ? "grade" : undefined;
     const unreadOnly = normalized.includes("non lett") || normalized.includes("nuov");
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     const labels: Record<string, string> = {
       note: "Nota",
       grade: "Voto",
@@ -513,8 +530,8 @@ export function answerQuestion(
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     if (!matches.length)
       return requestedType
-        ? "Non risultano notifiche di voto nei dati caricati."
-        : "Non risultano notifiche che corrispondono alla richiesta nei dati caricati.";
+        ? `Non risultano notifiche di voto${requestedDay === null ? "" : ` per ${relativeDayLabel(requestedDay)}`} nei dati caricati.`
+        : `Non risultano notifiche che corrispondono alla richiesta${requestedDay === null ? "" : ` per ${relativeDayLabel(requestedDay)}`} nei dati caricati.`;
     const shown = matches.slice(0, 8).map((item) => {
       const date = displayDate(item.date);
       const message = item.message?.trim();
@@ -606,17 +623,23 @@ export function answerQuestion(
   }
 
   if (normalized.includes("interrogaz")) {
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     const future = interrogazioni
-      .filter((item) => !item.completed && (daysUntil(item.date, now) ?? -1) >= 0)
+      .filter((item) => !item.completed)
+      .filter((item) => {
+        const distance = daysUntil(item.date, now);
+        return requestedDay !== null
+          ? distance === requestedDay
+          : distance !== null && distance >= 0;
+      })
       .sort((a, b) => `${a.date}${a.hour ?? 0}`.localeCompare(`${b.date}${b.hour ?? 0}`));
     const matches =
       requestedDay === null
         ? future
         : future.filter((item) => daysUntil(item.date, now) === requestedDay);
     if (!matches.length) {
-      if (requestedDay === 0) return "Non hai interrogazioni in agenda per oggi.";
-      if (requestedDay === 1) return "Non hai interrogazioni in agenda per domani.";
+      if (requestedDay !== null)
+        return `Non hai interrogazioni in agenda per ${relativeDayLabel(requestedDay)}.`;
       return "Non risultano interrogazioni future nella tua agenda locale. Puoi aggiungerle nella sezione Interrogazioni.";
     }
     const shown = matches.slice(0, requestedDay === null ? 3 : matches.length).map((item) => {
@@ -626,11 +649,9 @@ export function answerQuestion(
       return `${item.subject} (${date}${hour})${notes}`;
     });
     const heading =
-      requestedDay === 0
-        ? "Interrogazioni di oggi"
-        : requestedDay === 1
-          ? "Interrogazioni di domani"
-          : "Prossime interrogazioni in agenda";
+      requestedDay !== null
+        ? `Interrogazioni di ${relativeDayLabel(requestedDay)}`
+        : "Prossime interrogazioni in agenda";
     return `${heading}:\n${shown.map((item) => `• ${item}`).join("\n")}${matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : ""}`;
   }
 
@@ -640,37 +661,28 @@ export function answerQuestion(
     normalized.includes("avvisi") ||
     normalized.includes("notiz")
   ) {
-    const asksToday = normalized.includes("oggi");
-    const asksYesterday = normalized.includes("ieri");
+    const requestedDay = relativeDayOffset(normalized);
     const asksUnread = normalized.includes("non lett");
     const asksNew = normalized.includes("nuov") || normalized.includes("recent");
     let matches = notices;
-    if (asksToday)
+    if (requestedDay !== null)
       matches = matches.filter(
-        (notification) => notification.date?.slice(0, 10) === localDateKey(now),
+        (notification) => daysUntil(notification.date, now) === requestedDay,
       );
-    else if (asksYesterday) {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      matches = matches.filter(
-        (notification) => notification.date?.slice(0, 10) === localDateKey(yesterday),
-      );
-    }
-    if (asksUnread || (asksNew && !asksToday && !asksYesterday))
+    if (asksUnread || (asksNew && requestedDay === null))
       matches = matches.filter((notification) => !notification.read);
     if (!matches.length) {
-      if (asksToday) return "Oggi non risultano circolari nei dati caricati.";
-      if (asksYesterday) return "Ieri non risultano circolari nei dati caricati.";
+      if (requestedDay !== null)
+        return `Non risultano circolari per ${relativeDayLabel(requestedDay)} nei dati caricati.`;
       if (asksUnread || asksNew) return "Non risultano circolari nuove o non lette.";
       return "Non risultano circolari o avvisi nei dati caricati.";
     }
     const latestOnly =
       normalized.includes("ultima circolare") || normalized.includes("ultimo avviso");
     const shown = matches.slice(0, latestOnly ? 1 : 5);
-    const heading = asksToday
-      ? "Circolari di oggi"
-      : asksYesterday
-        ? "Circolari di ieri"
+    const heading =
+      requestedDay !== null
+        ? `Circolari di ${relativeDayLabel(requestedDay)}`
         : asksUnread || asksNew
           ? "Circolari nuove o non lette"
           : "Circolari recenti";
@@ -683,11 +695,11 @@ export function answerQuestion(
     ((normalized.includes("riepilog") ||
       normalized.includes("programma") ||
       normalized.includes("agenda")) &&
-      (normalized.includes("oggi") || normalized.includes("domani"))) ||
-    /\bcosa (?:ho|devo fare|mi aspetta) (?:oggi|domani)\b/.test(normalized) ||
-    /\bche impegni ho (?:oggi|domani)\b/.test(normalized);
+      relativeDayOffset(normalized) !== null) ||
+    /\bcosa (?:ho|devo fare|mi aspetta) (?:oggi|ieri|domani|dopodomani)\b/.test(normalized) ||
+    /\bche impegni ho (?:oggi|ieri|domani|dopodomani)\b/.test(normalized);
   if (asksDailyOverview) {
-    const offset = normalized.includes("domani") ? 1 : 0;
+    const offset = relativeDayOffset(normalized) ?? 0;
     const date = new Date(now);
     date.setDate(date.getDate() + offset);
     const dateKey = localDateKey(date);
@@ -762,11 +774,11 @@ export function answerQuestion(
     }
     return sections.length
       ? [
-          `Riepilogo di ${offset ? "domani" : "oggi"} (${dateLabel}):`,
+          `Riepilogo di ${relativeDayLabel(offset)} (${dateLabel}):`,
           ...sections.map((section) => `• ${section}`),
           "Riepilogo basato sui dati già caricati nell’app.",
         ].join("\n")
-      : `Non trovo lezioni inserite né compiti, attività, interrogazioni o comunicazioni per ${offset ? "domani" : "oggi"} (${dateLabel}) nei dati caricati.`;
+      : `Non trovo lezioni inserite né compiti, attività, interrogazioni o comunicazioni per ${relativeDayLabel(offset)} (${dateLabel}) nei dati caricati.`;
   }
 
   const subject = findSubject(query, data);
@@ -1113,7 +1125,7 @@ export function answerQuestion(
       matches = matches.filter((item) =>
         normalize(item.subject ?? "").includes(normalize(subject.name)),
       );
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     if (requestedDay !== null)
       matches = matches.filter((item) => daysUntil(item.dueDate, now) === requestedDay);
     matches.sort((a, b) => {
@@ -1126,7 +1138,7 @@ export function answerQuestion(
     if (!matches.length) {
       const state = asksCompletedAssignments ? "completati" : "aperti";
       const scope = subject ? ` di ${subject.name}` : "";
-      return `Non risultano compiti ${state}${scope}${requestedDay === null ? "" : requestedDay === 0 ? " per oggi" : " per domani"} nei dati caricati.`;
+      return `Non risultano compiti ${state}${scope}${requestedDay === null ? "" : ` per ${relativeDayLabel(requestedDay)}`} nei dati caricati.`;
     }
     const shown = matches.slice(0, 8).map((item) => {
       const dueDate = displayDate(item.dueDate);
@@ -1145,13 +1157,12 @@ export function answerQuestion(
     const open = data.assignments.filter((assignment) => !assignment.completed);
     if (!open.length) return "Non risultano compiti ancora da completare.";
 
-    const requestedDay = normalized.includes("domani") ? 1 : normalized.includes("oggi") ? 0 : null;
+    const requestedDay = relativeDayOffset(normalized);
     if (requestedDay !== null) {
       const due = open.filter((assignment) => daysUntil(assignment.dueDate, now) === requestedDay);
-      const label = requestedDay === 0 ? "oggi" : "domani";
       return due.length
-        ? `Hai ${due.length} ${due.length === 1 ? "compito" : "compiti"} in scadenza ${label}: ${due.map((item) => item.title).join(", ")}.`
-        : `Non hai compiti aperti in scadenza ${label}.`;
+        ? `Hai ${due.length} ${due.length === 1 ? "compito" : "compiti"} in scadenza ${relativeDayLabel(requestedDay)}: ${due.map((item) => item.title).join(", ")}.`
+        : `Non hai compiti aperti in scadenza ${relativeDayLabel(requestedDay)}.`;
     }
 
     if (normalized.includes("in ritardo") || normalized.includes("scaduti")) {

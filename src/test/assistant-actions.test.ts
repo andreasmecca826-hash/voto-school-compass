@@ -56,6 +56,12 @@ describe("assistant task actions", () => {
       kind: "confirm",
       action: { id: "homework-2", currentCompleted: true, completed: false },
     });
+    expect(
+      getAssignmentActionIntent(
+        "Riapri il compito Ripassa il capitolo 3 già completato",
+        assignments,
+      ),
+    ).toMatchObject({ kind: "confirm", action: { completed: false } });
   });
 
   it("does not offer a second confirmation for an already satisfied state", () => {
@@ -70,5 +76,9 @@ describe("assistant task actions", () => {
       message: expect.stringContaining("completato o riaprirlo"),
     });
     expect(getAssignmentActionIntent("Quanti compiti ho per domani?", assignments)).toBeNull();
+    expect(getAssignmentActionIntent("Quali compiti ho completato?", assignments)).toBeNull();
+    expect(
+      getAssignmentActionIntent("Non segnare Esercizi pagina 24 come completato", assignments),
+    ).toBeNull();
   });
 });
