@@ -200,7 +200,7 @@ export function createCalendarIcs(
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//VOTO//Calendario scolastico 2.5.0//IT",
+    "PRODID:-//VOTO//Calendario scolastico 2.6.0//IT",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:VOTO - Calendario scolastico",
