@@ -85,14 +85,14 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "oro",
     label: "Oro",
-    description: "Tema completo dorato e luminoso",
-    sw: "linear-gradient(135deg,#211b0d,#f2c14e,#fff0a6)",
+    description: "Ossidiana, oro satinato e riflessi champagne",
+    sw: "radial-gradient(circle at 78% 24%,#fff4bd 0 3%,transparent 4%),linear-gradient(125deg,#17110a 0%,#513a14 34%,#d3a533 49%,#fff0a3 56%,#9a6d1c 67%,#24190b 100%)",
   },
   {
     id: "diamante",
     label: "Diamante",
-    description: "Tema completo cristallino e luminoso",
-    sw: "linear-gradient(135deg,#101d35,#80cfff,#effbff)",
+    description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
+    sw: "linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "tramonto",
