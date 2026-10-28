@@ -1,11 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bot, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  getAssignmentActionIntent,
+  type AssignmentConfirmation,
+} from "@/lib/voto/assistant-actions";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
+
+type PendingAction =
+  | { type: "clear-day"; day: NonNullable<ReturnType<typeof scheduleDayToClear>> }
+  | { type: "assignment"; action: AssignmentConfirmation };
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -32,7 +40,7 @@ function Assistant() {
       text: "Ciao! Sono l’assistente locale di VOTO. Chiedimi informazioni sui tuoi dati scolastici: tutto resta su questo dispositivo.",
     },
   ]);
-  const [pendingDay, setPendingDay] = useState<ReturnType<typeof scheduleDayToClear>>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   useEffect(() => {
     setSuggestions(pickAssistantSuggestions());
@@ -53,13 +61,18 @@ function Assistant() {
         read: v.isRead(item.id, item.read),
       })),
     };
-    setMessages((current) => [
-      ...current,
-      { role: "user", text: clean },
-      {
-        role: "assistant",
-        text: dayToClear
-          ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
+    const assignmentIntent = getAssignmentActionIntent(clean, assistantData.assignments);
+    const nextPendingAction: PendingAction | null = dayToClear
+      ? { type: "clear-day", day: dayToClear }
+      : assignmentIntent?.kind === "confirm"
+        ? { type: "assignment", action: assignmentIntent.action }
+        : null;
+    const response = dayToClear
+      ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
+      : assignmentIntent?.kind === "confirm"
+        ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
+        : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
+          ? assignmentIntent.message
           : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
               source: v.source,
               lastSync: v.lastSync,
@@ -77,22 +90,46 @@ function Assistant() {
               homeScale: v.homeScale,
               homeModules: v.homeModules,
               flashcards: study.cards,
-            }),
-      },
+            });
+    setMessages((current) => [
+      ...current,
+      { role: "user", text: clean },
+      { role: "assistant", text: response },
     ]);
-    if (dayToClear) setPendingDay(dayToClear);
+    setPendingAction(nextPendingAction);
     setQuestion("");
   };
 
-  const confirmClearDay = () => {
-    if (!pendingDay) return;
-    clearScheduleDay(loadSchedule(), pendingDay);
-    const label = DAYS.find((day) => day.id === pendingDay)?.label;
+  const confirmPendingAction = () => {
+    if (!pendingAction) return;
+    let result: string;
+    if (pendingAction.type === "clear-day") {
+      clearScheduleDay(loadSchedule(), pendingAction.day);
+      const label = DAYS.find((day) => day.id === pendingAction.day)?.label;
+      result = `Fatto: ho cancellato tutte le lezioni dell’orario di ${label}.`;
+    } else {
+      const assignment = v.data.assignments.find((item) => item.id === pendingAction.action.id);
+      if (!assignment) {
+        result = "Non trovo più quel compito nei dati caricati: non ho apportato modifiche.";
+      } else if (v.isDone(assignment.id, assignment.completed) === pendingAction.action.completed) {
+        result = `“${assignment.title}” è già nello stato richiesto; non ho apportato altre modifiche.`;
+      } else {
+        v.toggleDone(assignment.id, assignment.completed);
+        result = pendingAction.action.completed
+          ? `Fatto: “${assignment.title}” è stato segnato come completato solo in VOTO. DidUP non è stato modificato.`
+          : `Fatto: “${assignment.title}” è stato riaperto solo in VOTO. DidUP non è stato modificato.`;
+      }
+    }
+    setMessages((current) => [...current, { role: "assistant", text: result }]);
+    setPendingAction(null);
+  };
+
+  const cancelPendingAction = () => {
+    setPendingAction(null);
     setMessages((current) => [
       ...current,
-      { role: "assistant", text: `Fatto: ho cancellato tutte le lezioni dell’orario di ${label}.` },
+      { role: "assistant", text: "Azione annullata. Non ho modificato nulla." },
     ]);
-    setPendingDay(null);
   };
 
   return (
@@ -144,22 +181,40 @@ function Assistant() {
         ))}
       </div>
 
-      {pendingDay && (
+      {pendingAction && (
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-warning/40 bg-warning/10 p-3 text-xs">
           <span className="flex-1">
-            Confermi la cancellazione dell’orario di{" "}
-            <strong>{DAYS.find((day) => day.id === pendingDay)?.label}</strong>?
+            {pendingAction.type === "clear-day" ? (
+              <>
+                Confermi la cancellazione dell’orario di{" "}
+                <strong>{DAYS.find((day) => day.id === pendingAction.day)?.label}</strong>?
+              </>
+            ) : (
+              <>
+                Confermi di{" "}
+                {pendingAction.action.completed ? "segnare come completato" : "riaprire"}{" "}
+                <strong>“{pendingAction.action.title}”</strong>
+                {pendingAction.action.subject ? ` · ${pendingAction.action.subject}` : ""}?
+                {pendingAction.action.dueDate
+                  ? ` Scadenza: ${pendingAction.action.dueDate.slice(8, 10)}/${pendingAction.action.dueDate.slice(5, 7)}.`
+                  : ""}
+              </>
+            )}
           </span>
           <button
             type="button"
-            onClick={confirmClearDay}
-            className="press rounded-lg bg-danger px-3 py-2 font-semibold text-white"
+            onClick={confirmPendingAction}
+            className={`press rounded-lg px-3 py-2 font-semibold ${pendingAction.type === "clear-day" ? "bg-danger text-white" : "bg-primary text-primary-foreground"}`}
           >
-            Cancella
+            {pendingAction.type === "clear-day"
+              ? "Cancella"
+              : pendingAction.action.completed
+                ? "Segna completato"
+                : "Riapri"}
           </button>
           <button
             type="button"
-            onClick={() => setPendingDay(null)}
+            onClick={cancelPendingAction}
             className="press rounded-lg border border-border px-3 py-2 font-semibold"
           >
             Annulla

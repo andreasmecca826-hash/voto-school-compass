@@ -577,4 +577,10 @@ describe("Assistente locale", () => {
       expect(answerQuestion(suggestion, data)).not.toContain("Non ho capito la domanda");
     }
   });
+
+  it("descrive le azioni sui compiti come disponibili solo dopo conferma", () => {
+    const capabilities = answerQuestion("Cosa sai fare?", data);
+    expect(capabilities).toContain("Dopo la tua conferma");
+    expect(capabilities).toContain("segnare un compito come completato o riaprirlo");
+  });
 });

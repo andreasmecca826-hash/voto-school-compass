@@ -181,7 +181,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico compiti o notifiche. L’unica modifica assistita è cancellare un giorno dell’orario, sempre dopo conferma.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi di oggi/domani e calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   const asksWhereToFind =
