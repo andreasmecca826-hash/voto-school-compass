@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  BadgeCheck,
   ChevronDown,
   ChevronUp,
   Download,
@@ -38,7 +39,7 @@ import {
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience" | "typography";
+type View = "menu" | "themes" | "home" | "experience" | "typography" | "registry";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -282,6 +283,19 @@ export function PersonalizationPanel() {
           </button>
           <button
             type="button"
+            onClick={() => setView("registry")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <BadgeCheck className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Stile del registro</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Scegli l’aspetto VOTO o DidUP
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={() => setView("typography")}
             className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
           >
@@ -446,6 +460,59 @@ export function PersonalizationPanel() {
         <p className="mt-3 text-[11px] text-muted-foreground">
           Le preferenze vengono salvate su questo dispositivo.
         </p>
+      </div>
+    );
+
+  if (view === "registry")
+    return (
+      <div className="pt-3">
+        <BackButton onClick={() => setView("menu")} title="Stile del registro" />
+        <SectionTitle>Identità visiva</SectionTitle>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          Cambia l’aspetto generale dell’app. Le funzioni e i dati restano quelli di VOTO; il
+          profilo DidUP è ispirato al registro e non è l’app ufficiale.
+        </p>
+        <div className="grid gap-3">
+          {[
+            {
+              id: "voto" as const,
+              label: "VOTO",
+              description: "Mantieni l’identità visiva attuale e le tue preferenze di tema.",
+              swatch: "bg-gradient-to-br from-neutral-950 via-neutral-800 to-rose-500",
+            },
+            {
+              id: "didup" as const,
+              label: "DidUP",
+              description:
+                "Interfaccia più istituzionale, blu e lineare, ispirata al registro DidUP.",
+              swatch: "bg-gradient-to-br from-sky-900 via-sky-700 to-sky-400",
+            },
+          ].map((style) => (
+            <button
+              key={style.id}
+              type="button"
+              aria-pressed={v.registryStyle === style.id}
+              onClick={() => v.setRegistryStyle(style.id)}
+              className={cn(
+                "press card-surface flex items-center gap-3 p-4 text-left",
+                v.registryStyle === style.id && "border-primary ring-2 ring-primary/30",
+              )}
+            >
+              <span className={cn("h-12 w-12 shrink-0 rounded-xl", style.swatch)} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{style.label}</span>
+                <span className="mt-1 block text-[11px] text-muted-foreground">
+                  {style.description}
+                </span>
+              </span>
+              {v.registryStyle === style.id && (
+                <span className="shrink-0 rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
+                  Attivo
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
     );
 

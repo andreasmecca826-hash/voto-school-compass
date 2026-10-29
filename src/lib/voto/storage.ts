@@ -13,6 +13,7 @@ export const KEYS = {
   density: "voto.density",
   reduceMotion: "voto.reduceMotion",
   theme: "voto.theme",
+  registryStyle: "voto.registryStyle",
   customTheme: "voto.customTheme",
   homeModules: "voto.homeModules",
   homeScale: "voto.homeScale",

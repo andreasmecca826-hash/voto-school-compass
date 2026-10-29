@@ -70,6 +70,7 @@ export type Theme =
   | "oro"
   | "diamante"
   | "custom";
+export type RegistryStyle = "voto" | "didup";
 export type CustomFont = "theme" | "sans" | "display" | "mono" | "serif";
 export type CustomTheme = {
   bgDark: string;
@@ -143,6 +144,7 @@ interface Ctx {
   density: Density;
   reduceMotion: boolean;
   theme: Theme;
+  registryStyle: RegistryStyle;
   customTheme: CustomTheme;
   interfaceScale: number;
   homeModules: HomeModuleConfig[];
@@ -165,6 +167,7 @@ interface Ctx {
   setDensity: (density: Density) => void;
   setReduceMotion: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
+  setRegistryStyle: (style: RegistryStyle) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
   setInterfaceScale: (scale: number) => void;
   resetCustomTheme: () => void;
@@ -217,6 +220,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [density, setDensityS] = useState<Density>("standard");
   const [reduceMotion, setReduceMotionS] = useState(false);
   const [theme, setThemeS] = useState<Theme>("original");
+  const [registryStyle, setRegistryStyleS] = useState<RegistryStyle>("voto");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
   const [interfaceScale, setInterfaceScaleS] = useState(100);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
@@ -273,6 +277,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setReduceMotionS(load(KEYS.reduceMotion, false));
     const savedTheme = load<Theme>(KEYS.theme, "original");
     setThemeS(savedTheme);
+    const savedRegistryStyle = load<RegistryStyle>(KEYS.registryStyle, "voto");
+    setRegistryStyleS(savedRegistryStyle === "didup" ? "didup" : "voto");
     const savedCustomTheme = load<Partial<CustomTheme>>(KEYS.customTheme, {});
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
@@ -354,6 +360,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["density"] = density;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
     root.dataset["theme"] = theme;
+    root.dataset["registryStyle"] = registryStyle;
     root.dataset["font"] = customTheme.font;
     root.style.fontSize = `${interfaceScale}%`;
     const custom: Record<string, string> = {
@@ -379,7 +386,19 @@ export function VotoProvider({ children }: { children: ReactNode }) {
               : '"Manrope", sans-serif',
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [accent, bg, mode, glass, density, reduceMotion, theme, customTheme, interfaceScale, ready]);
+  }, [
+    accent,
+    bg,
+    mode,
+    glass,
+    density,
+    reduceMotion,
+    theme,
+    registryStyle,
+    customTheme,
+    interfaceScale,
+    ready,
+  ]);
 
   const value: Ctx = useMemo(
     () => ({
@@ -398,6 +417,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       mode,
       glass,
       theme,
+      registryStyle,
       customTheme,
       interfaceScale,
       homeModules,
@@ -501,6 +521,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setTheme: (next) => {
         setThemeS(next);
         save(KEYS.theme, next);
+      },
+      setRegistryStyle: (next) => {
+        setRegistryStyleS(next);
+        save(KEYS.registryStyle, next);
       },
       setCustomTheme: (patch) =>
         setCustomThemeS((current) => {
@@ -631,6 +655,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       interrogazioni,
       completions,
       readIds,
+      registryStyle,
       density,
       reduceMotion,
       refreshImpl,
