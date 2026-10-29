@@ -165,15 +165,24 @@ function Dashboard() {
       )}
 
       <PeriodPicker />
-      <TomorrowSchoolCard
-        now={now}
-        schedule={schedule}
-        assignments={assignments}
-        interrogazioni={v.interrogazioni}
-        notifications={notifications}
-        isDone={v.isDone}
-      />
       <div className="flex flex-col">
+        {isHomeModuleVisible("domani-a-scuola") && (
+          <div
+            style={{
+              order: homeOrder("domani-a-scuola"),
+              zoom: homeModuleScale("domani-a-scuola"),
+            }}
+          >
+            <TomorrowSchoolCard
+              now={now}
+              schedule={schedule}
+              assignments={assignments}
+              interrogazioni={v.interrogazioni}
+              notifications={notifications}
+              isDone={v.isDone}
+            />
+          </div>
+        )}
         {isHomeModuleVisible("media") && (
           <div style={{ order: homeOrder("media"), zoom: homeModuleScale("media") }}>
             <section

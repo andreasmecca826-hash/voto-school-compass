@@ -8,7 +8,8 @@ export type HomeModuleId =
   | "promemoria"
   | "bacheca"
   | "obiettivo"
-  | "prossima-lezione";
+  | "prossima-lezione"
+  | "domani-a-scuola";
 
 export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean; scale: number };
 
@@ -16,6 +17,7 @@ export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
   { id: "media", enabled: true, scale: 100 },
   { id: "simulatore", enabled: true, scale: 100 },
   { id: "prossima-lezione", enabled: true, scale: 100 },
+  { id: "domani-a-scuola", enabled: true, scale: 100 },
   { id: "presenze", enabled: true, scale: 100 },
   { id: "compiti", enabled: true, scale: 100 },
   { id: "interrogazioni", enabled: true, scale: 100 },
