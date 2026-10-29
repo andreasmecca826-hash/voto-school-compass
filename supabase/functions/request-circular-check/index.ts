@@ -88,26 +88,24 @@ function publicError(error: unknown, operation: string) {
       operation: error.operation,
       status: error.status,
     });
-    return jsonResponse(
-      {
-        error: githubErrorMessage(error),
-        diagnosticCode: `${error.operation}_${error.status}`,
-      },
-      502,
-    );
+    // Risposta 200 con ok:false: un rifiuto di GitHub è uno stato atteso, non un crash
+    // della funzione. Così l'app mostra il messaggio senza errori runtime a schermo.
+    return jsonResponse({
+      ok: false,
+      error: githubErrorMessage(error),
+      diagnosticCode: `${error.operation}_${error.status}`,
+    });
   } else {
     console.error("circular-check request failed", {
       operation,
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
   }
-  return jsonResponse(
-    {
-      error: "Il controllo non è disponibile in questo momento.",
-      diagnosticCode: `${operation}_unknown`,
-    },
-    502,
-  );
+  return jsonResponse({
+    ok: false,
+    error: "Il controllo non è disponibile in questo momento.",
+    diagnosticCode: `${operation}_unknown`,
+  });
 }
 
 Deno.serve(async (request: Request) => {
@@ -118,7 +116,7 @@ Deno.serve(async (request: Request) => {
 
   const token = Deno.env.get("VOTO_CIRCULAR_TRIGGER_TOKEN");
   if (!token) {
-    return jsonResponse({ error: "Controllo manuale non ancora configurato." }, 503);
+    return jsonResponse({ ok: false, error: "Controllo manuale non ancora configurato." });
   }
 
   if (request.method === "GET") {
