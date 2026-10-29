@@ -1,18 +1,16 @@
 import {
-  Bell,
   CalendarCheck2,
-  ClipboardCheck,
-  ClipboardList,
+  CalendarX2,
   Eye,
+  FileX2,
   FileText,
+  Files,
   Pin,
-  X,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { fmt, overallAverage } from "@/lib/voto/calc";
-import { cn } from "@/lib/utils";
 
 function updatedLabel(value: string | null, now: Date) {
   const date = value ? new Date(value) : now;
@@ -84,13 +82,13 @@ export function DidupDashboard() {
       title: item.subject,
       subtitle: item.notes || "Da preparare",
       date: shortDate(item.date),
-      icon: <X />,
+      icon: <FileX2 />,
     }))
     : v.source === "demo"
       ? [
-        { id: "absence-1", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 3), icon: <X /> },
-        { id: "absence-2", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 6), icon: <X /> },
-        { id: "absence-3", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 7), icon: <X /> },
+        { id: "absence-1", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 3), icon: <FileX2 /> },
+        { id: "absence-2", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 6), icon: <FileX2 /> },
+        { id: "absence-3", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 7), icon: <FileX2 /> },
       ]
       : [{ id: "empty-event", title: "Nessun evento", subtitle: "Gli eventi compariranno qui", date: "", icon: <CalendarCheck2 /> }];
 
@@ -150,6 +148,9 @@ export function DidupDashboard() {
 
       <DidupSectionTitle title="Eventi appello" href="/interrogazioni" />
       <section className="didup-card overflow-hidden px-5">
+        <div className="flex justify-end">
+          <span className="-mr-5 -mt-1 rounded-full bg-[#04aeba] p-3"><CalendarX2 className="h-6 w-6" /></span>
+        </div>
         {eventItems.map((item) => (
           <div key={item.id} className="flex items-center gap-4 border-b border-white/15 py-4 last:border-0">
             <span className="text-[#08b8c4]">{item.icon}</span>
@@ -175,7 +176,7 @@ export function DidupDashboard() {
       <DidupScroller>
         {notices.length > 0 ? notices.slice(0, 5).map((item) => (
           <article key={item.id} className="didup-tile min-h-[294px] w-[78%] shrink-0 overflow-hidden p-5">
-            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#04aeba] p-3"><Bell className="h-5 w-5" /></span></div>
+            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#04aeba] p-3"><Files className="h-5 w-5" /></span></div>
             <p className="mt-2 text-[18px] uppercase">Circolari</p>
             <p className="text-[13px]">{item.subject || "C. FILETTI"}</p>
             <p className="mt-14 line-clamp-3 text-[15px] leading-6">{item.message || item.title}</p>
@@ -188,7 +189,7 @@ export function DidupDashboard() {
       <DidupScroller>
         {(reminders.length ? reminders : [{ id: "empty-reminder", title: "Nessun promemoria", message: "I prossimi promemoria appariranno qui." }]).slice(0, 5).map((item) => (
           <article key={item.id} className="didup-tile min-h-[250px] w-[78%] shrink-0 overflow-hidden p-5">
-            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#ff5264] p-3"><ClipboardCheck className="h-5 w-5" /></span></div>
+            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#ff5264] p-3"><CalendarCheck2 className="h-5 w-5" /></span></div>
             <p className="mt-2 text-[13px]">{item.subject || "S. CALABRESE"}</p>
             <p className="mt-16 text-[16px] leading-6">{item.message || item.title}</p>
           </article>
