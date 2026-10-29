@@ -40,7 +40,7 @@ export function CircularViewer({
   title: string;
   fileName: string | undefined;
   url: string | undefined;
-  path?: string;
+  path?: string | undefined;
 }) {
   const pdfFilename = safePdfFilename(fileName);
   const previewUrl = path ? internalPdfUrl(path) : url;

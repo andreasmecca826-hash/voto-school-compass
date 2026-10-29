@@ -57,7 +57,7 @@ export type UpcomingSchoolEvent = {
   id: string;
   title: string;
   date: string;
-  detail?: string;
+  detail?: string | undefined;
   source: "interrogazione" | "promemoria";
 };
 

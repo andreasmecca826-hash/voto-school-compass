@@ -38,7 +38,7 @@ export function reminderDateToIso(value?: string): string | null {
       : null;
   if (!parts) return null;
 
-  const [year, month, day] = parts;
+  const [year = 0, month = 0, day = 0] = parts;
   const check = new Date(Date.UTC(year, month - 1, day));
   if (
     check.getUTCFullYear() !== year ||
