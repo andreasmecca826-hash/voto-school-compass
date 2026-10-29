@@ -88,26 +88,24 @@ function publicError(error: unknown, operation: string) {
       operation: error.operation,
       status: error.status,
     });
-    return jsonResponse(
-      {
-        error: githubErrorMessage(error),
-        diagnosticCode: `${error.operation}_${error.status}`,
-      },
-      502,
-    );
+    // Risposta 200 con ok:false: un rifiuto di GitHub è uno stato atteso, non un crash
+    // della funzione. Così l'app mostra il messaggio senza errori runtime a schermo.
+    return jsonResponse({
+      ok: false,
+      error: githubErrorMessage(error),
+      diagnosticCode: `${error.operation}_${error.status}`,
+    });
   } else {
     console.error("circular-check request failed", {
       operation,
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
   }
-  return jsonResponse(
-    {
-      error: "Il controllo non è disponibile in questo momento.",
-      diagnosticCode: `${operation}_unknown`,
-    },
-    502,
-  );
+  return jsonResponse({
+    ok: false,
+    error: "Il controllo non è disponibile in questo momento.",
+    diagnosticCode: `${operation}_unknown`,
+  });
 }
 
 Deno.serve(async (request: Request) => {
@@ -118,7 +116,7 @@ Deno.serve(async (request: Request) => {
 
   const token = Deno.env.get("VOTO_CIRCULAR_TRIGGER_TOKEN");
   if (!token) {
-    return jsonResponse({ error: "Controllo manuale non ancora configurato." }, 503);
+    return jsonResponse({ ok: false, error: "Controllo manuale non ancora configurato." });
   }
 
   if (request.method === "GET") {
@@ -134,24 +132,26 @@ Deno.serve(async (request: Request) => {
           typeof candidate.created_at === "string" &&
           Date.parse(candidate.created_at) >= afterMs,
       );
-      if (!run) return jsonResponse({ status: "waiting" });
-      return jsonResponse({ status: run.status ?? "unknown", conclusion: run.conclusion ?? null });
+      if (!run) return jsonResponse({ ok: true, status: "waiting" });
+      return jsonResponse({
+        ok: true,
+        status: run.status ?? "unknown",
+        conclusion: run.conclusion ?? null,
+      });
     } catch (error) {
       return publicError(error, "status");
     }
   }
 
   if (dispatchInProgress) {
-    return jsonResponse({ error: "È già in corso un controllo.", retryAfterSeconds: 60 }, 409);
+    return jsonResponse({ ok: false, error: "È già in corso un controllo.", retryAfterSeconds: 60 });
   }
   if (localCooldownUntil > Date.now()) {
-    return jsonResponse(
-      {
-        error: "Il registro è stato controllato di recente.",
-        retryAfterSeconds: Math.ceil((localCooldownUntil - Date.now()) / 1000),
-      },
-      429,
-    );
+    return jsonResponse({
+      ok: false,
+      error: "Il registro è stato controllato di recente.",
+      retryAfterSeconds: Math.ceil((localCooldownUntil - Date.now()) / 1000),
+    });
   }
 
   dispatchInProgress = true;
@@ -163,7 +163,7 @@ Deno.serve(async (request: Request) => {
       const requestedAt = Number.isFinite(createdAt)
         ? new Date(createdAt - 10_000).toISOString()
         : new Date(Date.now() - 10_000).toISOString();
-      return jsonResponse({ status: "started", requestedAt, joinedExisting: true }, 202);
+      return jsonResponse({ ok: true, status: "started", requestedAt, joinedExisting: true }, 202);
     }
 
     const latest = runs.find(
@@ -173,13 +173,11 @@ Deno.serve(async (request: Request) => {
       const age = Date.now() - Date.parse(latest.created_at);
       if (Number.isFinite(age) && age < cooldownMs) {
         localCooldownUntil = Date.parse(latest.created_at) + cooldownMs;
-        return jsonResponse(
-          {
-            error: "Il registro è stato controllato di recente.",
-            retryAfterSeconds: retrySeconds(latest.created_at),
-          },
-          429,
-        );
+        return jsonResponse({
+          ok: false,
+          error: "Il registro è stato controllato di recente.",
+          retryAfterSeconds: retrySeconds(latest.created_at),
+        });
       }
     }
 
@@ -194,7 +192,7 @@ Deno.serve(async (request: Request) => {
     );
     if (!response.ok) throw new GitHubRequestError("dispatch", response.status);
     localCooldownUntil = Date.now() + cooldownMs;
-    return jsonResponse({ status: "started", requestedAt }, 202);
+    return jsonResponse({ ok: true, status: "started", requestedAt }, 202);
   } catch (error) {
     return publicError(error, "dispatch");
   } finally {
