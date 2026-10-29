@@ -68,19 +68,46 @@ function retrySeconds(createdAt: string | undefined) {
   return Math.max(1, Math.ceil((timestamp + cooldownMs - Date.now()) / 1000));
 }
 
+function githubErrorMessage(error: GitHubRequestError) {
+  if (error.status === 401) return "GitHub ha rifiutato il token del controllo (HTTP 401).";
+  if (error.status === 403) return "GitHub ha negato l’accesso del controllo (HTTP 403).";
+  if (error.status === 404) {
+    return "GitHub non trova il repository o il workflow, oppure il token non può accedervi (HTTP 404).";
+  }
+  if (error.status === 429)
+    return "GitHub ha raggiunto il limite di richieste (HTTP 429). Riprova più tardi.";
+  if (error.status === 422 && error.operation === "dispatch") {
+    return "GitHub ha rifiutato i parametri di avvio del workflow (HTTP 422).";
+  }
+  return `GitHub non ha completato la richiesta del controllo (HTTP ${error.status}).`;
+}
+
 function publicError(error: unknown, operation: string) {
   if (error instanceof GitHubRequestError) {
     console.error("circular-check GitHub API failed", {
       operation: error.operation,
       status: error.status,
     });
+    return jsonResponse(
+      {
+        error: githubErrorMessage(error),
+        diagnosticCode: `${error.operation}_${error.status}`,
+      },
+      502,
+    );
   } else {
     console.error("circular-check request failed", {
       operation,
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
   }
-  return jsonResponse({ error: "Il controllo non è disponibile in questo momento." }, 502);
+  return jsonResponse(
+    {
+      error: "Il controllo non è disponibile in questo momento.",
+      diagnosticCode: `${operation}_unknown`,
+    },
+    502,
+  );
 }
 
 Deno.serve(async (request: Request) => {
