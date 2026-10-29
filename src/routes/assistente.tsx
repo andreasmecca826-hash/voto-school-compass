@@ -7,12 +7,16 @@ import {
 } from "@/lib/voto/assistant-actions";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
-import { clearScheduleDay, DAYS, loadSchedule } from "@/lib/voto/orario";
+import { clearScheduleDayIfUnchanged, DAYS, loadSchedule } from "@/lib/voto/orario";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
 
 type PendingAction =
-  | { type: "clear-day"; day: NonNullable<ReturnType<typeof scheduleDayToClear>> }
+  | {
+      type: "clear-day";
+      day: NonNullable<ReturnType<typeof scheduleDayToClear>>;
+      expectedLessons: string[];
+    }
   | { type: "assignment"; action: AssignmentConfirmation };
 
 export const Route = createFileRoute("/assistente")({
@@ -50,6 +54,7 @@ function Assistant() {
     const clean = text.trim();
     if (!clean) return;
     const dayToClear = scheduleDayToClear(clean);
+    const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
       ...v.data,
       assignments: v.data.assignments.map((item) => ({
@@ -63,12 +68,15 @@ function Assistant() {
     };
     const assignmentIntent = getAssignmentActionIntent(clean, assistantData.assignments);
     const nextPendingAction: PendingAction | null = dayToClear
-      ? { type: "clear-day", day: dayToClear }
+      ? { type: "clear-day", day: dayToClear, expectedLessons }
       : assignmentIntent?.kind === "confirm"
         ? { type: "assignment", action: assignmentIntent.action }
         : null;
+    const lessonsToClear = expectedLessons
+      .map((lesson, index) => (lesson.trim() ? `${index + 1}ª ora: ${lesson.trim()}` : null))
+      .filter((lesson): lesson is string => lesson !== null);
     const response = dayToClear
-      ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}. Vuoi confermare?`
+      ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : assignmentIntent?.kind === "confirm"
         ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
         : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
@@ -104,9 +112,18 @@ function Assistant() {
     if (!pendingAction) return;
     let result: string;
     if (pendingAction.type === "clear-day") {
-      clearScheduleDay(loadSchedule(), pendingAction.day);
       const label = DAYS.find((day) => day.id === pendingAction.day)?.label;
-      result = `Fatto: ho cancellato tutte le lezioni dell’orario di ${label}.`;
+      const clearResult = clearScheduleDayIfUnchanged(
+        loadSchedule(),
+        pendingAction.day,
+        pendingAction.expectedLessons,
+      );
+      result =
+        clearResult === "cleared"
+          ? `Fatto: ho cancellato tutte le lezioni dell’orario di ${label}.`
+          : clearResult === "empty"
+            ? `L’orario di ${label} è già vuoto. Non ho modificato nulla.`
+            : `L’orario di ${label} è cambiato mentre aspettavi. Non ho cancellato nulla; controllalo e chiedimi di nuovo se vuoi svuotarlo.`;
     } else {
       const assignment = v.data.assignments.find((item) => item.id === pendingAction.action.id);
       if (!assignment) {
@@ -193,6 +210,19 @@ function Assistant() {
               <>
                 Confermi la cancellazione dell’orario di{" "}
                 <strong>{DAYS.find((day) => day.id === pendingAction.day)?.label}</strong>?
+                {pendingAction.expectedLessons.some((lesson) => lesson.trim()) ? (
+                  <span className="mt-1 block">
+                    Lezioni selezionate:{" "}
+                    {pendingAction.expectedLessons
+                      .map((lesson, index) =>
+                        lesson.trim() ? `${index + 1}ª ora: ${lesson.trim()}` : null,
+                      )
+                      .filter((lesson): lesson is string => lesson !== null)
+                      .join("; ")}
+                  </span>
+                ) : (
+                  <span className="mt-1 block">Il giorno risulta già vuoto.</span>
+                )}
               </>
             ) : (
               <>

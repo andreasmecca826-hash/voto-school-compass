@@ -42,4 +42,20 @@ describe("Media ponderata e voto necessario", () => {
     expect(res.status).toBe("ok");
     expect(res.needed).toBe(10);
   });
+
+  it("normalizza i pesi non positivi allo stesso modo per media e voto necessario", () => {
+    const grades = [g(5, 0), g(6, -2)];
+    const current = average(grades);
+    const result = neededGrade(grades, 6, 1, true);
+
+    expect(current).toBe(5.5);
+    expect(result.status).toBe("ok");
+    expect(result.needed).toBe(7);
+    expect(average([...grades, g(result.needed)])).toBe(6);
+  });
+
+  it("usa peso unitario anche quando il peso è non finito", () => {
+    expect(average([g(5, Number.POSITIVE_INFINITY)])).toBe(5);
+    expect(neededGrade([g(5, Number.POSITIVE_INFINITY)], 6).needed).toBe(7);
+  });
 });

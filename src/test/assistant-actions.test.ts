@@ -81,4 +81,36 @@ describe("assistant task actions", () => {
       getAssignmentActionIntent("Non segnare Esercizi pagina 24 come completato", assignments),
     ).toBeNull();
   });
+
+  it("does not turn a negative report of unfinished work into a completion action", () => {
+    expect(
+      getAssignmentActionIntent("Non ho finito Esercizi pagina 24", assignments),
+    ).toMatchObject({
+      kind: "already",
+      message: expect.stringContaining("già da fare"),
+    });
+    expect(
+      getAssignmentActionIntent("Non ho svolto Esercizi pagina 24", assignments),
+    ).not.toMatchObject({ kind: "confirm", action: { completed: true } });
+  });
+
+  it("asks which task when multiple titles are mentioned and keeps the most specific title", () => {
+    expect(
+      getAssignmentActionIntent(
+        "Segna Esercizi pagina 24 e Ripassa il capitolo 3 come completati",
+        assignments,
+      ),
+    ).toMatchObject({
+      kind: "clarify",
+      message: expect.stringContaining("più compiti compatibili"),
+    });
+
+    const overlappingTitles: Assignment[] = [
+      { id: "short", title: "Esercizi", completed: false },
+      { id: "specific", title: "Esercizi pagina 24", completed: false },
+    ];
+    expect(
+      getAssignmentActionIntent("Segna Esercizi pagina 24 come completato", overlappingTitles),
+    ).toMatchObject({ kind: "confirm", action: { id: "specific" } });
+  });
 });

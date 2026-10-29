@@ -219,7 +219,6 @@ export function answerQuestion(
     normalized.includes("come apro");
   if (asksWhereToFind) {
     const destinations: [string[], string][] = [
-      [["voto", "materia"], "Voti"],
       [["compit", "scadenz"], "Compiti"],
       [["assenza", "presenz", "ritardo"], "Dashboard, modulo Presenze"],
       [["orario", "lezion"], "Orario"],
@@ -237,6 +236,7 @@ export function answerQuestion(
         ["simulator", "calcolo media", "voto necessario"],
         "Studio Lab > Calcolo media e simulatore voti",
       ],
+      [["voto", "materia"], "Voti"],
       [["studio lab", "flashcard", "ruota del ripasso"], "Studio Lab"],
     ];
     const destination = destinations.find(([terms]) =>
@@ -247,12 +247,26 @@ export function answerQuestion(
   }
 
   if (
+    normalized.includes("anno scolastico") &&
+    ["quando", "data", "inizia", "inizio", "comincia", "finisce", "termina", "fine"].some((term) =>
+      normalized.includes(term),
+    )
+  )
+    return "Nei dati caricati non è indicata la data di inizio o fine dell’anno scolastico. Controlla le comunicazioni ufficiali della scuola.";
+
+  if (
     normalized.includes("come mi chiamo") ||
     normalized.includes("qual e il mio nome") ||
     normalized.includes("che classe faccio") ||
     normalized.includes("in che classe sono") ||
     normalized.includes("quale classe frequento") ||
-    normalized.includes("anno scolastico")
+    normalized.includes("qual e il mio anno scolastico") ||
+    normalized.includes("che anno scolastico frequento") ||
+    normalized.includes("quale anno scolastico frequento") ||
+    normalized.includes("in quale anno scolastico sono") ||
+    normalized.includes("in che anno scolastico sono") ||
+    normalized.includes("in che anno scolastico siamo") ||
+    normalized.includes("che anno scolastico e")
   ) {
     const profile = data.student;
     const details = [
@@ -414,8 +428,8 @@ export function answerQuestion(
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     if (!matches.length) {
       if (requestedDay !== null)
-        return `Non risultano note${asksUnread ? " nuove o non lette" : ""} per ${relativeDayLabel(requestedDay)} nei dati caricati.`;
-      if (asksUnread) return "Non risultano note nuove o non lette nei dati caricati.";
+        return `Non risultano note${asksUnread ? " non lette" : ""} per ${relativeDayLabel(requestedDay)} nei dati caricati.`;
+      if (asksUnread) return "Non risultano note non lette nei dati caricati.";
       return "Non risultano note disciplinari nei dati caricati.";
     }
     const shown = matches.slice(0, 5).map((item) => {
@@ -424,11 +438,11 @@ export function answerQuestion(
       const title = item.title.trim();
       const message = item.message?.trim();
       const text = message && message !== title ? `${title}: ${message}` : title;
-      return `• ${text}${subjectLabel}${date ? ` (${date})` : ""}${item.read ? "" : " — nuova"}`;
+      return `• ${text}${subjectLabel}${date ? ` (${date})` : ""}${item.read ? "" : " — non letta"}`;
     });
     const remainder =
       matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
-    return `Note${asksUnread ? " nuove/non lette" : " disciplinari"}:\n${shown.join("\n")}${remainder}\nLe trovi nella sezione Note.`;
+    return `Note${asksUnread ? " non lette" : " disciplinari"}:\n${shown.join("\n")}${remainder}\nLe trovi nella sezione Note.`;
   }
 
   const asksDiary = normalized.includes("diario") || normalized.includes("attivita");
@@ -571,7 +585,10 @@ export function answerQuestion(
     } else if (notices[0]) {
       lines.push(`Ultima circolare: ${noticeLabel(notices[0])}.`);
     }
-    const nextReminder = reminders.find((item) => (daysUntil(item.date, now) ?? 0) >= 0);
+    const nextReminder = reminders.find((item) => {
+      const days = daysUntil(item.date, now);
+      return days !== null && days >= 0;
+    });
     if (nextReminder) lines.push(`Promemoria: ${reminderLabel(nextReminder)}.`);
     return lines.length
       ? lines.join("\n")

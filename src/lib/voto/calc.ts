@@ -11,12 +11,14 @@ export function arithmeticMean(values: number[]): number | null {
   return valid.reduce((sum, value) => sum + value, 0) / valid.length;
 }
 
+const normalizedWeight = (weight: number) => (Number.isFinite(weight) && weight > 0 ? weight : 1);
+
 export function average(grades: Grade[], weighted = true): number | null {
   const valid = grades.filter((g) => Number.isFinite(g.value));
   if (!valid.length) return null;
   if (!weighted) return valid.reduce((s, g) => s + g.value, 0) / valid.length;
-  const tw = valid.reduce((s, g) => s + (g.weight > 0 ? g.weight : 1), 0);
-  return valid.reduce((s, g) => s + g.value * (g.weight > 0 ? g.weight : 1), 0) / tw;
+  const tw = valid.reduce((s, g) => s + normalizedWeight(g.weight), 0);
+  return valid.reduce((s, g) => s + g.value * normalizedWeight(g.weight), 0) / tw;
 }
 
 /** Media generale = media delle medie (ponderate) delle materie con almeno un voto. */
@@ -60,15 +62,16 @@ export function neededGrade(
   newWeight = 1,
   weighted = true,
 ): NeededResult {
-  const w = newWeight > 0 ? newWeight : 1;
+  const valid = grades.filter((g) => Number.isFinite(g.value));
+  const w = normalizedWeight(newWeight);
   let needed: number;
   if (weighted) {
-    const W = grades.reduce((s, g) => s + g.weight, 0);
-    const ws = grades.reduce((s, g) => s + g.value * g.weight, 0);
+    const W = valid.reduce((s, g) => s + normalizedWeight(g.weight), 0);
+    const ws = valid.reduce((s, g) => s + g.value * normalizedWeight(g.weight), 0);
     needed = (target * (W + w) - ws) / w;
   } else {
-    const n = grades.length;
-    const sum = grades.reduce((s, g) => s + g.value, 0);
+    const n = valid.length;
+    const sum = valid.reduce((s, g) => s + g.value, 0);
     needed = target * (n + 1) - sum;
   }
   if (needed <= 0) return { status: "reached", needed };

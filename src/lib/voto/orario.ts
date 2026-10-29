@@ -51,3 +51,21 @@ export function clearScheduleDay(schedule: Schedule, day: DayId): Schedule {
   saveSchedule(next);
   return next;
 }
+
+export type ClearScheduleDayResult = "cleared" | "changed" | "empty";
+
+export function clearScheduleDayIfUnchanged(
+  schedule: Schedule,
+  day: DayId,
+  expectedLessons: readonly string[],
+): ClearScheduleDayResult {
+  const currentLessons = schedule[day];
+  if (
+    currentLessons.length !== expectedLessons.length ||
+    currentLessons.some((lesson, index) => lesson !== expectedLessons[index])
+  )
+    return "changed";
+  if (!currentLessons.some((lesson) => lesson.trim())) return "empty";
+  clearScheduleDay(schedule, day);
+  return "cleared";
+}
