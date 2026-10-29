@@ -1,8 +1,9 @@
 import {
   ArrowLeft,
-  BookMarked,
+  BadgeCheck,
   ChevronDown,
   ChevronUp,
+  Download,
   Eye,
   EyeOff,
   Home,
@@ -12,8 +13,11 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Sun,
+  Type,
+  Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
@@ -23,6 +27,7 @@ import {
 import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
+import { createHomeSettingsFile, parseHomeSettingsFile } from "@/lib/voto/home-settings-file";
 import {
   useVoto,
   type Accent,
@@ -30,12 +35,11 @@ import {
   type CustomTheme,
   type Density,
   type HomeModuleId,
-  type InterfaceMode,
   type Mode,
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience" | "register";
+type View = "menu" | "themes" | "home" | "experience" | "typography" | "registry";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -78,6 +82,18 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     label: "Personalizzato",
     description: "Crea il tuo tema",
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
+  },
+  {
+    id: "oro",
+    label: "Oro",
+    description: "Ossidiana, oro satinato e riflessi champagne",
+    sw: "radial-gradient(circle at 78% 24%,#fff4bd 0 3%,transparent 4%),linear-gradient(125deg,#17110a 0%,#513a14 34%,#d3a533 49%,#fff0a3 56%,#9a6d1c 67%,#24190b 100%)",
+  },
+  {
+    id: "diamante",
+    label: "Diamante",
+    description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
+    sw: "linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "tramonto",
@@ -182,6 +198,7 @@ const CUSTOM_COLORS: {
   { key: "primary", label: "Colore principale" },
 ];
 const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
+  { id: "theme", label: "Come il tema", sample: "Aa" },
   { id: "sans", label: "Sans moderno", sample: "Aa" },
   { id: "display", label: "Display morbido", sample: "Aa" },
   { id: "mono", label: "Monospace", sample: "01" },
@@ -189,21 +206,20 @@ const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
-  { id: "simulatore", label: "Simulatore voto" },
+  { id: "simulatore", label: "Studio Lab" },
+  { id: "prossima-lezione", label: "Prossima lezione" },
+  { id: "domani-a-scuola", label: "Domani a scuola" },
   { id: "presenze", label: "Presenze" },
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },
   { id: "note", label: "Note" },
+  { id: "promemoria", label: "Promemoria DidUP" },
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];
 const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
   { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
   { id: "compact", label: "Compatto", description: "Schede più raccolte" },
-];
-const INTERFACE_OPTIONS: { id: InterfaceMode; label: string; description: string }[] = [
-  { id: "voto", label: "VOTO.", description: "Dashboard e menu dell’app VOTO." },
-  { id: "didup", label: "DidUP / Argo", description: "Layout scuro fedele al registro Argo" },
 ];
 const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
   { id: false, label: "Normali", description: "Transizioni e animazioni" },
@@ -215,7 +231,9 @@ export function PersonalizationPanel() {
   const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
-  const hiddenThemeName = THEMES.slice(4).find((theme) => theme.id === v.theme)?.label;
+  const homeSettingsInput = useRef<HTMLInputElement>(null);
+  const availableThemes = THEMES;
+  const hiddenThemeName = availableThemes.slice(4).find((theme) => theme.id === v.theme)?.label;
   const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
 
   if (view === "menu")
@@ -265,17 +283,28 @@ export function PersonalizationPanel() {
           </button>
           <button
             type="button"
-            onClick={() => setView("register")}
-            className="press card-surface col-span-2 flex min-h-28 items-center gap-4 p-4 text-left"
+            onClick={() => setView("registry")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <BookMarked className="h-7 w-7" />
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <BadgeCheck className="h-7 w-7" />
             </span>
-            <span>
-              <span className="block font-semibold">Stile registro</span>
-              <span className="mt-1 block text-[11px] text-muted-foreground">
-                Scegli se usare VOTO. oppure l’interfaccia DidUP / Argo
-              </span>
+            <span className="font-semibold">Stile del registro</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Scegli l’aspetto VOTO o DidUP
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("typography")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Type className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Tipografia</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Font e dimensione dell’interfaccia
             </span>
           </button>
           <button
@@ -295,30 +324,92 @@ export function PersonalizationPanel() {
       </div>
     );
 
-  if (view === "register")
+  if (view === "typography")
     return (
       <div className="pt-3">
-        <BackButton onClick={() => setView("menu")} title="Stile registro" />
-        <p className="mb-4 text-xs text-muted-foreground">
-          Questa impostazione cambia solo l’aspetto e la navigazione. I dati e l’aggiornamento ogni 15 minuti restano invariati.
+        <BackButton onClick={() => setView("menu")} title="Tipografia" />
+        <SectionTitle>Font dell’app</SectionTitle>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          Il font scelto si applica a tutti i temi. “Come il tema” ripristina lo stile tipografico
+          previsto da ciascun tema.
         </p>
-        <div className="grid gap-3">
-          {INTERFACE_OPTIONS.map((option) => (
+        <div className="grid grid-cols-2 gap-2">
+          {FONTS.map((font) => (
             <button
-              key={option.id}
+              key={font.id}
               type="button"
-              aria-pressed={v.interfaceMode === option.id}
-              onClick={() => v.setInterfaceMode(option.id)}
+              aria-pressed={v.customTheme.font === font.id}
+              onClick={() => v.setCustomTheme({ font: font.id })}
               className={cn(
-                "press card-surface p-4 text-left",
-                v.interfaceMode === option.id && "border-primary",
+                "press card-surface flex items-center gap-3 p-3 text-left",
+                v.customTheme.font === font.id && "border-primary",
               )}
             >
-              <span className="block text-sm font-semibold">{option.label}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{option.description}</span>
+              <span
+                className="text-2xl text-primary"
+                style={{
+                  fontFamily:
+                    font.id === "theme"
+                      ? "inherit"
+                      : font.id === "serif"
+                        ? "Georgia, serif"
+                        : font.id === "mono"
+                          ? '"JetBrains Mono", monospace'
+                          : font.id === "display"
+                            ? '"Space Grotesk", sans-serif'
+                            : '"Manrope", sans-serif',
+                }}
+              >
+                {font.sample}
+              </span>
+              <span className="text-xs font-semibold">{font.label}</span>
             </button>
           ))}
         </div>
+
+        <SectionTitle>Dimensione interfaccia</SectionTitle>
+        <section className="card-surface p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="interface-scale" className="text-xs font-semibold">
+              Scala generale
+            </label>
+            <output
+              className="tabular text-xs font-semibold text-primary"
+              htmlFor="interface-scale"
+            >
+              {v.interfaceScale}%
+            </output>
+          </div>
+          <input
+            id="interface-scale"
+            type="range"
+            min={80}
+            max={120}
+            step={5}
+            value={v.interfaceScale}
+            onChange={(event) => v.setInterfaceScale(Number(event.target.value))}
+            aria-label="Dimensione generale dell’interfaccia"
+            className="mt-3 w-full accent-primary"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>80%</span>
+            <span>120%</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              v.setCustomTheme({ font: "theme" });
+              v.setInterfaceScale(100);
+            }}
+            disabled={v.customTheme.font === "theme" && v.interfaceScale === 100}
+            className="mt-3 text-[11px] font-medium text-primary disabled:text-muted-foreground"
+          >
+            Ripristina tipografia
+          </button>
+        </section>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Le preferenze vengono salvate su questo dispositivo.
+        </p>
       </div>
     );
 
@@ -372,6 +463,59 @@ export function PersonalizationPanel() {
       </div>
     );
 
+  if (view === "registry")
+    return (
+      <div className="pt-3">
+        <BackButton onClick={() => setView("menu")} title="Stile del registro" />
+        <SectionTitle>Identità visiva</SectionTitle>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          Cambia l’aspetto generale dell’app. Le funzioni e i dati restano quelli di VOTO; il
+          profilo DidUP è ispirato al registro e non è l’app ufficiale.
+        </p>
+        <div className="grid gap-3">
+          {[
+            {
+              id: "voto" as const,
+              label: "VOTO",
+              description: "Mantieni l’identità visiva attuale e le tue preferenze di tema.",
+              swatch: "bg-gradient-to-br from-neutral-950 via-neutral-800 to-rose-500",
+            },
+            {
+              id: "didup" as const,
+              label: "DidUP",
+              description:
+                "Interfaccia più istituzionale, blu e lineare, ispirata al registro DidUP.",
+              swatch: "bg-gradient-to-br from-sky-900 via-sky-700 to-sky-400",
+            },
+          ].map((style) => (
+            <button
+              key={style.id}
+              type="button"
+              aria-pressed={v.registryStyle === style.id}
+              onClick={() => v.setRegistryStyle(style.id)}
+              className={cn(
+                "press card-surface flex items-center gap-3 p-4 text-left",
+                v.registryStyle === style.id && "border-primary ring-2 ring-primary/30",
+              )}
+            >
+              <span className={cn("h-12 w-12 shrink-0 rounded-xl", style.swatch)} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{style.label}</span>
+                <span className="mt-1 block text-[11px] text-muted-foreground">
+                  {style.description}
+                </span>
+              </span>
+              {v.registryStyle === style.id && (
+                <span className="shrink-0 rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
+                  Attivo
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+
   if (view === "home")
     return (
       <div className="pt-3">
@@ -379,46 +523,111 @@ export function PersonalizationPanel() {
         <SectionTitle>Moduli Home</SectionTitle>
         <section className="card-surface overflow-hidden p-2">
           <p className="px-2 pb-2 pt-1 text-[11px] text-muted-foreground">
-            Attiva i moduli e usa le frecce per scegliere l’ordine.
+            Attiva i moduli, ridimensionali con i cursori e usa le frecce per riordinarli.
           </p>
+          <div className="mb-3 rounded-xl border border-border bg-surface/40 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="home-scale" className="text-xs font-semibold">
+                Dimensione generale Home
+              </label>
+              <output className="tabular text-xs font-semibold text-primary" htmlFor="home-scale">
+                {v.homeScale}%
+              </output>
+            </div>
+            <input
+              id="home-scale"
+              type="range"
+              min={80}
+              max={120}
+              step={5}
+              value={v.homeScale}
+              onChange={(event) => v.setHomeScale(Number(event.target.value))}
+              aria-label="Dimensione generale della Home"
+              className="mt-3 w-full accent-primary"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>80%</span>
+              <span>120%</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => v.setHomeScale(100)}
+              disabled={v.homeScale === 100}
+              className="mt-2 text-[11px] font-medium text-primary disabled:text-muted-foreground"
+            >
+              Ripristina 100%
+            </button>
+          </div>
           <div className="space-y-1">
             {v.homeModules.map((module, index) => {
               const meta = HOME_MODULE_META.find((item) => item.id === module.id)!;
               return (
                 <div
                   key={module.id}
-                  className={cn(
-                    "flex items-center gap-2 rounded-xl p-2",
-                    !module.enabled && "opacity-50",
-                  )}
+                  className={cn("rounded-xl p-2", !module.enabled && "opacity-50")}
                 >
-                  <button
-                    type="button"
-                    onClick={() => v.toggleHomeModule(module.id)}
-                    aria-label={module.enabled ? `Nascondi ${meta.label}` : `Mostra ${meta.label}`}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted-foreground"
-                  >
-                    {module.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                  <span className="min-w-0 flex-1 text-sm">{meta.label}</span>
-                  <button
-                    type="button"
-                    disabled={index === 0}
-                    onClick={() => v.moveHomeModule(module.id, -1)}
-                    aria-label={`Sposta ${meta.label} su`}
-                    className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === v.homeModules.length - 1}
-                    onClick={() => v.moveHomeModule(module.id, 1)}
-                    aria-label={`Sposta ${meta.label} giù`}
-                    className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => v.toggleHomeModule(module.id)}
+                      aria-label={
+                        module.enabled ? `Nascondi ${meta.label}` : `Mostra ${meta.label}`
+                      }
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted-foreground"
+                    >
+                      {module.enabled ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </button>
+                    <span className="min-w-0 flex-1 text-sm">{meta.label}</span>
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      onClick={() => v.moveHomeModule(module.id, -1)}
+                      aria-label={`Sposta ${meta.label} su`}
+                      className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === v.homeModules.length - 1}
+                      onClick={() => v.moveHomeModule(module.id, 1)}
+                      aria-label={`Sposta ${meta.label} giù`}
+                      className="press flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:opacity-25"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 pl-11">
+                    <label
+                      htmlFor={`home-module-scale-${module.id}`}
+                      className="w-16 shrink-0 text-[10px] text-muted-foreground"
+                    >
+                      Dimensione
+                    </label>
+                    <input
+                      id={`home-module-scale-${module.id}`}
+                      type="range"
+                      min={80}
+                      max={120}
+                      step={5}
+                      value={module.scale}
+                      onChange={(event) =>
+                        v.setHomeModuleScale(module.id, Number(event.target.value))
+                      }
+                      aria-label={`Dimensione del modulo ${meta.label}`}
+                      className="min-w-0 flex-1 accent-primary"
+                    />
+                    <output
+                      className="tabular w-9 text-right text-[10px] font-semibold text-primary"
+                      htmlFor={`home-module-scale-${module.id}`}
+                    >
+                      {module.scale}%
+                    </output>
+                  </div>
                 </div>
               );
             })}
@@ -428,8 +637,66 @@ export function PersonalizationPanel() {
             onClick={v.resetHomeModules}
             className="press mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground"
           >
-            <RotateCcw className="h-3.5 w-3.5" /> Ripristina ordine Home
+            <RotateCcw className="h-3.5 w-3.5" /> Ripristina la Home
           </button>
+        </section>
+        <SectionTitle>Trasferisci impostazioni Home</SectionTitle>
+        <section className="card-surface p-4">
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            Esporta o importa ordine, visibilità e dimensioni dei moduli. Il file non contiene voti
+            o altri dati personali.
+          </p>
+          <input
+            ref={homeSettingsInput}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            aria-label="Seleziona file JSON delle impostazioni Home"
+            onChange={async (event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (!file) return;
+              try {
+                const settings = parseHomeSettingsFile(await file.text());
+                v.setHomeCustomization(settings);
+                toast.success("Impostazioni Home importate");
+              } catch (error) {
+                toast.error("Importazione non riuscita", {
+                  description: error instanceof Error ? error.message : "Controlla il file JSON.",
+                });
+              }
+            }}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const contents = createHomeSettingsFile({
+                  homeScale: v.homeScale,
+                  homeModules: v.homeModules,
+                });
+                const url = URL.createObjectURL(
+                  new Blob([contents], { type: "application/json;charset=utf-8" }),
+                );
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = "voto-home-impostazioni.json";
+                anchor.click();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                toast.success("File JSON esportato");
+              }}
+              className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-xs font-semibold"
+            >
+              <Download className="h-4 w-4" /> Esporta JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => homeSettingsInput.current?.click()}
+              className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground"
+            >
+              <Upload className="h-4 w-4" /> Importa JSON
+            </button>
+          </div>
         </section>
       </div>
     );
@@ -439,7 +706,7 @@ export function PersonalizationPanel() {
       <BackButton onClick={() => setView("menu")} title="Temi" />
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
-        {THEMES.slice(0, 4).map((theme) => (
+        {availableThemes.slice(0, 4).map((theme) => (
           <ThemeOption
             key={theme.id}
             theme={theme}
@@ -448,16 +715,16 @@ export function PersonalizationPanel() {
           />
         ))}
       </div>
-      {THEMES.length > 4 && (
+      {availableThemes.length > 4 && (
         <Accordion type="single" collapsible className="mt-2 rounded-xl border border-border px-3">
           <AccordionItem value="other-themes" className="border-0">
             <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
-              Altri temi ({THEMES.length - 4})
+              Altri temi ({availableThemes.length - 4})
               {hiddenThemeName ? ` · attivo: ${hiddenThemeName}` : ""}
             </AccordionTrigger>
             <AccordionContent className="pb-2">
               <div className="grid grid-cols-2 gap-2">
-                {THEMES.slice(4).map((theme) => (
+                {availableThemes.slice(4).map((theme) => (
                   <ThemeOption
                     key={theme.id}
                     theme={theme}
@@ -469,42 +736,6 @@ export function PersonalizationPanel() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-      )}
-      {v.theme === "original" && (
-        <>
-          <SectionTitle>Font</SectionTitle>
-          <div className="grid grid-cols-2 gap-2">
-            {FONTS.map((font) => (
-              <button
-                key={font.id}
-                type="button"
-                aria-pressed={v.customTheme.font === font.id}
-                onClick={() => v.setCustomTheme({ font: font.id })}
-                className={cn(
-                  "press card-surface flex items-center gap-3 p-3 text-left",
-                  v.customTheme.font === font.id && "border-primary",
-                )}
-              >
-                <span
-                  className="text-2xl text-primary"
-                  style={{
-                    fontFamily:
-                      font.id === "serif"
-                        ? "Georgia, serif"
-                        : font.id === "mono"
-                          ? '"JetBrains Mono", monospace'
-                          : font.id === "display"
-                            ? '"Space Grotesk", sans-serif'
-                            : '"Manrope", sans-serif',
-                  }}
-                >
-                  {font.sample}
-                </span>
-                <span className="text-xs font-semibold">{font.label}</span>
-              </button>
-            ))}
-          </div>
-        </>
       )}
       {v.theme === "custom" && (
         <section className="card-surface mt-3 p-4">

@@ -1,26 +1,12 @@
-import {
-  AlertCircle,
-  CheckCheck,
-  Clock,
-  GraduationCap,
-  Megaphone,
-  Newspaper,
-  type LucideIcon,
-} from "lucide-react";
+import { CheckCheck, Newspaper } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtDate } from "@/lib/voto/dates";
+import { NOTIF_META } from "@/lib/voto/notification-meta";
 import { useVoto } from "@/lib/voto/store";
 import type { NotificationType } from "@/lib/voto/types";
 import { CircularViewer } from "./CircularViewer";
 import { BottomSheet, Chip, Empty } from "./ui";
-
-export const NOTIF_META: Record<NotificationType, { label: string; icon: LucideIcon }> = {
-  note: { label: "Nota", icon: AlertCircle },
-  grade: { label: "Voto", icon: GraduationCap },
-  reminder: { label: "Promemoria", icon: Clock },
-  notice: { label: "Avviso", icon: Megaphone },
-};
 
 export function NotificationsSheet({
   open,
@@ -128,6 +114,7 @@ export function NotificationsSheet({
           onOpenChange={(open) => !open && setCircular(null)}
           title={circular.message ?? circular.title}
           fileName={circular.attachmentName}
+          path={circular.attachmentPath}
           url={circular.attachmentPath ? circular.attachmentUrl : undefined}
         />
       )}

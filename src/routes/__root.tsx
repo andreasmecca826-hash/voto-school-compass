@@ -14,6 +14,8 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { VotoProvider } from "@/lib/voto/store";
+import { SchoolPeriodsProvider } from "@/lib/voto/periods-context";
+import { StudyProvider } from "@/lib/voto/study-context";
 import { AppShell } from "@/components/voto/AppShell";
 import { AppPinLockProvider } from "@/components/voto/AppPinLockProvider";
 
@@ -78,11 +80,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
       { rel: "apple-touch-icon", href: "/icon.svg" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+        rel: "preload",
+        href: "/fonts/manrope-latin-variable.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
     ],
   }),
@@ -112,9 +115,13 @@ function RootComponent() {
     <AppPinLockProvider>
       <QueryClientProvider client={queryClient}>
         <VotoProvider>
+          <SchoolPeriodsProvider>
+          <StudyProvider>
           <AppShell>
             <Outlet />
           </AppShell>
+          </StudyProvider>
+          </SchoolPeriodsProvider>
           <Toaster
             theme="dark"
             position="top-center"

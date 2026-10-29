@@ -22,7 +22,7 @@ export function CircularCheckControl() {
         setPendingCheckAt(saved);
         setCheckNotice({
           kind: "info",
-          text: "Hai un controllo avviato. Verificane lo stato per aggiornare i dati.",
+          text: "Hai un aggiornamento DidUP in corso. Verificane lo stato per ricaricare il JSON.",
         });
       } else {
         window.localStorage.removeItem(PENDING_CHECK_KEY);
@@ -45,7 +45,7 @@ export function CircularCheckControl() {
     if (result === null) {
       setCheckNotice({
         kind: "info",
-        text: "Il controllo è ancora in corso. Usa ‘Verifica stato’ più tardi per aggiornare i dati.",
+        text: "L’aggiornamento è ancora in corso. Usa ‘Verifica stato’ più tardi per ricaricare il JSON.",
       });
       return;
     }
@@ -60,13 +60,13 @@ export function CircularCheckControl() {
       return;
     }
     await v.refresh({ silent: true });
-    setCheckNotice({ kind: "success", text: "Controllo terminato: ho aggiornato i dati." });
+    setCheckNotice({ kind: "success", text: "Aggiornamento DidUP terminato: JSON ricaricato." });
   };
 
   const checkCirculars = async () => {
     if (checkPending) return;
     setCheckPending(true);
-    setCheckNotice({ kind: "info", text: "Avvio del controllo su DidUP…" });
+    setCheckNotice({ kind: "info", text: "Avvio aggiornamento dati da DidUP…" });
     try {
       const requestedAt = await requestCircularCheck();
       setPendingCheckAt(requestedAt);
@@ -75,7 +75,7 @@ export function CircularCheckControl() {
       } catch {
         // Il polling resta attivo per questa sessione anche senza storage locale.
       }
-      setCheckNotice({ kind: "info", text: "Controllo avviato. Attendo il risultato…" });
+      setCheckNotice({ kind: "info", text: "Aggiornamento avviato. Attendo il nuovo JSON…" });
       await applyCheckResult(await watchCheck(requestedAt));
     } catch (error) {
       setCheckNotice({
@@ -113,7 +113,7 @@ export function CircularCheckControl() {
         className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-xs font-semibold text-primary disabled:opacity-60"
       >
         <RefreshCw className={cn("h-4 w-4", checkPending && "animate-spin")} />
-        {checkPending ? "Controllo in corso…" : "Controlla nuove circolari"}
+        {checkPending ? "Aggiornamento in corso…" : "Aggiorna dati da DidUP"}
       </button>
       {checkNotice && (
         <p

@@ -3,9 +3,11 @@ import {
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
+  BookOpen,
   Calculator,
   CalendarCheck,
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
   Clock3,
   Github,
@@ -13,23 +15,37 @@ import {
   Minus,
   StickyNote,
 } from "lucide-react";
+import { PeriodPicker } from "@/components/voto/PeriodPicker";
+import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
-import { useUi } from "@/components/voto/AppShell";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
-import { NOTIF_META } from "@/components/voto/NotificationsSheet";
+import { NOTIF_META } from "@/lib/voto/notification-meta";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
+import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
+import { emptySchedule, loadSchedule, type Schedule } from "@/lib/voto/orario";
+import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
+import {
+  openAssignmentsForTomorrow,
+  tomorrowDate,
+  tomorrowScheduleDay,
+  tomorrowSubjects,
+  upcomingSchoolEvents,
+} from "@/lib/voto/tomorrow-school";
+import type { Interrogazione } from "@/lib/voto/interrogazioni";
+import type { AppNotification, Assignment } from "@/lib/voto/types";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { fmtDate, fmtTime } from "@/lib/voto/dates";
 import {
   selectDashboardAssignments,
   selectNotificationsByType,
   selectOpenInterrogazioni,
+  selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,13 +64,18 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const v = useVoto();
+  const { isDone } = v;
   const now = useClock();
-  const ui = useUi();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
-  const { subjects, assignments, notifications, previousAverage } = v.data;
+  const [schedule, setSchedule] = useState<Schedule>(() => emptySchedule());
+  const { subjects, config } = useSchoolPeriods();
+  const { assignments, notifications, previousAverage } = v.data;
   const avg = useMemo(() => overallAverage(subjects), [subjects]);
   const history = useMemo(() => averageHistory(subjects), [subjects]);
-  const delta = avg !== null && previousAverage !== undefined ? avg - previousAverage : null;
+  const delta =
+    config.selection === "all" && avg !== null && previousAverage !== undefined
+      ? avg - previousAverage
+      : null;
   const today = useMemo(
     () => selectDashboardAssignments(assignments, now, v.isDone),
     [assignments, now, v.isDone],
@@ -72,6 +93,10 @@ function Dashboard() {
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
   const showingDays = attendanceView === "days";
   const notes = useMemo(() => selectNotificationsByType(notifications, "note"), [notifications]);
+  const reminders = useMemo(
+    () => selectUpcomingReminders(notifications, now).slice(0, 3),
+    [notifications, now],
+  );
   const bulletin = useMemo(
     () => selectNotificationsByType(notifications, "notice"),
     [notifications],
@@ -80,9 +105,33 @@ function Dashboard() {
     () => selectOpenInterrogazioni(v.interrogazioni),
     [v.interrogazioni],
   );
+  useEffect(() => setSchedule(loadSchedule()), []);
+  const nextLesson = useMemo(() => getNextScheduledLesson(schedule, now), [schedule, now]);
+  const lessonPreparation = useMemo(() => {
+    if (!nextLesson) return null;
+    const normalizedSubject = nextLesson.subject.trim().toLocaleLowerCase("it-IT");
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return assignments
+      .filter((assignment) => {
+        const subject = assignment.subject?.trim().toLocaleLowerCase("it-IT");
+        const dueDate = assignment.dueDate;
+        return (
+          subject === normalizedSubject &&
+          dueDate !== undefined &&
+          dueDate >= todayKey &&
+          !isDone(assignment.id, assignment.completed)
+        );
+      })
+      .sort((left, right) => (left.dueDate ?? "").localeCompare(right.dueDate ?? ""))[0];
+  }, [nextLesson, assignments, isDone, now]);
   const isHomeModuleVisible = (id: string) =>
     v.homeModules.find((module) => module.id === id)?.enabled ?? false;
   const homeOrder = (id: string) => v.homeModules.findIndex((module) => module.id === id);
+  const homeModuleScale = (id: string) =>
+    resolveHomeModuleScale(
+      v.homeScale,
+      v.homeModules.find((module) => module.id === id)?.scale ?? 100,
+    ) / v.homeScale;
 
   const micro =
     avg === null
@@ -98,7 +147,7 @@ function Dashboard() {
               : "Serve un recupero mirato: usa il simulatore.";
 
   return (
-    <div className="pt-3">
+    <div className="pt-3" style={{ zoom: v.homeScale / 100 }}>
       {v.source === "demo" && (
         <Link
           to="/impostazioni"
@@ -115,9 +164,27 @@ function Dashboard() {
         </Link>
       )}
 
+      <PeriodPicker />
       <div className="flex flex-col">
+        {isHomeModuleVisible("domani-a-scuola") && (
+          <div
+            style={{
+              order: homeOrder("domani-a-scuola"),
+              zoom: homeModuleScale("domani-a-scuola"),
+            }}
+          >
+            <TomorrowSchoolCard
+              now={now}
+              schedule={schedule}
+              assignments={assignments}
+              interrogazioni={v.interrogazioni}
+              notifications={notifications}
+              isDone={v.isDone}
+            />
+          </div>
+        )}
         {isHomeModuleVisible("media") && (
-          <div style={{ order: homeOrder("media") }}>
+          <div style={{ order: homeOrder("media"), zoom: homeModuleScale("media") }}>
             <section
               className="card-surface relative overflow-hidden p-5"
               aria-label="Media generale"
@@ -174,28 +241,79 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("simulatore") && (
-          <div style={{ order: homeOrder("simulatore") }}>
-            <button
-              type="button"
-              onClick={() => ui.openSimulator()}
+          <div style={{ order: homeOrder("simulatore"), zoom: homeModuleScale("simulatore") }}>
+            <Link
+              to="/studio"
               className="press card-surface mt-3 flex w-full items-center gap-3 p-4 text-left"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                 <Calculator className="h-5 w-5" />
               </span>
               <span className="flex-1">
-                <span className="block text-sm font-semibold">Che voto mi serve?</span>
+                <span className="block text-sm font-semibold">Studio Lab</span>
                 <span className="block text-xs text-muted-foreground">
-                  Simula la prossima verifica
+                  Calcolo media e simulatore voti
                 </span>
               </span>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </button>
+            </Link>
+          </div>
+        )}
+
+        {isHomeModuleVisible("prossima-lezione") && (
+          <div
+            style={{
+              order: homeOrder("prossima-lezione"),
+              zoom: homeModuleScale("prossima-lezione"),
+            }}
+          >
+            <SectionTitle
+              action={
+                <Link to="/orario" className="text-xs font-medium text-primary">
+                  Modifica orario
+                </Link>
+              }
+            >
+              Prossima lezione
+            </SectionTitle>
+            {nextLesson ? (
+              <section className="card-surface flex items-start gap-3 p-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <BookOpen className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    {nextLesson.isToday ? "Oggi" : nextLesson.dayLabel} · {nextLesson.hour}ª ora
+                  </p>
+                  <h3 className="mt-1 truncate text-base font-semibold">{nextLesson.subject}</h3>
+                  {lessonPreparation ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Da preparare:</span>{" "}
+                      {lessonPreparation.title}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Nessun compito aperto registrato per questa materia.
+                    </p>
+                  )}
+                  <p className="mt-2 text-[10px] text-muted-foreground">
+                    Le lezioni sono mostrate nell’ordine inserito: gli orari delle campanelle non
+                    sono configurati nell’app.
+                  </p>
+                </div>
+              </section>
+            ) : (
+              <Empty
+                icon={<BookOpen className="h-6 w-6" />}
+                title="Completa il tuo orario"
+                text="Inserisci le materie per vedere qui la prossima lezione."
+              />
+            )}
           </div>
         )}
 
         {isHomeModuleVisible("presenze") && (
-          <div style={{ order: homeOrder("presenze") }}>
+          <div style={{ order: homeOrder("presenze"), zoom: homeModuleScale("presenze") }}>
             <SectionTitle>Presenze</SectionTitle>
             <section className="card-surface p-4">
               <div className="mb-4 grid grid-cols-2 rounded-xl border border-border bg-surface p-1">
@@ -276,7 +394,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("compiti") && (
-          <div style={{ order: homeOrder("compiti") }}>
+          <div style={{ order: homeOrder("compiti"), zoom: homeModuleScale("compiti") }}>
             <SectionTitle
               action={
                 <Link to="/compiti" className="text-xs font-medium text-primary">
@@ -303,7 +421,9 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("interrogazioni") && (
-          <div style={{ order: homeOrder("interrogazioni") }}>
+          <div
+            style={{ order: homeOrder("interrogazioni"), zoom: homeModuleScale("interrogazioni") }}
+          >
             <SectionTitle
               action={
                 <Link to="/interrogazioni" className="text-xs font-medium text-primary">
@@ -329,7 +449,7 @@ function Dashboard() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{item.subject}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {fmtDate(item.date)}
+                        {item.date ? fmtDate(item.date) : "Data da definire"}
                         {item.hour ? ` · ${item.hour}ª ora` : item.time ? ` · ${item.time}` : ""}
                       </p>
                     </div>
@@ -346,7 +466,7 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("note") && (
-          <div style={{ order: homeOrder("note") }}>
+          <div style={{ order: homeOrder("note"), zoom: homeModuleScale("note") }}>
             <SectionTitle>Note</SectionTitle>
             {notes.length === 0 ? (
               <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" />
@@ -360,8 +480,35 @@ function Dashboard() {
           </div>
         )}
 
+        {isHomeModuleVisible("promemoria") && (
+          <div style={{ order: homeOrder("promemoria"), zoom: homeModuleScale("promemoria") }}>
+            <SectionTitle
+              action={
+                <Link to="/promemoria" className="text-xs font-medium text-primary">
+                  Vedi tutti
+                </Link>
+              }
+            >
+              Promemoria
+            </SectionTitle>
+            {reminders.length === 0 ? (
+              <Empty
+                icon={<Clock3 className="h-6 w-6" />}
+                title="Nessun promemoria"
+                text="I promemoria sincronizzati da DidUP compariranno qui."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {reminders.map((reminder) => (
+                  <NotifItem key={reminder.id} id={reminder.id} />
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {isHomeModuleVisible("bacheca") && (
-          <div style={{ order: homeOrder("bacheca") }}>
+          <div style={{ order: homeOrder("bacheca"), zoom: homeModuleScale("bacheca") }}>
             <SectionTitle>Bacheca</SectionTitle>
             <CircularCheckControl />
             {bulletin.length === 0 ? (
@@ -377,12 +524,162 @@ function Dashboard() {
         )}
 
         {isHomeModuleVisible("obiettivo") && (
-          <div style={{ order: homeOrder("obiettivo") }}>
+          <div style={{ order: homeOrder("obiettivo"), zoom: homeModuleScale("obiettivo") }}>
             <GoalWidget avg={avg} />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function TomorrowSchoolCard({
+  now,
+  schedule,
+  assignments,
+  interrogazioni,
+  notifications,
+  isDone,
+}: {
+  now: Date;
+  schedule: Schedule;
+  assignments: Assignment[];
+  interrogazioni: Interrogazione[];
+  notifications: AppNotification[];
+  isDone: (id: string, remote: boolean) => boolean;
+}) {
+  const nextDay = tomorrowScheduleDay(now);
+  const tomorrow = tomorrowDate(now);
+  const tomorrowLabel = new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(tomorrow);
+  const titleDate = tomorrowLabel.charAt(0).toLocaleUpperCase("it-IT") + tomorrowLabel.slice(1);
+  const materials = tomorrowSubjects(schedule, now);
+  const openTasks = openAssignmentsForTomorrow(assignments, isDone, now);
+  const events = upcomingSchoolEvents(interrogazioni, notifications, now);
+
+  return (
+    <section className="card-surface mt-4 overflow-hidden" aria-label="Domani a scuola">
+      <div className="flex items-center gap-3 border-b border-border bg-primary-soft/40 p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+          <CalendarCheck className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-semibold">Domani a scuola</h2>
+          <p className="text-xs text-muted-foreground">{titleDate}</p>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <h3 className="text-xs font-semibold">Libri e quaderni da portare</h3>
+          </div>
+          {materials.length ? (
+            <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {materials.map((subject) => (
+                <li
+                  key={subject}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="font-medium">{subject}</span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    Libro · quaderno
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
+              {nextDay
+                ? "Nessuna materia inserita nell’orario di domani."
+                : "Domani non è un giorno scolastico feriale: nessuna lezione prevista nell’orario."}
+            </p>
+          )}
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-semibold">Compiti con scadenza domani</h3>
+            </div>
+            <Link to="/compiti" className="text-[10px] font-medium text-primary">
+              Apri
+            </Link>
+          </div>
+          {openTasks.length ? (
+            <ul className="space-y-1.5">
+              {openTasks.slice(0, 4).map((task) => (
+                <li
+                  key={task.id}
+                  className="flex items-start justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0 font-medium">
+                    {task.title}
+                    {task.subject ? (
+                      <span className="font-normal text-muted-foreground"> · {task.subject}</span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {task.dueDate ? fmtDate(task.dueDate) : "Senza scadenza"}
+                  </span>
+                </li>
+              ))}
+              {openTasks.length > 4 && (
+                <li className="px-3 text-[10px] text-muted-foreground">
+                  e altri {openTasks.length - 4} compiti
+                </li>
+              )}
+            </ul>
+          ) : (
+            <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
+              Nessun compito con scadenza domani.
+            </p>
+          )}
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-semibold">Verifiche e interrogazioni di domani</h3>
+            </div>
+            <Link to="/interrogazioni" className="text-[10px] font-medium text-primary">
+              Agenda
+            </Link>
+          </div>
+          {events.length ? (
+            <ul className="space-y-1.5">
+              {events.slice(0, 4).map((event) => (
+                <li
+                  key={event.id}
+                  className="flex items-start justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0">
+                    <span className="font-medium">{event.title}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {event.source === "interrogazione" ? "Interrogazione" : "Promemoria DidUP"}
+                      {event.detail ? ` · ${event.detail}` : ""}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {fmtDate(event.date)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
+              Nessuna verifica o interrogazione in programma per domani.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -438,6 +735,7 @@ function NotifItem({ id }: { id: string }) {
           onOpenChange={setCircularOpen}
           title={n.message ?? n.title}
           fileName={n.attachmentName}
+          path={n.attachmentPath}
           url={n.attachmentPath ? n.attachmentUrl : undefined}
         />
       )}
@@ -447,7 +745,7 @@ function NotifItem({ id }: { id: string }) {
 
 function GoalWidget({ avg }: { avg: number | null }) {
   const v = useVoto();
-  const { subjects } = v.data;
+  const { subjects } = useSchoolPeriods();
   const graded = subjects.filter((s) => average(s.grades) !== null);
   const gap = avg === null ? null : v.target - avg;
 

@@ -16,21 +16,36 @@ import {
   RefreshCw,
   Settings,
   StickyNote,
-  Trophy,
   UsersRound,
   X,
+  Sparkles,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
-import { NotificationsSheet } from "./NotificationsSheet";
-import { AchievementsSheet } from "./AchievementsSheet";
-import { SimulatorSheet } from "./SimulatorSheet";
-import { SubjectSheet } from "./SubjectSheet";
-import { MusicPanel } from "./MusicPanel";
-import { DidupDashboard } from "./DidupDashboard";
-import { DidupMenu } from "./DidupMenu";
+
+const NotificationsSheet = lazy(() =>
+  import("./NotificationsSheet").then((module) => ({ default: module.NotificationsSheet })),
+);
+const SimulatorSheet = lazy(() =>
+  import("./SimulatorSheet").then((module) => ({ default: module.SimulatorSheet })),
+);
+const SubjectSheet = lazy(() =>
+  import("./SubjectSheet").then((module) => ({ default: module.SubjectSheet })),
+);
+const MusicPanel = lazy(() =>
+  import("./MusicPanel").then((module) => ({ default: module.MusicPanel })),
+);
 
 interface UiCtx {
   openNotifications: () => void;
@@ -51,6 +66,13 @@ const NAV = [
 ] as const;
 const MORE_NAV = [
   { to: "/voti", label: "Voti", description: "Voti e medie", icon: BookOpen, color: "#e56b5d" },
+  {
+    to: "/scrutini-infraperiodali",
+    label: "Scrutini infraperiodali",
+    description: "Crea una pagella manuale",
+    icon: GraduationCap,
+    color: "#3c9b88",
+  },
   {
     to: "/compiti",
     label: "Compiti assegnati",
@@ -78,6 +100,13 @@ const MORE_NAV = [
     description: "Note disciplinari",
     icon: StickyNote,
     color: "#f28f78",
+  },
+  {
+    to: "/promemoria",
+    label: "Promemoria",
+    description: "Promemoria dal registro DidUP",
+    icon: Clock3,
+    color: "#e1a642",
   },
   {
     to: "/professori",
@@ -108,17 +137,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [achievements, setAchievements] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
     open: false,
   });
   const [subject, setSubject] = useState<string | null>(null);
   const [mounted, setMounted] = useState({
     notifications: false,
-    achievements: false,
     simulator: false,
     subject: false,
   });
+  const [musicMounted, setMusicMounted] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
 
   useEffect(() => {
@@ -145,17 +173,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           setMounted((current) => ({ ...current, subject: true }));
           setSubject(id);
         },
-        openMusic: () => setMusicOpen(true),
+        openMusic: () => {
+          setMusicMounted(true);
+          setMusicOpen(true);
+        },
       }}
     >
-      <MusicPanel
-        open={musicOpen}
-        onClose={() => setMusicOpen(false)}
-      />
+      {musicMounted && (
+        <Suspense fallback={<PanelLoading label="Musica" />}>
+          <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
+        </Suspense>
+      )}
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
-        {v.interfaceMode === "didup" ? (
-          <div className="hidden" aria-hidden="true" />
-        ) : (
         <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
             <div className="min-w-0">
@@ -208,33 +237,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
-        )}
 
-        <main className={cn("flex-1", v.interfaceMode === "didup" ? "px-0" : "px-5 pb-28")}>
+        <main className="flex-1 px-5 pb-28">
           {v.ready ? (
-            moreOpen ? (v.interfaceMode === "didup" ? <DidupMenu /> : (
-              <MoreMenu
-                v={v}
-                currentPath={path}
-                onClose={() => setMoreOpen(false)}
-                onAchievements={() => {
-                  setMounted((current) => ({ ...current, achievements: true }));
-                  setAchievements(true);
-                }}
-                onSimulator={() => {
-                  setMounted((current) => ({ ...current, simulator: true }));
-                  setSim({ open: true });
-                }}
-              />
-            )) : v.interfaceMode === "didup" && path === "/" ? <DidupDashboard /> : children
+            moreOpen ? (
+              <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />
+            ) : (
+              children
+            )
           ) : (
             <ShellSkeleton />
           )}
         </main>
 
-        {v.interfaceMode === "didup" ? (
-          <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} />
-        ) : <nav
+        <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
@@ -292,34 +308,52 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </li>
           </ul>
-        </nav>}
+        </nav>
       </div>
 
-      {v.ready && (mounted.notifications || mounted.achievements || mounted.simulator || mounted.subject) && (
+      {v.ready && (mounted.notifications || mounted.simulator || mounted.subject) && (
         <>
-          {mounted.notifications && <NotificationsSheet open={notif} onOpenChange={setNotif} />}
-          {mounted.achievements && <AchievementsSheet open={achievements} onOpenChange={setAchievements} />}
+          {mounted.notifications && (
+            <Suspense fallback={<PanelLoading label="Novità" />}>
+              <NotificationsSheet open={notif} onOpenChange={setNotif} />
+            </Suspense>
+          )}
           {mounted.simulator && (
-            <SimulatorSheet
-              open={sim.open}
-              subjectId={sim.subjectId}
-              onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
-            />
+            <Suspense fallback={<PanelLoading label="Simulatore" />}>
+              <SimulatorSheet
+                open={sim.open}
+                subjectId={sim.subjectId}
+                onOpenChange={(o) => setSim((s) => ({ ...s, open: o }))}
+              />
+            </Suspense>
           )}
           {mounted.subject && (
-            <SubjectSheet
-              id={subject}
-              onClose={() => setSubject(null)}
-              onSimulate={(id) => {
-                setSubject(null);
-                setMounted((current) => ({ ...current, simulator: true }));
-                setSim({ open: true, subjectId: id });
-              }}
-            />
+            <Suspense fallback={<PanelLoading label="Materia" />}>
+              <SubjectSheet
+                id={subject}
+                onClose={() => setSubject(null)}
+                onSimulate={(id) => {
+                  setSubject(null);
+                  setMounted((current) => ({ ...current, simulator: true }));
+                  setSim({ open: true, subjectId: id });
+                }}
+              />
+            </Suspense>
           )}
         </>
       )}
     </Ui.Provider>
+  );
+}
+
+function PanelLoading({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      className="fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 rounded-xl border border-border bg-popover px-4 py-3 text-xs font-medium text-foreground shadow-lg"
+    >
+      Caricamento {label}…
+    </div>
   );
 }
 
@@ -339,36 +373,14 @@ function ShellSkeleton() {
   );
 }
 
-function DidupBottomNav({
-  path,
-  moreOpen,
-  onMenu,
-}: {
-  path: string;
-  moreOpen: boolean;
-  onMenu: () => void;
-}) {
-  return (
-    <nav className="didup-bottom fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] items-end justify-around px-7 pb-3 pt-2" aria-label="Navigazione DidUP">
-      <Link to="/" className={cn("flex flex-col items-center gap-1 text-xs", path === "/" ? "text-white" : "text-white/50")}><LayoutGrid className="h-6 w-6" />Home</Link>
-      <Link to="/diario" className={cn("flex flex-col items-center gap-1 text-xs", path.startsWith("/diario") ? "text-white" : "text-white/50")}><BookOpen className="h-6 w-6" />Diario</Link>
-      <button type="button" onClick={onMenu} className={cn("flex flex-col items-center gap-1 text-xs", moreOpen ? "text-white" : "text-white/50")}><span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f4bd35] text-black"><Menu className="h-6 w-6" /></span>Menu</button>
-    </nav>
-  );
-}
-
 function MoreMenu({
   v,
   currentPath,
   onClose,
-  onAchievements,
-  onSimulator,
 }: {
   v: ReturnType<typeof useVoto>;
   currentPath: string;
   onClose: () => void;
-  onAchievements: () => void;
-  onSimulator: () => void;
 }) {
   const studentName = v.data.student.name || "Studente";
   return (
@@ -391,6 +403,23 @@ function MoreMenu({
           <GraduationCap className="h-7 w-7" />
         </span>
       </div>
+      <Button
+        asChild
+        variant="outline"
+        className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left"
+      >
+        <Link to="/studio" onClick={onClose}>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+            <Sparkles />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-lg font-semibold">Studio Lab.</span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Calcolo media e simulatore · Ruota · Flashcard
+            </span>
+          </span>
+        </Link>
+      </Button>
       <div className="grid grid-cols-2 gap-3">
         {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
           const active = currentPath.startsWith(to);
@@ -430,34 +459,6 @@ function MoreMenu({
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => {
-            onSimulator();
-            onClose();
-          }}
-          className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
-        >
-          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#3998d7]">
-            <ClipboardList className="h-7 w-7 text-white" />
-          </span>
-          <span className="text-base font-bold">Simulatore</span>
-          <span className="mt-1 text-[10px] text-muted-foreground">Calcola il prossimo voto</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            onAchievements();
-            onClose();
-          }}
-          className="press relative flex min-h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border bg-card p-4 text-center shadow-sm"
-        >
-          <span className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl bg-[#8fbe78]">
-            <Trophy className="h-7 w-7 text-white" />
-          </span>
-          <span className="text-base font-bold">Traguardi</span>
-          <span className="mt-1 text-[10px] text-muted-foreground">I tuoi achievement</span>
-        </button>
       </div>
     </section>
   );

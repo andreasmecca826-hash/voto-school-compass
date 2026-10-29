@@ -9,11 +9,20 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { makeDemoData } from "./demo";
+import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData } from "./parse";
+import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
+import {
+  DEFAULT_HOME_MODULES,
+  normalizeHomeModules,
+  normalizeHomeScale,
+  type HomeModuleConfig,
+  type HomeModuleId,
+} from "./home-customization";
+export type { HomeModuleConfig, HomeModuleId } from "./home-customization";
 
 export type Accent =
   | "rosso"
@@ -44,7 +53,6 @@ export type Bg =
   | "carta";
 export type Mode = "chiaro" | "scuro";
 export type Density = "standard" | "compact";
-export type InterfaceMode = "voto" | "didup";
 export type Theme =
   | "original"
   | "lavender"
@@ -59,8 +67,11 @@ export type Theme =
   | "autunno"
   | "inverno"
   | "tramonto"
+  | "oro"
+  | "diamante"
   | "custom";
-export type CustomFont = "sans" | "display" | "mono" | "serif";
+export type RegistryStyle = "voto" | "didup";
+export type CustomFont = "theme" | "sans" | "display" | "mono" | "serif";
 export type CustomTheme = {
   bgDark: string;
   cardDark: string;
@@ -89,52 +100,12 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
   mutedLight: "#5c6a80",
   primary: "#61a7ff",
   radius: 1,
-  font: "sans",
+  font: "theme",
 };
-export type HomeModuleId =
-  | "media"
-  | "simulatore"
-  | "presenze"
-  | "compiti"
-  | "interrogazioni"
-  | "note"
-  | "bacheca"
-  | "obiettivo";
-export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean };
 
-export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
-  { id: "media", enabled: true },
-  { id: "simulatore", enabled: true },
-  { id: "presenze", enabled: true },
-  { id: "compiti", enabled: true },
-  { id: "interrogazioni", enabled: true },
-  { id: "note", enabled: true },
-  { id: "bacheca", enabled: true },
-  { id: "obiettivo", enabled: true },
-];
-
-function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
-  if (!Array.isArray(value)) return DEFAULT_HOME_MODULES;
-  const ids = new Set<HomeModuleId>();
-  const result: HomeModuleConfig[] = [];
-  value.forEach((item) => {
-    const id = typeof item === "string" ? item : (item as HomeModuleConfig)?.id;
-    if (
-      typeof id === "string" &&
-      DEFAULT_HOME_MODULES.some((m) => m.id === id) &&
-      !ids.has(id as HomeModuleId)
-    ) {
-      ids.add(id as HomeModuleId);
-      result.push({
-        id: id as HomeModuleId,
-        enabled: typeof item === "string" ? true : (item as HomeModuleConfig).enabled !== false,
-      });
-    }
-  });
-  DEFAULT_HOME_MODULES.forEach((m) => {
-    if (!ids.has(m.id)) result.push(m);
-  });
-  return result;
+function normalizeInterfaceScale(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 100;
+  return Math.round(Math.min(120, Math.max(80, value)) / 5) * 5;
 }
 
 function normalizeInterrogazioni(value: unknown): Interrogazione[] {
@@ -171,11 +142,13 @@ interface Ctx {
   mode: Mode;
   glass: boolean;
   density: Density;
-  interfaceMode: InterfaceMode;
   reduceMotion: boolean;
   theme: Theme;
+  registryStyle: RegistryStyle;
   customTheme: CustomTheme;
+  interfaceScale: number;
   homeModules: HomeModuleConfig[];
+  homeScale: number;
   interrogazioni: Interrogazione[];
   isDone: (id: string, remote: boolean) => boolean;
   toggleDone: (id: string, remote: boolean) => void;
@@ -192,13 +165,17 @@ interface Ctx {
   setMode: (m: Mode) => void;
   setGlass: (enabled: boolean) => void;
   setDensity: (density: Density) => void;
-  setInterfaceMode: (mode: InterfaceMode) => void;
   setReduceMotion: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
+  setRegistryStyle: (style: RegistryStyle) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
+  setInterfaceScale: (scale: number) => void;
   resetCustomTheme: () => void;
   toggleHomeModule: (id: HomeModuleId) => void;
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
+  setHomeScale: (scale: number) => void;
+  setHomeModuleScale: (id: HomeModuleId, scale: number) => void;
+  setHomeCustomization: (settings: { homeScale: number; homeModules: HomeModuleConfig[] }) => void;
   resetHomeModules: () => void;
   addInterrogazione: (item: Omit<Interrogazione, "id" | "completed" | "checklist">) => void;
   toggleInterrogazione: (id: string) => void;
@@ -241,11 +218,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [mode, setModeS] = useState<Mode>("scuro");
   const [glass, setGlassS] = useState(true);
   const [density, setDensityS] = useState<Density>("standard");
-  const [interfaceMode, setInterfaceModeS] = useState<InterfaceMode>("voto");
   const [reduceMotion, setReduceMotionS] = useState(false);
   const [theme, setThemeS] = useState<Theme>("original");
+  const [registryStyle, setRegistryStyleS] = useState<RegistryStyle>("voto");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
+  const [interfaceScale, setInterfaceScaleS] = useState(100);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
+  const [homeScale, setHomeScaleS] = useState(100);
   const [interrogazioni, setInterrogazioni] = useState<Interrogazione[]>([]);
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
@@ -295,15 +274,20 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setGlassS(load(KEYS.glass, true));
     const savedDensity = load<Density>(KEYS.density, "standard");
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
-    const savedInterfaceMode = load<InterfaceMode>(KEYS.interfaceMode, "voto");
-    setInterfaceModeS(savedInterfaceMode === "didup" ? "didup" : "voto");
     setReduceMotionS(load(KEYS.reduceMotion, false));
-    setThemeS(load(KEYS.theme, "original"));
+    const savedTheme = load<Theme>(KEYS.theme, "original");
+    setThemeS(savedTheme);
+    const savedRegistryStyle = load<RegistryStyle>(KEYS.registryStyle, "voto");
+    setRegistryStyleS(savedRegistryStyle === "didup" ? "didup" : "voto");
+    const savedCustomTheme = load<Partial<CustomTheme>>(KEYS.customTheme, {});
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
-      ...load<Partial<CustomTheme>>(KEYS.customTheme, {}),
+      ...savedCustomTheme,
+      font: savedCustomTheme.font === "sans" ? "theme" : (savedCustomTheme.font ?? "theme"),
     });
+    setInterfaceScaleS(normalizeInterfaceScale(load(KEYS.interfaceScale, 100)));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
+    setHomeScaleS(normalizeHomeScale(load(KEYS.homeScale, 100)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
     const demoData = load<VotoData | null>(KEYS.demoData, null);
@@ -325,6 +309,48 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   }, [refreshImpl]);
 
   useEffect(() => {
+    if (!ready || !url) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, ms);
+      });
+
+    void (async () => {
+      let requestedAt: string;
+      try {
+        requestedAt = await requestCircularCheck();
+      } catch {
+        // Un controllo recente (cooldown 3 minuti) non blocca l'apertura né la cache.
+        return;
+      }
+
+      const deadline = Date.now() + 10 * 60 * 1000;
+      while (!cancelled && Date.now() < deadline) {
+        await wait(5_000);
+        if (cancelled) return;
+        try {
+          const status = await getCircularCheckStatus(requestedAt);
+          if (status.status === "completed") {
+            if (status.conclusion === "success" && !cancelled) {
+              await refreshImpl(urlRef.current, true);
+            }
+            return;
+          }
+        } catch {
+          // Problemi momentanei di polling: il prossimo controllo farà un nuovo tentativo.
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [ready, url, refreshImpl]);
+
+  useEffect(() => {
     if (!ready) return;
     const root = document.documentElement;
     root.dataset["accent"] = accent;
@@ -332,10 +358,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["mode"] = mode;
     root.dataset["glass"] = glass ? "on" : "off";
     root.dataset["density"] = density;
-    root.dataset["interface"] = interfaceMode;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
     root.dataset["theme"] = theme;
+    root.dataset["registryStyle"] = registryStyle;
     root.dataset["font"] = customTheme.font;
+    root.style.fontSize = `${interfaceScale}%`;
     const custom: Record<string, string> = {
       "--custom-bg-dark": customTheme.bgDark,
       "--custom-card-dark": customTheme.cardDark,
@@ -355,17 +382,28 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           : customTheme.font === "serif"
             ? "Georgia, serif"
             : customTheme.font === "display"
-              ? "Manrope, sans-serif"
-              : "var(--font-sans)",
+              ? '"Space Grotesk", sans-serif'
+              : '"Manrope", sans-serif',
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [accent, bg, mode, glass, density, interfaceMode, reduceMotion, theme, customTheme, ready]);
+  }, [
+    accent,
+    bg,
+    mode,
+    glass,
+    density,
+    reduceMotion,
+    theme,
+    registryStyle,
+    customTheme,
+    interfaceScale,
+    ready,
+  ]);
 
   const value: Ctx = useMemo(
     () => ({
       ready,
       density,
-      interfaceMode,
       reduceMotion,
       data,
       source,
@@ -379,8 +417,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       mode,
       glass,
       theme,
+      registryStyle,
       customTheme,
+      interfaceScale,
       homeModules,
+      homeScale,
       interrogazioni,
       isDone: (id, remote) => completions[id] ?? remote,
       toggleDone: (id, remote) =>
@@ -424,6 +465,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         toast("URL rimosso", { description: "Stai visualizzando i dati demo." });
       },
       resetDemo: () => {
+        if (!canResetDemoData(source, urlRef.current)) {
+          toast.error("Il ripristino è disponibile solo in modalità demo.");
+          return;
+        }
         urlRef.current = "";
         setUrl("");
         [KEYS.url, KEYS.cache, KEYS.demoData, KEYS.lastSync, KEYS.completions, KEYS.read].forEach(
@@ -469,10 +514,6 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setDensityS(next);
         save(KEYS.density, next);
       },
-      setInterfaceMode: (next) => {
-        setInterfaceModeS(next);
-        save(KEYS.interfaceMode, next);
-      },
       setReduceMotion: (enabled) => {
         setReduceMotionS(enabled);
         save(KEYS.reduceMotion, enabled);
@@ -481,12 +522,21 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setThemeS(next);
         save(KEYS.theme, next);
       },
+      setRegistryStyle: (next) => {
+        setRegistryStyleS(next);
+        save(KEYS.registryStyle, next);
+      },
       setCustomTheme: (patch) =>
         setCustomThemeS((current) => {
           const next = { ...current, ...patch };
           save(KEYS.customTheme, next);
           return next;
         }),
+      setInterfaceScale: (scale) => {
+        const next = normalizeInterfaceScale(scale);
+        setInterfaceScaleS(next);
+        save(KEYS.interfaceScale, next);
+      },
       resetCustomTheme: () => {
         setCustomThemeS(DEFAULT_CUSTOM_THEME);
         save(KEYS.customTheme, DEFAULT_CUSTOM_THEME);
@@ -512,12 +562,38 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           save(KEYS.homeModules, next);
           return next;
         }),
+      setHomeScale: (scale) => {
+        const next = normalizeHomeScale(scale);
+        setHomeScaleS(next);
+        save(KEYS.homeScale, next);
+      },
+      setHomeModuleScale: (id, scale) =>
+        setHomeModulesS((current) => {
+          const next = current.map((module) =>
+            module.id === id ? { ...module, scale: normalizeHomeScale(scale) } : module,
+          );
+          save(KEYS.homeModules, next);
+          return next;
+        }),
+      setHomeCustomization: (settings) => {
+        const modules = normalizeHomeModules(settings.homeModules);
+        const scale = normalizeHomeScale(settings.homeScale);
+        setHomeModulesS(modules);
+        save(KEYS.homeModules, modules);
+        setHomeScaleS(scale);
+        save(KEYS.homeScale, scale);
+      },
       resetHomeModules: () => {
         setHomeModulesS(DEFAULT_HOME_MODULES);
         save(KEYS.homeModules, DEFAULT_HOME_MODULES);
+        setHomeScaleS(100);
+        save(KEYS.homeScale, 100);
       },
       addInterrogazione: (item) =>
         setInterrogazioni((current) => {
+          if (item.reminderId && current.some((entry) => entry.reminderId === item.reminderId)) {
+            return current;
+          }
           const next = [
             {
               ...item,
@@ -579,10 +655,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       interrogazioni,
       completions,
       readIds,
+      registryStyle,
       density,
-      interfaceMode,
       reduceMotion,
       refreshImpl,
+      homeScale,
+      interfaceScale,
     ],
   );
 

@@ -140,6 +140,134 @@ describe("Assistente locale", () => {
     expect(summary).toContain("Assemblea di classe");
   });
 
+  it("riconosce i promemoria DidUP e risponde per oggi e domani", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const reminderData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "reminder-today",
+          type: "reminder",
+          title: "Promemoria",
+          message: "Portare il libro",
+          subject: "Italiano",
+          date: "2026-10-27",
+          read: false,
+        },
+        {
+          id: "reminder-tomorrow",
+          type: "reminder",
+          title: "Promemoria",
+          message: "Verifica di algebra",
+          subject: "Matematica",
+          date: "2026-10-28",
+          read: false,
+        },
+      ],
+    };
+    expect(
+      answerQuestion("Quali promemoria ho oggi?", reminderData, emptySchedule(), now),
+    ).toContain("Portare il libro");
+    expect(
+      answerQuestion("Cosa devo ricordare domani?", reminderData, emptySchedule(), now),
+    ).toContain("Verifica di algebra");
+    expect(answerQuestion("Quali promemoria ho?", reminderData, emptySchedule(), now)).toContain(
+      "Promemoria DidUP",
+    );
+  });
+
+  it("separa i promemoria futuri da quelli passati e limita l’archivio a 30 giorni", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const datedReminders: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "old-31",
+          type: "reminder",
+          title: "Troppo vecchio",
+          date: "2026-09-26",
+          read: false,
+        },
+        { id: "old-30", type: "reminder", title: "Ultimo mese", date: "2026-09-27", read: false },
+        { id: "today", type: "reminder", title: "Oggi", date: "2026-10-27", read: false },
+        { id: "future", type: "reminder", title: "Domani", date: "2026-10-28", read: false },
+      ],
+    };
+    const upcoming = answerQuestion("Quali promemoria ho?", datedReminders, emptySchedule(), now);
+    expect(upcoming).toContain("Oggi");
+    expect(upcoming).toContain("Domani");
+    expect(upcoming).not.toContain("Ultimo mese");
+
+    const past = answerQuestion(
+      "Quali promemoria passati ho?",
+      datedReminders,
+      emptySchedule(),
+      now,
+    );
+    expect(past).toContain("Ultimo mese");
+    expect(past).not.toContain("Troppo vecchio");
+    expect(past).not.toContain("Domani");
+  });
+
+  it("interpreta ieri e dopodomani come date precise nei riepiloghi e nei promemoria", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const datedData: VotoData = {
+      ...data,
+      assignments: [
+        { id: "yesterday-task", title: "Consegna ieri", dueDate: "2026-10-26", completed: false },
+        { id: "tomorrow-task", title: "Consegna domani", dueDate: "2026-10-28", completed: false },
+        { id: "after-task", title: "Verifica dopodomani", dueDate: "2026-10-29", completed: false },
+      ],
+      notifications: [
+        {
+          id: "yesterday-reminder",
+          type: "reminder",
+          title: "Promemoria ieri",
+          date: "2026-10-26",
+          read: false,
+        },
+        {
+          id: "after-reminder",
+          type: "reminder",
+          title: "Promemoria dopo",
+          date: "2026-10-29",
+          read: false,
+        },
+      ],
+    };
+
+    expect(answerQuestion("Quali promemoria ho ieri?", datedData, emptySchedule(), now)).toContain(
+      "Promemoria ieri",
+    );
+    const overview = answerQuestion(
+      "Fammi il riepilogo di dopodomani",
+      datedData,
+      emptySchedule(),
+      now,
+    );
+    expect(overview).toContain("Verifica dopodomani");
+    expect(overview).not.toContain("Consegna domani");
+    expect(overview).toContain("Promemoria dopo");
+    const dueTasks = answerQuestion(
+      "Quali compiti scadono dopodomani?",
+      datedData,
+      emptySchedule(),
+      now,
+    );
+    expect(dueTasks).toContain("Verifica dopodomani");
+    expect(dueTasks).not.toContain("Consegna domani");
+  });
+
+  it("non trasforma una richiesta informativa sui compiti completati in un comando", () => {
+    const completedData: VotoData = {
+      ...data,
+      assignments: [{ id: "done", title: "Esercizi svolti", completed: true }],
+    };
+    expect(answerQuestion("Quali compiti ho completato?", completedData)).toContain(
+      "Esercizi svolti",
+    );
+  });
+
   it("risponde sulle interrogazioni in agenda e sui docenti per materia", () => {
     const now = new Date(2026, 9, 26, 12);
     const interrogazioni: Interrogazione[] = [
@@ -241,6 +369,263 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Quante ore di assenza ho?", data)).toContain("con 1 ritardo");
   });
 
+  it("consulta note e Diario con i campi presenti nei dati caricati", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const schoolData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "note-1",
+          type: "note",
+          title: "Materiale dimenticato",
+          message: "Mancava il quaderno",
+          subject: "Inglese",
+          date: "2026-10-27",
+          read: false,
+        },
+        { id: "notice-1", type: "notice", title: "Assemblea", read: false },
+      ],
+      diary: [
+        {
+          id: "diary-1",
+          date: "2026-10-27",
+          subject: "Inglese",
+          teacher: "Prof.ssa Rossi",
+          hour: "2",
+          activity: "Verifica dei vocaboli",
+        },
+      ],
+    };
+
+    const notes = answerQuestion("Quali note disciplinari ho?", schoolData, emptySchedule(), now);
+    expect(notes).toContain("Materiale dimenticato");
+    expect(notes).toContain("nuova");
+    expect(notes).not.toContain("Assemblea");
+    expect(
+      answerQuestion("Cosa ho fatto oggi nel Diario?", schoolData, emptySchedule(), now),
+    ).toContain("Verifica dei vocaboli");
+    expect(
+      answerQuestion("Quali note non lette ho ieri?", schoolData, emptySchedule(), now),
+    ).toContain("per ieri");
+  });
+
+  it("consulta compiti completati e voti filtrati per materia e tipo", () => {
+    const schoolData: VotoData = {
+      ...data,
+      assignments: [
+        {
+          id: "done-1",
+          title: "Esercizi svolti",
+          subject: "Inglese",
+          dueDate: "2026-10-20",
+          dueTime: "10:00",
+          completed: true,
+          details: "Unità 3",
+        },
+      ],
+    };
+    expect(answerQuestion("Quali compiti ho completato?", schoolData)).toContain("Unità 3");
+    const grades = answerQuestion("Quali voti orali ho in Inglese?", data);
+    expect(grades).toContain("orale");
+    expect(grades).not.toContain("scritto");
+  });
+
+  it("riporta uscite anticipate, preferenze e stato di sincronizzazione senza scrivere dati", () => {
+    const context = {
+      source: "remote" as const,
+      lastSync: "2026-10-27T08:30:00.000Z",
+      hasRemoteUrl: true,
+      target: 8.5,
+      theme: "original",
+      mode: "scuro",
+      customFont: "sans",
+      interfaceScale: 110,
+      homeScale: 100,
+      homeModules: [{ id: "note", enabled: true }],
+    };
+    expect(answerQuestion("Quante uscite anticipate ho?", data)).toContain("0 uscite anticipate");
+    expect(
+      answerQuestion("Qual è il mio obiettivo?", data, emptySchedule(), new Date(), [], context),
+    ).toContain("8,50");
+    expect(
+      answerQuestion("Che tema sto usando?", data, emptySchedule(), new Date(), [], context),
+    ).toContain("font Sans");
+    expect(
+      answerQuestion(
+        "Qual è lo stato della sincronizzazione?",
+        data,
+        emptySchedule(),
+        new Date(),
+        [],
+        context,
+      ),
+    ).toContain("sorgente remota configurata");
+  });
+
+  it("spiega cosa sa consultare e chiarisce che non invia giustificazioni", () => {
+    expect(answerQuestion("Cosa sai fare?", data)).toContain("note");
+    const justification = answerQuestion("Come giustifico un'assenza?", data);
+    expect(justification).toContain("non inviare una giustificazione");
+    expect(justification).toContain("DidUP Famiglia");
+  });
+
+  it("filtra notifiche di voto e promemoria non letti senza modificarne lo stato", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const notificationData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "grade-notice",
+          type: "grade",
+          title: "Nuovo voto di Inglese",
+          message: "È stato pubblicato un voto",
+          subject: "Inglese",
+          date: "2026-10-27",
+          read: false,
+        },
+        {
+          id: "reminder-read",
+          type: "reminder",
+          title: "Già letto",
+          date: "2026-10-28",
+          read: true,
+        },
+        {
+          id: "reminder-unread",
+          type: "reminder",
+          title: "Da leggere",
+          date: "2026-10-28",
+          read: false,
+        },
+      ],
+    };
+    expect(
+      answerQuestion("Quali notifiche di voto ho?", notificationData, emptySchedule(), now),
+    ).toContain("Nuovo voto di Inglese");
+    const reminders = answerQuestion(
+      "Quali promemoria non letti ho?",
+      notificationData,
+      emptySchedule(),
+      now,
+    );
+    expect(reminders).toContain("Da leggere");
+    expect(reminders).not.toContain("Già letto");
+  });
+
+  it("consulta lo storico interrogazioni e la checklist senza spuntarla", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const agenda: Interrogazione[] = [
+      {
+        id: "past",
+        subject: "Storia",
+        date: "2026-10-20",
+        completed: true,
+        checklist: [],
+      },
+      {
+        id: "future",
+        subject: "Inglese",
+        date: "2026-10-29",
+        completed: false,
+        checklist: [
+          { id: "appunti", label: "Ripassare gli appunti", done: true },
+          { id: "argomenti", label: "Studiare gli argomenti", done: false },
+        ],
+      },
+    ];
+    expect(
+      answerQuestion("Quali interrogazioni ho completato?", data, emptySchedule(), now, agenda),
+    ).toContain("Storia");
+    const preparation = answerQuestion(
+      "Cosa devo preparare per la prossima interrogazione?",
+      data,
+      emptySchedule(),
+      now,
+      agenda,
+    );
+    expect(preparation).toContain("Fatto: Ripassare gli appunti");
+    expect(preparation).toContain("Da fare: Studiare gli argomenti");
+    expect(preparation).toContain("non modifica la checklist");
+  });
+
+  it("riassume in un solo messaggio orario, compiti, diario, interrogazioni e promemoria", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const tomorrowData: VotoData = {
+      ...data,
+      assignments: [{ id: "a-tomorrow", title: "Tema", dueDate: "2026-10-28", completed: false }],
+      diary: [
+        { id: "d-tomorrow", date: "2026-10-28", subject: "Italiano", activity: "Consegna tema" },
+      ],
+      notifications: [
+        {
+          id: "r-tomorrow",
+          type: "reminder",
+          title: "Portare il libro",
+          date: "2026-10-28",
+          read: false,
+        },
+      ],
+    };
+    const schedule = emptySchedule();
+    schedule.mercoledi[0] = "Storia";
+    const agenda: Interrogazione[] = [
+      {
+        id: "i-tomorrow",
+        subject: "Matematica",
+        date: "2026-10-28",
+        completed: false,
+        checklist: [],
+      },
+    ];
+
+    const summary = answerQuestion(
+      "Fammi il riepilogo di domani",
+      tomorrowData,
+      schedule,
+      now,
+      agenda,
+    );
+    expect(summary).toContain("Storia");
+    expect(summary).toContain("Tema");
+    expect(summary).toContain("Consegna tema");
+    expect(summary).toContain("Matematica");
+    expect(summary).toContain("Portare il libro");
+  });
+
+  it("consulta profilo e strumenti Studio Lab senza inventare dati", () => {
+    const profileData: VotoData = {
+      ...data,
+      student: { name: "Giulia", className: "2A", schoolYear: "2026/2027" },
+    };
+    const context = {
+      flashcards: [
+        { id: "card-1", subject: "Inglese", question: "Come si dice mela?", answer: "Apple" },
+      ],
+    };
+    expect(answerQuestion("In che classe sono?", profileData)).toContain("2A");
+    expect(answerQuestion("In che classe sono?", profileData)).toContain("Giulia");
+    expect(
+      answerQuestion(
+        "Mostrami le risposte delle flashcard di Inglese",
+        data,
+        emptySchedule(),
+        new Date(),
+        [],
+        context,
+      ),
+    ).toContain("Apple");
+    expect(answerQuestion("Dove trovo il simulatore?", data)).toContain(
+      "Studio Lab > Calcolo media e simulatore voti",
+    );
+  });
+
+  it("spiega che Oro e Diamante sono già selezionabili nella personalizzazione", () => {
+    expect(answerQuestion("Come sblocco il tema Diamante?", data)).toContain(
+      "sono già selezionabili",
+    );
+    expect(answerQuestion("Dove trovo il tema Oro?", data)).toContain("Personalizza > Temi");
+  });
+
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
     const first = pickAssistantSuggestions(() => 0);
     const second = pickAssistantSuggestions(() => 0.99);
@@ -253,5 +638,11 @@ describe("Assistente locale", () => {
     for (const suggestion of [...first, ...second]) {
       expect(answerQuestion(suggestion, data)).not.toContain("Non ho capito la domanda");
     }
+  });
+
+  it("descrive le azioni sui compiti come disponibili solo dopo conferma", () => {
+    const capabilities = answerQuestion("Cosa sai fare?", data);
+    expect(capabilities).toContain("Dopo la tua conferma");
+    expect(capabilities).toContain("segnare un compito come completato o riaprirlo");
   });
 });

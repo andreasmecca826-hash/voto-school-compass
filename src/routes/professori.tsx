@@ -27,7 +27,7 @@ function Professori() {
     if (!normalized) return teachers.map((entry, index) => ({ entry, index }));
     return teachers
       .map((entry, index) => ({ entry, index }))
-      .filter(([{ entry }]) => `${entry[0]} ${entry[1]}`.toLocaleLowerCase("it-IT").includes(normalized));
+      .filter(({ entry }) => `${entry[0]} ${entry[1]}`.toLocaleLowerCase("it-IT").includes(normalized));
   }, [query, teachers]);
 
   const resetForm = () => {

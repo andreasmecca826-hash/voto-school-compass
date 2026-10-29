@@ -8,7 +8,7 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_
 type SignedUrlResponse = { path?: unknown; signedUrl?: unknown };
 
 function supabaseProjectUrl() {
-  const raw = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
+  const raw = (import.meta.env["VITE_SUPABASE_URL"] as string | undefined)?.trim();
   if (!raw) return DEFAULT_SUPABASE_URL;
   if (/^[a-z0-9]{20}$/i.test(raw)) return `https://${raw}.supabase.co`;
   return raw.replace(/\/+$/, "");
@@ -16,8 +16,8 @@ function supabaseProjectUrl() {
 
 function supabasePublishableKey() {
   return (
-    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
-    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+    (import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined) ||
+    (import.meta.env["VITE_SUPABASE_ANON_KEY"] as string | undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY
   );
 }
@@ -50,6 +50,7 @@ async function signedPdfUrl(path: string): Promise<string | null> {
 }
 
 type CheckPayload = {
+  ok?: unknown;
   status?: unknown;
   requestedAt?: unknown;
   conclusion?: unknown;
@@ -101,21 +102,17 @@ export async function requestCircularCheck(): Promise<string> {
   }
 
   const body = await checkResponse(response);
-  if (response.status === 202 && typeof body.requestedAt === "string") return body.requestedAt;
-  if (response.status === 409) throw new Error("È già in corso un controllo delle circolari.");
-  if (response.status === 429) {
-    const seconds = typeof body.retryAfterSeconds === "number" ? body.retryAfterSeconds : 60;
-    const minutes = Math.max(1, Math.ceil(seconds / 60));
-    throw new Error(
-      `Il registro è stato controllato di recente. Riprova tra circa ${minutes} min.`,
-    );
+  if (typeof body.requestedAt === "string" && body.ok !== false) return body.requestedAt;
+  if (typeof body.error === "string") {
+    if (typeof body.retryAfterSeconds === "number") {
+      const minutes = Math.max(1, Math.ceil(body.retryAfterSeconds / 60));
+      throw new Error(
+        `Il registro è stato controllato di recente. Riprova tra circa ${minutes} min.`,
+      );
+    }
+    throw new Error(body.error);
   }
-  if (response.status === 503) {
-    throw new Error("Il controllo manuale non è ancora configurato dal server.");
-  }
-  throw new Error(
-    typeof body.error === "string" ? body.error : "Non è stato possibile avviare il controllo.",
-  );
+  throw new Error("Non è stato possibile avviare il controllo.");
 }
 
 export async function getCircularCheckStatus(after: string): Promise<CircularCheckStatus> {
@@ -128,10 +125,9 @@ export async function getCircularCheckStatus(after: string): Promise<CircularChe
     throw new Error("Impossibile leggere lo stato del controllo.");
   }
   const body = await checkResponse(response);
+  if (typeof body.error === "string") throw new Error(body.error);
   if (!response.ok || typeof body.status !== "string") {
-    throw new Error(
-      typeof body.error === "string" ? body.error : "Stato del controllo non disponibile.",
-    );
+    throw new Error("Stato del controllo non disponibile.");
   }
   return {
     status: body.status as CircularCheckStatus["status"],
