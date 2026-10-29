@@ -1,20 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { normalizeSupabaseUrl, supabaseAuthHeaders } from "@/lib/server/supabaseStorageAuth";
+import { normalizeSupabaseUrl } from "@/lib/server/supabaseStorageAuth";
 
-const DEFAULT_BUCKET = "circulars";
+const DEFAULT_SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
+const validPath = (value: unknown): value is string =>
+  typeof value === "string" && /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
 
-type SupabaseConfig = {
-  url: string;
-  key: string;
-  bucket: string;
+type SignedPdfResponse = {
+  path?: unknown;
+  signedUrl?: unknown;
 };
 
-function config(): SupabaseConfig {
-  const rawUrl = process.env["SUPABASE_URL"]?.trim();
-  const key = process.env["SUPABASE_SERVICE_ROLE_KEY"] || process.env["SUPABASE_KEY"];
-  if (!rawUrl || !key) throw new Error("Supabase Storage non configurato sul backend.");
-  const url = normalizeSupabaseUrl(rawUrl);
-  return { url, key, bucket: process.env["SUPABASE_STORAGE_BUCKET"] || DEFAULT_BUCKET };
+function config() {
+  const rawUrl =
+    process.env["VITE_SUPABASE_URL"]?.trim() ||
+    process.env["SUPABASE_URL"]?.trim() ||
+    DEFAULT_SUPABASE_URL;
+  const key =
+    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]?.trim() ||
+    process.env["VITE_SUPABASE_ANON_KEY"]?.trim() ||
+    process.env["SUPABASE_PUBLISHABLE_KEY"]?.trim() ||
+    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+  return { url: normalizeSupabaseUrl(rawUrl), key };
 }
 
 function json(body: unknown, status = 200) {
@@ -22,10 +29,6 @@ function json(body: unknown, status = 200) {
     status,
     headers: { "content-type": "application/json; charset=utf-8" },
   });
-}
-
-function validPath(value: unknown): value is string {
-  return typeof value === "string" && /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
 }
 
 function attachmentDisposition(value: string | null, path: string) {
@@ -46,14 +49,36 @@ function attachmentDisposition(value: string | null, path: string) {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
+async function signedPdfUrl(project: { url: string; key: string }, path: string) {
+  const response = await fetch(`${project.url}/functions/v1/mirror-circular`, {
+    method: "POST",
+    headers: {
+      apikey: project.key,
+      Authorization: `Bearer ${project.key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ path }),
+  });
+  if (!response.ok) throw new Error(`sign_http_${response.status}`);
+
+  const result = (await response.json()) as SignedPdfResponse;
+  if (result.path !== path || typeof result.signedUrl !== "string") {
+    throw new Error("signed_url_invalid");
+  }
+  const url = new URL(result.signedUrl);
+  if (url.protocol !== "https:" || url.origin !== project.url) {
+    throw new Error("signed_url_origin_invalid");
+  }
+  return url;
+}
+
 async function readPrivatePdf(
-  supabase: SupabaseConfig,
+  project: { url: string; key: string },
   path: string,
   downloadName?: string | null,
 ) {
-  const response = await fetch(`${supabase.url}/storage/v1/object/${supabase.bucket}/${path}`, {
-    headers: supabaseAuthHeaders(supabase.key),
-  });
+  const signedUrl = await signedPdfUrl(project, path);
+  const response = await fetch(signedUrl);
   if (!response.ok) throw new Error(`storage_http_${response.status}`);
   return new Response(response.body, {
     status: 200,
