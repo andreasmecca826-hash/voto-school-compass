@@ -3,7 +3,6 @@ import {
   CalendarCheck2,
   ClipboardCheck,
   ClipboardList,
-  CircleUserRound,
   Eye,
   FileText,
   Pin,
@@ -42,6 +41,16 @@ function tomorrowLabel(now: Date) {
   }).toUpperCase();
 }
 
+function daysAgoLabel(now: Date, days: number) {
+  const date = new Date(now);
+  date.setDate(date.getDate() - days);
+  return date.toLocaleDateString("it-IT", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+  }).toUpperCase();
+}
+
 export function DidupDashboard() {
   const v = useVoto();
   const now = useClock();
@@ -69,6 +78,21 @@ export function DidupDashboard() {
   );
   const studentName = (v.data.student.name || "ANDREA MARIA").toUpperCase();
   const progress = avg === null ? 0 : Math.max(0, Math.min(100, avg * 10));
+  const eventItems = v.interrogazioni.length > 0
+    ? v.interrogazioni.slice(0, 4).map((item) => ({
+      id: item.id,
+      title: item.subject,
+      subtitle: item.notes || "Da preparare",
+      date: shortDate(item.date),
+      icon: <X />,
+    }))
+    : v.source === "demo"
+      ? [
+        { id: "absence-1", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 3), icon: <X /> },
+        { id: "absence-2", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 6), icon: <X /> },
+        { id: "absence-3", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 7), icon: <X /> },
+      ]
+      : [{ id: "empty-event", title: "Nessun evento", subtitle: "Gli eventi compariranno qui", date: "", icon: <CalendarCheck2 /> }];
 
   return (
     <div className="didup-page min-h-dvh bg-black px-3 pb-24 text-white">
@@ -77,9 +101,7 @@ export function DidupDashboard() {
           <h1 className="text-[25px] font-normal leading-none tracking-tight">{studentName}</h1>
           <p className="mt-2 text-[11px] leading-none text-white/80">{updatedLabel(v.lastSync, now)}</p>
         </div>
-        <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#f5f5f5] text-[#05a8b5]">
-          <CircleUserRound className="h-9 w-9" strokeWidth={1.8} />
-        </div>
+        <img src="/didup-profile.jpg" alt="" className="h-[58px] w-[58px] object-cover" />
       </header>
 
       <section className="didup-card overflow-hidden px-5 pb-4 pt-5">
@@ -128,13 +150,7 @@ export function DidupDashboard() {
 
       <DidupSectionTitle title="Eventi appello" href="/interrogazioni" />
       <section className="didup-card overflow-hidden px-5">
-        {(v.interrogazioni.length > 0 ? v.interrogazioni.slice(0, 4).map((item) => ({
-          id: item.id,
-          title: item.subject,
-          subtitle: item.notes || "Da preparare",
-          date: shortDate(item.date),
-          icon: <X />,
-        })) : [{ id: "empty-event", title: "Nessun evento", subtitle: "Gli eventi compariranno qui", date: "", icon: <CalendarCheck2 /> }]).map((item) => (
+        {eventItems.map((item) => (
           <div key={item.id} className="flex items-center gap-4 border-b border-white/15 py-4 last:border-0">
             <span className="text-[#08b8c4]">{item.icon}</span>
             <div className="min-w-0 flex-1"><p className="text-[16px]">{item.title}</p><p className="text-[13px] text-[#e47d89]">{item.subtitle}</p></div>
@@ -183,14 +199,7 @@ export function DidupDashboard() {
 }
 
 function BackpackIllustration() {
-  return (
-    <div className="didup-backpack" aria-hidden="true">
-      <span className="didup-backpack-handle" />
-      <span className="didup-backpack-strap left" />
-      <span className="didup-backpack-strap right" />
-      <span className="didup-backpack-body"><span className="didup-backpack-pocket" /></span>
-    </div>
-  );
+  return <img src="/didup-backpack.jpg" alt="" className="mx-auto mt-6 h-[104px] w-[92px] object-cover object-top" />;
 }
 
 function EmptyTile({ text }: { text: string }) {
