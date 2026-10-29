@@ -60,7 +60,7 @@ function dateLabel(value?: string): string {
 
 export function assistantSearchTerms(query: string): string[] {
   return [...new Set(normalize(query).match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
-    (term) => term.length > 1 && !STOP_WORDS.has(term),
+    (term) => (term.length > 1 || /^\d$/.test(term)) && !STOP_WORDS.has(term),
   );
 }
 
@@ -72,12 +72,24 @@ export function isAssistantSearchQuery(query: string): boolean {
 
 function rankResult(result: AssistantSearchResult, terms: string[], phrase: string): number {
   const title = normalize(result.title);
+  const numericSearchText = normalize(
+    `${result.category} ${result.title} ${result.searchableText}`,
+  );
   const text = normalize(
     `${result.category} ${result.title} ${result.detail} ${result.searchableText}`,
   );
-  const matched = terms.filter((term) => text.includes(term));
+  const containsNumericToken = (value: string, term: string) => {
+    const tokens: string[] = value.match(/[\p{L}\p{N}]+/gu) ?? [];
+    return tokens.includes(term);
+  };
+  const matched = terms.filter((term) =>
+    /^\d+$/.test(term) ? containsNumericToken(numericSearchText, term) : text.includes(term),
+  );
+  if (terms.some((term) => /^\d+$/.test(term)) && matched.length !== terms.length) return 0;
   if (matched.length === 0) return 0;
-  const titleMatches = terms.filter((term) => title.includes(term)).length;
+  const titleMatches = terms.filter((term) =>
+    /^\d+$/.test(term) ? containsNumericToken(title, term) : title.includes(term),
+  ).length;
   const phraseBoost = phrase.length > 2 && text.includes(phrase) ? 3 : 0;
   return matched.length * 2 + titleMatches * 2 + phraseBoost;
 }

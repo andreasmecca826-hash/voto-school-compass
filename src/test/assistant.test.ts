@@ -140,6 +140,22 @@ describe("Assistente locale", () => {
     expect(summary).toContain("Assemblea di classe");
   });
 
+  it("non presenta un promemoria senza data come prossimo", () => {
+    const noDateReminderData: VotoData = {
+      ...data,
+      notifications: [
+        { id: "undated", type: "reminder", title: "Promemoria senza data", read: false },
+      ],
+    };
+    const summary = answerQuestion(
+      "Quali sono le novità?",
+      noDateReminderData,
+      emptySchedule(),
+      new Date(2026, 9, 27, 12),
+    );
+    expect(summary).not.toContain("Promemoria: Promemoria senza data");
+  });
+
   it("riconosce i promemoria DidUP e risponde per oggi e domani", () => {
     const now = new Date(2026, 9, 27, 12);
     const reminderData: VotoData = {
@@ -380,7 +396,7 @@ describe("Assistente locale", () => {
           title: "Materiale dimenticato",
           message: "Mancava il quaderno",
           subject: "Inglese",
-          date: "2026-10-27",
+          date: "2026-08-27",
           read: false,
         },
         { id: "notice-1", type: "notice", title: "Assemblea", read: false },
@@ -399,7 +415,8 @@ describe("Assistente locale", () => {
 
     const notes = answerQuestion("Quali note disciplinari ho?", schoolData, emptySchedule(), now);
     expect(notes).toContain("Materiale dimenticato");
-    expect(notes).toContain("nuova");
+    expect(notes).toContain("non letta");
+    expect(notes).not.toContain("nuova");
     expect(notes).not.toContain("Assemblea");
     expect(
       answerQuestion("Cosa ho fatto oggi nel Diario?", schoolData, emptySchedule(), now),
@@ -604,6 +621,10 @@ describe("Assistente locale", () => {
     };
     expect(answerQuestion("In che classe sono?", profileData)).toContain("2A");
     expect(answerQuestion("In che classe sono?", profileData)).toContain("Giulia");
+    expect(answerQuestion("In che anno scolastico sono?", profileData)).toContain("2026/2027");
+    const schoolStart = answerQuestion("Quando inizia l’anno scolastico?", profileData);
+    expect(schoolStart).toContain("non è indicata la data di inizio");
+    expect(schoolStart).not.toContain("2026/2027");
     expect(
       answerQuestion(
         "Mostrami le risposte delle flashcard di Inglese",
@@ -614,9 +635,9 @@ describe("Assistente locale", () => {
         context,
       ),
     ).toContain("Apple");
-    expect(answerQuestion("Dove trovo il simulatore?", data)).toContain(
-      "Studio Lab > Calcolo media e simulatore voti",
-    );
+    expect(
+      answerQuestion("Dove trovo il simulatore per calcolare il voto necessario?", data),
+    ).toContain("Studio Lab > Calcolo media e simulatore voti");
   });
 
   it("spiega che Oro e Diamante sono già selezionabili nella personalizzazione", () => {

@@ -102,6 +102,16 @@ describe("ricerca rapida locale dell’assistente", () => {
     expect(answerQuestion("Cerca algebra", data, emptySchedule())).toContain("Esercizi di algebra");
   });
 
+  it("trova i voti a una cifra senza trattare le date come voti", () => {
+    const seven = searchAssistantData("cerca 7", data);
+    expect(seven.some((item) => item.category === "Voto" && item.title.includes("7"))).toBe(true);
+    expect(searchAssistantData("cerca 8", data)).toHaveLength(0);
+    expect(
+      searchAssistantData("cerca 7 Matematica", data).some((item) => item.category === "Voto"),
+    ).toBe(true);
+    expect(searchAssistantData("cerca 7 Storia", data)).toHaveLength(0);
+  });
+
   it("non intercetta le normali domande già gestite dall’assistente", () => {
     expect(answerQuestion("Qual è la mia media generale?", data, emptySchedule())).toContain(
       "media generale",

@@ -22,6 +22,18 @@ const normalize = (value: string) =>
 
 const includesAny = (text: string, terms: string[]) => terms.some((term) => text.includes(term));
 
+function isExplicitlyNegatedTaskAction(query: string): boolean {
+  return /\bnon\s+(?:(?:voglio|devo|posso)\s+)?(?:segnare|segna|marcare|marca|mettere|metti|completare|completa|riaprire|riapri)\b/.test(
+    query,
+  );
+}
+
+function reportsUnfinishedTask(query: string): boolean {
+  return /\bnon\s+(?:(?:ho|hai|ha|abbiamo|avete|hanno|sono|sei|e)\s+(?:ancora\s+)?|(?:voglio|devo|posso)\s+)?(?:fatt\w*|finit\w*|svolt\w*|conclus\w*|complet\w*)\b/.test(
+    query,
+  );
+}
+
 function requestedCompletionState(query: string): boolean | null {
   const requestsReopen = includesAny(query, [
     "riapri",
@@ -62,17 +74,41 @@ export function getAssignmentActionIntent(
   assignments: Assignment[],
 ): AssignmentActionIntent | null {
   const normalized = normalize(query.trim());
-  if (/\bnon\s+(?:segnare|segna|marcare|marca|completare|completa)\b/.test(normalized)) return null;
+  if (isExplicitlyNegatedTaskAction(normalized)) return null;
   const targetState = requestedCompletionState(normalized);
   const hasTaskReference = includesAny(normalized, ["compit", "consegn", "attivita"]);
   const hasActionVerb = /\b(segna|marca|metti|imposta|completa|riapri|annulla)\b/.test(normalized);
   const reportsCompletion = /\bho\s+(fatto|finito|complet\w*|svolt\w*)/.test(normalized);
-  const candidates = assignments
-    .filter((assignment) => {
-      const title = normalize(assignment.title.trim());
-      return title.length >= 3 && normalized.includes(title);
-    })
-    .sort((a, b) => normalize(b.title).length - normalize(a.title).length);
+  const matchedCandidates = assignments.filter((assignment) => {
+    const title = normalize(assignment.title.trim());
+    return title.length >= 3 && normalized.includes(title);
+  });
+  const candidates = matchedCandidates.filter((candidate) => {
+    const title = normalize(candidate.title.trim());
+    return !matchedCandidates.some((other) => {
+      if (other.id === candidate.id) return false;
+      const otherTitle = normalize(other.title.trim());
+      return otherTitle.length > title.length && otherTitle.includes(title);
+    });
+  });
+  if (reportsUnfinishedTask(normalized) && candidates.length) {
+    if (candidates.length > 1)
+      return {
+        kind: "clarify",
+        message:
+          "Capito: non segno questi compiti come completati. Non ho modificato nulla; indicami il titolo preciso se vuoi aggiornare uno stato.",
+      };
+    const assignment = candidates[0]!;
+    return assignment.completed
+      ? {
+          kind: "clarify",
+          message: `Dici di non aver finito “${assignment.title}”, ma nei dati risulta completato. Vuoi riaprirlo? Non ho modificato nulla.`,
+        }
+      : {
+          kind: "already",
+          message: `Capito: “${assignment.title}” risulta già da fare. Non ho modificato nulla.`,
+        };
+  }
   const referencesTask = hasTaskReference || candidates.length > 0;
   const expressesAction = hasActionVerb || (reportsCompletion && candidates.length > 0);
 
@@ -86,7 +122,7 @@ export function getAssignmentActionIntent(
   }
 
   const completed = targetState;
-  let matchingAssignments = candidates.length ? [candidates[0]!] : [];
+  let matchingAssignments = candidates;
 
   if (!matchingAssignments.length) {
     const subjectMatches = assignments.filter((assignment) => {
