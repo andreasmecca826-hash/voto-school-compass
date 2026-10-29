@@ -31,9 +31,15 @@ export function tomorrowSubjects(schedule: Schedule, now: Date): string[] {
 export function openAssignmentsForTomorrow(
   assignments: Assignment[],
   isDone: (id: string, completed: boolean) => boolean,
+  now: Date,
 ): Assignment[] {
+  const tomorrow = localDateKey(tomorrowDate(now));
   return assignments
-    .filter((assignment) => !isDone(assignment.id, assignment.completed))
+    .filter(
+      (assignment) =>
+        assignment.dueDate?.slice(0, 10) === tomorrow &&
+        !isDone(assignment.id, assignment.completed),
+    )
     .sort((a, b) => {
       if (!a.dueDate) return b.dueDate ? 1 : a.title.localeCompare(b.title, "it");
       if (!b.dueDate) return -1;
@@ -41,13 +47,10 @@ export function openAssignmentsForTomorrow(
     });
 }
 
-function isWithinDays(date: string, now: Date, days: number): boolean {
+function isTomorrow(date: string, now: Date): boolean {
   const dateKey = date.slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
-  const today = localDateKey(now);
-  const end = new Date(now);
-  end.setDate(end.getDate() + days);
-  return dateKey >= today && dateKey <= localDateKey(end);
+  return dateKey === localDateKey(tomorrowDate(now));
 }
 
 export type UpcomingSchoolEvent = {
@@ -62,10 +65,9 @@ export function upcomingSchoolEvents(
   interrogazioni: Interrogazione[],
   notifications: AppNotification[],
   now: Date,
-  days = 7,
 ): UpcomingSchoolEvent[] {
   const events: UpcomingSchoolEvent[] = interrogazioni
-    .filter((item) => !item.completed && isWithinDays(item.date, now, days))
+    .filter((item) => !item.completed && isTomorrow(item.date, now))
     .map((item) => ({
       id: `interrogazione-${item.id}`,
       title: item.subject,
@@ -78,7 +80,7 @@ export function upcomingSchoolEvents(
   for (const notification of notifications) {
     if (notification.type !== "reminder" || !notification.date) continue;
     const text = `${notification.title} ${notification.message ?? ""} ${notification.subject ?? ""}`;
-    if (!assessmentPattern.test(text) || !isWithinDays(notification.date, now, days)) continue;
+    if (!assessmentPattern.test(text) || !isTomorrow(notification.date, now)) continue;
     events.push({
       id: `promemoria-${notification.id}`,
       title: notification.subject

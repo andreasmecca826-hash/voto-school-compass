@@ -548,7 +548,7 @@ function TomorrowSchoolCard({
   }).format(tomorrow);
   const titleDate = tomorrowLabel.charAt(0).toLocaleUpperCase("it-IT") + tomorrowLabel.slice(1);
   const materials = tomorrowSubjects(schedule, now);
-  const openTasks = openAssignmentsForTomorrow(assignments, isDone);
+  const openTasks = openAssignmentsForTomorrow(assignments, isDone, now);
   const events = upcomingSchoolEvents(interrogazioni, notifications, now);
 
   return (
@@ -596,7 +596,7 @@ function TomorrowSchoolCard({
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              <h3 className="text-xs font-semibold">Compiti ancora da completare</h3>
+              <h3 className="text-xs font-semibold">Compiti con scadenza domani</h3>
             </div>
             <Link to="/compiti" className="text-[10px] font-medium text-primary">
               Apri
@@ -628,7 +628,7 @@ function TomorrowSchoolCard({
             </ul>
           ) : (
             <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
-              Hai completato tutti i compiti.
+              Nessun compito con scadenza domani.
             </p>
           )}
         </div>
@@ -637,7 +637,7 @@ function TomorrowSchoolCard({
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-primary" />
-              <h3 className="text-xs font-semibold">Verifiche e interrogazioni imminenti</h3>
+              <h3 className="text-xs font-semibold">Verifiche e interrogazioni di domani</h3>
             </div>
             <Link to="/interrogazioni" className="text-[10px] font-medium text-primary">
               Agenda
@@ -665,7 +665,7 @@ function TomorrowSchoolCard({
             </ul>
           ) : (
             <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
-              Nessuna verifica o interrogazione in agenda nei prossimi 7 giorni.
+              Nessuna verifica o interrogazione in programma per domani.
             </p>
           )}
         </div>

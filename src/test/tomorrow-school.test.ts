@@ -32,30 +32,50 @@ describe("Domani a scuola", () => {
     expect(tomorrowSubjects(emptySchedule(), saturdayEve)).toEqual([]);
   });
 
-  it("ordina i compiti aperti per scadenza e non include quelli completati", () => {
+  it("mostra solo i compiti aperti con scadenza esattamente domani", () => {
     const assignments: Assignment[] = [
       { id: "later", title: "Ricerca", dueDate: "2026-11-02", completed: false },
-      { id: "done", title: "Esercizi", dueDate: "2026-10-29", completed: true },
+      { id: "today", title: "Ripasso", dueDate: "2026-10-29", completed: false },
+      { id: "overdue", title: "Recupero", dueDate: "2026-10-28", completed: false },
+      { id: "done", title: "Esercizi", dueDate: "2026-10-30", completed: true },
       { id: "soon", title: "Studio", dueDate: "2026-10-30", completed: false },
       { id: "none", title: "Lettura", completed: false },
     ];
-    const tasks = openAssignmentsForTomorrow(assignments, (_id, remote) => remote);
-    expect(tasks.map((task) => task.id)).toEqual(["soon", "later", "none"]);
+    const tasks = openAssignmentsForTomorrow(
+      assignments,
+      (_id, remote) => remote,
+      new Date(2026, 9, 29, 12),
+    );
+    expect(tasks.map((task) => task.id)).toEqual(["soon"]);
   });
 
-  it("include interrogazioni non completate e promemoria di verifica entro sette giorni", () => {
+  it("include solo interrogazioni e promemoria di verifica con data domani", () => {
     const notifications: AppNotification[] = [
       {
         id: "test",
         type: "reminder",
         title: "Verifica di scienze",
-        date: "2026-11-03",
+        date: "2026-10-30",
         read: false,
       },
       {
         id: "generic",
         type: "reminder",
         title: "Portare il modulo",
+        date: "2026-10-30",
+        read: false,
+      },
+      {
+        id: "today-test",
+        type: "reminder",
+        title: "Verifica già oggi",
+        date: "2026-10-29",
+        read: false,
+      },
+      {
+        id: "later-test",
+        type: "reminder",
+        title: "Verifica più avanti",
         date: "2026-11-03",
         read: false,
       },
@@ -70,6 +90,7 @@ describe("Domani a scuola", () => {
     const events = upcomingSchoolEvents(
       [
         makeInterrogazione("soon", "2026-10-30"),
+        makeInterrogazione("today", "2026-10-29"),
         makeInterrogazione("done", "2026-10-30", true),
         makeInterrogazione("late", "2026-11-10"),
       ],
