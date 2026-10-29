@@ -1,4 +1,4 @@
-import { Bell, BookOpenText, CalendarCheck2, CalendarClock, CircleUserRound, ClipboardCheck, ClipboardList, FileBadge, FileText, Library, MessageSquareText, NotebookPen, NotebookTabs, School, Share2, UsersRound, WalletCards } from "lucide-react";
+import { Bell, CalendarCheck2, CalendarClock, CircleUserRound, ClipboardCheck, ClipboardList, FileBadge, FileText, MessageSquareText, NotebookPen, Palette, School, Settings, UsersRound } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useVoto } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
@@ -9,19 +9,15 @@ const ITEMS: MenuItem[] = [
   { label: "Eventi appello", color: "#00aebd", icon: CalendarCheck2, to: "/interrogazioni" },
   { label: "Note", color: "#f39a88", icon: NotebookPen, to: "/note" },
   { label: "Voti giornalieri", color: "#ec7365", icon: FileText, to: "/voti" },
-  { label: "Voti scrutinio", color: "#8f54c9", icon: FileBadge, muted: true },
+  { label: "Pagella", color: "#8f54c9", icon: FileBadge, to: "/scrutini-infraperiodali" },
   { label: "Attività svolta", color: "#3c9ed9", icon: MessageSquareText, to: "/diario" },
   { label: "Compiti assegnati", color: "#6064e9", icon: School, to: "/compiti" },
   { label: "Promemoria", color: "#ff5264", icon: ClipboardCheck, to: "/" },
   { label: "Orario", color: "#e99abd", icon: CalendarClock, to: "/orario" },
   { label: "Ricevimento docenti", color: "#8fc783", icon: UsersRound, to: "/professori" },
   { label: "Bacheca", color: "#06afbd", icon: ClipboardList, to: "/" },
-  { label: "Bacheca alunno", color: "#00aeba", icon: NotebookTabs, muted: true },
-  { label: "Condivisione", color: "#40d991", icon: Share2, muted: true },
-  { label: "Giudizi", color: "#d9d9d9", icon: MessageSquareText, muted: true },
-  { label: "Pagamenti", color: "#8d55cf", icon: WalletCards, muted: true },
-  { label: "Curriculum", color: "#385c8f", icon: Library, muted: true },
-  { label: "Comunicazioni MIM", color: "#466fe3", icon: BookOpenText, muted: true },
+  { label: "Personalizza", color: "#e3a63b", icon: Palette, to: "/personalizza" },
+  { label: "Impostazioni", color: "#3b75b8", icon: Settings, to: "/impostazioni" },
 ];
 
 export function DidupMenu() {
