@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, Send, Sparkles, UserRound } from "lucide-react";
+import { Bot, Search, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getAssignmentActionIntent,
@@ -154,6 +154,11 @@ function Assistant() {
           L’assistente usa solo i dati già caricati nell’app e fa i calcoli direttamente sul
           dispositivo.
         </p>
+        <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
+          <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+          Ricerca rapida: scrivi “cerca algebra”, “trova circolare uscita” o una parola per trovare
+          corrispondenze in voti, materie, compiti, note, avvisi, diario e interrogazioni.
+        </p>
       </section>
 
       <div className="mt-5 space-y-3">
@@ -245,7 +250,7 @@ function Assistant() {
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Scrivi una domanda..."
+          placeholder="Fai una domanda o cerca nei tuoi dati..."
           aria-label="Domanda all'assistente"
           className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
         />

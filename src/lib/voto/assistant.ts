@@ -9,6 +9,11 @@ import {
   teachersForSubjectQuestion,
 } from "./teachers";
 import type { Grade, VotoData } from "./types";
+import {
+  formatAssistantSearchResults,
+  isAssistantSearchQuery,
+  searchAssistantData,
+} from "./assistant-search";
 
 export interface AssistantContext {
   source?: "demo" | "remote" | "cache";
@@ -184,6 +189,10 @@ export function answerQuestion(
   const normalized = normalize(query.trim());
   if (!normalized)
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
+
+  if (isAssistantSearchQuery(query)) {
+    return formatAssistantSearchResults(searchAssistantData(query, data, interrogazioni));
+  }
 
   if (
     normalized.includes("giustific") &&
