@@ -7,6 +7,7 @@ import {
   Calculator,
   CalendarCheck,
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
   Clock3,
   Github,
@@ -26,6 +27,15 @@ import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
 import { emptySchedule, loadSchedule, type Schedule } from "@/lib/voto/orario";
 import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
+import {
+  openAssignmentsForTomorrow,
+  tomorrowDate,
+  tomorrowScheduleDay,
+  tomorrowSubjects,
+  upcomingSchoolEvents,
+} from "@/lib/voto/tomorrow-school";
+import type { Interrogazione } from "@/lib/voto/interrogazioni";
+import type { AppNotification, Assignment } from "@/lib/voto/types";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { fmtDate, fmtTime } from "@/lib/voto/dates";
 import {
@@ -155,6 +165,14 @@ function Dashboard() {
       )}
 
       <PeriodPicker />
+      <TomorrowSchoolCard
+        now={now}
+        schedule={schedule}
+        assignments={assignments}
+        interrogazioni={v.interrogazioni}
+        notifications={notifications}
+        isDone={v.isDone}
+      />
       <div className="flex flex-col">
         {isHomeModuleVisible("media") && (
           <div style={{ order: homeOrder("media"), zoom: homeModuleScale("media") }}>
@@ -503,6 +521,156 @@ function Dashboard() {
         )}
       </div>
     </div>
+  );
+}
+
+function TomorrowSchoolCard({
+  now,
+  schedule,
+  assignments,
+  interrogazioni,
+  notifications,
+  isDone,
+}: {
+  now: Date;
+  schedule: Schedule;
+  assignments: Assignment[];
+  interrogazioni: Interrogazione[];
+  notifications: AppNotification[];
+  isDone: (id: string, remote: boolean) => boolean;
+}) {
+  const nextDay = tomorrowScheduleDay(now);
+  const tomorrow = tomorrowDate(now);
+  const tomorrowLabel = new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(tomorrow);
+  const titleDate = tomorrowLabel.charAt(0).toLocaleUpperCase("it-IT") + tomorrowLabel.slice(1);
+  const materials = tomorrowSubjects(schedule, now);
+  const openTasks = openAssignmentsForTomorrow(assignments, isDone);
+  const events = upcomingSchoolEvents(interrogazioni, notifications, now);
+
+  return (
+    <section className="card-surface mt-4 overflow-hidden" aria-label="Domani a scuola">
+      <div className="flex items-center gap-3 border-b border-border bg-primary-soft/40 p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+          <CalendarCheck className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-semibold">Domani a scuola</h2>
+          <p className="text-xs text-muted-foreground">{titleDate}</p>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <h3 className="text-xs font-semibold">Libri e quaderni da portare</h3>
+          </div>
+          {materials.length ? (
+            <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {materials.map((subject) => (
+                <li
+                  key={subject}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="font-medium">{subject}</span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    Libro · quaderno
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
+              {nextDay
+                ? "Nessuna materia inserita nell’orario di domani."
+                : "Domani non è un giorno scolastico feriale: nessuna lezione prevista nell’orario."}
+            </p>
+          )}
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-semibold">Compiti ancora da completare</h3>
+            </div>
+            <Link to="/compiti" className="text-[10px] font-medium text-primary">
+              Apri
+            </Link>
+          </div>
+          {openTasks.length ? (
+            <ul className="space-y-1.5">
+              {openTasks.slice(0, 4).map((task) => (
+                <li
+                  key={task.id}
+                  className="flex items-start justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0 font-medium">
+                    {task.title}
+                    {task.subject ? (
+                      <span className="font-normal text-muted-foreground"> · {task.subject}</span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {task.dueDate ? fmtDate(task.dueDate) : "Senza scadenza"}
+                  </span>
+                </li>
+              ))}
+              {openTasks.length > 4 && (
+                <li className="px-3 text-[10px] text-muted-foreground">
+                  e altri {openTasks.length - 4} compiti
+                </li>
+              )}
+            </ul>
+          ) : (
+            <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
+              Hai completato tutti i compiti.
+            </p>
+          )}
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-semibold">Verifiche e interrogazioni imminenti</h3>
+            </div>
+            <Link to="/interrogazioni" className="text-[10px] font-medium text-primary">
+              Agenda
+            </Link>
+          </div>
+          {events.length ? (
+            <ul className="space-y-1.5">
+              {events.slice(0, 4).map((event) => (
+                <li
+                  key={event.id}
+                  className="flex items-start justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0">
+                    <span className="font-medium">{event.title}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {event.source === "interrogazione" ? "Interrogazione" : "Promemoria DidUP"}
+                      {event.detail ? ` · ${event.detail}` : ""}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {fmtDate(event.date)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted-foreground">
+              Nessuna verifica o interrogazione in agenda nei prossimi 7 giorni.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
