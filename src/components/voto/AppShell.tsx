@@ -33,6 +33,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
+import { DidupDashboard } from "./DidupDashboard";
+import { DidupMenu } from "./DidupMenu";
 
 const NotificationsSheet = lazy(() =>
   import("./NotificationsSheet").then((module) => ({ default: module.NotificationsSheet })),
@@ -185,7 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Suspense>
       )}
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
-        <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
+        {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
           <div className="flex h-16 items-center justify-between px-5">
             <div className="min-w-0">
               <Link
@@ -236,21 +238,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </div>
           </div>
-        </header>
+        </header>}
 
-        <main className="flex-1 px-5 pb-28">
+        <main className={cn("flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28")}>
           {v.ready ? (
-            moreOpen ? (
-              <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />
-            ) : (
-              children
-            )
+            moreOpen ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
+              v.registryStyle === "didup" && path === "/" ? <DidupDashboard /> : children
           ) : (
             <ShellSkeleton />
           )}
         </main>
 
-        <nav
+        {v.registryStyle === "didup" ? <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} /> : <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
@@ -308,7 +307,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </li>
           </ul>
-        </nav>
+        </nav>}
       </div>
 
       {v.ready && (mounted.notifications || mounted.simulator || mounted.subject) && (
@@ -370,6 +369,24 @@ function ShellSkeleton() {
         <Skeleton key={i} className="h-16 rounded-2xl bg-card" />
       ))}
     </div>
+  );
+}
+
+function DidupBottomNav({
+  path,
+  moreOpen,
+  onMenu,
+}: {
+  path: string;
+  moreOpen: boolean;
+  onMenu: () => void;
+}) {
+  return (
+    <nav className="didup-bottom fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] items-end justify-around px-7 pb-3 pt-2" aria-label="Navigazione DidUP">
+      <Link to="/" className={cn("flex flex-col items-center gap-1 text-xs", path === "/" ? "text-white" : "text-white/50")}><LayoutGrid className="h-6 w-6" />Home</Link>
+      <Link to="/diario" className={cn("flex flex-col items-center gap-1 text-xs", path.startsWith("/diario") ? "text-white" : "text-white/50")}><BookOpen className="h-6 w-6" />Diario</Link>
+      <button type="button" onClick={onMenu} className={cn("flex flex-col items-center gap-1 text-xs", moreOpen ? "text-white" : "text-white/50")}><span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f4bd35] text-black"><Menu className="h-6 w-6" /></span>Menu</button>
+    </nav>
   );
 }
 
