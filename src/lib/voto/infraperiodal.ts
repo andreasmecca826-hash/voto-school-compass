@@ -46,7 +46,7 @@ export function normalizeManualReports(value: unknown): ManualInfraperiodReport[
     ) {
       return [];
     }
-    const entries = item.entries.flatMap((entry): ManualReportEntry[] => {
+    const entries = item.entries.flatMap((entry: any): ManualReportEntry[] => {
       if (
         !entry ||
         typeof entry !== "object" ||
