@@ -726,6 +726,7 @@ function NotifItem({ id }: { id: string }) {
           onOpenChange={setCircularOpen}
           title={n.message ?? n.title}
           fileName={n.attachmentName}
+          path={n.attachmentPath}
           url={n.attachmentPath ? n.attachmentUrl : undefined}
         />
       )}

@@ -114,6 +114,7 @@ export function NotificationsSheet({
           onOpenChange={(open) => !open && setCircular(null)}
           title={circular.message ?? circular.title}
           fileName={circular.attachmentName}
+          path={circular.attachmentPath}
           url={circular.attachmentPath ? circular.attachmentUrl : undefined}
         />
       )}
