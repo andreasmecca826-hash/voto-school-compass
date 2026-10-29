@@ -567,6 +567,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       },
       addInterrogazione: (item) =>
         setInterrogazioni((current) => {
+          if (item.reminderId && current.some((entry) => entry.reminderId === item.reminderId)) {
+            return current;
+          }
           const next = [
             {
               ...item,

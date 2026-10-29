@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, ChevronDown, Clock3 } from "lucide-react";
+import { CalendarPlus, Check, ChevronDown, Clock3 } from "lucide-react";
 import { useMemo } from "react";
 import { Empty } from "@/components/voto/ui";
 import { fmtDate } from "@/lib/voto/dates";
 import { selectPastReminders, selectUpcomingReminders } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
+import { reminderDateToIso } from "@/lib/voto/interrogazioni";
 
 export const Route = createFileRoute("/promemoria")({
   head: () => ({
@@ -29,6 +30,7 @@ function Promemoria() {
   );
   const renderReminder = (reminder: (typeof upcoming)[number]) => {
     const read = v.isRead(reminder.id, reminder.read);
+    const addedToVerifications = v.interrogazioni.some((item) => item.reminderId === reminder.id);
     return (
       <li key={reminder.id} className={`card-surface p-4 ${!read ? "border-primary/30" : ""}`}>
         <div className="flex items-start gap-3">
@@ -76,6 +78,38 @@ function Promemoria() {
                 </button>
               )}
             </div>
+            <button
+              type="button"
+              disabled={addedToVerifications}
+              onClick={() => {
+                const date = reminderDateToIso(reminder.date);
+                const title = reminder.title.trim();
+                const subject = reminder.subject?.trim() || title || "Promemoria";
+                const notes = [
+                  reminder.message?.trim(),
+                  !date ? "Data non specificata nel promemoria: da definire." : undefined,
+                ]
+                  .filter(Boolean)
+                  .join("\n\n");
+                v.addInterrogazione({
+                  subject,
+                  date: date ?? "",
+                  notes: notes || undefined,
+                  reminderId: reminder.id,
+                });
+              }}
+              className="press mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-xs font-semibold text-primary disabled:border-success/30 disabled:bg-success-soft disabled:text-success"
+            >
+              {addedToVerifications ? (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Aggiunto a Verifiche
+                </>
+              ) : (
+                <>
+                  <CalendarPlus className="h-3.5 w-3.5" /> Aggiungi a Verifiche
+                </>
+              )}
+            </button>
           </div>
         </div>
       </li>

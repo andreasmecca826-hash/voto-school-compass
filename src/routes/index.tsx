@@ -422,7 +422,7 @@ function Dashboard() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{item.subject}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {fmtDate(item.date)}
+                        {item.date ? fmtDate(item.date) : "Data da definire"}
                         {item.hour ? ` · ${item.hour}ª ora` : item.time ? ` · ${item.time}` : ""}
                       </p>
                     </div>
