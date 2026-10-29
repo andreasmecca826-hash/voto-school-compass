@@ -163,7 +163,7 @@ Deno.serve(async (request: Request) => {
       const requestedAt = Number.isFinite(createdAt)
         ? new Date(createdAt - 10_000).toISOString()
         : new Date(Date.now() - 10_000).toISOString();
-      return jsonResponse({ status: "started", requestedAt, joinedExisting: true }, 202);
+      return jsonResponse({ ok: true, status: "started", requestedAt, joinedExisting: true }, 202);
     }
 
     const latest = runs.find(
@@ -173,13 +173,11 @@ Deno.serve(async (request: Request) => {
       const age = Date.now() - Date.parse(latest.created_at);
       if (Number.isFinite(age) && age < cooldownMs) {
         localCooldownUntil = Date.parse(latest.created_at) + cooldownMs;
-        return jsonResponse(
-          {
-            error: "Il registro è stato controllato di recente.",
-            retryAfterSeconds: retrySeconds(latest.created_at),
-          },
-          429,
-        );
+        return jsonResponse({
+          ok: false,
+          error: "Il registro è stato controllato di recente.",
+          retryAfterSeconds: retrySeconds(latest.created_at),
+        });
       }
     }
 
@@ -194,7 +192,7 @@ Deno.serve(async (request: Request) => {
     );
     if (!response.ok) throw new GitHubRequestError("dispatch", response.status);
     localCooldownUntil = Date.now() + cooldownMs;
-    return jsonResponse({ status: "started", requestedAt }, 202);
+    return jsonResponse({ ok: true, status: "started", requestedAt }, 202);
   } catch (error) {
     return publicError(error, "dispatch");
   } finally {
