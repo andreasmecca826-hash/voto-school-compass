@@ -16,6 +16,7 @@ export const KEYS = {
   customTheme: "voto.customTheme",
   homeModules: "voto.homeModules",
   interrogazioni: "voto.interrogazioni",
+  interfaceMode: "voto.interfaceMode",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

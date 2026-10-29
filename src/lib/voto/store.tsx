@@ -44,6 +44,7 @@ export type Bg =
   | "carta";
 export type Mode = "chiaro" | "scuro";
 export type Density = "standard" | "compact";
+export type InterfaceMode = "voto" | "didup";
 export type Theme =
   | "original"
   | "lavender"
@@ -170,6 +171,7 @@ interface Ctx {
   mode: Mode;
   glass: boolean;
   density: Density;
+  interfaceMode: InterfaceMode;
   reduceMotion: boolean;
   theme: Theme;
   customTheme: CustomTheme;
@@ -190,6 +192,7 @@ interface Ctx {
   setMode: (m: Mode) => void;
   setGlass: (enabled: boolean) => void;
   setDensity: (density: Density) => void;
+  setInterfaceMode: (mode: InterfaceMode) => void;
   setReduceMotion: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
@@ -238,6 +241,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [mode, setModeS] = useState<Mode>("scuro");
   const [glass, setGlassS] = useState(true);
   const [density, setDensityS] = useState<Density>("standard");
+  const [interfaceMode, setInterfaceModeS] = useState<InterfaceMode>("voto");
   const [reduceMotion, setReduceMotionS] = useState(false);
   const [theme, setThemeS] = useState<Theme>("original");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
@@ -291,6 +295,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setGlassS(load(KEYS.glass, true));
     const savedDensity = load<Density>(KEYS.density, "standard");
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
+    const savedInterfaceMode = load<InterfaceMode>(KEYS.interfaceMode, "voto");
+    setInterfaceModeS(savedInterfaceMode === "didup" ? "didup" : "voto");
     setReduceMotionS(load(KEYS.reduceMotion, false));
     setThemeS(load(KEYS.theme, "original"));
     setCustomThemeS({
@@ -326,6 +332,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["mode"] = mode;
     root.dataset["glass"] = glass ? "on" : "off";
     root.dataset["density"] = density;
+    root.dataset["interface"] = interfaceMode;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
     root.dataset["theme"] = theme;
     root.dataset["font"] = customTheme.font;
@@ -352,12 +359,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
               : "var(--font-sans)",
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [accent, bg, mode, glass, density, reduceMotion, theme, customTheme, ready]);
+  }, [accent, bg, mode, glass, density, interfaceMode, reduceMotion, theme, customTheme, ready]);
 
   const value: Ctx = useMemo(
     () => ({
       ready,
       density,
+      interfaceMode,
       reduceMotion,
       data,
       source,
@@ -460,6 +468,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setDensity: (next) => {
         setDensityS(next);
         save(KEYS.density, next);
+      },
+      setInterfaceMode: (next) => {
+        setInterfaceModeS(next);
+        save(KEYS.interfaceMode, next);
       },
       setReduceMotion: (enabled) => {
         setReduceMotionS(enabled);
@@ -568,6 +580,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       completions,
       readIds,
       density,
+      interfaceMode,
       reduceMotion,
       refreshImpl,
     ],

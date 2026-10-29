@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  BookMarked,
   ChevronDown,
   ChevronUp,
   Eye,
@@ -29,11 +30,12 @@ import {
   type CustomTheme,
   type Density,
   type HomeModuleId,
+  type InterfaceMode,
   type Mode,
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience";
+type View = "menu" | "themes" | "home" | "experience" | "register";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -199,6 +201,10 @@ const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
   { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
   { id: "compact", label: "Compatto", description: "Schede più raccolte" },
 ];
+const INTERFACE_OPTIONS: { id: InterfaceMode; label: string; description: string }[] = [
+  { id: "voto", label: "VOTO.", description: "Dashboard e menu dell’app VOTO." },
+  { id: "didup", label: "DidUP / Argo", description: "Layout scuro fedele al registro Argo" },
+];
 const MOTION_OPTIONS: { id: boolean; label: string; description: string }[] = [
   { id: false, label: "Normali", description: "Transizioni e animazioni" },
   { id: true, label: "Ridotte", description: "Meno movimento nell’interfaccia" },
@@ -259,6 +265,21 @@ export function PersonalizationPanel() {
           </button>
           <button
             type="button"
+            onClick={() => setView("register")}
+            className="press card-surface col-span-2 flex min-h-28 items-center gap-4 p-4 text-left"
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <BookMarked className="h-7 w-7" />
+            </span>
+            <span>
+              <span className="block font-semibold">Stile registro</span>
+              <span className="mt-1 block text-[11px] text-muted-foreground">
+                Scegli se usare VOTO. oppure l’interfaccia DidUP / Argo
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={openMusic}
             className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
           >
@@ -270,6 +291,33 @@ export function PersonalizationPanel() {
               Brani dal dispositivo o da URL
             </span>
           </button>
+        </div>
+      </div>
+    );
+
+  if (view === "register")
+    return (
+      <div className="pt-3">
+        <BackButton onClick={() => setView("menu")} title="Stile registro" />
+        <p className="mb-4 text-xs text-muted-foreground">
+          Questa impostazione cambia solo l’aspetto e la navigazione. I dati e l’aggiornamento ogni 15 minuti restano invariati.
+        </p>
+        <div className="grid gap-3">
+          {INTERFACE_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={v.interfaceMode === option.id}
+              onClick={() => v.setInterfaceMode(option.id)}
+              className={cn(
+                "press card-surface p-4 text-left",
+                v.interfaceMode === option.id && "border-primary",
+              )}
+            >
+              <span className="block text-sm font-semibold">{option.label}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{option.description}</span>
+            </button>
+          ))}
         </div>
       </div>
     );

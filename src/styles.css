@@ -649,6 +649,23 @@
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+.didup-page {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+.didup-card,
+.didup-tile,
+.didup-menu-card {
+  background: #292929;
+  border-radius: 9px;
+}
+.didup-menu-card {
+  min-height: 132px;
+}
+.didup-bottom {
+  background: #000;
+  border-top: 1px solid rgb(255 255 255 / 0.05);
+}
 [data-glass="off"] .glass-panel {
   background: var(--color-background);
   box-shadow: none;
