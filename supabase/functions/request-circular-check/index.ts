@@ -132,24 +132,26 @@ Deno.serve(async (request: Request) => {
           typeof candidate.created_at === "string" &&
           Date.parse(candidate.created_at) >= afterMs,
       );
-      if (!run) return jsonResponse({ status: "waiting" });
-      return jsonResponse({ status: run.status ?? "unknown", conclusion: run.conclusion ?? null });
+      if (!run) return jsonResponse({ ok: true, status: "waiting" });
+      return jsonResponse({
+        ok: true,
+        status: run.status ?? "unknown",
+        conclusion: run.conclusion ?? null,
+      });
     } catch (error) {
       return publicError(error, "status");
     }
   }
 
   if (dispatchInProgress) {
-    return jsonResponse({ error: "È già in corso un controllo.", retryAfterSeconds: 60 }, 409);
+    return jsonResponse({ ok: false, error: "È già in corso un controllo.", retryAfterSeconds: 60 });
   }
   if (localCooldownUntil > Date.now()) {
-    return jsonResponse(
-      {
-        error: "Il registro è stato controllato di recente.",
-        retryAfterSeconds: Math.ceil((localCooldownUntil - Date.now()) / 1000),
-      },
-      429,
-    );
+    return jsonResponse({
+      ok: false,
+      error: "Il registro è stato controllato di recente.",
+      retryAfterSeconds: Math.ceil((localCooldownUntil - Date.now()) / 1000),
+    });
   }
 
   dispatchInProgress = true;
