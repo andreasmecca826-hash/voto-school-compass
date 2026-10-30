@@ -115,6 +115,7 @@ export function NotificationsSheet({
           title={circular.message ?? circular.title}
           fileName={circular.attachmentName}
           path={circular.attachmentPath}
+          attachments={circular.attachments}
           url={circular.attachmentPath ? circular.attachmentUrl : undefined}
         />
       )}

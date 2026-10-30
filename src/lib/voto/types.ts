@@ -32,6 +32,14 @@ export interface Assignment {
 
 export type NotificationType = "note" | "grade" | "reminder" | "notice";
 
+export interface CircularAttachment {
+  name?: string | undefined;
+  /** Percorso del PDF nel bucket privato, ad esempio circulars/<sha256>.pdf. */
+  path?: string | undefined;
+  /** URL firmato temporaneo, valorizzato solo per allegati interni. */
+  url?: string | undefined;
+}
+
 export interface AppNotification {
   id: string;
   type: NotificationType;
@@ -44,6 +52,8 @@ export interface AppNotification {
   /** URL sorgente legacy usato solo dal backend per il mirroring. */
   attachmentUrl?: string | undefined;
   attachmentName?: string | undefined;
+  /** Allegati multipli della stessa circolare; i campi singoli restano per compatibilità. */
+  attachments?: CircularAttachment[] | undefined;
   read: boolean;
 }
 

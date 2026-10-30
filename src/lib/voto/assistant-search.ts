@@ -171,10 +171,11 @@ export function searchAssistantData(
         notification.subject,
         notification.message,
         notification.attachmentName,
+        ...(notification.attachments ?? []).map((attachment) => attachment.name),
       ]
         .filter(Boolean)
         .join(" · "),
-      searchableText: `${notification.title} ${notification.subject ?? ""} ${notification.message ?? ""} ${notification.attachmentName ?? ""}`,
+      searchableText: `${notification.title} ${notification.subject ?? ""} ${notification.message ?? ""} ${notification.attachmentName ?? ""} ${(notification.attachments ?? []).map((attachment) => attachment.name ?? "").join(" ")}`,
     });
   }
 

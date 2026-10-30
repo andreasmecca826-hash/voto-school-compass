@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Download, FileText, X } from "lucide-react";
 import {
   Sheet,
@@ -6,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import type { CircularAttachment } from "@/lib/voto/types";
 
 function safePdfFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "circolare.pdf", (char) => {
@@ -34,6 +36,7 @@ export function CircularViewer({
   fileName,
   url,
   path,
+  attachments,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,10 +44,26 @@ export function CircularViewer({
   fileName: string | undefined;
   url: string | undefined;
   path?: string | undefined;
+  attachments?: CircularAttachment[] | undefined;
 }) {
-  const pdfFilename = safePdfFilename(fileName);
-  const previewUrl = path ? internalPdfUrl(path) : url;
-  const downloadUrl = path ? internalPdfUrl(path, true, pdfFilename) : url;
+  const files = attachments?.length
+    ? attachments
+    : fileName || path || url
+      ? [{ name: fileName, path, url }]
+      : [];
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (open) setSelectedIndex(0);
+  }, [open, title]);
+
+  const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
+  const activeFile = files[activeIndex];
+  const pdfFilename = safePdfFilename(activeFile?.name);
+  const previewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : activeFile?.url;
+  const downloadUrl = activeFile?.path
+    ? internalPdfUrl(activeFile.path, true, pdfFilename)
+    : activeFile?.url;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -58,18 +77,50 @@ export function CircularViewer({
             <FileText className="h-4 w-4 shrink-0 text-primary" />
             <span className="truncate">{title}</span>
           </SheetTitle>
-          <SheetDescription className="truncate">{fileName ?? "Circolare"}</SheetDescription>
+          <SheetDescription className="truncate">
+            {activeFile?.name ?? "Circolare"}
+          </SheetDescription>
         </SheetHeader>
+        {files.length > 1 && (
+          <div className="mb-3">
+            <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
+              Allegati ({files.length})
+            </p>
+            <div
+              role="tablist"
+              aria-label="Allegati della circolare"
+              className="flex gap-2 overflow-x-auto pb-1"
+            >
+              {files.map((file, index) => (
+                <button
+                  key={`${file.path ?? file.name ?? "allegato"}-${index}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={index === activeIndex}
+                  onClick={() => setSelectedIndex(index)}
+                  className={`press max-w-[220px] shrink-0 truncate rounded-lg border px-3 py-2 text-xs font-medium ${
+                    index === activeIndex
+                      ? "border-primary bg-primary-soft text-primary"
+                      : "border-border bg-card text-muted-foreground"
+                  }`}
+                >
+                  {file.name ?? `PDF ${index + 1}`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {previewUrl ? (
           <iframe
-            title={title}
+            key={activeFile?.path ?? activeFile?.url ?? activeIndex}
+            title={activeFile?.name ?? title}
             src={previewUrl}
             className="min-h-0 w-full flex-1 rounded-xl border border-border bg-white"
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
-            <p>Il PDF non è disponibile nello storage interno.</p>
+            <p>Questo PDF non è disponibile nello storage interno.</p>
           </div>
         )}
         {downloadUrl && (

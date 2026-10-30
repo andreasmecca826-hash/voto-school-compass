@@ -736,6 +736,7 @@ function NotifItem({ id }: { id: string }) {
           title={n.message ?? n.title}
           fileName={n.attachmentName}
           path={n.attachmentPath}
+          attachments={n.attachments}
           url={n.attachmentPath ? n.attachmentUrl : undefined}
         />
       )}

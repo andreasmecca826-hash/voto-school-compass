@@ -215,6 +215,7 @@ export function DidupDashboard() {
         title={selectedCircular?.message ?? selectedCircular?.title ?? "Circolare"}
         fileName={selectedCircular?.attachmentName}
         path={selectedCircular?.attachmentPath}
+        attachments={selectedCircular?.attachments}
         url={selectedCircular?.attachmentPath ? selectedCircular.attachmentUrl : undefined}
       />
     </div>

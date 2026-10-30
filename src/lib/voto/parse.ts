@@ -2,6 +2,7 @@ import type {
   AppNotification,
   Assignment,
   Attendance,
+  CircularAttachment,
   DiaryEntry,
   Grade,
   GradeType,
@@ -53,6 +54,31 @@ const notifType = (v: unknown): NotificationType => {
   if (s === "notice" || s === "avviso") return "notice";
   return "note";
 };
+
+function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
+  if (typeof raw === "string") {
+    const value = raw.trim();
+    if (!value) return undefined;
+    const isInternalPath = /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
+    const name = isInternalPath
+      ? value.split("/").at(-1)
+      : value.split(/[/?#]/).filter(Boolean).at(-1);
+    return {
+      ...(name ? { name } : {}),
+      ...(isInternalPath ? { path: value } : {}),
+    };
+  }
+  if (!isObj(raw)) return undefined;
+  const path = str(raw["path"] ?? raw["attachmentPath"]);
+  const name = str(
+    raw["name"] ?? raw["fileName"] ?? raw["filename"] ?? raw["attachmentName"] ?? raw["nome"],
+  );
+  if (!path && !name) return undefined;
+  return {
+    ...(name ? { name } : {}),
+    ...(path ? { path } : {}),
+  };
+}
 
 const slug = (s: string) =>
   s
@@ -114,18 +140,25 @@ export function parseVotoData(raw: unknown): VotoData {
     Array.isArray(raw["notifications"]) ? raw["notifications"] : []
   )
     .filter(isObj)
-    .map((n, i) => ({
-      id: str(n["id"]) ?? `n-${i}`,
-      type: notifType(n["type"]),
-      title: str(n["title"]) ?? "Avviso",
-      message: str(n["message"]),
-      date: str(n["date"]),
-      subject: str(n["subject"]),
-      attachmentPath: str(n["attachmentPath"]),
-      attachmentUrl: str(n["attachmentUrl"]),
-      attachmentName: str(n["attachmentName"]),
-      read: n["read"] === true,
-    }));
+    .map((n, i) => {
+      const rawAttachments = n["attachments"] ?? n["allegati"] ?? n["attachmentPaths"];
+      const attachments = Array.isArray(rawAttachments)
+        ? rawAttachments.map(parseCircularAttachment).filter((item) => item !== undefined)
+        : undefined;
+      return {
+        id: str(n["id"]) ?? `n-${i}`,
+        type: notifType(n["type"]),
+        title: str(n["title"]) ?? "Avviso",
+        message: str(n["message"]),
+        date: str(n["date"]),
+        subject: str(n["subject"]),
+        attachmentPath: str(n["attachmentPath"]),
+        attachmentUrl: str(n["attachmentUrl"]),
+        attachmentName: str(n["attachmentName"]),
+        ...(attachments?.length ? { attachments } : {}),
+        read: n["read"] === true,
+      };
+    });
 
   const diary: DiaryEntry[] = (Array.isArray(raw["diary"]) ? raw["diary"] : [])
     .filter(isObj)
