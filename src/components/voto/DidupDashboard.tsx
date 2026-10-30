@@ -43,16 +43,6 @@ function tomorrowLabel(now: Date) {
   }).toUpperCase();
 }
 
-function daysAgoLabel(now: Date, days: number) {
-  const date = new Date(now);
-  date.setDate(date.getDate() - days);
-  return date.toLocaleDateString("it-IT", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-  }).toUpperCase();
-}
-
 export function DidupDashboard() {
   const v = useVoto();
   const now = useClock();
@@ -94,23 +84,12 @@ export function DidupDashboard() {
   );
   const studentName = (v.data.student.name || "ANDREA MARIA").toUpperCase();
   const progress = avg === null ? 0 : Math.max(0, Math.min(100, avg * 10));
-  const eventItems = v.interrogazioni.length > 0
-    ? v.interrogazioni.slice(0, 4).map((item) => ({
-      id: item.id,
-      title: item.subject,
-      subtitle: item.notes || "Da preparare",
-      date: shortDate(item.date),
-      icon: item.subject.toLocaleLowerCase("it-IT").includes("assenza")
-        ? <AbsenceIcon />
-        : <CalendarX2 className="h-5 w-5" />,
-    }))
-    : v.source === "demo"
-      ? [
-        { id: "absence-1", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 3), icon: <AbsenceIcon /> },
-        { id: "absence-2", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 6), icon: <AbsenceIcon /> },
-        { id: "absence-3", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 7), icon: <AbsenceIcon /> },
-      ]
-      : [{ id: "empty-event", title: "Nessun evento", subtitle: "Gli eventi compariranno qui", date: "", icon: <CalendarCheck2 /> }];
+  const absenceItems = [
+    { id: "absence-days", title: "Assenze", subtitle: "Giorni totali", value: Math.round(attendance.absenceDays), icon: <AbsenceIcon /> },
+    { id: "absence-hours", title: "Ore di assenza", subtitle: "Totale ore", value: Math.round(attendance.absenceHours), icon: <CalendarX2 className="h-5 w-5" /> },
+    { id: "delays", title: "Ritardi", subtitle: "Totale ingressi", value: attendance.delays, icon: <CalendarCheck2 className="h-5 w-5" /> },
+    { id: "early-exits", title: "Uscite", subtitle: "Uscite anticipate", value: attendance.earlyExits, icon: <CalendarX2 className="h-5 w-5" /> },
+  ];
 
   return (
     <div className="didup-page min-h-dvh bg-black px-2 pb-24 text-white">
@@ -166,15 +145,15 @@ export function DidupDashboard() {
         )) : <EmptyTile text="Nessun compito in scadenza" variant="task" />}
       </DidupScroller>
 
-      <DidupSectionTitle title="Eventi appello" href="/interrogazioni" />
+      <DidupSectionTitle title="Assenze" href="/" />
       <section className="didup-card relative overflow-hidden px-5 pb-4">
         <img src="/didup-event-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[41px] w-[41px] select-none" />
         <div className="h-12" aria-hidden="true" />
-        {eventItems.map((item) => (
+        {absenceItems.map((item) => (
           <div key={item.id} className="flex items-center gap-4 border-b border-white/15 py-4 last:border-0">
             <span className="flex w-[20px] shrink-0 items-center justify-center text-[#08b8c4]">{item.icon}</span>
             <div className="min-w-0 flex-1"><p className="text-[16px]">{item.title}</p><p className="text-[13px] text-[#e47d89]">{item.subtitle}</p></div>
-            <span className="text-[13px] text-[#08b8c4]">{item.date}</span>
+            <span className="text-[18px] font-extrabold text-[#08b8c4]">{item.value}</span>
           </div>
         ))}
       </section>
