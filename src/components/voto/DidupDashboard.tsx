@@ -10,7 +10,7 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { selectUpcomingReminders } from "@/lib/voto/selectors";
-import { toIso } from "@/lib/voto/dates";
+import { fmtDate, toIso } from "@/lib/voto/dates";
 import type { AppNotification } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { fmt, overallAverage } from "@/lib/voto/calc";
@@ -25,7 +25,7 @@ function updatedLabel(value: string | null | undefined, now: Date) {
 
 function shortDate(iso?: string) {
   if (!iso) return "";
-  return new Date(`${iso}T12:00:00`).toLocaleDateString("it-IT", {
+  return fmtDate(iso, {
     day: "2-digit",
     month: "short",
     year: "2-digit",
@@ -55,7 +55,7 @@ export function DidupDashboard() {
   const periodDateRange = useMemo(() => {
     const dates = periodSubjects.flatMap((subject) => subject.grades.map((grade) => grade.date)).sort();
     if (!dates.length) return periodLabel.toUpperCase();
-    const format = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString("it-IT", {
+    const format = (date: string) => fmtDate(date, {
       day: "2-digit",
       month: "2-digit",
       year: "2-digit",
