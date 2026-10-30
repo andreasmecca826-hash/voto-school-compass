@@ -1,15 +1,16 @@
 import {
   Bell,
   CalendarCheck2,
-  CalendarClock,
+  CalendarX2,
   CircleUserRound,
-  ClipboardCheck,
   ClipboardList,
-  FileBadge,
-  FileText,
+  Backpack,
+  BookOpenText,
+  FilePenLine,
   MessageSquareText,
-  NotebookPen,
-  School,
+  NotebookTabs,
+  Share2,
+  AlarmClock,
   UsersRound,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -25,17 +26,17 @@ type MenuItem = {
 };
 
 const ITEMS: MenuItem[] = [
-  { label: "Eventi appello", color: "#00aebd", icon: CalendarCheck2, to: "/interrogazioni" },
-  { label: "Note", color: "#f39a88", icon: NotebookPen, to: "/note" },
-  { label: "Voti giornalieri", color: "#ec7365", icon: FileText, to: "/voti" },
-  { label: "Voti scrutini", color: "#8f54c9", icon: FileBadge, to: "/scrutini-infraperiodali" },
+  { label: "Eventi appello", color: "#00aebd", icon: CalendarX2, to: "/interrogazioni" },
+  { label: "Note", color: "#f39a88", icon: FilePenLine, to: "/note" },
+  { label: "Voti giornalieri", color: "#ec7365", icon: BookOpenText, to: "/voti" },
+  { label: "Voti scrutini", color: "#8f54c9", icon: NotebookTabs, to: "/scrutini-infraperiodali" },
   { label: "Attività svolta", color: "#3c9ed9", icon: MessageSquareText, to: "/diario" },
-  { label: "Compiti assegnati", color: "#6064e9", icon: School, to: "/compiti" },
-  { label: "Promemoria", color: "#ff5264", icon: ClipboardCheck, to: "/" },
-  { label: "Orario", color: "#e99abd", icon: CalendarClock, to: "/orario" },
+  { label: "Compiti assegnati", color: "#6064e9", icon: Backpack, to: "/compiti" },
+  { label: "Promemoria", color: "#ff5264", icon: CalendarCheck2, to: "/" },
+  { label: "Orario", color: "#e99abd", icon: AlarmClock, to: "/orario" },
   { label: "Ricevimento docenti", color: "#8fc783", icon: UsersRound, to: "/professori" },
   { label: "Bacheca", color: "#06afbd", icon: ClipboardList, to: "/" },
-  { label: "Condivisione", color: "#39cf92", icon: ClipboardList, to: "/" },
+  { label: "Condivisione", color: "#39cf92", icon: Share2, to: "/" },
 ];
 
 export function DidupMenu() {
