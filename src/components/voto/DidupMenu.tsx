@@ -10,7 +10,6 @@ import {
   MessageSquareText,
   NotebookTabs,
   Palette,
-  Share2,
   Settings,
   AlarmClock,
   UsersRound,
@@ -38,7 +37,6 @@ const ITEMS: MenuItem[] = [
   { label: "Orario", color: "#e99abd", icon: AlarmClock, to: "/orario" },
   { label: "Ricevimento docenti", color: "#8fc783", icon: UsersRound, to: "/professori" },
   { label: "Bacheca", color: "#06afbd", icon: ClipboardList, to: "/" },
-  { label: "Condivisione", color: "#39cf92", icon: Share2, to: "/" },
   { label: "Personalizza", color: "#e3a63b", icon: Palette, to: "/personalizza" },
   { label: "Impostazioni", color: "#3b75b8", icon: Settings, to: "/impostazioni" },
 ];
@@ -64,10 +62,10 @@ export function DidupMenu() {
           const content = (
             <>
               <span
-                className="absolute right-0 top-0 flex h-14 w-14 -translate-y-0.5 translate-x-0.5 items-center justify-center rounded-full"
-                style={{ backgroundColor: item.color }}
+                className="absolute right-2 top-2 flex h-12 w-12 items-center justify-center"
+                style={{ color: item.color }}
               >
-                <Icon className="h-7 w-7 text-white" />
+                <Icon className="h-8 w-8" />
               </span>
               <span className="text-center text-[18px] font-bold leading-tight">{item.label}</span>
             </>
