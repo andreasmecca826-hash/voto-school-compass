@@ -839,6 +839,9 @@
   background: #292929;
   border-radius: 9px;
 }
+.didup-task-tile {
+  background: #6e6e6e;
+}
 .didup-menu-card {
   min-height: 132px;
 }

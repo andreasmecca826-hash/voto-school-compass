@@ -155,7 +155,7 @@ export function DidupDashboard() {
       <DidupSectionTitle title="Prossimi compiti" href="/compiti" />
       <DidupScroller>
         {openAssignments.length > 0 ? openAssignments.slice(0, 5).map((item) => (
-          <article key={item.id} className="didup-tile flex min-h-[176px] w-[82%] shrink-0 flex-col overflow-hidden p-5">
+          <article key={item.id} className="didup-tile didup-task-tile flex min-h-[176px] w-[82%] shrink-0 flex-col overflow-hidden p-5">
             <div className="flex items-start justify-between gap-2">
               <p className="truncate text-[15px] font-medium uppercase text-white/90">{item.subject ?? "COMPITO"}</p>
               <Pin className="h-5 w-5 shrink-0 rotate-45 text-[#e84834]" fill="#e84834" strokeWidth={1.5} />
@@ -163,7 +163,7 @@ export function DidupDashboard() {
             <p className="mt-5 line-clamp-3 text-[14px] leading-5 text-white/90">{item.title}{item.details ? `: ${item.details}` : ""}</p>
             <p className="mt-auto border-t border-white/30 pt-3 text-center text-[10px] uppercase text-black/80">Consegna {item.dueDate ? shortDate(item.dueDate) : "Data da definire"}</p>
           </article>
-        )) : <EmptyTile text="Nessun compito in scadenza" />}
+        )) : <EmptyTile text="Nessun compito in scadenza" task />}
       </DidupScroller>
 
       <DidupSectionTitle title="Eventi appello" href="/interrogazioni" />
@@ -245,8 +245,8 @@ function BackpackIllustration() {
   return <img src="/didup-backpack.jpg" alt="" className="mx-auto mt-6 h-[104px] w-[92px] object-cover object-top" />;
 }
 
-function EmptyTile({ text }: { text: string }) {
-  return <article className="didup-tile flex min-h-[176px] w-[82%] shrink-0 items-center justify-center p-5 text-center text-sm text-white/70">{text}</article>;
+function EmptyTile({ text, task = false }: { text: string; task?: boolean }) {
+  return <article className={`didup-tile${task ? " didup-task-tile" : ""} flex min-h-[176px] w-[82%] shrink-0 items-center justify-center p-5 text-center text-sm text-white/70`}>{text}</article>;
 }
 
 function DidupSectionTitle({ title, href }: { title: string; href: string }) {
