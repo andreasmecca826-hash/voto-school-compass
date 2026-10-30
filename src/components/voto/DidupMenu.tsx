@@ -1,16 +1,12 @@
 import {
-  Archive,
   Bell,
   CalendarCheck2,
   CalendarClock,
   CircleUserRound,
   ClipboardCheck,
   ClipboardList,
-  CreditCard,
   FileBadge,
   FileText,
-  GraduationCap,
-  Landmark,
   MessageSquareText,
   NotebookPen,
   School,
@@ -39,12 +35,7 @@ const ITEMS: MenuItem[] = [
   { label: "Orario", color: "#e99abd", icon: CalendarClock, to: "/orario" },
   { label: "Ricevimento docenti", color: "#8fc783", icon: UsersRound, to: "/professori" },
   { label: "Bacheca", color: "#06afbd", icon: ClipboardList, to: "/" },
-  { label: "Bacheca alunno", color: "#08aebd", icon: ClipboardList, to: "/" },
   { label: "Condivisione", color: "#39cf92", icon: ClipboardList, to: "/" },
-  { label: "Giudizi", color: "#d6d6d6", icon: MessageSquareText, muted: true },
-  { label: "Pagamenti", color: "#9b5bd1", icon: CreditCard, muted: true },
-  { label: "Curriculum", color: "#406ca4", icon: Archive, muted: true },
-  { label: "Comunicazioni MIM", color: "#3f83ec", icon: Landmark, muted: true },
 ];
 
 export function DidupMenu() {
