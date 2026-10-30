@@ -2,9 +2,7 @@ import {
   CalendarCheck2,
   CalendarX2,
   Eye,
-  FileX2,
   FileText,
-  Files,
   Pin,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -102,19 +100,21 @@ export function DidupDashboard() {
       title: item.subject,
       subtitle: item.notes || "Da preparare",
       date: shortDate(item.date),
-      icon: <FileX2 />,
+      icon: item.subject.toLocaleLowerCase("it-IT").includes("assenza")
+        ? <AbsenceIcon />
+        : <CalendarX2 className="h-5 w-5" />,
     }))
     : v.source === "demo"
       ? [
-        { id: "absence-1", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 3), icon: <FileX2 /> },
-        { id: "absence-2", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 6), icon: <FileX2 /> },
-        { id: "absence-3", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 7), icon: <FileX2 /> },
+        { id: "absence-1", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 3), icon: <AbsenceIcon /> },
+        { id: "absence-2", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 6), icon: <AbsenceIcon /> },
+        { id: "absence-3", title: "Assenza", subtitle: "(Da giustificare)", date: daysAgoLabel(now, 7), icon: <AbsenceIcon /> },
       ]
       : [{ id: "empty-event", title: "Nessun evento", subtitle: "Gli eventi compariranno qui", date: "", icon: <CalendarCheck2 /> }];
 
   return (
-    <div className="didup-page min-h-dvh bg-black px-3 pb-24 text-white">
-      <header className="flex items-center justify-between px-3 pb-6 pt-5">
+    <div className="didup-page min-h-dvh bg-black px-2 pb-24 text-white">
+      <header className="flex items-center justify-between px-2.5 pb-6 pt-5">
         <div>
           <h1 className="text-[25px] font-normal leading-none tracking-tight">{studentName}</h1>
           <p className="mt-2 text-[11px] leading-none text-white/80">{updatedLabel(v.data.updatedAt || v.lastSync, now)}</p>
@@ -155,7 +155,7 @@ export function DidupDashboard() {
       <DidupSectionTitle title="Prossimi compiti" href="/compiti" />
       <DidupScroller>
         {openAssignments.length > 0 ? openAssignments.slice(0, 5).map((item) => (
-          <article key={item.id} className="didup-tile didup-task-tile flex min-h-[176px] w-[82%] shrink-0 flex-col overflow-hidden p-5">
+          <article key={item.id} className="didup-tile didup-task-tile flex min-h-[196px] w-[84%] shrink-0 flex-col overflow-hidden p-5">
             <div className="flex items-start justify-between gap-2">
               <p className="truncate text-[15px] font-medium uppercase text-white/90">{item.subject ?? "COMPITO"}</p>
               <Pin className="h-5 w-5 shrink-0 rotate-45 text-[#e84834]" fill="#e84834" strokeWidth={1.5} />
@@ -163,17 +163,16 @@ export function DidupDashboard() {
             <p className="mt-5 line-clamp-3 text-[14px] leading-5 text-white/90">{item.title}{item.details ? `: ${item.details}` : ""}</p>
             <p className="mt-auto border-t border-white/30 pt-3 text-center text-[10px] uppercase text-black/80">Consegna {item.dueDate ? shortDate(item.dueDate) : "Data da definire"}</p>
           </article>
-        )) : <EmptyTile text="Nessun compito in scadenza" task />}
+        )) : <EmptyTile text="Nessun compito in scadenza" variant="task" />}
       </DidupScroller>
 
       <DidupSectionTitle title="Eventi appello" href="/interrogazioni" />
-      <section className="didup-card overflow-hidden px-5">
-        <div className="flex justify-end">
-          <span className="-mr-5 -mt-1 rounded-full bg-[#04aeba] p-3"><CalendarX2 className="h-6 w-6" /></span>
-        </div>
+      <section className="didup-card relative overflow-hidden px-5 pb-4">
+        <img src="/didup-event-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[41px] w-[41px] select-none" />
+        <div className="h-12" aria-hidden="true" />
         {eventItems.map((item) => (
           <div key={item.id} className="flex items-center gap-4 border-b border-white/15 py-4 last:border-0">
-            <span className="text-[#08b8c4]">{item.icon}</span>
+            <span className="flex w-[20px] shrink-0 items-center justify-center text-[#08b8c4]">{item.icon}</span>
             <div className="min-w-0 flex-1"><p className="text-[16px]">{item.title}</p><p className="text-[13px] text-[#e47d89]">{item.subtitle}</p></div>
             <span className="text-[13px] text-[#08b8c4]">{item.date}</span>
           </div>
@@ -183,8 +182,8 @@ export function DidupDashboard() {
       <DidupSectionTitle title="Ultimi voti" href="/voti" />
       <DidupScroller>
         {latestGrades.slice(0, 5).map(({ subject, grade }) => (
-          <article key={grade.id} className="didup-tile relative min-h-[180px] w-[78%] shrink-0 overflow-hidden p-5">
-            <span className="absolute right-0 top-0 flex h-[66px] w-[66px] items-center justify-center rounded-full bg-[#3fd596] text-[23px] font-extrabold">{grade.label}</span>
+          <article key={grade.id} className="didup-tile relative min-h-[176px] w-[84%] shrink-0 overflow-hidden p-4">
+            <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#3fd596] text-[20px] font-extrabold">{grade.label}</span>
             <p className="text-[12px] text-[#08b8c4]">{shortDate(grade.date)}</p>
             <p className="mt-5 text-[16px] uppercase">{subject.name}</p>
             <p className="mt-1 text-[13px] text-white/90">{grade.teacher || grade.comment || grade.type}</p>
@@ -195,11 +194,12 @@ export function DidupDashboard() {
       <DidupSectionTitle title="Bacheca" href="/" />
       <DidupScroller>
         {notices.length > 0 ? notices.slice(0, 5).map((item) => (
-          <article key={item.id} className="didup-tile min-h-[294px] w-[78%] shrink-0 overflow-hidden p-5">
-            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#04aeba] p-3"><Files className="h-5 w-5" /></span></div>
+          <article key={item.id} className="didup-tile relative flex min-h-[234px] w-[84%] shrink-0 flex-col overflow-hidden p-4">
+            <p className="pr-12 text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p>
+            <img src="/didup-bacheca-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
             <p className="mt-2 text-[18px] uppercase">Circolari</p>
             <p className="text-[13px]">{item.subject || "Circolare"}</p>
-            <p className="mt-14 line-clamp-3 text-[15px] leading-6">{item.message || item.title}</p>
+            <p className="mt-14 line-clamp-1 text-[15px] leading-6">{item.message || item.title}</p>
             {item.attachmentPath && (
               <button
                 type="button"
@@ -214,14 +214,15 @@ export function DidupDashboard() {
               </button>
             )}
           </article>
-        )) : <EmptyTile text="Nessuna circolare" />}
+        )) : <EmptyTile text="Nessuna circolare" variant="notice" />}
       </DidupScroller>
 
       <DidupSectionTitle title="Promemoria" href="/promemoria" />
       <DidupScroller>
         {(reminders.length ? reminders : [{ id: "empty-reminder", title: "Nessun promemoria", message: "I prossimi promemoria appariranno qui." }]).slice(0, 5).map((item) => (
-          <article key={item.id} className="didup-tile min-h-[250px] w-[78%] shrink-0 overflow-hidden p-5">
-            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date) || "DATA DA DEFINIRE"}</p><span className="rounded-full bg-[#ff5264] p-3"><CalendarCheck2 className="h-5 w-5" /></span></div>
+          <article key={item.id} className="didup-tile relative min-h-[177px] w-[84%] shrink-0 overflow-hidden p-4">
+            <p className="pr-12 text-[12px] text-[#08b8c4]">{shortDate(item.date) || "DATA DA DEFINIRE"}</p>
+            <img src="/didup-reminder-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
             <p className="mt-2 text-[13px]">{item.subject || "Promemoria"}</p>
             <p className="mt-16 text-[16px] leading-6">{item.message || item.title}</p>
           </article>
@@ -245,14 +246,21 @@ function BackpackIllustration() {
   return <img src="/didup-backpack.jpg" alt="" className="mx-auto mt-6 h-[104px] w-[92px] object-cover object-top" />;
 }
 
-function EmptyTile({ text, task = false }: { text: string; task?: boolean }) {
-  return <article className={`didup-tile${task ? " didup-task-tile" : ""} flex min-h-[176px] w-[82%] shrink-0 items-center justify-center p-5 text-center text-sm text-white/70`}>{text}</article>;
+function AbsenceIcon() {
+  return <img src="/didup-absence-icon.png" alt="" aria-hidden="true" className="h-[26px] w-[20px] shrink-0 object-contain" />;
+}
+
+function EmptyTile({ text, variant }: { text: string; variant: "task" | "notice" }) {
+  const size = variant === "task"
+    ? "didup-task-tile min-h-[196px] p-5"
+    : "min-h-[234px] p-4";
+  return <article className={`didup-tile ${size} flex w-[84%] shrink-0 items-center justify-center text-center text-sm text-white/70`}>{text}</article>;
 }
 
 function DidupSectionTitle({ title, href }: { title: string; href: string }) {
-  return <div className="mt-9 flex items-center justify-between px-2"><h2 className="text-[22px] font-extrabold">{title}</h2><Link to={href} className="text-[13px] text-white/90">Vedi tutti ›</Link></div>;
+  return <div className="mt-9 flex items-center justify-between px-3.5"><h2 className="text-[22px] font-extrabold">{title}</h2><Link to={href} className="text-[13px] text-white/90">Vedi tutti ›</Link></div>;
 }
 
 function DidupScroller({ children }: { children: ReactNode }) {
-  return <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto px-0.5">{children}</div>;
+  return <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-0.5">{children}</div>;
 }
