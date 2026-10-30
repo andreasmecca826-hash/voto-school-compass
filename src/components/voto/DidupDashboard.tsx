@@ -8,12 +8,18 @@ import {
   Pin,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { CircularViewer } from "@/components/voto/CircularViewer";
+import { useSchoolPeriods } from "@/lib/voto/periods-context";
+import { selectUpcomingReminders } from "@/lib/voto/selectors";
+import { toIso } from "@/lib/voto/dates";
+import type { AppNotification } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { fmt, overallAverage } from "@/lib/voto/calc";
 
-function updatedLabel(value: string | null, now: Date) {
-  const date = value ? new Date(value) : now;
+function updatedLabel(value: string | null | undefined, now: Date) {
+  const parsed = value ? new Date(value) : now;
+  const date = Number.isNaN(parsed.getTime()) ? now : parsed;
   const time = date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
   const day = date.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
   return `Dati aggiornati alle ${time} del ${day}`;
@@ -53,12 +59,26 @@ export function DidupDashboard() {
   const v = useVoto();
   const now = useClock();
   const { subjects, assignments, notifications, attendance } = v.data;
-  const avg = useMemo(() => overallAverage(subjects), [subjects]);
+  const { subjects: periodSubjects, label: periodLabel } = useSchoolPeriods();
+  const [selectedCircular, setSelectedCircular] = useState<AppNotification | null>(null);
+  const today = toIso(now);
+  const isDone = v.isDone;
+  const avg = useMemo(() => overallAverage(periodSubjects), [periodSubjects]);
+  const periodDateRange = useMemo(() => {
+    const dates = periodSubjects.flatMap((subject) => subject.grades.map((grade) => grade.date)).sort();
+    if (!dates.length) return periodLabel.toUpperCase();
+    const format = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
+    return `${format(dates[0] ?? "")} – ${format(dates[dates.length - 1] ?? "")}`;
+  }, [periodSubjects, periodLabel]);
   const openAssignments = useMemo(
     () => assignments
-      .filter((item) => !v.isDone(item.id, item.completed))
+      .filter((item) => !isDone(item.id, item.completed) && (!item.dueDate || item.dueDate.slice(0, 10) >= today))
       .sort((a, b) => `${a.dueDate ?? "9999"}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate ?? "9999"}${b.dueTime ?? ""}`)),
-    [assignments, v.isDone],
+    [assignments, today, isDone],
   );
   const latestGrades = useMemo(
     () => subjects
@@ -71,8 +91,8 @@ export function DidupDashboard() {
     [notifications],
   );
   const reminders = useMemo(
-    () => notifications.filter((item) => item.type === "reminder").sort((a, b) => (a.date ?? "").localeCompare(b.date ?? "")),
-    [notifications],
+    () => selectUpcomingReminders(notifications, now),
+    [notifications, now],
   );
   const studentName = (v.data.student.name || "ANDREA MARIA").toUpperCase();
   const progress = avg === null ? 0 : Math.max(0, Math.min(100, avg * 10));
@@ -97,7 +117,7 @@ export function DidupDashboard() {
       <header className="flex items-center justify-between px-3 pb-6 pt-5">
         <div>
           <h1 className="text-[25px] font-normal leading-none tracking-tight">{studentName}</h1>
-          <p className="mt-2 text-[11px] leading-none text-white/80">{updatedLabel(v.lastSync, now)}</p>
+          <p className="mt-2 text-[11px] leading-none text-white/80">{updatedLabel(v.data.updatedAt || v.lastSync, now)}</p>
         </div>
         <img src="/didup-profile.jpg" alt="" className="h-[58px] w-[58px] object-cover" />
       </header>
@@ -114,7 +134,7 @@ export function DidupDashboard() {
               <span>{avg === null ? "—" : fmt(avg)}</span>
             </div>
             <p className="mt-5 text-[12px] italic leading-5 text-white/90">Calcolata nel periodo</p>
-            <p className="text-[12px] italic leading-5 text-white/90">15/09/26 – 15/12/26</p>
+            <p className="text-[12px] italic leading-5 text-white/90">{periodDateRange}</p>
           </div>
           <div className="text-center">
             <h2 className="text-[20px] font-extrabold leading-none">Prepara lo zaino!</h2>
@@ -141,7 +161,7 @@ export function DidupDashboard() {
               <Pin className="h-5 w-5 shrink-0 rotate-45 text-[#e84834]" fill="#e84834" strokeWidth={1.5} />
             </div>
             <p className="mt-5 line-clamp-3 text-[14px] leading-5 text-white/90">{item.title}{item.details ? `: ${item.details}` : ""}</p>
-            <p className="mt-auto border-t border-white/30 pt-3 text-center text-[10px] uppercase text-black/80">Consegna {shortDate(item.dueDate)}</p>
+            <p className="mt-auto border-t border-white/30 pt-3 text-center text-[10px] uppercase text-black/80">Consegna {item.dueDate ? shortDate(item.dueDate) : "Data da definire"}</p>
           </article>
         )) : <EmptyTile text="Nessun compito in scadenza" />}
       </DidupScroller>
@@ -178,9 +198,21 @@ export function DidupDashboard() {
           <article key={item.id} className="didup-tile min-h-[294px] w-[78%] shrink-0 overflow-hidden p-5">
             <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#04aeba] p-3"><Files className="h-5 w-5" /></span></div>
             <p className="mt-2 text-[18px] uppercase">Circolari</p>
-            <p className="text-[13px]">{item.subject || "C. FILETTI"}</p>
+            <p className="text-[13px]">{item.subject || "Circolare"}</p>
             <p className="mt-14 line-clamp-3 text-[15px] leading-6">{item.message || item.title}</p>
-            <p className="mt-auto text-[12px] text-white/90"><FileText className="mr-2 inline h-4 w-4" />1</p>
+            {item.attachmentPath && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCircular(item);
+                  v.markRead([item.id]);
+                }}
+                aria-label={`Apri e scarica PDF: ${item.title}`}
+                className="press mt-auto inline-flex items-center text-left text-[12px] text-white/90"
+              >
+                <FileText className="mr-2 h-4 w-4" />1
+              </button>
+            )}
           </article>
         )) : <EmptyTile text="Nessuna circolare" />}
       </DidupScroller>
@@ -189,12 +221,22 @@ export function DidupDashboard() {
       <DidupScroller>
         {(reminders.length ? reminders : [{ id: "empty-reminder", title: "Nessun promemoria", message: "I prossimi promemoria appariranno qui." }]).slice(0, 5).map((item) => (
           <article key={item.id} className="didup-tile min-h-[250px] w-[78%] shrink-0 overflow-hidden p-5">
-            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p><span className="rounded-full bg-[#ff5264] p-3"><CalendarCheck2 className="h-5 w-5" /></span></div>
-            <p className="mt-2 text-[13px]">{item.subject || "S. CALABRESE"}</p>
+            <div className="flex items-start justify-between"><p className="text-[12px] text-[#08b8c4]">{shortDate(item.date) || "DATA DA DEFINIRE"}</p><span className="rounded-full bg-[#ff5264] p-3"><CalendarCheck2 className="h-5 w-5" /></span></div>
+            <p className="mt-2 text-[13px]">{item.subject || "Promemoria"}</p>
             <p className="mt-16 text-[16px] leading-6">{item.message || item.title}</p>
           </article>
         ))}
       </DidupScroller>
+      <CircularViewer
+        open={selectedCircular !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCircular(null);
+        }}
+        title={selectedCircular?.message ?? selectedCircular?.title ?? "Circolare"}
+        fileName={selectedCircular?.attachmentName}
+        path={selectedCircular?.attachmentPath}
+        url={selectedCircular?.attachmentPath ? selectedCircular.attachmentUrl : undefined}
+      />
     </div>
   );
 }
