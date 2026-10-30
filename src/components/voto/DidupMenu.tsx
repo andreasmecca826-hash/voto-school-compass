@@ -9,7 +9,9 @@ import {
   FilePenLine,
   MessageSquareText,
   NotebookTabs,
+  Palette,
   Share2,
+  Settings,
   AlarmClock,
   UsersRound,
 } from "lucide-react";
@@ -37,6 +39,8 @@ const ITEMS: MenuItem[] = [
   { label: "Ricevimento docenti", color: "#8fc783", icon: UsersRound, to: "/professori" },
   { label: "Bacheca", color: "#06afbd", icon: ClipboardList, to: "/" },
   { label: "Condivisione", color: "#39cf92", icon: Share2, to: "/" },
+  { label: "Personalizza", color: "#e3a63b", icon: Palette, to: "/personalizza" },
+  { label: "Impostazioni", color: "#3b75b8", icon: Settings, to: "/impostazioni" },
 ];
 
 export function DidupMenu() {
