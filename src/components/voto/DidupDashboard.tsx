@@ -191,7 +191,7 @@ export function DidupDashboard() {
         ))}
       </DidupScroller>
 
-      <DidupSectionTitle title="Bacheca" href="/" />
+      <DidupSectionTitle title="Condivisione" href="/" />
       <DidupScroller>
         {notices.length > 0 ? notices.slice(0, 5).map((item) => (
           <article key={item.id} className="didup-tile relative flex min-h-[234px] w-[84%] shrink-0 flex-col overflow-hidden p-4">

@@ -15,7 +15,7 @@ const ITEMS: MenuItem[] = [
   { label: "Promemoria", color: "#ff5264", icon: ClipboardCheck, to: "/" },
   { label: "Orario", color: "#e99abd", icon: CalendarClock, to: "/orario" },
   { label: "Ricevimento docenti", color: "#8fc783", icon: UsersRound, to: "/professori" },
-  { label: "Bacheca", color: "#06afbd", icon: ClipboardList, to: "/" },
+  { label: "Condivisione", color: "#06afbd", icon: ClipboardList, to: "/" },
   { label: "Personalizza", color: "#e3a63b", icon: Palette, to: "/personalizza" },
   { label: "Impostazioni", color: "#3b75b8", icon: Settings, to: "/impostazioni" },
 ];
