@@ -27,10 +27,10 @@ export function parseGradeValue(v: unknown): number | null {
   let s = v.trim().replace(",", ".").replace("½", ".5");
   let delta = 0;
   if (/^\d+(\.\d+)?\s*\+$/.test(s)) {
-    delta = 0.25;
+    delta = 0.15;
     s = s.replace("+", "");
   } else if (/^\d+(\.\d+)?\s*-$/.test(s)) {
-    delta = -0.25;
+    delta = -0.15;
     s = s.replace("-", "");
   }
   const range = s.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
@@ -39,6 +39,28 @@ export function parseGradeValue(v: unknown): number | null {
   const r = n + delta;
   return r >= 0 && r <= 10 ? r : null;
 }
+
+/** Corregge i valori numerici in cache usando il voto originale quando include + o -. */
+export function normalizeCachedGradeValues(data: VotoData): VotoData {
+  let changed = false;
+  const subjects = data.subjects.map((subject) => {
+    const grades = subject.grades.map((grade) => {
+      const parsedLabel = parseGradeValue(grade.label);
+      if (!/[+-]\s*$/.test(grade.label) || parsedLabel === null || parsedLabel === grade.value) {
+        return grade;
+      }
+      changed = true;
+      return { ...grade, value: parsedLabel };
+    });
+    return grades.some((grade, index) => grade !== subject.grades[index])
+      ? { ...subject, grades }
+      : subject;
+  });
+  return changed ? { ...data, subjects } : data;
+}
+
+const isSignedGradeLabel = (value: unknown): value is string =>
+  typeof value === "string" && /^\d+(?:[.,]\d+)?\s*[+-]$/.test(value.trim());
 
 const gradeType = (v: unknown): GradeType => {
   const s = String(v ?? "").toLowerCase();
@@ -108,7 +130,8 @@ export function parseVotoData(raw: unknown): VotoData {
     const grades: Grade[] = [];
     (Array.isArray(sub["grades"]) ? sub["grades"] : []).forEach((gr, j) => {
       if (!isObj(gr)) return;
-      const value = parseGradeValue(gr["value"]);
+      const label = str(gr["label"]);
+      const value = parseGradeValue(isSignedGradeLabel(label) ? label : gr["value"]);
       if (value === null) return; // voti non numerici (es. "giust.") ignorati
       const w =
         typeof gr["weight"] === "number" && gr["weight"] > 0
@@ -117,7 +140,7 @@ export function parseVotoData(raw: unknown): VotoData {
       grades.push({
         id: str(gr["id"]) ?? `${slug(name)}-${j}`,
         value,
-        label: str(gr["value"]) ?? String(value),
+        label: label ?? str(gr["value"]) ?? String(value),
         date: str(gr["date"]) ?? "",
         type: gradeType(gr["type"]),
         weight: Number.isFinite(w) && w > 0 ? w : 1,

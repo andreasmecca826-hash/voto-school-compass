@@ -10,7 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
-import { fetchVotoData } from "./parse";
+import { fetchVotoData, normalizeCachedGradeValues } from "./parse";
 import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
@@ -262,7 +262,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const u = load<string>(KEYS.url, "");
-    const cache = load<VotoData | null>(KEYS.cache, null);
+    const rawCache = load<VotoData | null>(KEYS.cache, null);
+    const cache =
+      rawCache && Array.isArray(rawCache.subjects)
+        ? normalizeCachedGradeValues(rawCache)
+        : rawCache;
     urlRef.current = u;
     setUrl(u);
     setCompletions(load(KEYS.completions, {}));
@@ -294,9 +298,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
       setSource("cache");
+      if (cache !== rawCache) save(KEYS.cache, cache);
     } else if (!u && demoData && Array.isArray(demoData.subjects)) {
-      setData(demoData);
+      const normalizedDemoData = normalizeCachedGradeValues(demoData);
+      setData(normalizedDemoData);
       setSource("demo");
+      if (normalizedDemoData !== demoData) save(KEYS.demoData, normalizedDemoData);
     } else {
       setData(makeDemoData());
       setSource("demo");

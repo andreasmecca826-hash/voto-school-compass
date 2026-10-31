@@ -659,7 +659,7 @@ function Settings() {
                 {SCHEMA}
               </pre>
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Voti non numerici vengono ignorati; "7+" = 7,25 e "7-" = 6,75. Il peso predefinito è
+                Voti non numerici vengono ignorati; "7+" = 7,15 e "7-" = 6,85. Il peso predefinito è
                 1.
               </p>
             </div>
