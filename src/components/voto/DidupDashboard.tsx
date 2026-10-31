@@ -160,17 +160,26 @@ export function DidupDashboard() {
 
       <DidupSectionTitle title="Ultimi voti" href="/voti" />
       <DidupScroller>
-        {latestGrades.slice(0, 5).map(({ subject, grade }) => (
-          <article key={grade.id} className="didup-tile relative min-h-[176px] w-[84%] shrink-0 overflow-hidden p-4">
-            <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center text-[20px] font-extrabold text-white">
-              <img src="/didup-grade-badge.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full select-none" />
-              <span className="relative z-10">{grade.label}</span>
-            </span>
-            <p className="text-[12px] text-[#08b8c4]">{shortDate(grade.date)}</p>
-            <p className="mt-5 text-[16px] uppercase">{subject.name}</p>
-            <p className="mt-1 text-[13px] text-white/90">{grade.teacher || grade.comment || grade.type}</p>
-          </article>
-        ))}
+        {latestGrades.slice(0, 5).map(({ subject, grade }) => {
+          const badgeImage =
+            grade.value < 5
+              ? "/didup-grade-badge-red.png"
+              : grade.value < 6
+                ? "/didup-grade-badge-orange.png"
+                : "/didup-grade-badge.png";
+
+          return (
+            <article key={grade.id} className="didup-tile relative min-h-[176px] w-[84%] shrink-0 overflow-hidden p-4">
+              <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center text-[20px] font-extrabold text-white">
+                <img src={badgeImage} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full select-none" />
+                <span className="relative z-10">{grade.label}</span>
+              </span>
+              <p className="text-[12px] text-[#08b8c4]">{shortDate(grade.date)}</p>
+              <p className="mt-5 text-[16px] uppercase">{subject.name}</p>
+              <p className="mt-1 text-[13px] text-white/90">{grade.teacher || grade.comment || grade.type}</p>
+            </article>
+          );
+        })}
       </DidupScroller>
 
       <DidupSectionTitle title="Bacheca" href="/" />
