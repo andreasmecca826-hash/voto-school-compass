@@ -46,6 +46,118 @@ describe("Conversione dei voti con segno", () => {
     expect(staleCache.subjects[0]?.grades[0]?.value).toBe(7.25);
   });
 
+  it("nasconde il voto ripetuto come falsa descrizione, anche se era già in cache", () => {
+    const data = parseVotoData({
+      subjects: [
+        {
+          name: "Italiano",
+          grades: [
+            {
+              id: "g1",
+              value: 6,
+              label: "6",
+              date: "2026-10-01",
+              type: "orale",
+              comment: "Sei",
+            },
+            {
+              id: "g2",
+              value: 6,
+              label: "6",
+              date: "2026-10-02",
+              type: "scritto",
+              comment: "6",
+            },
+            {
+              id: "g3",
+              value: 6,
+              label: "6",
+              date: "2026-10-03",
+              type: "scritto",
+              comment: "Analisi del testo",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.subjects[0]?.grades[0]?.comment).toBeUndefined();
+    expect(data.subjects[0]?.grades[1]?.comment).toBeUndefined();
+    expect(data.subjects[0]?.grades[2]?.comment).toBe("Analisi del testo");
+
+    const staleCache = {
+      ...data,
+      subjects: data.subjects.map((subject) => ({
+        ...subject,
+        grades: subject.grades.map((grade) =>
+          grade.id === "g1" ? { ...grade, comment: "sei" } : grade,
+        ),
+      })),
+    };
+
+    expect(normalizeCachedGradeValues(staleCache).subjects[0]?.grades[0]?.comment).toBeUndefined();
+  });
+
+  it.each([
+    { value: 0, word: "zero" },
+    { value: 1, word: "uno" },
+    { value: 2, word: "due" },
+    { value: 3, word: "tre" },
+    { value: 4, word: "quattro" },
+    { value: 5, word: "cinque" },
+    { value: 6, word: "sei" },
+    { value: 7, word: "sette" },
+    { value: 8, word: "otto" },
+    { value: 9, word: "nove" },
+    { value: 10, word: "dieci" },
+  ])("nasconde il voto $value se ripetuto come ‘$word’", ({ value, word }) => {
+    const data = parseVotoData({
+      subjects: [
+        {
+          name: "Italiano",
+          grades: [
+            {
+              id: `g-${value}`,
+              value,
+              label: String(value),
+              date: "2026-10-01",
+              type: "orale",
+              comment: word,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.subjects[0]?.grades[0]?.comment).toBeUndefined();
+  });
+
+  it.each([
+    { label: "7+", value: 7.15, comment: "sette" },
+    { label: "7-", value: 6.85, comment: "sette" },
+    { label: "6,5", value: 6.5, comment: "6,5" },
+  ])("nasconde anche le forme equivalenti di $label", ({ label, value, comment }) => {
+    const data = parseVotoData({
+      subjects: [
+        {
+          name: "Italiano",
+          grades: [
+            {
+              id: "g-signed",
+              value,
+              label,
+              date: "2026-10-01",
+              type: "orale",
+              comment,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.subjects[0]?.grades[0]?.comment).toBeUndefined();
+  });
+
   it("non mostra description come commento voto, ma conserva i commenti espliciti e gli alias degli altri dati", () => {
     const data = parseVotoData({
       subjects: [

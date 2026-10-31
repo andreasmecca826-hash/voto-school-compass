@@ -40,17 +40,68 @@ export function parseGradeValue(v: unknown): number | null {
   return r >= 0 && r <= 10 ? r : null;
 }
 
+const ITALIAN_GRADE_WORDS = [
+  "zero",
+  "uno",
+  "due",
+  "tre",
+  "quattro",
+  "cinque",
+  "sei",
+  "sette",
+  "otto",
+  "nove",
+  "dieci",
+];
+
+function normalizedGradeText(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("it-IT")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[.,!?;:]+$/g, "");
+}
+
+function gradeCommentOrUndefined(
+  comment: string | undefined,
+  label: string,
+  value: number,
+): string | undefined {
+  if (!comment?.trim()) return undefined;
+
+  const normalizedComment = normalizedGradeText(comment);
+  const numericLabel = label.trim().match(/^(\d+)\s*[+-]?$/);
+  const spokenGrade = Number.isInteger(value)
+    ? ITALIAN_GRADE_WORDS[value]
+    : numericLabel
+      ? ITALIAN_GRADE_WORDS[Number(numericLabel[1])]
+      : undefined;
+  const valueForms = [
+    normalizedGradeText(label),
+    normalizedGradeText(String(value)),
+    normalizedGradeText(new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(value)),
+    spokenGrade,
+  ].filter((form): form is string => Boolean(form));
+
+  return valueForms.includes(normalizedComment) ? undefined : comment.trim();
+}
+
 /** Corregge i valori numerici in cache usando il voto originale quando include + o -. */
 export function normalizeCachedGradeValues(data: VotoData): VotoData {
   let changed = false;
   const subjects = data.subjects.map((subject) => {
     const grades = subject.grades.map((grade) => {
       const parsedLabel = parseGradeValue(grade.label);
-      if (!/[+-]\s*$/.test(grade.label) || parsedLabel === null || parsedLabel === grade.value) {
+      const value =
+        /[+-]\s*$/.test(grade.label) && parsedLabel !== null ? parsedLabel : grade.value;
+      const comment = gradeCommentOrUndefined(grade.comment, grade.label, value);
+      if (value === grade.value && comment === grade.comment) {
         return grade;
       }
       changed = true;
-      return { ...grade, value: parsedLabel };
+      return { ...grade, value, comment };
     });
     return grades.some((grade, index) => grade !== subject.grades[index])
       ? { ...subject, grades }
@@ -137,14 +188,15 @@ export function parseVotoData(raw: unknown): VotoData {
         typeof gr["weight"] === "number" && gr["weight"] > 0
           ? gr["weight"]
           : parseFloat(String(gr["weight"] ?? "").replace(",", "."));
+      const gradeLabel = label ?? str(gr["value"]) ?? String(value);
       grades.push({
         id: str(gr["id"]) ?? `${slug(name)}-${j}`,
         value,
-        label: label ?? str(gr["value"]) ?? String(value),
+        label: gradeLabel,
         date: str(gr["date"]) ?? "",
         type: gradeType(gr["type"]),
         weight: Number.isFinite(w) && w > 0 ? w : 1,
-        comment: str(gr["comment"]),
+        comment: gradeCommentOrUndefined(str(gr["comment"]), gradeLabel, value),
         teacher: str(gr["teacher"]) ?? str(gr["docente"]) ?? str(gr["prof"]),
       });
     });
@@ -216,12 +268,14 @@ export function parseVotoData(raw: unknown): VotoData {
       const date = str(event["date"]);
       if (!type || !date) return [];
       const justificationStatus = str(event["justificationStatus"]);
-      return [{
-        id: str(event["id"]) ?? `appello-${i}`,
-        type,
-        date: date.slice(0, 10),
-        ...(justificationStatus ? { justificationStatus } : {}),
-      }];
+      return [
+        {
+          id: str(event["id"]) ?? `appello-${i}`,
+          type,
+          date: date.slice(0, 10),
+          ...(justificationStatus ? { justificationStatus } : {}),
+        },
+      ];
     });
 
   const st = isObj(raw["student"]) ? raw["student"] : {};
