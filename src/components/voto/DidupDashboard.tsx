@@ -159,9 +159,9 @@ export function DidupDashboard() {
         )) : <EmptyTile text="Nessun compito in scadenza" variant="task" />}
       </DidupScroller>
 
-      <section className="didup-card relative overflow-hidden px-5 pb-2 pt-4">
+      <section className="didup-card relative mt-12 overflow-hidden px-5 pb-2 pt-4">
         <img
-          src="/didup-event-badge.png"
+          src="/didup-event-badge-transparent.png"
           alt=""
           aria-hidden="true"
           className="absolute right-0 top-0 h-9 w-9 select-none"
