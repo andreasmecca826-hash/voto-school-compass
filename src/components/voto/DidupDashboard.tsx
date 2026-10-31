@@ -208,11 +208,6 @@ export function DidupDashboard() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-[16px] leading-5">{title}</p>
-                        {event.justificationStatus && (
-                          <p className="mt-1 text-[13px] leading-5 text-[#e47d89]">
-                            ({event.justificationStatus})
-                          </p>
-                        )}
                       </div>
                       <time
                         dateTime={event.date}
