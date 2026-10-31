@@ -32,6 +32,19 @@ function shortDate(iso?: string) {
   }).toUpperCase();
 }
 
+function dueDateLabel(iso?: string) {
+  if (!iso) return "DATA DA DEFINIRE";
+  const date = new Date(`${iso.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "DATA DA DEFINIRE";
+  return date
+    .toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+    })
+    .toUpperCase();
+}
+
 function tomorrowLabel(now: Date) {
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -102,9 +115,10 @@ export function DidupDashboard() {
       </header>
 
       <section className="didup-card overflow-hidden px-5 pb-4 pt-5">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="relative border-r-2 border-[#08adb9] pr-4 text-center">
-            <Eye className="absolute left-0 top-0 h-5 w-5 text-[#08adb9]" strokeWidth={2.5} />
+        <div className="relative grid grid-cols-2 gap-4">
+          <span aria-hidden="true" className="absolute left-1/2 top-[60px] h-[44px] w-[2px] -translate-x-1/2 bg-[#0aa0b1]" />
+          <div className="text-center">
+            <Eye className="absolute left-0 top-0 h-5 w-5 text-[#0aa0b1]" strokeWidth={2.5} />
             <h2 className="text-[20px] font-extrabold leading-none">Media</h2>
             <div
               className="didup-average-ring mx-auto mt-7"
@@ -122,7 +136,7 @@ export function DidupDashboard() {
             <p className="text-[12px] italic leading-5 text-white/90">domani, {tomorrowLabel(now)}</p>
           </div>
         </div>
-        <div className="mt-5 border-t-2 border-[#08adb9] pt-4">
+        <div className="mt-5 border-t-2 border-[#0aa0b1] pt-4">
           <div className="grid grid-cols-3 text-center text-[11px] font-extrabold uppercase">
             <span>Assenze<strong className="mt-1 block text-[17px]">{Math.round(attendance.absenceDays)}</strong></span>
             <span>Ritardi<strong className="mt-1 block text-[17px]">{attendance.delays}</strong></span>
@@ -140,7 +154,7 @@ export function DidupDashboard() {
               <Pin className="h-5 w-5 shrink-0 rotate-45 text-[#e84834]" fill="#e84834" strokeWidth={1.5} />
             </div>
             <p className="mt-5 line-clamp-3 text-[14px] leading-5 text-white/90">{item.title}{item.details ? `: ${item.details}` : ""}</p>
-            <p className="mt-auto border-t border-white/30 pt-3 text-center text-[10px] uppercase text-black/80">Consegna {item.dueDate ? shortDate(item.dueDate) : "Data da definire"}</p>
+            <p className="mt-auto border-t border-white/30 pt-3 text-center text-[10px] uppercase text-black/80">Consegna {dueDateLabel(item.dueDate)}</p>
           </article>
         )) : <EmptyTile text="Nessun compito in scadenza" variant="task" />}
       </DidupScroller>
@@ -238,7 +252,7 @@ export function DidupDashboard() {
         {notices.length > 0 ? notices.slice(0, 5).map((item) => (
           <article key={item.id} className="didup-tile relative flex min-h-[234px] w-[84%] shrink-0 flex-col overflow-hidden p-4">
             <p className="pr-12 text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p>
-            <img src="/didup-bacheca-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
+            <img src="/didup-bacheca-badge-transparent.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
             <p className="mt-2 text-[18px] uppercase">Circolari</p>
             <p className="text-[13px]">{item.subject || "Circolare"}</p>
             <p className="mt-14 line-clamp-1 text-[15px] leading-6">{item.message || item.title}</p>
@@ -264,7 +278,7 @@ export function DidupDashboard() {
         {(reminders.length ? reminders : [{ id: "empty-reminder", title: "Nessun promemoria", message: "I prossimi promemoria appariranno qui." }]).slice(0, 5).map((item) => (
           <article key={item.id} className="didup-tile relative min-h-[177px] w-[84%] shrink-0 overflow-hidden p-4">
             <p className="pr-12 text-[12px] text-[#08b8c4]">{shortDate(item.date) || "DATA DA DEFINIRE"}</p>
-            <img src="/didup-reminder-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
+            <img src="/didup-reminder-badge-transparent.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
             <p className="mt-2 text-[13px]">{item.subject || "Promemoria"}</p>
             <p className="mt-16 text-[16px] leading-6">{item.message || item.title}</p>
           </article>
@@ -286,7 +300,7 @@ export function DidupDashboard() {
 }
 
 function BackpackIllustration() {
-  return <img src="/didup-backpack.jpg" alt="" className="mx-auto mt-6 h-[104px] w-[92px] object-cover object-top" />;
+  return <img src="/didup-backpack-transparent.png" alt="" className="mx-auto mt-3 h-[85px] w-[84px] object-contain object-top" />;
 }
 
 function AbsenceIcon() {

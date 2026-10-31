@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  BookMarked,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -8,6 +9,7 @@ import {
   ClipboardList,
   Clock3,
   GraduationCap,
+  House,
   LayoutGrid,
   Menu,
   MessageCircle,
@@ -381,12 +383,57 @@ function DidupBottomNav({
   moreOpen: boolean;
   onMenu: () => void;
 }) {
+  const homeActive = path === "/";
+  const diaryActive = path.startsWith("/diario");
+
   return (
-    <nav className="didup-bottom fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] items-end justify-around px-7 pb-3 pt-2" aria-label="Navigazione DidUP">
-      <Link to="/" className={cn("flex flex-col items-center gap-1 text-xs", path === "/" ? "text-white" : "text-white/50")}><LayoutGrid className="h-6 w-6" />Home</Link>
-      <Link to="/diario" className={cn("flex flex-col items-center gap-1 text-xs", path.startsWith("/diario") ? "text-white" : "text-white/50")}><BookOpen className="h-6 w-6" />Diario</Link>
-      <button type="button" onClick={onMenu} className={cn("flex flex-col items-center gap-1 text-xs", moreOpen ? "text-white" : "text-white/50")}><span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f4bd35] text-black"><Menu className="h-6 w-6" /></span>Menu</button>
+    <nav
+      className="didup-bottom fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] items-end justify-around px-7 pb-3 pt-2"
+      aria-label="Navigazione DidUP"
+    >
+      <Link
+        to="/"
+        aria-current={homeActive ? "page" : undefined}
+        className={cn("flex flex-col items-center gap-1 text-xs", homeActive ? "text-white" : "text-white/65")}
+      >
+        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", homeActive && "bg-[#60c9c5]")}>
+          <House className={cn("h-6 w-6", homeActive ? "text-white" : "text-[#263b88]")} strokeWidth={1.5} />
+        </span>
+        Home
+      </Link>
+      <Link
+        to="/diario"
+        aria-current={diaryActive ? "page" : undefined}
+        className={cn("flex flex-col items-center gap-1 text-xs", diaryActive ? "text-white" : "text-white/65")}
+      >
+        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", diaryActive && "bg-[#60c9c5]")}>
+          <BookMarked className={cn("h-6 w-6", diaryActive ? "text-white" : "text-[#263b88]")} strokeWidth={1.5} />
+        </span>
+        Diario
+      </Link>
+      <button
+        type="button"
+        onClick={onMenu}
+        aria-expanded={moreOpen}
+        aria-label="Menu"
+        className={cn("flex flex-col items-center gap-1 text-xs", moreOpen ? "text-white" : "text-white/65")}
+      >
+        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", moreOpen && "bg-[#60c9c5]")}>
+          <DidupMenuIcon active={moreOpen} />
+        </span>
+        Menu
+      </button>
     </nav>
+  );
+}
+
+function DidupMenuIcon({ active }: { active: boolean }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={cn("h-6 w-6", active ? "text-white" : "text-[#263b88]")} fill="currentColor">
+      {[5, 12, 19].flatMap((x) => [5, 12, 19].map((y) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={x === 12 && y === 12 ? 1.8 : 1.35} />
+      )))}
+    </svg>
   );
 }
 
