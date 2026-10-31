@@ -162,7 +162,7 @@ export function DidupDashboard() {
       <DidupScroller>
         {latestGrades.slice(0, 5).map(({ subject, grade }) => (
           <article key={grade.id} className="didup-tile relative min-h-[176px] w-[84%] shrink-0 overflow-hidden p-4">
-            <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#3fd596] text-[20px] font-extrabold">{grade.label}</span>
+            <span className="absolute right-0 top-0 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#3fd596] text-[20px] font-extrabold">{grade.label}</span>
             <p className="text-[12px] text-[#08b8c4]">{shortDate(grade.date)}</p>
             <p className="mt-5 text-[16px] uppercase">{subject.name}</p>
             <p className="mt-1 text-[13px] text-white/90">{grade.teacher || grade.comment || grade.type}</p>
