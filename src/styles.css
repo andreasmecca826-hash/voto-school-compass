@@ -841,6 +841,7 @@
 }
 .didup-task-tile {
   background: #6e6e6e;
+  font-family: Roboto, "Noto Sans", Arial, sans-serif;
 }
 .didup-menu-card {
   min-height: 132px;
@@ -851,8 +852,8 @@
 }
 .didup-average-ring {
   display: grid;
-  width: 86px;
-  height: 86px;
+  width: 76px;
+  height: 76px;
   place-items: center;
   border-radius: 999px;
   background: conic-gradient(#4bc56b var(--progress), transparent 0);
@@ -861,14 +862,14 @@
 .didup-average-ring::after {
   content: "";
   position: absolute;
-  inset: 7px;
+  inset: 6px;
   border-radius: inherit;
   background: #292929;
 }
 .didup-average-ring span {
   position: relative;
   z-index: 1;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
 }
 .didup-backpack {

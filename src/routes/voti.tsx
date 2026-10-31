@@ -26,7 +26,11 @@ function Voti() {
   const ui = useUi();
   const [sort, setSort] = useState<Sort>("nome");
   const list = subjects
-    .map((s) => ({ s, st: subjectStats(s) }))
+    .map((s) => ({
+      s,
+      st: subjectStats(s),
+      latestGrade: [...s.grades].sort((a, b) => b.date.localeCompare(a.date))[0],
+    }))
     .sort((a, b) =>
       sort === "nome"
         ? a.s.name.localeCompare(b.s.name)
@@ -58,7 +62,7 @@ function Voti() {
         </Chip>
       </div>
       <ul className="mt-4 space-y-2">
-        {list.map(({ s, st }) => (
+        {list.map(({ s, st, latestGrade }) => (
           <li key={s.id}>
             <button
               type="button"
@@ -68,6 +72,14 @@ function Voti() {
               <SubjectMark name={s.name} color={s.color} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{s.name}</p>
+                {s.teacher && (
+                  <p className="text-[11px] text-muted-foreground">{s.teacher}</p>
+                )}
+                {latestGrade?.comment && (
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {latestGrade.comment}
+                  </p>
+                )}
                 <p className="tabular mb-1.5 text-[11px] text-muted-foreground">
                   {st.count} voti
                   {st.max !== null && ` · max ${fmt(st.max, 1)} · min ${fmt(st.min ?? 0, 1)}`}

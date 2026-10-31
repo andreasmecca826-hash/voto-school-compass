@@ -58,6 +58,9 @@ function Promemoria() {
             {reminder.subject && (
               <p className="mt-2 text-xs text-muted-foreground">{reminder.subject}</p>
             )}
+            {reminder.teacher && (
+              <p className="mt-1 text-xs text-muted-foreground">Docente: {reminder.teacher}</p>
+            )}
             <div className="mt-3 flex items-center justify-between gap-3">
               <span className="text-[11px] text-muted-foreground">
                 {reminder.date

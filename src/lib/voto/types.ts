@@ -10,6 +10,7 @@ export interface Grade {
   type: GradeType;
   weight: number; // default 1
   comment?: string | undefined;
+  teacher?: string | undefined;
 }
 
 export interface Subject {
@@ -28,6 +29,7 @@ export interface Assignment {
   dueTime?: string | undefined;
   completed: boolean;
   details?: string | undefined;
+  teacher?: string | undefined;
 }
 
 export type NotificationType = "note" | "grade" | "reminder" | "notice";
@@ -47,6 +49,7 @@ export interface AppNotification {
   message?: string | undefined;
   date?: string | undefined;
   subject?: string | undefined;
+  teacher?: string | undefined;
   /** Percorso del PDF nel bucket Supabase Storage interno. */
   attachmentPath?: string | undefined;
   /** URL sorgente legacy usato solo dal backend per il mirroring. */

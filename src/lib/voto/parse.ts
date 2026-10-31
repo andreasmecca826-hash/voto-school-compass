@@ -145,13 +145,14 @@ export function parseVotoData(raw: unknown): VotoData {
         type: gradeType(gr["type"]),
         weight: Number.isFinite(w) && w > 0 ? w : 1,
         comment: str(gr["comment"]),
+        teacher: str(gr["teacher"]) ?? str(gr["docente"]) ?? str(gr["prof"]),
       });
     });
     return {
       id: str(sub["id"]) ?? slug(name),
       name,
       color: str(sub["color"]),
-      teacher: str(sub["teacher"]),
+      teacher: str(sub["teacher"]) ?? str(sub["docente"]) ?? str(sub["prof"]),
       grades,
     };
   });
@@ -165,7 +166,8 @@ export function parseVotoData(raw: unknown): VotoData {
       dueDate: str(a["dueDate"]),
       dueTime: str(a["dueTime"]),
       completed: a["completed"] === true,
-      details: str(a["details"]),
+      details: str(a["details"]) ?? str(a["description"]),
+      teacher: str(a["teacher"]) ?? str(a["docente"]) ?? str(a["prof"]),
     }));
 
   const notifications: AppNotification[] = (
@@ -181,9 +183,10 @@ export function parseVotoData(raw: unknown): VotoData {
         id: str(n["id"]) ?? `n-${i}`,
         type: notifType(n["type"]),
         title: str(n["title"]) ?? "Avviso",
-        message: str(n["message"]),
+        message: str(n["message"]) ?? str(n["description"]) ?? str(n["details"]),
         date: str(n["date"]),
         subject: str(n["subject"]),
+        teacher: str(n["teacher"]) ?? str(n["docente"]) ?? str(n["prof"]),
         attachmentPath: str(n["attachmentPath"]),
         attachmentUrl: str(n["attachmentUrl"]),
         attachmentName: str(n["attachmentName"]),
@@ -208,19 +211,18 @@ export function parseVotoData(raw: unknown): VotoData {
     Array.isArray(raw["attendanceEvents"]) ? raw["attendanceEvents"] : []
   )
     .filter(isObj)
-    .map((event, i) => {
+    .flatMap((event, i) => {
       const type = attendanceEventType(event["type"]);
       const date = str(event["date"]);
-      if (!type || !date) return undefined;
+      if (!type || !date) return [];
       const justificationStatus = str(event["justificationStatus"]);
-      return {
+      return [{
         id: str(event["id"]) ?? `appello-${i}`,
         type,
         date: date.slice(0, 10),
         ...(justificationStatus ? { justificationStatus } : {}),
-      };
-    })
-    .filter((event): event is AttendanceEvent => event !== undefined);
+      }];
+    });
 
   const st = isObj(raw["student"]) ? raw["student"] : {};
   const prev =

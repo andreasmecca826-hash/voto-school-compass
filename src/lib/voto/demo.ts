@@ -23,6 +23,7 @@ export function makeDemoRaw() {
         id: "matematica",
         name: "Matematica",
         color: "#E85D5D",
+        teacher: "Prof.ssa Rossi",
         grades: [
           {
             id: "m1",
@@ -54,6 +55,7 @@ export function makeDemoRaw() {
         id: "italiano",
         name: "Italiano",
         color: "#D9A441",
+        teacher: "Prof. Gallo",
         grades: [
           {
             id: "i1",
@@ -77,6 +79,7 @@ export function makeDemoRaw() {
         id: "inglese",
         name: "Inglese",
         color: "#5DA9E8",
+        teacher: "Prof. Bianchi",
         grades: [
           {
             id: "e1",
@@ -101,6 +104,7 @@ export function makeDemoRaw() {
         id: "fisica",
         name: "Fisica",
         color: "#8FC27A",
+        teacher: "Prof. Verdi",
         grades: [
           {
             id: "f1",
@@ -124,6 +128,7 @@ export function makeDemoRaw() {
         id: "storia",
         name: "Storia",
         color: "#B48AD9",
+        teacher: "Prof.ssa Neri",
         grades: [
           {
             id: "s1",
@@ -226,6 +231,7 @@ export function makeDemoRaw() {
         message: "Dinamica, capitoli 4 e 5.",
         date: iso(4),
         subject: "Fisica",
+        teacher: "Prof. Verdi",
         read: false,
       },
       {
@@ -234,6 +240,7 @@ export function makeDemoRaw() {
         title: "Nota disciplinare di classe",
         message: "Ritardo collettivo al rientro dall'intervallo.",
         date: iso(-8),
+        teacher: "Prof.ssa Neri",
         read: true,
       },
     ],

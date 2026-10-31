@@ -56,7 +56,7 @@ export function SubjectSheet({ id, onClose, onSimulate }: { id: string | null; o
               <li key={g.id} className="flex items-center gap-3 py-3">
                 <GradePill value={g.value} label={g.label} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{g.comment ?? "Senza commento"}</p>
+                  {g.comment && <p className="truncate text-sm">{g.comment}</p>}
                   <p className="text-[11px] capitalize text-muted-foreground">
                     {g.type} · {fmtDate(g.date, { day: "numeric", month: "long" })}
                   </p>

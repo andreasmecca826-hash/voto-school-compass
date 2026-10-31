@@ -81,6 +81,9 @@ function Note() {
                     {note.subject && (
                       <p className="mt-2 text-xs text-muted-foreground">{note.subject}</p>
                     )}
+                    {note.teacher && (
+                      <p className="mt-1 text-xs text-muted-foreground">Docente: {note.teacher}</p>
+                    )}
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <span className="text-[11px] text-muted-foreground">
                         {fmtDate(note.date, { day: "numeric", month: "long", year: "numeric" })}
