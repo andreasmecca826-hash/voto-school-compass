@@ -161,14 +161,17 @@ export function DidupDashboard() {
       <DidupSectionTitle title="Ultimi voti" href="/voti" />
       <DidupScroller>
         {latestGrades.slice(0, 5).map(({ subject, grade }) => {
-          const badgeColor = grade.value < 5 ? "#ff565d" : grade.value < 6 ? "#ffb83d" : "#3fd596";
+          const badgeImage =
+            grade.value < 5
+              ? "/didup-grade-badge-red.png"
+              : grade.value < 6
+                ? "/didup-grade-badge-orange.png"
+                : "/didup-grade-badge.png";
 
           return (
             <article key={grade.id} className="didup-tile relative min-h-[176px] w-[84%] shrink-0 overflow-hidden p-4">
               <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center text-[20px] font-extrabold text-white">
-                <svg aria-hidden="true" className="absolute inset-0 h-full w-full" viewBox="0 0 79 78" preserveAspectRatio="none">
-                  <path d="M14 0 C6 0 0 10 0 25 V39 C0 59 22 78 34 78 H56 C68 78 78 71 78 63 V0 Z" fill={badgeColor} />
-                </svg>
+                <img src={badgeImage} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full select-none" />
                 <span className="relative z-10">{grade.label}</span>
               </span>
               <p className="text-[12px] text-[#08b8c4]">{shortDate(grade.date)}</p>
