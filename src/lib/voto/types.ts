@@ -66,6 +66,15 @@ export interface Attendance {
   absenceLimitHours: number;
 }
 
+export type AttendanceEventType = "absence" | "delay" | "earlyExit";
+
+export interface AttendanceEvent {
+  id: string;
+  type: AttendanceEventType;
+  date: string;
+  justificationStatus?: string | undefined;
+}
+
 export interface DiaryEntry {
   id: string;
   date: string;
@@ -90,6 +99,7 @@ export interface VotoData {
   notifications: AppNotification[];
   diary: DiaryEntry[];
   attendance: Attendance;
+  attendanceEvents?: AttendanceEvent[] | undefined;
 }
 
 export type DataSource = "demo" | "remote" | "cache";

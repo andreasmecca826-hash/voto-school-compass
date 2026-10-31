@@ -2,6 +2,7 @@ import type {
   AppNotification,
   Assignment,
   Attendance,
+  AttendanceEvent,
   CircularAttachment,
   DiaryEntry,
   Grade,
@@ -53,6 +54,14 @@ const notifType = (v: unknown): NotificationType => {
   if (s === "reminder" || s === "promemoria") return "reminder";
   if (s === "notice" || s === "avviso") return "notice";
   return "note";
+};
+
+const attendanceEventType = (v: unknown): AttendanceEvent["type"] | undefined => {
+  const s = String(v ?? "").toLowerCase();
+  if (s === "a" || s === "absence" || s === "assenza") return "absence";
+  if (s === "i" || s === "delay" || s === "ritardo") return "delay";
+  if (s === "u" || s === "earlyexit" || s === "early-exit" || s === "uscita") return "earlyExit";
+  return undefined;
 };
 
 function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
@@ -172,6 +181,24 @@ export function parseVotoData(raw: unknown): VotoData {
     }))
     .filter((entry) => entry.date || entry.activity);
 
+  const attendanceEvents: AttendanceEvent[] = (
+    Array.isArray(raw["attendanceEvents"]) ? raw["attendanceEvents"] : []
+  )
+    .filter(isObj)
+    .map((event, i) => {
+      const type = attendanceEventType(event["type"]);
+      const date = str(event["date"]);
+      if (!type || !date) return undefined;
+      const justificationStatus = str(event["justificationStatus"]);
+      return {
+        id: str(event["id"]) ?? `appello-${i}`,
+        type,
+        date: date.slice(0, 10),
+        ...(justificationStatus ? { justificationStatus } : {}),
+      };
+    })
+    .filter((event): event is AttendanceEvent => event !== undefined);
+
   const st = isObj(raw["student"]) ? raw["student"] : {};
   const prev =
     typeof raw["previousAverage"] === "number" && Number.isFinite(raw["previousAverage"])
@@ -206,6 +233,7 @@ export function parseVotoData(raw: unknown): VotoData {
     notifications,
     diary,
     attendance,
+    attendanceEvents,
   };
 }
 

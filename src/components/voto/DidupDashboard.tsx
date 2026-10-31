@@ -84,12 +84,12 @@ export function DidupDashboard() {
   );
   const studentName = (v.data.student.name || "ANDREA MARIA").toUpperCase();
   const progress = avg === null ? 0 : Math.max(0, Math.min(100, avg * 10));
-  const absenceItems = [
-    { id: "absence-days", title: "Assenze", subtitle: "Giorni totali", value: Math.round(attendance.absenceDays), icon: <AbsenceIcon /> },
-    { id: "absence-hours", title: "Ore di assenza", subtitle: "Totale ore", value: Math.round(attendance.absenceHours), icon: <CalendarX2 className="h-5 w-5" /> },
-    { id: "delays", title: "Ritardi", subtitle: "Totale ingressi", value: attendance.delays, icon: <CalendarCheck2 className="h-5 w-5" /> },
-    { id: "early-exits", title: "Uscite", subtitle: "Uscite anticipate", value: attendance.earlyExits, icon: <CalendarX2 className="h-5 w-5" /> },
-  ];
+  const attendanceEvents = useMemo(
+    () => [...(v.data.attendanceEvents ?? [])]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 3),
+    [v.data.attendanceEvents],
+  );
 
   return (
     <div className="didup-page min-h-dvh bg-black px-2 pb-24 text-white">
@@ -145,17 +145,68 @@ export function DidupDashboard() {
         )) : <EmptyTile text="Nessun compito in scadenza" variant="task" />}
       </DidupScroller>
 
-      <DidupSectionTitle title="Assenze" href="/" />
-      <section className="didup-card relative overflow-hidden px-5 pb-4">
-        <img src="/didup-event-badge.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[41px] w-[41px] select-none" />
-        <div className="h-12" aria-hidden="true" />
-        {absenceItems.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 border-b border-white/15 py-4 last:border-0">
-            <span className="flex w-[20px] shrink-0 items-center justify-center text-[#08b8c4]">{item.icon}</span>
-            <div className="min-w-0 flex-1"><p className="text-[16px]">{item.title}</p><p className="text-[13px] text-[#e47d89]">{item.subtitle}</p></div>
-            <span className="text-[18px] font-extrabold text-[#08b8c4]">{item.value}</span>
-          </div>
-        ))}
+      <section className="didup-card relative overflow-hidden px-5 pb-2 pt-4">
+        <img
+          src="/didup-event-badge.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute right-0 top-0 h-9 w-9 select-none"
+        />
+        <h2 className="pr-10 text-[18px] font-extrabold leading-6">Eventi appello</h2>
+        <div className="mt-2">
+          {attendanceEvents.length > 0 ? (
+            attendanceEvents.map((event, index) => {
+              const title =
+                event.type === "absence"
+                  ? "Assenza"
+                  : event.type === "delay"
+                    ? "Ritardo"
+                    : "Uscita";
+              const icon =
+                event.type === "absence" ? (
+                  <AbsenceIcon />
+                ) : event.type === "delay" ? (
+                  <CalendarCheck2 className="h-5 w-5" />
+                ) : (
+                  <CalendarX2 className="h-5 w-5" />
+                );
+
+              return (
+                <div key={event.id} className="flex items-center gap-4 py-3">
+                  <span className="flex w-[22px] shrink-0 items-center justify-center text-[#08b8c4]">
+                    {icon}
+                  </span>
+                  <div
+                    className={`min-w-0 flex-1 pb-3 ${index < attendanceEvents.length - 1 ? "border-b border-white/15" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[16px] leading-5">{title}</p>
+                        {event.justificationStatus && (
+                          <p className="mt-1 text-[13px] leading-5 text-[#e47d89]">
+                            ({event.justificationStatus})
+                          </p>
+                        )}
+                      </div>
+                      <time
+                        dateTime={event.date}
+                        className="whitespace-nowrap pt-1 text-[12px] font-semibold text-[#08b8c4]"
+                      >
+                        {shortDate(event.date)}
+                      </time>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="py-5 text-center text-[13px] text-white/70">
+              {attendance.absenceDays > 0 || attendance.delays > 0 || attendance.earlyExits > 0
+                ? "Dettagli degli eventi non disponibili nei dati sincronizzati."
+                : "Nessun evento di appello."}
+            </p>
+          )}
+        </div>
       </section>
 
       <DidupSectionTitle title="Ultimi voti" href="/voti" />
@@ -239,7 +290,7 @@ function BackpackIllustration() {
 }
 
 function AbsenceIcon() {
-  return <img src="/didup-absence-icon.png" alt="" aria-hidden="true" className="h-[26px] w-[20px] shrink-0 object-contain" />;
+  return <img src="/didup-absence-icon.png" alt="" aria-hidden="true" className="h-[23px] w-[18px] shrink-0 object-contain" />;
 }
 
 function EmptyTile({ text, variant }: { text: string; variant: "task" | "notice" }) {
