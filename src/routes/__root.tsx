@@ -39,7 +39,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
-    const msg = String(error?.message ?? "");
+    const msg = String((error as Error | undefined)?.message ?? "");
     if (/dynamically imported module|Importing a module script failed|error loading dynamically/i.test(msg)) {
       const KEY = "voto.chunkReloadAt";
       const last = Number(sessionStorage.getItem(KEY) || 0);
