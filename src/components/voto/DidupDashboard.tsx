@@ -249,28 +249,46 @@ export function DidupDashboard() {
 
       <DidupSectionTitle title="Bacheca" href="/" />
       <DidupScroller>
-        {notices.length > 0 ? notices.slice(0, 5).map((item) => (
-          <article key={item.id} className="didup-tile relative flex min-h-[234px] w-[84%] shrink-0 flex-col overflow-hidden p-4">
-            <p className="pr-12 text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p>
-            <img src="/didup-bacheca-badge-transparent.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[45px] w-[45px] select-none" />
-            <p className="mt-2 text-[18px] uppercase">Circolari</p>
-            <p className="text-[13px]">{item.subject || "Circolare"}</p>
-            <p className="mt-14 line-clamp-1 text-[15px] leading-6">{item.message || item.title}</p>
-            {item.attachmentPath && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCircular(item);
-                  v.markRead([item.id]);
-                }}
-                aria-label={`Apri e scarica PDF: ${item.title}`}
-                className="press mt-auto inline-flex items-center text-left text-[12px] text-white/90"
+        {notices.length > 0 ? (
+          notices.slice(0, 5).map((item) => {
+            const attachmentCount = item.attachments?.length || (item.attachmentPath ? 1 : 0);
+            return (
+              <article
+                key={item.id}
+                className="didup-tile relative flex min-h-[234px] w-[84%] shrink-0 flex-col overflow-hidden p-4"
               >
-                <FileText className="mr-2 h-4 w-4" />1
-              </button>
-            )}
-          </article>
-        )) : <EmptyTile text="Nessuna circolare" variant="notice" />}
+                <p className="pr-12 text-[12px] text-[#08b8c4]">{shortDate(item.date)}</p>
+                <img
+                  src="/didup-bacheca-badge-transparent.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute right-0 top-0 h-[45px] w-[45px] select-none"
+                />
+                <p className="mt-2 text-[18px] uppercase">Circolari</p>
+                <p className="text-[13px]">{item.subject || "Circolare"}</p>
+                <p className="mt-14 line-clamp-1 text-[15px] leading-6">
+                  {item.message || item.title}
+                </p>
+                {attachmentCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCircular(item);
+                      v.markRead([item.id]);
+                    }}
+                    aria-label={`Apri circolare, ${attachmentCount} ${attachmentCount === 1 ? "allegato" : "allegati"}: ${item.title}`}
+                    className="press mt-auto inline-flex items-center text-left text-[12px] text-white/90"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    {attachmentCount}
+                  </button>
+                )}
+              </article>
+            );
+          })
+        ) : (
+          <EmptyTile text="Nessuna circolare" variant="notice" />
+        )}
       </DidupScroller>
 
       <DidupSectionTitle title="Promemoria" href="/promemoria" />
