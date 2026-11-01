@@ -20,6 +20,8 @@ export const KEYS = {
   interfaceScale: "voto.interfaceScale",
   interrogazioni: "voto.interrogazioni",
   infraperiodalReports: "voto.infraperiodalReports",
+  schoolEndDate: "voto.schoolEndDate",
+  absenceHoursPerDay: "voto.absenceHoursPerDay",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

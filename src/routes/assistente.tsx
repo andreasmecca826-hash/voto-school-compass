@@ -7,7 +7,9 @@ import {
 } from "@/lib/voto/assistant-actions";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
+import { loadAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
 import { clearScheduleDayIfUnchanged, DAYS, loadSchedule } from "@/lib/voto/orario";
+import { loadSchoolEndDate } from "@/lib/voto/school-end-date";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
 
@@ -98,6 +100,8 @@ function Assistant() {
               homeScale: v.homeScale,
               homeModules: v.homeModules,
               flashcards: study.cards,
+              schoolEndDate: loadSchoolEndDate(),
+              absenceHoursPerDay: loadAbsenceHoursPerDay(),
             });
     setMessages((current) => [
       ...current,

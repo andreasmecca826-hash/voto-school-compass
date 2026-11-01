@@ -1,9 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Calculator, CircleDot, Layers, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  CalendarX2,
+  Calculator,
+  CircleDot,
+  Layers,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
+import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
 import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
 
@@ -14,7 +25,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Flashcard, ruota di ripasso, calcolo media e simulatore dei voti in un unico spazio.",
+          "Flashcard, ruota di ripasso, calcoli di voti e assenze e data fine scuola in un unico spazio.",
       },
       { property: "og:title", content: "Studio Lab — VOTO." },
       {
@@ -35,6 +46,20 @@ const TOOLS = [
     subtitle: "Due strumenti per capire e pianificare i tuoi voti",
     icon: Calculator,
     tone: "text-success bg-success-soft",
+  },
+  {
+    id: "absence-calculator",
+    title: "Calcolo assenze",
+    subtitle: "Controlla le ore residue e simula nuove assenze",
+    icon: CalendarX2,
+    tone: "text-warning bg-surface",
+  },
+  {
+    id: "school-end",
+    title: "Fine scuola",
+    subtitle: "Imposta la data ufficiale e chiedi all’assistente quanto manca",
+    icon: CalendarDays,
+    tone: "text-primary bg-primary-soft",
   },
   {
     id: "wheel",
@@ -142,6 +167,8 @@ function Studio() {
               <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
               {tool === "wheel" && <WheelTool />}
               {tool === "flashcards" && <FlashcardsTool />}
+              {tool === "absence-calculator" && <AbsenceCalculator />}
+              {tool === "school-end" && <SchoolEndDateTool />}
             </>
           )}
         </>

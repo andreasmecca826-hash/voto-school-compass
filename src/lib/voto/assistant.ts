@@ -1,4 +1,6 @@
 import { average, fmt, neededGrade, overallAverage } from "./calc";
+import { calculateAbsencePlan } from "./absence-calculator";
+import { DEFAULT_ABSENCE_HOURS_PER_DAY } from "./absence-preferences";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
 import type { Flashcard } from "./study";
@@ -32,6 +34,8 @@ export interface AssistantContext {
   homeScale?: number;
   homeModules?: Array<{ id: string; enabled: boolean }>;
   flashcards?: Flashcard[];
+  schoolEndDate?: string;
+  absenceHoursPerDay?: number;
 }
 
 const normalize = (value: string) =>
@@ -71,6 +75,23 @@ function gradeFrom(query: string) {
     /(?:prendo|prendessi|prendero|con un nuovo voto|con un voto)[^0-9]{0,16}(10(?:[.,]0+)?|[0-9](?:[.,][0-9]+)?)/,
   );
   return match?.[1] ? Number(match[1].replace(",", ".")) : null;
+}
+
+function simulatedAbsenceHours(query: string): number | null {
+  const asksForSimulation = [
+    "simul",
+    "aggiung",
+    "se faccio",
+    "se facessi",
+    "se avessi",
+    "ipotizz",
+    "considera",
+  ].some((term) => query.includes(term));
+  if (!asksForSimulation) return null;
+  const match = query.match(/\b(\d+(?:[.,]\d+)?)\s*(?:ore|h)\b/);
+  if (!match?.[1]) return null;
+  const value = Number(match[1].replace(",", "."));
+  return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 function dayFromQuery(query: string, now: Date): DayId | null {
@@ -209,7 +230,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, oltre a calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   const asksWhereToFind =
@@ -246,11 +267,37 @@ export function answerQuestion(
       return `Trovi questa funzione in ${destination[1]}. Puoi aprirla dal menu dell’app.`;
   }
 
+  const asksSchoolEnd =
+    [
+      "finisce",
+      "finiscono",
+      "finira",
+      "finiranno",
+      "termina",
+      "terminano",
+      "terminera",
+      "termineranno",
+      "fine",
+      "ultimo giorno",
+      "manca",
+    ].some((term) => normalized.includes(term)) &&
+    ["scuola", "lezion", "anno scolastico"].some((term) => normalized.includes(term));
+  if (asksSchoolEnd) {
+    const endDate = context.schoolEndDate;
+    const dateLabel = displayDate(endDate);
+    const remainingDays = daysUntil(endDate, now);
+    if (!endDate || !dateLabel || remainingDays === null)
+      return "Per calcolare quando finisce la scuola, imposta prima la data ufficiale in Studio Lab > Fine scuola. La data non è nei dati sincronizzati e non la indovino.";
+    if (remainingDays === 0) return `Oggi, ${dateLabel}, è l’ultimo giorno di scuola impostato.`;
+    if (remainingDays > 0)
+      return `La fine delle lezioni è impostata per il ${dateLabel}: mancano ${remainingDays} ${remainingDays === 1 ? "giorno" : "giorni"} di calendario (weekend e festività inclusi).`;
+    const elapsedDays = Math.abs(remainingDays);
+    return `La data di fine lezioni impostata era il ${dateLabel}: è passata da ${elapsedDays} ${elapsedDays === 1 ? "giorno" : "giorni"}.`;
+  }
+
   if (
     normalized.includes("anno scolastico") &&
-    ["quando", "data", "inizia", "inizio", "comincia", "finisce", "termina", "fine"].some((term) =>
-      normalized.includes(term),
-    )
+    ["quando", "data", "inizia", "inizio", "comincia"].some((term) => normalized.includes(term))
   )
     return "Nei dati caricati non è indicata la data di inizio o fine dell’anno scolastico. Controlla le comunicazioni ufficiali della scuola.";
 
@@ -1102,17 +1149,60 @@ export function answerQuestion(
       : `La tua media generale è ${number(current)}.`;
   }
 
-  if (
-    (normalized.includes("assenza") || normalized.includes("assenze")) &&
-    (normalized.includes("limite") || normalized.includes("ancora") || normalized.includes("manca"))
-  ) {
-    const { absenceHours, absenceLimitHours } = data.attendance;
-    const remaining = absenceLimitHours - absenceHours;
-    return remaining > 0
-      ? `Hai ${number(absenceHours)} ore di assenza su ${number(absenceLimitHours)}: ti restano ${number(remaining)} ore prima del limite.`
-      : remaining === 0
-        ? `Hai raggiunto il limite di ${number(absenceLimitHours)} ore di assenza.`
-        : `Hai superato il limite di ${number(absenceLimitHours)} ore di ${number(Math.abs(remaining))} ore.`;
+  const mentionsAbsence =
+    normalized.includes("assenza") ||
+    normalized.includes("assenze") ||
+    normalized.includes("assent");
+  const additionalAbsenceHours = mentionsAbsence ? simulatedAbsenceHours(normalized) : null;
+  if (additionalAbsenceHours !== null) {
+    const plan = calculateAbsencePlan({
+      absenceHours: data.attendance.absenceHours,
+      absenceLimitHours: data.attendance.absenceLimitHours,
+      annualHours: data.attendance.annualHours,
+      simulatedHours: additionalAbsenceHours,
+      hoursPerDay: context.absenceHoursPerDay ?? DEFAULT_ABSENCE_HOURS_PER_DAY,
+    });
+    if (!plan.hasConfiguredLimit)
+      return `Con altre ${number(additionalAbsenceHours)} ore arriveresti a ${number(plan.simulatedTotalHours)} ore di assenza, ma nei dati caricati non è impostato un limite valido per valutare il risultato.`;
+    if (plan.simulatedExceededHours > 0)
+      return `Con altre ${number(additionalAbsenceHours)} ore arriveresti a ${number(plan.simulatedTotalHours)} ore di assenza: supereresti il limite di ${number(plan.simulatedExceededHours)} ore.`;
+    if (plan.simulatedRemainingHours === 0)
+      return `Con altre ${number(additionalAbsenceHours)} ore arriveresti esattamente al limite di ${number(plan.absenceLimitHours)} ore.`;
+    const dayEstimate =
+      plan.fullDaysAfterSimulation === null
+        ? ""
+        : ` Sono circa ${plan.fullDaysAfterSimulation} giornate intere residue, calcolate usando ${number(plan.hoursPerDay)} ore per giornata.`;
+    return `Con altre ${number(additionalAbsenceHours)} ore arriveresti a ${number(plan.simulatedTotalHours)} ore: resterebbero ${number(plan.simulatedRemainingHours)} ore prima del limite.${dayEstimate}`;
+  }
+
+  const asksForRemainingAbsence = [
+    "limite",
+    "ancora",
+    "manca",
+    "restan",
+    "posso fare",
+    "posso assentarmi",
+    "posso permettermi",
+  ].some((term) => normalized.includes(term));
+  if (mentionsAbsence && asksForRemainingAbsence) {
+    const plan = calculateAbsencePlan({
+      absenceHours: data.attendance.absenceHours,
+      absenceLimitHours: data.attendance.absenceLimitHours,
+      annualHours: data.attendance.annualHours,
+      simulatedHours: 0,
+      hoursPerDay: context.absenceHoursPerDay ?? DEFAULT_ABSENCE_HOURS_PER_DAY,
+    });
+    if (!plan.hasConfiguredLimit)
+      return `Nei dati caricati risultano ${number(plan.absenceHours)} ore di assenza, ma non è impostato un limite valido per calcolare quanto margine resta.`;
+    if (plan.exceededHours > 0)
+      return `Hai ${number(plan.absenceHours)} ore di assenza e hai già superato il limite di ${number(plan.absenceLimitHours)} ore di ${number(plan.exceededHours)} ore.`;
+    if (plan.remainingHours === 0)
+      return `Hai raggiunto il limite di ${number(plan.absenceLimitHours)} ore di assenza.`;
+    const dayEstimate =
+      normalized.includes("giorn") && plan.fullDaysRemaining !== null
+        ? ` A ${number(plan.hoursPerDay)} ore per giornata, equivalgono a circa ${plan.fullDaysRemaining} giornate intere.`
+        : "";
+    return `Hai ${number(plan.absenceHours)} ore di assenza su ${number(plan.absenceLimitHours)}: ti restano ${number(plan.remainingHours)} ore prima del limite.${dayEstimate}`;
   }
 
   if (
@@ -1130,9 +1220,19 @@ export function answerQuestion(
     normalized.includes("ritardi")
   ) {
     const { attendance } = data;
+    const plan = calculateAbsencePlan({
+      absenceHours: attendance.absenceHours,
+      absenceLimitHours: attendance.absenceLimitHours,
+      annualHours: attendance.annualHours,
+      simulatedHours: 0,
+      hoursPerDay: context.absenceHoursPerDay ?? DEFAULT_ABSENCE_HOURS_PER_DAY,
+    });
     const daysLabel = attendance.absenceDays === 1 ? "giorno" : "giorni";
     const delaysLabel = attendance.delays === 1 ? "ritardo" : "ritardi";
-    return `Hai ${attendance.absenceDays} ${daysLabel} e ${number(attendance.absenceHours)} ore di assenza, con ${attendance.delays} ${delaysLabel}. Il limite impostato è ${number(attendance.absenceLimitHours)} ore.`;
+    const limitSummary = plan.hasConfiguredLimit
+      ? `Il limite impostato è ${number(plan.absenceLimitHours)} ore.`
+      : "Nei dati caricati non è impostato un limite valido per le assenze.";
+    return `Hai ${attendance.absenceDays} ${daysLabel} e ${number(plan.absenceHours)} ore di assenza, con ${attendance.delays} ${delaysLabel}. ${limitSummary}`;
   }
 
   const asksCompletedAssignments =

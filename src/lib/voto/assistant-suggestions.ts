@@ -8,6 +8,8 @@ const SUGGESTIONS = [
   "Quali promemoria ho?",
   "Chi insegna Inglese?",
   "Quanto mi manca al limite delle assenze?",
+  "Se aggiungo 5 ore di assenza, cosa succede?",
+  "Quando finisce la scuola?",
   "Quali sono le prossime interrogazioni?",
   "Quali materie sono sotto il 6?",
   "Quali note disciplinari ho?",

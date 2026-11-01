@@ -640,6 +640,38 @@ describe("Assistente locale", () => {
     ).toContain("Studio Lab > Calcolo media e simulatore voti");
   });
 
+  it("calcola i giorni alla fine delle lezioni usando solo la data locale configurata", () => {
+    const now = new Date(2026, 0, 1, 12);
+    const configured = answerQuestion("Quando finirà la scuola?", data, emptySchedule(), now, [], {
+      schoolEndDate: "2026-06-08",
+    });
+    expect(configured).toContain("08/06/2026");
+    expect(configured).toContain("giorni di calendario");
+
+    const missing = answerQuestion("Quando finisce la scuola?", data, emptySchedule(), now);
+    expect(missing).toContain("Studio Lab > Fine scuola");
+
+    const lastDay = answerQuestion(
+      "Qual è l’ultimo giorno di scuola?",
+      data,
+      emptySchedule(),
+      new Date(2026, 5, 8, 12),
+      [],
+      { schoolEndDate: "2026-06-08" },
+    );
+    expect(lastDay).toContain("Oggi");
+
+    const passedDate = answerQuestion(
+      "Quanti giorni mancano alla fine delle lezioni?",
+      data,
+      emptySchedule(),
+      new Date(2026, 5, 10, 12),
+      [],
+      { schoolEndDate: "2026-06-08" },
+    );
+    expect(passedDate).toContain("è passata da 2 giorni");
+  });
+
   it("spiega che Oro e Diamante sono già selezionabili nella personalizzazione", () => {
     expect(answerQuestion("Come sblocco il tema Diamante?", data)).toContain(
       "sono già selezionabili",
@@ -666,4 +698,42 @@ describe("Assistente locale", () => {
     expect(capabilities).toContain("Dopo la tua conferma");
     expect(capabilities).toContain("segnare un compito come completato o riaprirlo");
   });
+});
+it("calcola localmente il margine e simula ore aggiuntive di assenza", () => {
+  const absenceData: VotoData = {
+    ...data,
+    attendance: { ...data.attendance, absenceHours: 12, absenceLimitHours: 30, annualHours: 120 },
+  };
+  const now = new Date(2026, 9, 27, 12);
+  const context = { absenceHoursPerDay: 4 };
+  const remaining = answerQuestion(
+    "Quante giornate intere di assenza mi restano prima del limite?",
+    absenceData,
+    emptySchedule(),
+    now,
+    [],
+    context,
+  );
+  expect(remaining).toContain("restano 18,00 ore");
+  expect(remaining).toContain("4 giornate intere");
+
+  const simulation = answerQuestion(
+    "Se aggiungo 5 ore di assenza, cosa succede?",
+    absenceData,
+    emptySchedule(),
+    now,
+    [],
+    context,
+  );
+  expect(simulation).toContain("arriveresti a 17,00 ore");
+  expect(simulation).toContain("resterebbero 13,00 ore");
+  expect(simulation).toContain("3 giornate intere residue");
+
+  const noLimitData: VotoData = {
+    ...absenceData,
+    attendance: { ...absenceData.attendance, absenceLimitHours: 0 },
+  };
+  expect(answerQuestion("Quanto mi manca al limite delle assenze?", noLimitData)).toContain(
+    "non è impostato un limite valido",
+  );
 });
