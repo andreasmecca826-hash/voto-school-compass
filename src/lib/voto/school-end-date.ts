@@ -12,6 +12,14 @@ function isValidIsoDate(value: string): boolean {
   );
 }
 
+export function daysUntilSchoolEnd(value: string | undefined, now: Date): number | null {
+  if (!value || !isValidIsoDate(value)) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  const endDate = Date.UTC(year!, month! - 1, day!);
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((endDate - today) / 86_400_000);
+}
+
 export function loadSchoolEndDate(): string | undefined {
   const value = load<unknown>(KEYS.schoolEndDate, null);
   return typeof value === "string" && isValidIsoDate(value) ? value : undefined;
