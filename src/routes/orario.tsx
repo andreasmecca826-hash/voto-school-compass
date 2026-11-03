@@ -146,7 +146,7 @@ function Orario() {
                 }`}
               >
                 <span className="relative flex h-9 w-8 shrink-0 items-start justify-center text-[#4169a8]">
-                  <Clock3 className="h-7 w-7" strokeWidth={2.8} />
+                  <img src="/didup-clock-icon.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
                   <span className="absolute bottom-0 left-0 text-[11px] font-bold leading-none text-white">
                     {index + 1}
                   </span>
