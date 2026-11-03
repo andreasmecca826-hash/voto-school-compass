@@ -131,9 +131,11 @@ export function DidupDashboard() {
         <img src="/didup-profile.jpg" alt="" className="h-[50px] w-[50px] object-cover" />
       </header>
 
-      <section className="didup-card overflow-hidden px-5 pb-2 pt-[26px]">
+      <section
+        className={`didup-card overflow-hidden px-5 pb-2 ${averageHidden ? "pt-[14px]" : "pt-[26px]"}`}
+      >
         <div
-          className={`relative grid gap-4 ${averageHidden ? "min-h-[112px] grid-cols-[0.72fr_1.28fr] items-center" : "grid-cols-2"}`}
+          className={`relative grid gap-4 ${averageHidden ? "min-h-[104px] grid-cols-[0.72fr_1.28fr]" : "grid-cols-2"}`}
         >
           {!averageHidden && (
             <span
@@ -150,13 +152,13 @@ export function DidupDashboard() {
               setAverageHidden(next);
               save(KEYS.homeAverageHidden, next);
             }}
-            className="press absolute -left-1 -top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0aa0b1]"
+            className="press absolute -left-1 top-[1px] z-10 flex h-7 w-7 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0aa0b1]"
           >
             <DidupEyeIcon hidden={averageHidden} />
           </button>
           {averageHidden ? (
-            <div className="flex min-h-[104px] items-center justify-center pt-2">
-              <BackpackIllustration className="mx-auto h-[76px] w-[68px] object-contain object-center" />
+            <div className="flex min-h-[104px] items-start justify-center">
+              <BackpackIllustration className="mx-auto -mt-5 h-[76px] w-[68px] object-contain object-center" />
             </div>
           ) : (
             <div className="text-center">
@@ -174,7 +176,7 @@ export function DidupDashboard() {
           <div className="text-center">
             <h2 className="text-[16px] font-extrabold leading-none">Prepara lo zaino!</h2>
             {!averageHidden && <BackpackIllustration />}
-            <p className={`${averageHidden ? "mt-5" : "mt-4"} text-[12px] italic leading-5 text-white/90`}>
+            <p className={`${averageHidden ? "mt-2" : "mt-4"} text-[12px] italic leading-5 text-white/90`}>
               Controlla le materie di
             </p>
             <p className="text-[12px] italic leading-5 text-white/90">
