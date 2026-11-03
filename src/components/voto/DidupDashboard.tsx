@@ -176,12 +176,21 @@ export function DidupDashboard() {
           <div className="text-center">
             <h2 className="text-[16px] font-extrabold leading-none">Prepara lo zaino!</h2>
             {!averageHidden && <BackpackIllustration />}
-            <p className={`${averageHidden ? "mt-2" : "mt-4"} text-[12px] italic leading-5 text-white/90`}>
-              Controlla le materie di
-            </p>
-            <p className="text-[12px] italic leading-5 text-white/90">
-              domani, {tomorrowLabel(now)}
-            </p>
+            {averageHidden ? (
+              <div className="mt-2 text-[11px] italic leading-4 text-white/90">
+                <p className="whitespace-nowrap">Controlla le materie di domani,</p>
+                <p className="whitespace-nowrap">{tomorrowLabel(now)}</p>
+              </div>
+            ) : (
+              <>
+                <p className="mt-4 text-[12px] italic leading-5 text-white/90">
+                  Controlla le materie di
+                </p>
+                <p className="text-[12px] italic leading-5 text-white/90">
+                  domani, {tomorrowLabel(now)}
+                </p>
+              </>
+            )}
           </div>
         </div>
         <div className={`${averageHidden ? "mt-2" : "mt-3"} border-t-2 border-[#0aa0b1] pt-2`}>
