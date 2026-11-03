@@ -393,6 +393,9 @@ function DidupBottomNav({
     >
       <Link
         to="/"
+        onClick={() => {
+          if (moreOpen) onMenu();
+        }}
         aria-current={homeActive ? "page" : undefined}
         className={cn("flex flex-col items-center gap-1 text-xs", homeActive ? "text-white" : "text-white/65")}
       >
@@ -403,6 +406,9 @@ function DidupBottomNav({
       </Link>
       <Link
         to="/diario"
+        onClick={() => {
+          if (moreOpen) onMenu();
+        }}
         aria-current={diaryActive ? "page" : undefined}
         className={cn("flex flex-col items-center gap-1 text-xs", diaryActive ? "text-white" : "text-white/65")}
       >
