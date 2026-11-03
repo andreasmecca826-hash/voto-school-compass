@@ -133,7 +133,7 @@ export function DidupDashboard() {
 
       <section className="didup-card overflow-hidden px-5 pb-2 pt-[26px]">
         <div
-          className={`relative grid gap-4 ${averageHidden ? "min-h-[142px] grid-cols-[0.72fr_1.28fr] items-center" : "grid-cols-2"}`}
+          className={`relative grid gap-4 ${averageHidden ? "min-h-[112px] grid-cols-[0.72fr_1.28fr] items-center" : "grid-cols-2"}`}
         >
           {!averageHidden && (
             <span
@@ -155,8 +155,8 @@ export function DidupDashboard() {
             <DidupEyeIcon hidden={averageHidden} />
           </button>
           {averageHidden ? (
-            <div className="flex min-h-[132px] items-center justify-center pt-2">
-              <BackpackIllustration className="mx-auto h-[108px] w-[100px] object-contain object-center" />
+            <div className="flex min-h-[104px] items-center justify-center pt-2">
+              <BackpackIllustration className="mx-auto h-[76px] w-[68px] object-contain object-center" />
             </div>
           ) : (
             <div className="text-center">
@@ -385,7 +385,7 @@ function DidupEyeIcon({ hidden }: { hidden: boolean }) {
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      className="h-[19px] w-[19px]"
+      className="h-[15px] w-[15px]"
     >
       <path
         d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12Z"
