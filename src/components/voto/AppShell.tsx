@@ -381,13 +381,9 @@ function DidupBottomNav({
   moreOpen: boolean;
   onMenu: () => void;
 }) {
-  const voto = useVoto();
   const homeActive = path === "/" && !moreOpen;
   const diaryActive = path.startsWith("/diario") && !moreOpen;
   const menuActive = moreOpen || (!homeActive && !diaryActive);
-  const unreadNotifications = voto.data.notifications.filter(
-    (item) => !voto.isRead(item.id, item.read),
-  ).length;
 
   return (
     <nav
@@ -404,11 +400,6 @@ function DidupBottomNav({
       >
         <span className={cn("relative flex h-11 w-11 items-center justify-center rounded-full", homeActive && "bg-[#4169a8]")}>
           <img src="/didup-nav-home.png" alt="" aria-hidden="true" className={cn("h-7 w-7 object-contain", homeActive && "brightness-0 invert")} />
-          {unreadNotifications > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[#ed4f5b] px-1 text-[9px] font-bold leading-none text-white">
-              {unreadNotifications > 99 ? "99+" : unreadNotifications}
-            </span>
-          )}
         </span>
         Home
       </Link>
