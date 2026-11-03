@@ -204,7 +204,7 @@ function Professori() {
     const studentName = (voto.data.student.name ?? "").toUpperCase();
     return (
       <div className="didup-page min-h-dvh bg-black px-0 pb-[100px] text-white">
-        <header className="flex items-start justify-between px-4 pt-5">
+        <header className="flex items-start justify-between px-5 pt-5">
           <div className="flex min-w-0 items-start">
             <Link
               to="/"
@@ -213,7 +213,7 @@ function Professori() {
             >
               <ChevronLeft className="h-8 w-8" strokeWidth={1.8} />
             </Link>
-            <div className="ml-8 min-w-0 pt-0.5">
+            <div className="ml-10 min-w-0 pt-0.5">
               <h1 className="text-[21px] font-normal leading-6">CONDIVISIONE</h1>
               {studentName && <p className="mt-0.5 text-[14px] leading-5">{studentName}</p>}
             </div>
@@ -230,7 +230,7 @@ function Professori() {
         {registryTeachers.length ? (
           <ul className="mt-8 divide-y divide-[#484848] bg-[#292929]">
             {registryTeachers.map(([teacher, teacherSubjects]) => (
-              <li key={teacher} className="flex min-h-[130px] items-center gap-4 px-5 py-5">
+              <li key={teacher} className="flex min-h-[130px] items-start gap-2 px-5 py-6">
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24"
@@ -239,20 +239,17 @@ function Professori() {
                   <circle cx="12" cy="7" r="4" />
                   <path d="M3 21v-1.5c0-3.7 3.8-6.5 9-6.5s9 2.8 9 6.5V21H3Z" />
                 </svg>
-                <div className="min-w-0 flex-1 self-center">
+                <div className="min-w-0 flex-1">
                   <h3 className="text-[18px] font-normal uppercase leading-6">{teacher}</h3>
                   {teacherSubjects && (
                     <p className="mt-1.5 text-[14px] uppercase leading-5 text-[#16a0ae]">
                       ({teacherSubjects})
                     </p>
                   )}
-                  <p className="mt-3 text-[12px] uppercase leading-5 text-[#c4c4c4]">
-                    N° DOCUMENTI DOCENTE: — - STUDENTE: —
-                  </p>
                 </div>
                 <ChevronRight
                   aria-hidden="true"
-                  className="h-6 w-6 shrink-0 text-white/80"
+                  className="h-6 w-6 shrink-0 self-center text-white/80"
                   strokeWidth={1.7}
                 />
               </li>
