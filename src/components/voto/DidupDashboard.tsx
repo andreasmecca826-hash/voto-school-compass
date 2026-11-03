@@ -158,7 +158,7 @@ export function DidupDashboard() {
           </button>
           {averageHidden ? (
             <div className="flex min-h-[68px] items-start justify-center">
-              <BackpackIllustration className="mx-auto -mt-5 h-[76px] w-[68px] object-contain object-center" />
+              <BackpackIllustration className="mx-auto -mt-5 translate-x-3 h-[76px] w-[68px] object-contain object-center" />
             </div>
           ) : (
             <div className="text-center">
