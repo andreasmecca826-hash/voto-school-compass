@@ -294,14 +294,14 @@ function DidupActivityRow({ entry, fallbackHour }: { entry: DiaryEntry; fallback
   return (
     <li className="px-3 py-5">
       <div className="flex min-h-[40px] items-center gap-3">
-        <span className="relative flex h-9 w-8 shrink-0 items-start justify-center text-[#4169a8]">
+        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
           <img
-            src="/didup-clock-icon.png"
+            src="/didup-diary-clock-icon.png"
             alt=""
             aria-hidden="true"
-            className="h-7 w-7 object-contain"
+            className="h-8 w-8 object-contain"
           />
-          <span className="absolute bottom-0 left-0 text-[11px] font-bold leading-none text-white">
+          <span className="absolute bottom-0 left-0 text-[11px] font-bold leading-none text-[#0aa0b1]">
             {hour}°
           </span>
         </span>
