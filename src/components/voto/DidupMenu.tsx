@@ -2,7 +2,6 @@ import {
   Bell,
   CalendarCheck2,
   CalendarX2,
-  CircleUserRound,
   ClipboardList,
   Backpack,
   BookOpenText,
@@ -52,9 +51,12 @@ export function DidupMenu() {
           <h1 className="text-[26px] font-normal tracking-tight">Menu</h1>
           <p className="text-sm text-white/75">{studentName}</p>
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#03a8b5]">
-          <CircleUserRound className="h-8 w-8" />
-        </div>
+        <img
+          src="/didup-profile.jpg"
+          alt=""
+          aria-hidden="true"
+          className="h-12 w-12 object-cover"
+        />
       </header>
       <div className="grid grid-cols-2 gap-5 px-1">
         {ITEMS.map((item) => {

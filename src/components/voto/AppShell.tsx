@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  BookMarked,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -9,7 +8,6 @@ import {
   ClipboardList,
   Clock3,
   GraduationCap,
-  House,
   LayoutGrid,
   Menu,
   MessageCircle,
@@ -383,8 +381,13 @@ function DidupBottomNav({
   moreOpen: boolean;
   onMenu: () => void;
 }) {
-  const homeActive = path === "/";
-  const diaryActive = path.startsWith("/diario");
+  const voto = useVoto();
+  const homeActive = path === "/" && !moreOpen;
+  const diaryActive = path.startsWith("/diario") && !moreOpen;
+  const menuActive = moreOpen || (!homeActive && !diaryActive);
+  const unreadNotifications = voto.data.notifications.filter(
+    (item) => !voto.isRead(item.id, item.read),
+  ).length;
 
   return (
     <nav
@@ -399,8 +402,13 @@ function DidupBottomNav({
         aria-current={homeActive ? "page" : undefined}
         className={cn("flex flex-col items-center gap-1 text-xs", homeActive ? "text-white" : "text-white/65")}
       >
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", homeActive && "bg-[#60c9c5]")}>
-          <House className={cn("h-6 w-6", homeActive ? "text-white" : "text-[#263b88]")} strokeWidth={1.5} />
+        <span className={cn("relative flex h-11 w-11 items-center justify-center rounded-full", homeActive && "bg-[#4169a8]")}>
+          <img src="/didup-nav-home.png" alt="" aria-hidden="true" className={cn("h-7 w-7 object-contain", homeActive && "brightness-0 invert")} />
+          {unreadNotifications > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[#ed4f5b] px-1 text-[9px] font-bold leading-none text-white">
+              {unreadNotifications > 99 ? "99+" : unreadNotifications}
+            </span>
+          )}
         </span>
         Home
       </Link>
@@ -412,8 +420,8 @@ function DidupBottomNav({
         aria-current={diaryActive ? "page" : undefined}
         className={cn("flex flex-col items-center gap-1 text-xs", diaryActive ? "text-white" : "text-white/65")}
       >
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", diaryActive && "bg-[#60c9c5]")}>
-          <BookMarked className={cn("h-6 w-6", diaryActive ? "text-white" : "text-[#263b88]")} strokeWidth={1.5} />
+        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", diaryActive && "bg-[#4169a8]")}>
+          <img src="/didup-nav-diary.png" alt="" aria-hidden="true" className={cn("h-7 w-7 object-contain", diaryActive && "brightness-0 invert")} />
         </span>
         Diario
       </Link>
@@ -421,11 +429,12 @@ function DidupBottomNav({
         type="button"
         onClick={onMenu}
         aria-expanded={moreOpen}
+        aria-current={menuActive ? "page" : undefined}
         aria-label="Menu"
-        className={cn("flex flex-col items-center gap-1 text-xs", moreOpen ? "text-white" : "text-white/65")}
+        className={cn("flex flex-col items-center gap-1 text-xs", menuActive ? "text-white" : "text-white/65")}
       >
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", moreOpen && "bg-[#60c9c5]")}>
-          <DidupMenuIcon active={moreOpen} />
+        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", menuActive && "bg-[#f5b52e]")}>
+          <DidupMenuIcon active={menuActive} />
         </span>
         Menu
       </button>
