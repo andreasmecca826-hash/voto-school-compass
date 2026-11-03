@@ -135,7 +135,7 @@ export function DidupDashboard() {
         className={`didup-card overflow-hidden px-5 pb-2 ${averageHidden ? "pt-[14px]" : "pt-[26px]"}`}
       >
         <div
-          className={`relative grid gap-4 ${averageHidden ? "min-h-[104px] grid-cols-[0.72fr_1.28fr]" : "grid-cols-2"}`}
+          className={`relative grid gap-4 ${averageHidden ? "min-h-[68px] grid-cols-[0.72fr_1.28fr]" : "grid-cols-2"}`}
         >
           {!averageHidden && (
             <span
@@ -157,7 +157,7 @@ export function DidupDashboard() {
             <DidupEyeIcon hidden={averageHidden} />
           </button>
           {averageHidden ? (
-            <div className="flex min-h-[104px] items-start justify-center">
+            <div className="flex min-h-[68px] items-start justify-center">
               <BackpackIllustration className="mx-auto -mt-5 h-[76px] w-[68px] object-contain object-center" />
             </div>
           ) : (
@@ -184,7 +184,7 @@ export function DidupDashboard() {
             </p>
           </div>
         </div>
-        <div className="mt-3 border-t-2 border-[#0aa0b1] pt-2">
+        <div className={`${averageHidden ? "mt-2" : "mt-3"} border-t-2 border-[#0aa0b1] pt-2`}>
           <div className="grid grid-cols-3 text-center text-[10px] font-extrabold uppercase">
             <span>Assenze<strong className="mt-1 block text-[15px]">{Math.round(attendance.absenceDays)}</strong></span>
             <span>Ritardi<strong className="mt-1 block text-[15px]">{attendance.delays}</strong></span>
