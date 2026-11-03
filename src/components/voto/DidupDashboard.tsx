@@ -4,7 +4,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { selectUpcomingReminders } from "@/lib/voto/selectors";
@@ -12,6 +12,7 @@ import { fmtDate, toIso } from "@/lib/voto/dates";
 import type { AppNotification } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { fmt, overallAverage } from "@/lib/voto/calc";
+import { KEYS, load, save } from "@/lib/voto/storage";
 
 function updatedLabel(value: string | null | undefined, now: Date) {
   const parsed = value ? new Date(value) : now;
@@ -57,6 +58,10 @@ function tomorrowLabel(now: Date) {
 export function DidupDashboard() {
   const v = useVoto();
   const now = useClock();
+  const [averageHidden, setAverageHidden] = useState(false);
+  useEffect(() => {
+    setAverageHidden(load(KEYS.homeAverageHidden, false));
+  }, []);
   const { subjects, assignments, notifications, attendance } = v.data;
   const { subjects: periodSubjects, label: periodLabel } = useSchoolPeriods();
   const [selectedCircular, setSelectedCircular] = useState<AppNotification | null>(null);
@@ -127,25 +132,54 @@ export function DidupDashboard() {
       </header>
 
       <section className="didup-card overflow-hidden px-5 pb-2 pt-[26px]">
-        <div className="relative grid grid-cols-2 gap-4">
-          <span aria-hidden="true" className="absolute left-1/2 top-[40px] h-[34px] w-[2px] -translate-x-1/2 bg-[#0aa0b1]" />
-          <div className="text-center">
-            <DidupEyeIcon />
-            <h2 className="text-[16px] font-extrabold leading-none">Media</h2>
-            <div
-              className="didup-average-ring mx-auto mt-[22px]"
-              style={{ "--progress": `${progress}%` } as CSSProperties}
-            >
-              <span>{avg === null ? "—" : fmt(avg)}</span>
+        <div
+          className={`relative grid gap-4 ${averageHidden ? "min-h-[142px] grid-cols-[0.72fr_1.28fr] items-center" : "grid-cols-2"}`}
+        >
+          {!averageHidden && (
+            <span
+              aria-hidden="true"
+              className="absolute left-1/2 top-[40px] h-[34px] w-[2px] -translate-x-1/2 bg-[#0aa0b1]"
+            />
+          )}
+          <button
+            type="button"
+            aria-label={averageHidden ? "Mostra la media" : "Nascondi la media"}
+            aria-pressed={averageHidden}
+            onClick={() => {
+              const next = !averageHidden;
+              setAverageHidden(next);
+              save(KEYS.homeAverageHidden, next);
+            }}
+            className="press absolute -left-1 -top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0aa0b1]"
+          >
+            <DidupEyeIcon hidden={averageHidden} />
+          </button>
+          {averageHidden ? (
+            <div className="flex min-h-[132px] items-center justify-center pt-2">
+              <BackpackIllustration className="mx-auto h-[108px] w-[100px] object-contain object-center" />
             </div>
-            <p className="mt-[22px] text-[12px] italic leading-5 text-white/90">Calcolata nel periodo</p>
-            <p className="text-[12px] italic leading-5 text-white/90">{periodDateRange}</p>
-          </div>
+          ) : (
+            <div className="text-center">
+              <h2 className="text-[16px] font-extrabold leading-none">Media</h2>
+              <div
+                className="didup-average-ring mx-auto mt-[22px]"
+                style={{ "--progress": `${progress}%` } as CSSProperties}
+              >
+                <span>{avg === null ? "—" : fmt(avg)}</span>
+              </div>
+              <p className="mt-[22px] text-[12px] italic leading-5 text-white/90">Calcolata nel periodo</p>
+              <p className="text-[12px] italic leading-5 text-white/90">{periodDateRange}</p>
+            </div>
+          )}
           <div className="text-center">
             <h2 className="text-[16px] font-extrabold leading-none">Prepara lo zaino!</h2>
-            <BackpackIllustration />
-            <p className="mt-4 text-[12px] italic leading-5 text-white/90">Controlla le materie di</p>
-            <p className="text-[12px] italic leading-5 text-white/90">domani, {tomorrowLabel(now)}</p>
+            {!averageHidden && <BackpackIllustration />}
+            <p className={`${averageHidden ? "mt-5" : "mt-4"} text-[12px] italic leading-5 text-white/90`}>
+              Controlla le materie di
+            </p>
+            <p className="text-[12px] italic leading-5 text-white/90">
+              domani, {tomorrowLabel(now)}
+            </p>
           </div>
         </div>
         <div className="mt-3 border-t-2 border-[#0aa0b1] pt-2">
@@ -336,23 +370,32 @@ export function DidupDashboard() {
   );
 }
 
-function BackpackIllustration() {
-  return <img src="/didup-backpack-transparent.png" alt="" className="mx-auto mt-3 h-[85px] w-[84px] object-contain object-top" />;
+function BackpackIllustration({ className }: { className?: string }) {
+  return (
+    <img
+      src="/didup-backpack-transparent.png"
+      alt=""
+      className={className ?? "mx-auto mt-3 h-[85px] w-[84px] object-contain object-top"}
+    />
+  );
 }
 
-function DidupEyeIcon() {
+function DidupEyeIcon({ hidden }: { hidden: boolean }) {
   return (
     <svg
       aria-hidden="true"
-      viewBox="0 0 24 19"
-      className="absolute -left-[6px] -top-[9.5px] h-[12px] w-[16px]"
+      viewBox="0 0 24 24"
+      className="h-[19px] w-[19px]"
     >
       <path
-        d="M1 9.5c2.4-5.5 6.1-8.5 11-8.5s8.6 3 11 8.5c-2.4 5.25-6.1 8.25-11 8.25S3.4 14.75 1 9.5Z"
+        d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12Z"
         fill="#0aa0b1"
       />
-      <circle cx="12" cy="9.5" r="3.1" fill="#292929" />
-      <circle cx="12" cy="9.5" r="1.25" fill="#0aa0b1" />
+      <circle cx="12" cy="12" r="3.2" fill="#292929" />
+      <circle cx="12" cy="12" r="1.3" fill="#0aa0b1" />
+      {hidden && (
+        <path d="M4 20 20 4" fill="none" stroke="#0aa0b1" strokeLinecap="round" strokeWidth="3" />
+      )}
     </svg>
   );
 }

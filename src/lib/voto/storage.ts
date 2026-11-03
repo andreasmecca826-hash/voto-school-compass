@@ -17,6 +17,7 @@ export const KEYS = {
   customTheme: "voto.customTheme",
   homeModules: "voto.homeModules",
   homeScale: "voto.homeScale",
+  homeAverageHidden: "voto.homeAverageHidden",
   interfaceScale: "voto.interfaceScale",
   interrogazioni: "voto.interrogazioni",
   infraperiodalReports: "voto.infraperiodalReports",
