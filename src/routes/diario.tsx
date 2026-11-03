@@ -294,22 +294,14 @@ function DidupActivityRow({ entry, fallbackHour }: { entry: DiaryEntry; fallback
   return (
     <li className="px-3 py-5">
       <div className="flex min-h-[40px] items-center gap-3">
-        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-          <span
+        <span className="relative flex h-9 w-8 shrink-0 items-start justify-center text-[#4169a8]">
+          <img
+            src="/didup-clock-icon.png"
+            alt=""
             aria-hidden="true"
-            className="h-8 w-8 bg-[#0aa0b1]"
-            style={{
-              maskImage: "url(/didup-clock-icon.png)",
-              WebkitMaskImage: "url(/didup-clock-icon.png)",
-              maskPosition: "center",
-              WebkitMaskPosition: "center",
-              maskRepeat: "no-repeat",
-              WebkitMaskRepeat: "no-repeat",
-              maskSize: "contain",
-              WebkitMaskSize: "contain",
-            }}
+            className="h-7 w-7 object-contain"
           />
-          <span className="absolute bottom-0 left-0 text-[10px] font-bold leading-none text-[#0aa0b1]">
+          <span className="absolute bottom-0 left-0 text-[11px] font-bold leading-none text-white">
             {hour}°
           </span>
         </span>
