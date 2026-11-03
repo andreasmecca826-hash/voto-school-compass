@@ -181,8 +181,8 @@ function DidupDiario() {
         <div className="flex h-9 items-center justify-between">
           <button
             type="button"
-            aria-label="Mese precedente"
-            onClick={() => setSelectedDate((current) => shiftMonth(current ?? activeDate, -1))}
+            aria-label="Settimana precedente"
+            onClick={() => setSelectedDate((current) => shiftWeek(current ?? activeDate, -1))}
             className="press flex h-9 w-9 items-center justify-center rounded-full text-white"
           >
             <ChevronLeft className="h-7 w-7" strokeWidth={2.2} />
@@ -192,8 +192,8 @@ function DidupDiario() {
           </h2>
           <button
             type="button"
-            aria-label="Mese successivo"
-            onClick={() => setSelectedDate((current) => shiftMonth(current ?? activeDate, 1))}
+            aria-label="Settimana successiva"
+            onClick={() => setSelectedDate((current) => shiftWeek(current ?? activeDate, 1))}
             className="press flex h-9 w-9 items-center justify-center rounded-full text-white"
           >
             <ChevronRight className="h-7 w-7" strokeWidth={2.2} />
@@ -374,10 +374,8 @@ function weekDates(date: Date) {
   });
 }
 
-function shiftMonth(date: Date, delta: number) {
-  const dayOfMonth = date.getDate();
-  const shifted = new Date(date.getFullYear(), date.getMonth() + delta, 1);
-  const daysInMonth = new Date(shifted.getFullYear(), shifted.getMonth() + 1, 0).getDate();
-  shifted.setDate(Math.min(dayOfMonth, daysInMonth));
+function shiftWeek(date: Date, delta: number) {
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + delta * 7);
   return shifted;
 }
