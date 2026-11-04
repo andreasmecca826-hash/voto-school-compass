@@ -151,8 +151,13 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
     };
   }
   if (!isObj(raw)) return undefined;
-  const path = str(raw["path"] ?? raw["attachmentPath"]);
-  const url = str(raw["url"] ?? raw["attachmentUrl"]);
+  const rawPath = str(raw["path"] ?? raw["attachmentPath"]);
+  const rawUrl = str(raw["url"] ?? raw["attachmentUrl"]);
+  const path =
+    rawPath && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/i.test(rawPath)
+      ? rawPath.replace(/^\/+/, "")
+      : undefined;
+  const url = rawUrl ?? (rawPath && /^https?:\/\//i.test(rawPath) ? rawPath : undefined);
   const name = str(
     raw["name"] ?? raw["fileName"] ?? raw["filename"] ?? raw["attachmentName"] ?? raw["nome"],
   );
@@ -233,6 +238,14 @@ export function parseVotoData(raw: unknown): VotoData {
       const attachments = Array.isArray(rawAttachments)
         ? rawAttachments.map(parseCircularAttachment).filter((item) => item !== undefined)
         : undefined;
+      const legacyPath = str(n["attachmentPath"]);
+      const legacyInternalPath =
+        legacyPath && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/i.test(legacyPath)
+          ? legacyPath.replace(/^\/+/, "")
+          : undefined;
+      const legacyUrl =
+        str(n["attachmentUrl"]) ??
+        (legacyPath && /^https?:\/\//i.test(legacyPath) ? legacyPath : undefined);
       return {
         id: str(n["id"]) ?? `n-${i}`,
         type: notifType(n["type"]),
@@ -241,8 +254,8 @@ export function parseVotoData(raw: unknown): VotoData {
         date: str(n["date"]),
         subject: str(n["subject"]),
         teacher: str(n["teacher"]) ?? str(n["docente"]) ?? str(n["prof"]),
-        attachmentPath: str(n["attachmentPath"]),
-        attachmentUrl: str(n["attachmentUrl"]),
+        attachmentPath: legacyInternalPath,
+        attachmentUrl: legacyUrl,
         attachmentName: str(n["attachmentName"]),
         ...(attachments?.length ? { attachments } : {}),
         read: n["read"] === true,
