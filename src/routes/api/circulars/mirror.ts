@@ -6,7 +6,7 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 const ATTACHMENT_REQUEST_TIMEOUT_MS = 45_000;
 const validPath = (value: unknown): value is string =>
-  typeof value === "string" && /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
+  typeof value === "string" && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
 
 type SignedPdfResponse = {
   path?: unknown;
@@ -167,8 +167,9 @@ export const Route = createFileRoute("/api/circulars/mirror")({
       GET: async ({ request }) => {
         try {
           const params = new URL(request.url).searchParams;
-          const path = params.get("path");
-          if (!validPath(path)) return json({ error: "path non valido" }, 400);
+          const rawPath = params.get("path");
+          const path = rawPath?.replace(/^\/+/, "") ?? null;
+          if (!validPath(path)) return json({ error: "Path allegato non valido" }, 400);
           const downloadName =
             params.get("download") === "1" ? (params.get("filename") ?? "circolare.pdf") : null;
           return await readPrivateAttachment(config(), path, downloadName);
