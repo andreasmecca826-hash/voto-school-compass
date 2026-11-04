@@ -45,4 +45,26 @@ describe("parser allegati circolari multipli", () => {
     expect(parsed.notifications[0]?.attachments).toBeUndefined();
     expect(parsed.notifications[0]?.attachmentPath).toBe(`circulars/${"c".repeat(64)}.pdf`);
   });
+
+  it("mantiene i link esterni degli allegati non PDF", () => {
+    const parsed = parseVotoData({
+      subjects: [],
+      notifications: [
+        {
+          id: "notice-docx",
+          type: "notice",
+          title: "Circolare con Word",
+          attachments: [
+            { path: `circulars/${"d".repeat(64)}.pdf`, name: "circolare.pdf" },
+            { url: "https://didup.example/report.docx", name: "report.docx" },
+          ],
+        },
+      ],
+    });
+
+    expect(parsed.notifications[0]?.attachments).toEqual([
+      { path: `circulars/${"d".repeat(64)}.pdf`, name: "circolare.pdf" },
+      { url: "https://didup.example/report.docx", name: "report.docx" },
+    ]);
+  });
 });

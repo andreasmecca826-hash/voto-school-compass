@@ -9,15 +9,15 @@ import {
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
 
-function safePdfFilename(value?: string) {
-  const cleaned = Array.from(value?.trim() || "circolare.pdf", (char) => {
+function safeAttachmentFilename(value?: string) {
+  const cleaned = Array.from(value?.trim() || "allegato", (char) => {
     const code = char.charCodeAt(0);
     return char === "\\" || char === "/" || char === '"' || code < 32 || code === 127 ? "_" : char;
   })
     .join("")
     .replace(/\s+/g, " ")
     .slice(0, 120);
-  return /\.pdf$/i.test(cleaned) ? cleaned : `${cleaned}.pdf`;
+  return cleaned || "allegato";
 }
 
 function internalPdfUrl(path: string, download = false, filename?: string) {
@@ -59,11 +59,12 @@ export function CircularViewer({
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
-  const pdfFilename = safePdfFilename(activeFile?.name);
+  const attachmentFilename = safeAttachmentFilename(activeFile?.name);
   const previewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : activeFile?.url;
   const downloadUrl = activeFile?.path
-    ? internalPdfUrl(activeFile.path, true, pdfFilename)
+    ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
+  const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || Boolean(activeFile?.path);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -104,13 +105,13 @@ export function CircularViewer({
                       : "border-border bg-card text-muted-foreground"
                   }`}
                 >
-                  {file.name ?? `PDF ${index + 1}`}
+                  {file.name ?? `Allegato ${index + 1}`}
                 </button>
               ))}
             </div>
           </div>
         )}
-        {previewUrl ? (
+        {previewUrl && isPdf ? (
           <iframe
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
@@ -120,19 +121,25 @@ export function CircularViewer({
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
-            <p>Questo PDF non è disponibile nello storage interno.</p>
+            <p>
+              {activeFile?.name
+                ? "Questo formato non ha un’anteprima integrata. Usa il pulsante sotto per aprirlo o scaricarlo."
+                : "Questo allegato non è disponibile."}
+            </p>
           </div>
         )}
         {downloadUrl && (
           <a
             href={downloadUrl}
-            download={pdfFilename}
+            download={activeFile?.path ? attachmentFilename : undefined}
+            target={activeFile?.path ? undefined : "_blank"}
+            rel={activeFile?.path ? undefined : "noreferrer"}
             className="press mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
           >
-            <Download className="h-4 w-4" /> Scarica PDF
+            <Download className="h-4 w-4" /> {isPdf ? "Scarica PDF" : "Apri allegato"}
           </a>
         )}
-        {previewUrl && (
+        {previewUrl && isPdf && (
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
             Se l’anteprima non si carica, puoi scaricare il PDF.
           </p>

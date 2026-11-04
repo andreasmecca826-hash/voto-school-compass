@@ -36,9 +36,9 @@ export type NotificationType = "note" | "grade" | "reminder" | "notice";
 
 export interface CircularAttachment {
   name?: string | undefined;
-  /** Percorso del PDF nel bucket privato, ad esempio circulars/<sha256>.pdf. */
+  /** Percorso dell’allegato PDF nel bucket privato, ad esempio circulars/<sha256>.pdf. */
   path?: string | undefined;
-  /** URL firmato temporaneo, valorizzato solo per allegati interni. */
+  /** URL sorgente per allegati non PDF ancora ospitati da DidUP. */
   url?: string | undefined;
 }
 

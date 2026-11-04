@@ -152,13 +152,15 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
   }
   if (!isObj(raw)) return undefined;
   const path = str(raw["path"] ?? raw["attachmentPath"]);
+  const url = str(raw["url"] ?? raw["attachmentUrl"]);
   const name = str(
     raw["name"] ?? raw["fileName"] ?? raw["filename"] ?? raw["attachmentName"] ?? raw["nome"],
   );
-  if (!path && !name) return undefined;
+  if (!path && !url && !name) return undefined;
   return {
     ...(name ? { name } : {}),
     ...(path ? { path } : {}),
+    ...(url ? { url } : {}),
   };
 }
 
