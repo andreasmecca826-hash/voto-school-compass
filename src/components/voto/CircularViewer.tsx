@@ -64,7 +64,7 @@ export function CircularViewer({
   const downloadUrl = activeFile?.path
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
-  const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || Boolean(activeFile?.path);
+  const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -136,7 +136,8 @@ export function CircularViewer({
             rel={activeFile?.path ? undefined : "noreferrer"}
             className="press mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
           >
-            <Download className="h-4 w-4" /> {isPdf ? "Scarica PDF" : "Apri allegato"}
+            <Download className="h-4 w-4" />
+            {isPdf ? "Scarica PDF" : activeFile?.path ? "Scarica DOCX" : "Apri allegato"}
           </a>
         )}
         {previewUrl && isPdf && (

@@ -5,7 +5,7 @@ const corsHeaders = {
 };
 const bucket = Deno.env.get("SUPABASE_STORAGE_BUCKET") || "circulars";
 const validPath = (value: unknown): value is string =>
-  typeof value === "string" && /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
+  typeof value === "string" && /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -54,7 +54,7 @@ Deno.serve(async (request: Request) => {
     return jsonResponse({ error: "JSON non valido" }, 400);
   }
   const path = typeof body === "object" && body !== null ? (body as { path?: unknown }).path : null;
-  if (!validPath(path)) return jsonResponse({ error: "Path PDF non valido" }, 400);
+  if (!validPath(path)) return jsonResponse({ error: "Path allegato non valido" }, 400);
 
   const rawUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -75,7 +75,7 @@ Deno.serve(async (request: Request) => {
     );
     if (!response.ok) {
       console.error("mirror-circular signing failed", { status: response.status });
-      return jsonResponse({ error: "PDF non disponibile nello storage interno" }, 502);
+      return jsonResponse({ error: "Allegato non disponibile nello storage interno" }, 502);
     }
 
     const result = await response.json();
@@ -97,6 +97,6 @@ Deno.serve(async (request: Request) => {
     console.error("mirror-circular signing failed", {
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
-    return jsonResponse({ error: "Impossibile preparare il PDF" }, 502);
+    return jsonResponse({ error: "Impossibile preparare l'allegato" }, 502);
   }
 });

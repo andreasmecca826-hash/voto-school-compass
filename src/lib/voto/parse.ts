@@ -141,7 +141,7 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
   if (typeof raw === "string") {
     const value = raw.trim();
     if (!value) return undefined;
-    const isInternalPath = /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
+    const isInternalPath = /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
     const name = isInternalPath
       ? value.split("/").at(-1)
       : value.split(/[/?#]/).filter(Boolean).at(-1);
