@@ -52,6 +52,8 @@ export function CircularViewer({
       ? [{ name: fileName, path, url }]
       : [];
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | undefined>();
 
   useEffect(() => {
     if (open) setSelectedIndex(0);
@@ -65,6 +67,34 @@ export function CircularViewer({
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
+
+  async function downloadAttachment() {
+    if (!downloadUrl || isDownloading) return;
+    if (!activeFile?.path) {
+      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setIsDownloading(true);
+    setDownloadError(undefined);
+    try {
+      const response = await fetch(downloadUrl, { credentials: "same-origin" });
+      if (!response.ok) throw new Error(`download_${response.status}`);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = attachmentFilename;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+    } catch {
+      setDownloadError("Download non riuscito. Riprova tra qualche secondo.");
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -129,16 +159,18 @@ export function CircularViewer({
           </div>
         )}
         {downloadUrl && (
-          <a
-            href={downloadUrl}
-            download={activeFile?.path ? attachmentFilename : undefined}
-            target={activeFile?.path ? undefined : "_blank"}
-            rel={activeFile?.path ? undefined : "noreferrer"}
+          <button
+            type="button"
+            onClick={downloadAttachment}
+            disabled={isDownloading}
             className="press mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
           >
             <Download className="h-4 w-4" />
-            {isPdf ? "Scarica PDF" : activeFile?.path ? "Scarica DOCX" : "Apri allegato"}
-          </a>
+            {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
+          </button>
+        )}
+        {downloadError && (
+          <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>
         )}
         {previewUrl && isPdf && (
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
