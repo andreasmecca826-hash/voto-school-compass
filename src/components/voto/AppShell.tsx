@@ -50,6 +50,7 @@ const MusicPanel = lazy(() =>
 );
 
 interface UiCtx {
+  openMenu: () => void;
   openNotifications: () => void;
   openSimulator: (subjectId?: string) => void;
   openSubject: (id: string) => void;
@@ -162,6 +163,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <Ui.Provider
       value={{
+        openMenu: () => setMoreOpen(true),
         openNotifications: () => {
           setMounted((current) => ({ ...current, notifications: true }));
           setNotif(true);
