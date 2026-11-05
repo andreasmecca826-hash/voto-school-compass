@@ -27,6 +27,7 @@ export interface Assignment {
   subject?: string | undefined;
   dueDate?: string | undefined;
   dueTime?: string | undefined;
+  assignedDate?: string | undefined;
   completed: boolean;
   details?: string | undefined;
   teacher?: string | undefined;

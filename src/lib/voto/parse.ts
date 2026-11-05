@@ -83,9 +83,7 @@ function gradeCommentOrUndefined(
     normalizedGradeText(String(value)),
     normalizedGradeText(new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(value)),
     spokenGrade,
-    ...(value % 1 === 0.5 && spokenGrade
-      ? [`${spokenGrade} e mezzo`, `${spokenGrade} mezzo`]
-      : []),
+    ...(value % 1 === 0.5 && spokenGrade ? [`${spokenGrade} e mezzo`, `${spokenGrade} mezzo`] : []),
     ...(numericLabel?.[1] ? [normalizedGradeText(numericLabel[1])] : []),
   ].filter((form): form is string => Boolean(form));
 
@@ -228,6 +226,7 @@ export function parseVotoData(raw: unknown): VotoData {
       subject: str(a["subject"]),
       dueDate: str(a["dueDate"]),
       dueTime: str(a["dueTime"]),
+      assignedDate: str(a["assignedDate"]) ?? str(a["assignmentDate"]),
       completed: a["completed"] === true,
       details: str(a["details"]) ?? str(a["description"]),
       teacher: str(a["teacher"]) ?? str(a["docente"]) ?? str(a["prof"]),
