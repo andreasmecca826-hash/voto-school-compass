@@ -93,10 +93,20 @@ export function saveSchoolClosures(periods: SchoolClosurePeriod[]): boolean {
   return true;
 }
 
+export function loadExcludeWeekends(): boolean {
+  const value = load<unknown>(KEYS.schoolExcludeWeekends, true);
+  return typeof value === "boolean" ? value : true;
+}
+
+export function saveExcludeWeekends(exclude: boolean): void {
+  save(KEYS.schoolExcludeWeekends, exclude);
+}
+
 export function schoolDaysUntilSchoolEnd(
   value: string | undefined,
   now: Date,
   closures: SchoolClosurePeriod[] = [],
+  excludeWeekends = true,
 ): number | null {
   if (!value || !isValidIsoDate(value)) return null;
   const target = Date.parse(`${value}T00:00:00Z`);
@@ -109,7 +119,7 @@ export function schoolDaysUntilSchoolEnd(
   const isSchoolDay = (time: number): boolean => {
     const date = new Date(time);
     const weekday = date.getUTCDay();
-    if (weekday === 0 || weekday === 6) return false;
+    if (excludeWeekends && (weekday === 0 || weekday === 6)) return false;
     const year = date.getUTCFullYear();
     let yearHolidays = holidays.get(year);
     if (!yearHolidays) {

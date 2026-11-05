@@ -126,6 +126,18 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "linear-gradient(135deg,#c0c0c0,#083c83)",
   },
   {
+    id: "windows-98",
+    label: "Windows 98",
+    description: "Grigio classico, blu navy e bordi in rilievo",
+    sw: "linear-gradient(135deg,#dfdfdf 0%,#c0c0c0 42%,#808080 48%,#000080 52%,#1084d0 100%)",
+  },
+  {
+    id: "windows-7",
+    label: "Windows 7",
+    description: "Vetro Aero, blu cielo e riflessi luminosi",
+    sw: "linear-gradient(135deg,#f2fdff 0%,#b8e8ff 24%,#4b98ce 48%,#1765a6 72%,#dcf7ff 100%)",
+  },
+  {
     id: "dark-academia",
     label: "Dark Academia",
     description: "Carta e atmosfera classica",

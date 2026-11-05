@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { fmtDate } from "@/lib/voto/dates";
 import {
+  loadExcludeWeekends,
   loadSchoolClosures,
+  saveExcludeWeekends,
   saveSchoolClosures,
   schoolDaysUntilSchoolEnd,
   type SchoolClosurePeriod,
@@ -16,6 +18,7 @@ import {
 export function SchoolEndDateTool() {
   const [date, setDate] = useState("");
   const [closures, setClosures] = useState<SchoolClosurePeriod[]>([]);
+  const [excludeWeekends, setExcludeWeekends] = useState(true);
   const [closureStart, setClosureStart] = useState("");
   const [closureEnd, setClosureEnd] = useState("");
   const now = useClock();
@@ -23,7 +26,13 @@ export function SchoolEndDateTool() {
   useEffect(() => {
     setDate(loadSchoolEndDate() ?? "");
     setClosures(loadSchoolClosures());
+    setExcludeWeekends(loadExcludeWeekends());
   }, []);
+
+  const updateExcludeWeekends = (checked: boolean) => {
+    setExcludeWeekends(checked);
+    saveExcludeWeekends(checked);
+  };
 
   const updateDate = (value: string) => {
     setDate(value);
@@ -48,7 +57,9 @@ export function SchoolEndDateTool() {
     if (saveSchoolClosures(next)) setClosures(next);
   };
 
-  const daysRemaining = date ? schoolDaysUntilSchoolEnd(date, now, closures) : null;
+  const daysRemaining = date
+    ? schoolDaysUntilSchoolEnd(date, now, closures, excludeWeekends)
+    : null;
   const formattedDate = date
     ? fmtDate(date, { day: "2-digit", month: "long", year: "numeric" })
     : "";
@@ -80,14 +91,36 @@ export function SchoolEndDateTool() {
         )}
       </section>
 
+      <section className="card-surface flex items-start gap-3 p-4">
+        <input
+          id="school-exclude-weekends"
+          type="checkbox"
+          checked={excludeWeekends}
+          onChange={(event) => updateExcludeWeekends(event.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-primary"
+          role="switch"
+          aria-label="Escludi sabato e domenica dal conteggio"
+        />
+        <div>
+          <label htmlFor="school-exclude-weekends" className="block text-sm font-semibold">
+            Escludi sabato e domenica
+          </label>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {excludeWeekends
+              ? "Attivo: il conteggio considera solo i giorni feriali."
+              : "Disattivo: sabato e domenica vengono conteggiati come giorni rimanenti."}
+          </p>
+        </div>
+      </section>
+
       <section className="card-surface space-y-3 p-4" aria-labelledby="school-closures-title">
         <div>
           <h3 id="school-closures-title" className="text-sm font-semibold">
-            Chiusure scolastiche extra
+            Festività e chiusure extra
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Aggiungi vacanze o giornate senza lezione comunicate dalla tua scuola, se non sono già
-            festività nazionali.
+            Puoi aggiungerne più di una. Per una festività singola scegli la stessa data in “Dal” e
+            “Al”; per le vacanze inserisci l’intervallo.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -119,10 +152,10 @@ export function SchoolEndDateTool() {
           disabled={!closureStart || !closureEnd || closureStart > closureEnd}
           className="h-10 rounded-xl bg-primary-soft px-3 text-xs font-semibold text-primary disabled:opacity-50"
         >
-          Aggiungi chiusura
+          Aggiungi festività o chiusura
         </button>
         {closures.length > 0 && (
-          <ul className="space-y-2" aria-label="Chiusure scolastiche aggiunte">
+          <ul className="space-y-2" aria-label="Festività e chiusure aggiunte">
             {closures.map((period, index) => (
               <li
                 key={`${period.start}-${period.end}-${index}`}
@@ -136,7 +169,7 @@ export function SchoolEndDateTool() {
                 <button
                   type="button"
                   onClick={() => removeClosure(index)}
-                  aria-label={`Rimuovi chiusura dal ${period.start} al ${period.end}`}
+                  aria-label={`Rimuovi festività o chiusura dal ${period.start} al ${period.end}`}
                   className="px-2 py-1 font-medium text-danger"
                 >
                   Rimuovi
@@ -162,8 +195,9 @@ export function SchoolEndDateTool() {
                 : `La data è passata da ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? "giorno" : "giorni"} di lezione`}
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Esclusi sabati, domeniche e festività nazionali italiane. Sono escluse anche le chiusure
-            scolastiche extra inserite qui sopra.
+            {excludeWeekends ? "Esclusi sabati e domeniche, " : "Inclusi sabati e domeniche, "}
+            festività nazionali italiane e chiusure scolastiche extra inserite qui sopra sono
+            escluse dal conteggio.
           </p>
         </section>
       )}

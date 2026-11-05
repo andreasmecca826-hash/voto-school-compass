@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadAbsenceHoursPerDay, saveAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
-import { calculateAbsencePlan, simulatedAbsenceHours } from "@/lib/voto/absence-calculator";
+import { calculateAbsencePlan } from "@/lib/voto/absence-calculator";
 import { fmt } from "@/lib/voto/calc";
 import { useVoto } from "@/lib/voto/store";
 
@@ -13,33 +13,40 @@ const numberLabel = (value: number) => fmt(Math.round(value * 100) / 100, 2);
 
 export function AbsenceCalculator() {
   const { attendance } = useVoto().data;
+  const [currentDaysInput, setCurrentDaysInput] = useState(String(attendance.absenceDays));
+  const [currentHoursInput, setCurrentHoursInput] = useState(String(attendance.absenceHours));
   const [simulatedDaysInput, setSimulatedDaysInput] = useState("0");
+  const [simulatedHoursInput, setSimulatedHoursInput] = useState("0");
   const [hoursPerDayInput, setHoursPerDayInput] = useState("6");
   useEffect(() => {
     setHoursPerDayInput(String(loadAbsenceHoursPerDay()));
   }, []);
+  useEffect(() => {
+    setCurrentDaysInput(String(attendance.absenceDays));
+    setCurrentHoursInput(String(attendance.absenceHours));
+  }, [attendance.absenceDays, attendance.absenceHours]);
   const updateHoursPerDay = (value: string) => {
     setHoursPerDayInput(value);
     const parsed = numericInput(value);
     if (parsed > 0) saveAbsenceHoursPerDay(parsed);
   };
   const calculation = calculateAbsencePlan({
-    absenceHours: attendance.absenceHours,
+    absenceHours: numericInput(currentHoursInput),
     absenceLimitHours: attendance.absenceLimitHours,
     annualHours: attendance.annualHours,
-    simulatedHours: simulatedAbsenceHours(
-      numericInput(simulatedDaysInput),
-      numericInput(hoursPerDayInput),
-    ),
+    simulatedHours: numericInput(simulatedHoursInput),
     hoursPerDay: numericInput(hoursPerDayInput),
   });
   const percent = calculation.currentAnnualPercentage;
+  const currentDays = numericInput(currentDaysInput);
+  const simulatedDays = numericInput(simulatedDaysInput);
+  const totalDaysAfterSimulation = currentDays + simulatedDays;
 
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        Calcolo basato sulle ore e sul limite presenti nei dati caricati. La simulazione non
-        modifica il registro e resta su questo dispositivo.
+        I valori iniziali arrivano dal registro, ma puoi personalizzare assenze e ore già fatte e
+        quelle da simulare. Le modifiche valgono solo per questo calcolo: non cambiano il JSON.
       </p>
 
       <section className="card-surface space-y-3 p-4" aria-labelledby="absence-current-title">
@@ -47,8 +54,20 @@ export function AbsenceCalculator() {
           Situazione attuale
         </h3>
         <div className="grid grid-cols-2 gap-2">
-          <Metric label="Giorni di assenza" value={`${numberLabel(attendance.absenceDays)} gg`} />
-          <Metric label="Ore di assenza" value={`${numberLabel(calculation.absenceHours)} h`} />
+          <NumberField
+            id="absence-current-days"
+            label="Assenze già fatte (giorni)"
+            value={currentDaysInput}
+            onChange={setCurrentDaysInput}
+            step="0.5"
+          />
+          <NumberField
+            id="absence-current-hours"
+            label="Ore già fatte"
+            value={currentHoursInput}
+            onChange={setCurrentHoursInput}
+            step="0.5"
+          />
           <Metric
             label="Limite impostato"
             value={
@@ -64,13 +83,19 @@ export function AbsenceCalculator() {
             }
           />
           <Metric
+            label="Giornate intere residue"
+            value={
+              calculation.hasConfiguredLimit ? `${calculation.fullDaysRemaining ?? "—"} gg` : "—"
+            }
+          />
+          <Metric
             label="Monte ore annuale"
             value={calculation.annualHours > 0 ? `${numberLabel(calculation.annualHours)} h` : "—"}
           />
         </div>
         {percent !== null && (
           <p className="text-[11px] text-muted-foreground">
-            Le assenze registrate corrispondono al {numberLabel(percent)}% del monte ore annuale.
+            Le ore attuali corrispondono al {numberLabel(percent)}% del monte ore annuale.
           </p>
         )}
         {calculation.hasConfiguredLimit && calculation.exceededHours > 0 && (
@@ -89,12 +114,23 @@ export function AbsenceCalculator() {
         <h3 id="absence-simulation-title" className="text-sm font-semibold">
           Simula altre assenze
         </h3>
+        <p className="text-[11px] text-muted-foreground">
+          Inserisci separatamente quante giornate e quante ore aggiungere. Per esempio, parti da 15
+          assenze e simulane altre 12.
+        </p>
         <NumberField
           id="absence-extra-days"
-          label="Giornate aggiuntive da simulare"
+          label="Altre assenze da simulare (giorni)"
           value={simulatedDaysInput}
           onChange={setSimulatedDaysInput}
           step="1"
+        />
+        <NumberField
+          id="absence-extra-hours"
+          label="Altre ore da simulare"
+          value={simulatedHoursInput}
+          onChange={setSimulatedHoursInput}
+          step="0.5"
         />
         <NumberField
           id="absence-hours-per-day"
@@ -111,8 +147,10 @@ export function AbsenceCalculator() {
             className="rounded-xl border border-border bg-surface p-3 text-xs"
           >
             <p>
-              Con il valore indicato avresti {numberLabel(calculation.simulatedTotalHours)} ore di
-              assenza totali.
+              Dopo altre {numberLabel(simulatedDays)} giornate e{" "}
+              {numberLabel(calculation.simulatedHours)} ore, avresti{" "}
+              {numberLabel(totalDaysAfterSimulation)} giornate e{" "}
+              {numberLabel(calculation.simulatedTotalHours)} ore di assenza totali.
             </p>
             {calculation.simulatedExceededHours > 0 ? (
               <p className="mt-1 font-semibold text-danger">
@@ -122,7 +160,7 @@ export function AbsenceCalculator() {
             ) : calculation.simulatedRemainingHours === 0 ? (
               <p className="mt-1 font-semibold text-warning">
                 {calculation.simulatedHours > 0
-                  ? "Con questa simulazione raggiungeresti esattamente il limite."
+                  ? "Con questi valori raggiungeresti esattamente il limite."
                   : "Hai raggiunto esattamente il limite."}
               </p>
             ) : (

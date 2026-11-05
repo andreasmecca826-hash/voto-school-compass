@@ -59,6 +59,8 @@ export type Theme =
   | "cybercore"
   | "brutalist"
   | "retro-os"
+  | "windows-98"
+  | "windows-7"
   | "dark-academia"
   | "glassmorphism"
   | "y2k"

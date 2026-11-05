@@ -21,6 +21,10 @@ describe("schoolDaysUntilSchoolEnd", () => {
     expect(schoolDaysUntilSchoolEnd("2026-04-07", new Date(2026, 3, 3, 12))).toBe(1);
   });
 
+  it("include sabato e domenica quando l’opzione di esclusione è disattivata", () => {
+    expect(schoolDaysUntilSchoolEnd("2026-01-06", new Date(2026, 0, 2, 12), [], false)).toBe(3);
+  });
+
   it("esclude anche gli intervalli di chiusura scolastica indicati", () => {
     expect(
       schoolDaysUntilSchoolEnd("2026-01-06", new Date(2026, 0, 2, 12), [

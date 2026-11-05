@@ -25,6 +25,7 @@ export const KEYS = {
   schoolEndDate: "voto.schoolEndDate",
   absenceHoursPerDay: "voto.absenceHoursPerDay",
   schoolClosures: "voto.schoolClosures",
+  schoolExcludeWeekends: "voto.schoolExcludeWeekends",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {
