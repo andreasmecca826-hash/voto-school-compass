@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  LogIn,
   LogOut,
   UserRound,
 } from "lucide-react";
@@ -80,7 +79,15 @@ function eventDescription(event: AttendanceEvent) {
 }
 
 function eventIcon(event: AttendanceEvent) {
-  if (event.type === "absence") return <LogIn className="h-6 w-6" strokeWidth={1.7} />;
+  if (event.type === "absence") {
+    return (
+      <img
+        src="/didup-entry-event-reference.png"
+        alt=""
+        className="h-full w-full rounded-full object-cover"
+      />
+    );
+  }
   if (event.type === "delay") return <Clock3 className="h-6 w-6" strokeWidth={1.7} />;
   return <LogOut className="h-6 w-6" strokeWidth={1.7} />;
 }
@@ -142,7 +149,7 @@ function EventiAppello() {
           </p>
         </div>
         <img
-          src="/didup-profile.jpg"
+          src="/didup-profile-reference.png"
           alt=""
           aria-hidden="true"
           className="h-[44px] w-[44px] shrink-0 rounded-full object-cover"
