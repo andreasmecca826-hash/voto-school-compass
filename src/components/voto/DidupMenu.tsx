@@ -138,7 +138,14 @@ export function DidupMenu() {
             <>
               {item.iconImage ? (
                 <img
-                  src={item.iconImage}
+                  src={
+                    item.iconImage.endsWith(".png")
+                      ? item.iconImage.replace(
+                          "/didup-menu-icons/",
+                          "/didup-menu-icons-transparent/",
+                        )
+                      : item.iconImage
+                  }
                   alt=""
                   aria-hidden="true"
                   className="absolute right-0 top-0 h-9 w-9 select-none"
