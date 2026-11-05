@@ -1,7 +1,7 @@
 import {
-  CalendarCheck2,
   CalendarX2,
   FileText,
+  LogIn,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
@@ -237,7 +237,7 @@ export function DidupDashboard() {
                 event.type === "absence" ? (
                   <AbsenceIcon />
                 ) : event.type === "delay" ? (
-                  <CalendarCheck2 className="h-5 w-5" />
+                  <LogIn className="h-6 w-6" strokeWidth={1.8} />
                 ) : (
                   <CalendarX2 className="h-5 w-5" />
                 );
