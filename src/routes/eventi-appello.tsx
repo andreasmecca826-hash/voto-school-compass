@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  LogIn,
   LogOut,
   UserRound,
 } from "lucide-react";
@@ -79,17 +80,9 @@ function eventDescription(event: AttendanceEvent) {
 }
 
 function eventIcon(event: AttendanceEvent) {
-  if (event.type === "absence") {
-    return (
-      <img
-        src="/didup-entry-event-reference.png"
-        alt=""
-        className="h-full w-full rounded-full object-cover"
-      />
-    );
-  }
-  if (event.type === "delay") return <Clock3 className="h-6 w-6" strokeWidth={1.7} />;
-  return <LogOut className="h-6 w-6" strokeWidth={1.7} />;
+  if (event.type === "absence") return <LogIn className="h-5 w-5" strokeWidth={1.7} />;
+  if (event.type === "delay") return <Clock3 className="h-5 w-5" strokeWidth={1.7} />;
+  return <LogOut className="h-5 w-5" strokeWidth={1.7} />;
 }
 
 function eventDateLabel(iso: string) {
@@ -132,7 +125,7 @@ function EventiAppello() {
 
   return (
     <div className="didup-page mx-auto min-h-dvh w-full max-w-[480px] bg-black pb-[112px] text-white">
-      <header className="flex min-h-[112px] items-center justify-between gap-4 px-4 pb-4 pt-7">
+      <header className="flex min-h-[112px] items-center justify-between gap-4 px-4 pb-4 pr-2 pt-7">
         <Link
           to="/"
           aria-label="Torna alla Home"
@@ -152,7 +145,7 @@ function EventiAppello() {
           src="/didup-profile-reference.png"
           alt=""
           aria-hidden="true"
-          className="h-[44px] w-[44px] shrink-0 rounded-full object-cover"
+          className="h-[42px] w-[42px] shrink-0 rounded-full object-contain"
         />
       </header>
 
@@ -160,18 +153,20 @@ function EventiAppello() {
         aria-label="Riepilogo presenze"
         className="mx-5 mt-[14px] flex min-h-[84px] items-center justify-center gap-3 rounded-[12px] bg-[#252525] px-3 py-3"
       >
-        <AttendanceCount
-          value={Math.round(v.data.attendance.absenceDays)}
-          label="ASS"
-          tone="absence"
-        />
-        <AttendanceCount value={v.data.attendance.delays} label="RIT" tone="neutral" />
-        <AttendanceCount value={v.data.attendance.earlyExits} label="USC" tone="neutral" />
+        <div className="flex translate-x-1 items-center gap-4">
+          <AttendanceCount
+            value={Math.round(v.data.attendance.absenceDays)}
+            label="ASS"
+            tone="absence"
+          />
+          <AttendanceCount value={v.data.attendance.delays} label="RIT" tone="neutral" />
+          <AttendanceCount value={v.data.attendance.earlyExits} label="USC" tone="neutral" />
+        </div>
       </section>
 
       <section
         aria-label="Calendario eventi"
-        className="mx-5 mt-5 rounded-[10px] bg-[#252525] px-4 pb-3 pt-2"
+        className="mx-5 mt-5 rounded-[10px] bg-[#252525] px-4 pb-5 pt-2"
       >
         <div className="flex items-center justify-between">
           <button
@@ -243,11 +238,11 @@ function EventiAppello() {
               return (
                 <li
                   key={event.id}
-                  className="flex min-h-[142px] items-center gap-4 bg-[#252525] px-5 py-5"
+                  className="flex min-h-[142px] items-center gap-4 bg-[#252525] py-5 pl-2 pr-5"
                 >
                   <span
                     aria-hidden="true"
-                    className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full bg-[#4169a8] text-white"
+                    className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#4169a8] text-white"
                   >
                     {eventIcon(event)}
                   </span>
@@ -326,7 +321,7 @@ function AttendanceCount({
 }) {
   return (
     <div
-      className={`flex h-[54px] w-[56px] shrink-0 flex-col items-center justify-center rounded-[10px] ${
+      className={`flex h-[52px] w-[52px] shrink-0 flex-col items-center justify-center rounded-[10px] ${
         tone === "absence" ? "bg-[#e56c6c]" : "bg-[#365f99]"
       }`}
     >
