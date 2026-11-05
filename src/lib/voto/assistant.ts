@@ -1,4 +1,4 @@
-import { average, fmt, neededGrade, overallAverage } from "./calc";
+import { average, fmt, gradeTone, neededGrade, overallAverage } from "./calc";
 import { calculateAbsencePlan } from "./absence-calculator";
 import { DEFAULT_ABSENCE_HOURS_PER_DAY } from "./absence-preferences";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
@@ -34,8 +34,8 @@ export interface AssistantContext {
   homeScale?: number;
   homeModules?: Array<{ id: string; enabled: boolean }>;
   flashcards?: Flashcard[];
-  schoolEndDate?: string;
-  absenceHoursPerDay?: number;
+  schoolEndDate?: string | undefined;
+  absenceHoursPerDay?: number | undefined;
 }
 
 const normalize = (value: string) =>
@@ -46,8 +46,33 @@ const normalize = (value: string) =>
 
 const number = (value: number) => fmt(Math.round(value * 100) / 100, 2);
 
+function editDistance(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    let diagonal = previous[0]!;
+    previous[0] = row;
+    for (let column = 1; column <= right.length; column += 1) {
+      const above = previous[column]!;
+      previous[column] =
+        left[row - 1] === right[column - 1]
+          ? diagonal
+          : Math.min(diagonal + 1, above + 1, previous[column - 1]! + 1);
+      diagonal = above;
+    }
+  }
+  return previous[right.length]!;
+}
+
+function subjectTokenMatches(queryToken: string, subjectToken: string): boolean {
+  if (queryToken === subjectToken) return true;
+  if (queryToken.length >= 3 && subjectToken.startsWith(queryToken)) return true;
+  if (subjectToken.length >= 3 && queryToken.startsWith(subjectToken)) return true;
+  const maxDistance = Math.max(queryToken.length, subjectToken.length) >= 7 ? 2 : 1;
+  return queryToken.length >= 4 && subjectToken.length >= 4 && editDistance(queryToken, subjectToken) <= maxDistance;
+}
+
 function findSubject(query: string, data: VotoData) {
-  const normalized = normalize(query);
+  const normalized = normalize(query).replace(/[^\p{L}\p{N}\s]+/gu, " ");
   const exactMatches = data.subjects.filter((subject) =>
     normalized.includes(normalize(subject.name)),
   );
@@ -60,7 +85,18 @@ function findSubject(query: string, data: VotoData) {
       .filter((token) => token.length >= 4)
       .some((token) => normalized.includes(token)),
   );
-  return partialMatches.length === 1 ? partialMatches[0] : undefined;
+  if (partialMatches.length === 1) return partialMatches[0];
+
+  const queryTokens = normalized.split(/\s+/).filter((token) => token.length >= 3);
+  const tolerantMatches = data.subjects.filter((subject) => {
+    const subjectTokens = normalize(subject.name)
+      .split(/\s+/)
+      .filter((token) => token.length >= 4);
+    return subjectTokens.some((subjectToken) =>
+      queryTokens.some((queryToken) => subjectTokenMatches(queryToken, subjectToken)),
+    );
+  });
+  return tolerantMatches.length === 1 ? tolerantMatches[0] : undefined;
 }
 
 function targetFrom(query: string) {
@@ -155,6 +191,14 @@ function latestGrade(data: VotoData) {
       .flatMap((subject) => subject.grades.map((grade) => ({ subject, grade })))
       .sort((a, b) => b.grade.date.localeCompare(a.grade.date))[0] ?? null
   );
+}
+
+function gradeToneLabel(value: number | null): string {
+  const tone = gradeTone(value);
+  if (tone === "good") return "verde (da 6 in su)";
+  if (tone === "ok") return "arancione (da 5 a 5,99)";
+  if (tone === "bad") return "rosso (sotto 5)";
+  return "grigio (nessun voto)";
 }
 
 function noticesByDate(data: VotoData) {
@@ -1105,6 +1149,20 @@ export function answerQuestion(
     return ranked[0]
       ? `La media più alta è ${number(ranked[0].avg)} in ${ranked[0].item.name}.`
       : "Non ci sono ancora voti sufficienti.";
+  }
+
+  const asksGradeColors =
+    normalized.includes("colore") ||
+    normalized.includes("colori") ||
+    normalized.includes("verde") ||
+    normalized.includes("arancion") ||
+    normalized.includes("rosso");
+  if (asksGradeColors) {
+    if (subject) {
+      const current = average(subject.grades);
+      return `In ${subject.name} la media è ${current === null ? "—" : number(current)}: fascia ${gradeToneLabel(current)}.`;
+    }
+    return "La regola dei voti è: verde da 6 in su, arancione da 5 a 5,99, rosso sotto il 5. Le materie senza voti sono grigie.";
   }
 
   if (

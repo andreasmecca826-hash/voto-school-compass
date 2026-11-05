@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useUi } from "@/components/voto/AppShell";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { Chip, GradePill, ProgressBar, SubjectMark } from "@/components/voto/ui";
-import { fmt, subjectStats } from "@/lib/voto/calc";
+import { fmt, gradeTone, subjectStats } from "@/lib/voto/calc";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { useVoto } from "@/lib/voto/store";
 import type { PeriodSelection } from "@/lib/voto/periods";
@@ -77,7 +77,7 @@ function Voti() {
   if (v.registryStyle === "didup") {
     return (
       <DidupVotiPage
-        studentName={(v.data.student.name || "ANDREA MARIA").toUpperCase()}
+        studentName={(v.displayName || v.data.student.name || "ANDREA MARIA").toUpperCase()}
         subjects={didupList}
         period={didupPeriod}
         dateRange={didupRange}
@@ -223,6 +223,15 @@ function DidupVotiPage({
       <ul className="border-b border-[#3a3a3a]">
         {subjects.map((subject) => {
           const stats = subjectStats(subject);
+          const tone = gradeTone(stats.avg);
+          const toneClass =
+            tone === "good"
+              ? "bg-[#3ed69d] text-[#14382c]"
+              : tone === "ok"
+                ? "bg-[#f2a93b] text-[#3d2b0d]"
+                : tone === "bad"
+                  ? "bg-[#ec6c62] text-[#3d1613]"
+                  : "bg-[#e8e8e8] text-[#555]";
           return (
             <li key={subject.id} className="border-t border-[#3a3a3a] first:border-t-0">
               <button
@@ -233,9 +242,7 @@ function DidupVotiPage({
               >
                 <span
                   aria-hidden="true"
-                  className={`grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full bg-[#f0f0f0] text-[16px] font-normal ${
-                    stats.avg === null ? "text-white" : "text-[#343434]"
-                  }`}
+                  className={`grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full text-[16px] font-normal ${toneClass}`}
                 >
                   {stats.avg === null ? "—" : fmt(stats.avg, 1)}
                 </span>
