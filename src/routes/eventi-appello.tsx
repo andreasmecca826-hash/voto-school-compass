@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  DoorOpen,
   LogIn,
   LogOut,
   UserRound,
@@ -120,7 +119,7 @@ function EventiAppello() {
 
   return (
     <div className="didup-page mx-auto min-h-dvh w-full max-w-[480px] bg-black pb-[112px] text-white">
-      <header className="flex min-h-[98px] items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+      <header className="flex min-h-[112px] items-center justify-between gap-4 px-4 pb-4 pt-7">
         <Link
           to="/"
           aria-label="Torna alla Home"
@@ -129,7 +128,7 @@ function EventiAppello() {
           <ArrowLeft className="h-7 w-7" strokeWidth={1.8} />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[20px] font-normal uppercase leading-tight tracking-[0.04em]">
+          <h1 className="truncate text-[18px] font-normal uppercase leading-tight tracking-[0.04em]">
             Eventi appello
           </h1>
           <p className="mt-1 truncate text-[12px] uppercase leading-tight text-white/90">
@@ -140,13 +139,13 @@ function EventiAppello() {
           src="/didup-profile.jpg"
           alt=""
           aria-hidden="true"
-          className="h-[52px] w-[52px] shrink-0 rounded-full object-cover"
+          className="h-[44px] w-[44px] shrink-0 rounded-full object-cover"
         />
       </header>
 
       <section
         aria-label="Riepilogo presenze"
-        className="mx-5 mt-5 grid grid-cols-3 gap-3 rounded-[10px] bg-[#252525] px-3 py-4"
+        className="mx-5 mt-[14px] flex min-h-[84px] items-center justify-center gap-3 rounded-[12px] bg-[#252525] px-3 py-3"
       >
         <AttendanceCount
           value={Math.round(v.data.attendance.absenceDays)}
@@ -159,30 +158,30 @@ function EventiAppello() {
 
       <section
         aria-label="Calendario eventi"
-        className="mx-5 mt-5 rounded-[10px] bg-[#252525] px-4 pb-4 pt-4"
+        className="mx-5 mt-5 rounded-[10px] bg-[#252525] px-4 pb-3 pt-2"
       >
         <div className="flex items-center justify-between">
           <button
             type="button"
             aria-label="Mese precedente"
             onClick={() => changeMonth(-1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08a5b5]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08a5b5]"
           >
-            <ChevronLeft className="h-7 w-7" />
+            <ChevronLeft className="h-6 w-6" />
           </button>
-          <h2 className="text-[21px] font-normal capitalize">{monthLabel}</h2>
+          <h2 className="text-[18px] font-normal capitalize">{monthLabel}</h2>
           <button
             type="button"
             aria-label="Mese successivo"
             onClick={() => changeMonth(1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08a5b5]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08a5b5]"
           >
-            <ChevronRight className="h-7 w-7" />
+            <ChevronRight className="h-6 w-6" />
           </button>
         </div>
-        <div className="mt-3 grid grid-cols-7 text-center">
+        <div className="mt-2 grid grid-cols-7 text-center">
           {week.map((date, index) => (
-            <span key={`weekday-${date}`} className="pb-2 text-[12px] capitalize text-white/80">
+            <span key={`weekday-${date}`} className="pb-1 text-[14px] capitalize text-white/80">
               {WEEKDAYS[index]}
             </span>
           ))}
@@ -235,18 +234,14 @@ function EventiAppello() {
                 >
                   <span
                     aria-hidden="true"
-                    className={`flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full ${
-                      event.type === "absence"
-                        ? "bg-[#4169a8] text-white"
-                        : "bg-[#4169a8] text-white"
-                    }`}
+                    className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full bg-[#4169a8] text-white"
                   >
                     {eventIcon(event)}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[#4169a8]">
                       <UserRound className="h-4 w-4 fill-current" />
-                      <span className="text-[15px] font-semibold">{eventLabel(event)}</span>
+                      <span className="text-[16px] font-semibold">{eventLabel(event)}</span>
                     </div>
                     <time
                       dateTime={event.date}
@@ -255,7 +250,7 @@ function EventiAppello() {
                       {eventDateLabel(event.date)}
                     </time>
                     <p
-                      className={`mt-2 text-[14px] ${justified ? "text-white/65" : "text-[#e46b62]"}`}
+                      className={`mt-2 text-[15px] ${justified ? "text-white/65" : "text-[#e46b62]"}`}
                     >
                       {justified ? event.justificationStatus || "Giustificato" : "Da giustificare"}
                     </p>
@@ -289,13 +284,12 @@ function EventiAppello() {
           type="button"
           aria-pressed={onlyToJustify}
           onClick={() => setOnlyToJustify((active) => !active)}
-          className={`flex min-h-[54px] w-full items-center justify-center gap-3 rounded-[12px] px-4 text-[14px] font-medium uppercase tracking-[0.04em] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+          className={`flex min-h-[46px] w-full items-center justify-center gap-3 rounded-[12px] px-4 text-[15px] font-medium uppercase tracking-[0.04em] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
             onlyToJustify ? "bg-[#087f8d]" : "bg-[#08a5b5] hover:bg-[#0bb3c4]"
           }`}
         >
-          <DoorOpen className="h-5 w-5" />
           <span>{onlyToJustify ? "Tutti gli eventi" : "Eventi da giustificare"}</span>
-          <span className="flex h-8 min-w-8 items-center justify-center rounded-full border border-white/80 px-1 text-[13px]">
+          <span className="flex h-7 min-w-7 items-center justify-center rounded-full border border-white/80 px-1 text-[13px]">
             {pendingEvents.length}
           </span>
         </button>
@@ -315,12 +309,12 @@ function AttendanceCount({
 }) {
   return (
     <div
-      className={`flex min-h-[76px] flex-col items-center justify-center rounded-[10px] ${
+      className={`flex h-[54px] w-[56px] shrink-0 flex-col items-center justify-center rounded-[10px] ${
         tone === "absence" ? "bg-[#e56c6c]" : "bg-[#365f99]"
       }`}
     >
-      <span className="text-[18px] leading-6">{Number.isFinite(value) ? value : 0}</span>
-      <span className="text-[14px] font-medium leading-5">{label}</span>
+      <span className="text-[16px] leading-5">{Number.isFinite(value) ? value : 0}</span>
+      <span className="text-[13px] font-medium leading-4">{label}</span>
     </div>
   );
 }
