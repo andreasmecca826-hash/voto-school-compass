@@ -150,6 +150,30 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "radial-gradient(ellipse at 18% 20%,#63e4f3 0%,transparent 43%),radial-gradient(ellipse at 85% 15%,#9b78ff 0%,transparent 48%),linear-gradient(145deg,#17172f,#28365f)",
   },
   {
+    id: "casino",
+    label: "Casinò",
+    description: "Panno verde, oro satinato e dettagli color rubino",
+    sw: "radial-gradient(circle at 78% 30%,#f7d878 0 4%,transparent 5%),linear-gradient(135deg,#102d25,#1f6849 48%,#c59b3b 72%,#592c37)",
+  },
+  {
+    id: "calcio",
+    label: "Calcio",
+    description: "Campo verde, linee da stadio e luci della partita",
+    sw: "radial-gradient(ellipse at 50% 20%,#fff3b0 0%,transparent 35%),repeating-linear-gradient(90deg,#164c31 0 22%,#1f633b 22% 44%)",
+  },
+  {
+    id: "terminale",
+    label: "Terminale",
+    description: "Console scura, testo monospaziato e verde fosforo",
+    sw: "repeating-linear-gradient(0deg,#07140c 0 7px,#0b1c10 7px 8px),linear-gradient(135deg,#07140c,#144322)",
+  },
+  {
+    id: "pixel-arcade",
+    label: "Pixel Arcade",
+    description: "Console 8-bit, viola profondo e colori arcade",
+    sw: "linear-gradient(135deg,#211442 0 32%,#7146c7 32% 55%,#25d8ca 55% 75%,#f2cb4c 75%)",
+  },
+  {
     id: "y2k",
     label: "Y2K",
     description: "Portale web 2000: cromo, ciano e fucsia",

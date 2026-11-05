@@ -3,6 +3,7 @@
 @import "tw-animate-css";
 @import "./themes/windows7.css";
 @import "./themes/glassmorphism.css";
+@import "./themes/extra-themes.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -479,6 +480,70 @@
   --theme-radius: 1.75rem;
   --theme-font-sans: Manrope, sans-serif;
   --theme-font-display: Manrope, sans-serif;
+}
+[data-theme="casino"] {
+  --theme-bg-dark: oklch(0.12 0.045 158);
+  --theme-card-dark: oklch(0.19 0.05 155);
+  --theme-surface-dark: oklch(0.25 0.06 155);
+  --theme-bg-light: oklch(0.94 0.035 90);
+  --theme-card-light: oklch(0.985 0.018 88);
+  --theme-surface-light: oklch(0.88 0.045 91);
+  --theme-fg-dark: oklch(0.94 0.025 90);
+  --theme-fg-light: oklch(0.22 0.04 155);
+  --theme-muted-dark: oklch(0.72 0.035 105);
+  --theme-muted-light: oklch(0.44 0.035 150);
+  --theme-primary: oklch(0.78 0.15 83);
+  --theme-radius: 0.75rem;
+  --theme-font-sans: Manrope, sans-serif;
+  --theme-font-display: Georgia, "Times New Roman", serif;
+}
+[data-theme="calcio"] {
+  --theme-bg-dark: oklch(0.14 0.055 155);
+  --theme-card-dark: oklch(0.21 0.06 153);
+  --theme-surface-dark: oklch(0.28 0.07 151);
+  --theme-bg-light: oklch(0.94 0.045 145);
+  --theme-card-light: oklch(0.985 0.022 145);
+  --theme-surface-light: oklch(0.87 0.065 145);
+  --theme-fg-dark: oklch(0.96 0.025 145);
+  --theme-fg-light: oklch(0.2 0.05 155);
+  --theme-muted-dark: oklch(0.72 0.045 145);
+  --theme-muted-light: oklch(0.43 0.045 150);
+  --theme-primary: oklch(0.75 0.17 145);
+  --theme-radius: 0.75rem;
+  --theme-font-sans: Manrope, sans-serif;
+  --theme-font-display: "Space Grotesk", sans-serif;
+}
+[data-theme="terminale"] {
+  --theme-bg-dark: oklch(0.095 0.025 150);
+  --theme-card-dark: oklch(0.15 0.035 150);
+  --theme-surface-dark: oklch(0.21 0.045 150);
+  --theme-bg-light: oklch(0.94 0.02 145);
+  --theme-card-light: oklch(0.985 0.012 145);
+  --theme-surface-light: oklch(0.88 0.035 145);
+  --theme-fg-dark: oklch(0.9 0.12 145);
+  --theme-fg-light: oklch(0.18 0.055 150);
+  --theme-muted-dark: oklch(0.68 0.08 150);
+  --theme-muted-light: oklch(0.4 0.055 150);
+  --theme-primary: oklch(0.78 0.19 145);
+  --theme-radius: 0.35rem;
+  --theme-font-sans: "JetBrains Mono", monospace;
+  --theme-font-display: "JetBrains Mono", monospace;
+}
+[data-theme="pixel-arcade"] {
+  --theme-bg-dark: oklch(0.13 0.055 275);
+  --theme-card-dark: oklch(0.21 0.075 278);
+  --theme-surface-dark: oklch(0.29 0.09 280);
+  --theme-bg-light: oklch(0.95 0.025 95);
+  --theme-card-light: oklch(0.99 0.012 95);
+  --theme-surface-light: oklch(0.89 0.035 95);
+  --theme-fg-dark: oklch(0.97 0.025 90);
+  --theme-fg-light: oklch(0.2 0.055 275);
+  --theme-muted-dark: oklch(0.75 0.07 285);
+  --theme-muted-light: oklch(0.43 0.055 275);
+  --theme-primary: oklch(0.84 0.19 100);
+  --theme-radius: 0.18rem;
+  --theme-font-sans: "JetBrains Mono", monospace;
+  --theme-font-display: "JetBrains Mono", monospace;
 }
 [data-theme="y2k"] {
   --theme-bg-dark: oklch(0.16 0.07 260);

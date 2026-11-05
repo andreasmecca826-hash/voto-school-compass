@@ -31,10 +31,13 @@ describe("preferences backup", () => {
     expect(contents).not.toContain("url");
   });
 
-  it.each(["windows-98", "windows-7"] as const)("round-trips il tema %s", (theme) => {
-    const parsed = parsePreferencesBackup(createPreferencesBackup({ ...preferences, theme }));
-    expect(parsed.theme).toBe(theme);
-  });
+  it.each(["windows-98", "windows-7", "casino", "calcio", "terminale", "pixel-arcade"] as const)(
+    "round-trips il tema %s",
+    (theme) => {
+      const parsed = parsePreferencesBackup(createPreferencesBackup({ ...preferences, theme }));
+      expect(parsed.theme).toBe(theme);
+    },
+  );
 
   it("rejects malformed JSON, another file type and unsafe custom colors", () => {
     expect(() => parsePreferencesBackup("not json")).toThrow("JSON valido");
