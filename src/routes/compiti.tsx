@@ -259,7 +259,7 @@ function DidupCompitiPage({
                       )}
                       <div
                         className={`flex items-center justify-end gap-2 text-[12px] uppercase tracking-wide text-[#08a5b5] ${
-                          description ? "mt-5" : "mt-auto pt-6"
+                          description ? "mt-[26px]" : "mt-auto pt-6"
                         }`}
                       >
                         <Clock3 className="h-4 w-4 shrink-0" />
