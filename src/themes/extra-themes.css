@@ -352,6 +352,35 @@
   position: relative;
   isolation: isolate;
 }
+:root[data-theme="casino"]:not([data-registry-style="didup"]) body::before {
+  position: fixed;
+  z-index: -1;
+  top: min(42vh, 390px);
+  left: max(14px, calc(50vw - 645px));
+  display: flex;
+  width: 104px;
+  height: 148px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 56%, #f8efdc);
+  border-radius: 8px;
+  background: linear-gradient(145deg, #fffdf5, #eee3ca);
+  box-shadow:
+    9px 8px 0 -2px #eadcb9,
+    9px 8px 0 -1px color-mix(in srgb, var(--color-primary) 42%, transparent),
+    18px 16px 0 -4px #f5eddb,
+    0 12px 28px rgb(0 0 0 / 22%);
+  color: #a52b41;
+  content: "A\A ♥";
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.05;
+  opacity: 0.35;
+  pointer-events: none;
+  transform: rotate(-12deg);
+  white-space: pre;
+}
 :root[data-theme="casino"]:not([data-registry-style="didup"]) body::after {
   position: fixed;
   z-index: -1;
@@ -395,12 +424,40 @@
 }
 :root[data-theme="casino"]:not([data-registry-style="didup"])
   .card-surface
-  :is(.bg-primary-soft, .bg-success-soft, .bg-warning-soft, .bg-danger-soft) {
+  :is(.bg-primary-soft, .bg-success-soft, .bg-warning-soft, .bg-danger-soft)[class*="w-"]:has(svg) {
   border: 1px dashed color-mix(in srgb, var(--color-primary) 62%, var(--color-border));
   border-radius: 50%;
   box-shadow:
     inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 14%, transparent),
     0 2px 5px color-mix(in srgb, black 24%, transparent);
+}
+:root[data-theme="casino"]:not([data-registry-style="didup"])
+  .card-surface
+  :is(.bg-primary-soft, .bg-success-soft, .bg-warning-soft, .bg-danger-soft)[class*="w-"]:has(svg) {
+  position: relative;
+}
+:root[data-theme="casino"]:not([data-registry-style="didup"])
+  .card-surface
+  :is(.bg-primary-soft, .bg-success-soft, .bg-warning-soft, .bg-danger-soft)[class*="w-"]:has(
+    svg
+  )::after {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  width: 14px;
+  height: 19px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 55%, #fff8e9);
+  border-radius: 2px;
+  background: linear-gradient(145deg, #fffdf7, #eee2c7);
+  box-shadow: 1px 2px 2px rgb(0 0 0 / 30%);
+  color: #a52b41;
+  content: "♥";
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10px;
+  line-height: 1;
+  transform: rotate(9deg);
 }
 :root[data-theme="casino"]:not([data-registry-style="didup"])
   button:not([role="switch"], [role="checkbox"], [role="radio"], [role="slider"]):not(.bg-primary) {
@@ -417,5 +474,12 @@
     right: -148px;
     width: 292px;
     opacity: 0.2;
+  }
+  :root[data-theme="casino"]:not([data-registry-style="didup"]) body::before {
+    top: 42vh;
+    left: 8px;
+    width: 88px;
+    height: 126px;
+    opacity: 0.24;
   }
 }
