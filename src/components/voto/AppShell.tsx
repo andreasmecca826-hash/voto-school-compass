@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { DidupDashboard } from "./DidupDashboard";
 import { DidupMenu } from "./DidupMenu";
+import { Windows7Orb, Windows7Taskbar } from "./Windows7Chrome";
 
 const NotificationsSheet = lazy(() =>
   import("./NotificationsSheet").then((module) => ({ default: module.NotificationsSheet })),
@@ -139,6 +140,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
   const now = useClock();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const isWindows7 = v.theme === "windows-7" && v.registryStyle !== "didup";
+  const routeTitle = [...NAV, ...MORE_NAV,
+    { to: "/studio", label: "Studio Lab." },
+    { to: "/assistente", label: "Assistente" },
+  ].find(({ to }) => to === "/" ? path === "/" : path === to || path.startsWith(`${to}/`))?.label || "Registro scolastico";
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
@@ -215,17 +221,26 @@ export function AppShell({ children }: { children: ReactNode }) {
           <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
         </Suspense>
       )}
-      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
-        {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
-          <div className="flex h-16 items-center justify-between px-5">
-            <div className="min-w-0">
-              <Link
+      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", isWindows7 && "windows7-shell")}>
+        {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className={cn("glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]", isWindows7 && "windows7-header")}>
+          {isWindows7 && (
+            <div className="windows7-titlebar">
+              <Link to="/" className="windows7-titlebar-brand" aria-label="VOTO. dashboard">
+                <Windows7Orb className="windows7-titlebar-icon" />
+                <span>VOTO</span>
+              </Link>
+              <span className="windows7-titlebar-title windows7-titlebar-route">{routeTitle}</span>
+            </div>
+          )}
+          <div className={cn("flex h-16 items-center justify-between px-5", isWindows7 && "windows7-toolbar")}>
+            <div className={cn("min-w-0", isWindows7 && "windows7-toolbar-info")}>
+              {isWindows7 ? <span className="windows7-toolbar-caption">Registro scolastico</span> : <Link
                 to="/"
                 className="font-display text-xl font-bold tracking-tight"
                 aria-label="VOTO. dashboard"
               >
                 VOTO<span className="text-primary">.</span>
-              </Link>
+              </Link>}
               <p className="truncate text-[11px] capitalize text-muted-foreground">
                 {dateLabel || "\u00a0"}
               </p>
@@ -270,7 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>}
 
         <main
-          className={cn("relative flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28")}
+          className={cn("relative flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28", isWindows7 && "windows7-content")}
           onTouchStart={handlePullStart}
           onTouchMove={handlePullMove}
           onTouchEnd={handlePullEnd}
@@ -288,14 +303,25 @@ export function AppShell({ children }: { children: ReactNode }) {
             {pullDistance >= 56 ? "Rilascia per aggiornare" : "Trascina per aggiornare"}
           </div>
           {v.ready ? (
-            moreOpen ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
+            moreOpen && !isWindows7 ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
               v.registryStyle === "didup" && path === "/" ? <DidupDashboard /> : children
           ) : (
             <ShellSkeleton />
           )}
         </main>
 
-        {v.registryStyle === "didup" ? <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} /> : <nav
+        {v.registryStyle === "didup" ? <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} /> : isWindows7 ? (
+          <Windows7Taskbar
+            navigation={NAV}
+            moreNavigation={MORE_NAV}
+            currentPath={path}
+            studentName={v.displayName || v.data.student.name || "Studente"}
+            now={now}
+            ready={v.ready}
+            open={moreOpen}
+            onOpenChange={setMoreOpen}
+          />
+        ) : <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >

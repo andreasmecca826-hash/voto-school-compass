@@ -134,8 +134,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "windows-7",
     label: "Windows 7",
-    description: "Vetro Aero, blu cielo e riflessi luminosi",
-    sw: "linear-gradient(135deg,#f2fdff 0%,#b8e8ff 24%,#4b98ce 48%,#1765a6 72%,#dcf7ff 100%)",
+    description: "Aero originale, finestre chiare, menu Start e taskbar",
+    sw: "radial-gradient(ellipse at 28% 82%,#87e6f7 0%,transparent 44%),linear-gradient(155deg,#053c79 0%,#087fc3 46%,#55c8e8 67%,#0b5394 100%)",
   },
   {
     id: "dark-academia",
@@ -748,6 +748,13 @@ export function PersonalizationPanel() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+      )}
+      {v.theme === "windows-7" && (
+        <p className="mt-3 rounded-md border border-border bg-card p-3 text-xs text-muted-foreground">
+          Aero mantiene le finestre chiare, come Windows 7. La modalità chiara o scura cambia la
+          tinta del desktop e delle cornici; il menu Start raccoglie tutte le sezioni di VOTO.
+          {v.registryStyle === "didup" && " Per visualizzarlo, scegli lo stile del registro VOTO."}
+        </p>
       )}
       {v.theme === "custom" && (
         <section className="card-surface mt-3 p-4">

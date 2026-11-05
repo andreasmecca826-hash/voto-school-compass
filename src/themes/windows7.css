@@ -1,0 +1,737 @@
+/* Windows 7 Aero: glass belongs to window chrome, not to document surfaces.
+   Keep this complete theme isolated from the original and DidUP interfaces. */
+:root[data-theme="windows-7"][data-mode]:not([data-registry-style="didup"]) {
+  color-scheme: light;
+  --background: #0876b2;
+  --card: #ffffff;
+  --surface: #f0f3f6;
+  --popover: #ffffff;
+  --foreground: #1e1e1e;
+  --card-foreground: #1e1e1e;
+  --popover-foreground: #1e1e1e;
+  --muted: #edf0f3;
+  --muted-foreground: #52616e;
+  --primary: #175a91;
+  --primary-foreground: #ffffff;
+  --primary-soft: #e5f2fc;
+  --secondary: #f0f0f0;
+  --secondary-foreground: #1e1e1e;
+  --accent: #e5f2fc;
+  --accent-foreground: #1e1e1e;
+  --border: #b8c5d1;
+  --input: #8e9dac;
+  --ring: #3c91cf;
+  --success: #26710a;
+  --success-soft: #edf5e7;
+  --danger: #b3261e;
+  --danger-soft: #fff0ee;
+  --warning: #946000;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --radius: 4px;
+  --win7-glass-top: rgb(207 233 250 / 82%);
+  --win7-glass-bottom: rgb(79 147 198 / 74%);
+  --win7-desktop-top: #07569c;
+  --win7-desktop-bottom: #0094cb;
+
+  & body {
+    color: var(--foreground);
+    background-color: #0876b2;
+    background-image:
+      radial-gradient(ellipse 80% 28% at 28% 78%, rgb(162 245 253 / 75%), transparent 72%),
+      radial-gradient(ellipse 52% 55% at 75% 52%, rgb(20 177 225 / 65%), transparent 76%),
+      linear-gradient(
+        165deg,
+        var(--win7-desktop-top) 10%,
+        #007ec0 52%,
+        var(--win7-desktop-bottom) 77%,
+        #07538e
+      );
+    background-attachment: fixed;
+    font-family: var(--font-sans);
+  }
+
+  & body::before {
+    content: "";
+    position: fixed;
+    left: -30vw;
+    top: 43vh;
+    width: 155vw;
+    height: 110vh;
+    border-top: 2px solid rgb(222 252 255 / 65%);
+    border-radius: 50%;
+    transform: rotate(-16deg);
+    box-shadow: 0 -9px 35px rgb(144 248 255 / 32%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  & .font-display {
+    font-family: var(--font-sans);
+    letter-spacing: normal;
+  }
+
+  & .card-surface {
+    border: 1px solid #b8c5d1;
+    border-radius: 4px;
+    background: #fff;
+    color: #1e1e1e;
+    box-shadow:
+      0 1px 3px rgb(21 49 75 / 12%),
+      inset 0 1px 0 #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  & .bg-primary-soft {
+    background: #e5f2fc;
+    color: #175a91;
+    border-radius: 3px;
+  }
+
+  & .glass-panel {
+    border-color: rgb(241 250 255 / 88%);
+    background:
+      linear-gradient(
+        125deg,
+        rgb(255 255 255 / 35%) 0%,
+        transparent 28% 65%,
+        rgb(255 255 255 / 22%) 80%,
+        transparent
+      ),
+      linear-gradient(180deg, var(--win7-glass-top), var(--win7-glass-bottom));
+    color: #102a43;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 88%);
+    -webkit-backdrop-filter: blur(12px) saturate(135%);
+    backdrop-filter: blur(12px) saturate(135%);
+  }
+
+  &
+    :is(.windows7-content, .windows7-toolbar, [role="dialog"]:not(.windows7-start-menu))
+    :where(button, a.bg-primary, a.bg-secondary) {
+    border-radius: 3px;
+    text-shadow: none;
+    transition:
+      border-color 120ms ease,
+      box-shadow 120ms ease,
+      background-color 120ms ease;
+  }
+
+  &
+    :is(.windows7-content, .windows7-toolbar, [role="dialog"]:not(.windows7-start-menu))
+    :where(
+      button:not(.card-surface):not([role="switch"]):not([role="checkbox"]):not([role="radio"]):not(
+          [role="slider"]
+        ):not([style*="background"])
+    ) {
+    border: 1px solid #8e9cab;
+    background: linear-gradient(180deg, #fafafa 0%, #eeeeee 48%, #e4e4e4 49%, #f3f3f3 100%);
+    color: #1e1e1e;
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 90%),
+      0 1px 1px rgb(0 0 0 / 6%);
+  }
+
+  &
+    :is(.windows7-content, .windows7-toolbar, [role="dialog"]:not(.windows7-start-menu))
+    :is(button.bg-primary, a.bg-primary) {
+    border: 1px solid #3c7fb1;
+    background: linear-gradient(180deg, #f0f8ff 0%, #d8ebfa 48%, #b9d9ef 49%, #e1f1fd 100%);
+    color: #102e46;
+    box-shadow:
+      inset 0 0 0 1px #e5f6ff,
+      0 0 2px #74b2e0;
+  }
+
+  &
+    :is(.windows7-content, .windows7-toolbar, [role="dialog"]:not(.windows7-start-menu))
+    button:not(:disabled):not([role="slider"]):not([style*="background"]):hover {
+    border-color: #3c7fb1;
+    background: linear-gradient(180deg, #eef8ff 0%, #d9effc 48%, #bce5fc 49%, #ddf4ff 100%);
+    box-shadow:
+      inset 0 0 0 1px #fff,
+      0 0 3px rgb(48 154 224 / 40%);
+  }
+
+  &
+    :is(.windows7-content, .windows7-toolbar, [role="dialog"]:not(.windows7-start-menu))
+    button:not(:disabled):active {
+    transform: none;
+    border-color: #2c628b;
+    box-shadow: inset 0 1px 3px rgb(25 75 110 / 25%);
+  }
+
+  & button:disabled {
+    cursor: default;
+  }
+
+  &
+    :is(
+      input:not(
+        [type="checkbox"],
+        [type="radio"],
+        [type="range"],
+        [type="hidden"],
+        [type="file"],
+        [type="color"]
+      ),
+      select,
+      textarea
+    ) {
+    border: 1px solid #8e9dac;
+    border-radius: 2px;
+    background: #fff;
+    color: #1e1e1e;
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 10%);
+  }
+
+  & :is(input, select, textarea):focus-visible {
+    border-color: #3995d6;
+    outline: 2px solid #64a9d8;
+    outline-offset: 1px;
+  }
+
+  & input[type="range"] {
+    accent-color: #3a91c8;
+  }
+
+  & [role="tablist"] {
+    gap: 2px;
+    border-radius: 3px;
+    background: #e8edf2;
+  }
+
+  & [role="tab"][data-state="active"] {
+    background: #fff;
+    border-color: #7fa8c5;
+    color: #1e1e1e;
+  }
+
+  & [role="dialog"]:not(.windows7-start-menu) {
+    border: 1px solid #567994;
+    border-radius: 7px;
+    background: #f8fafc;
+    color: #1e1e1e;
+    box-shadow:
+      0 12px 38px rgb(0 19 45 / 42%),
+      inset 0 0 0 5px #b8d8ef,
+      inset 0 0 0 6px #fff;
+  }
+
+  & [role="dialog"]:not(.windows7-start-menu) > button.absolute {
+    border: 1px solid #914b47;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(#f5b7a6 0%, #cf6856 48%, #ad3c2f 49%, #cc6d56 100%);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 45%);
+    opacity: 1;
+  }
+
+  & [role="dialog"]:not(.windows7-start-menu) > button.absolute:hover {
+    background: linear-gradient(#ffd5bf, #e44929);
+    color: #fff;
+  }
+
+  & [data-sonner-toast] {
+    border: 1px solid #8ea5b8 !important;
+    border-radius: 5px !important;
+    background: #fbfcff !important;
+    color: #1e1e1e !important;
+    box-shadow: 0 3px 10px rgb(0 25 55 / 24%);
+  }
+}
+
+:root[data-theme="windows-7"][data-mode="scuro"]:not([data-registry-style="didup"]) {
+  --background: #074270;
+  --win7-glass-top: rgb(179 213 238 / 85%);
+  --win7-glass-bottom: rgb(65 126 174 / 82%);
+  --win7-desktop-top: #032b62;
+  --win7-desktop-bottom: #076396;
+}
+
+/* The app is a real window, while the taskbar belongs to the desktop. */
+.windows7-shell {
+  position: relative;
+  margin: 0 auto calc(70px + env(safe-area-inset-bottom));
+  max-width: 760px;
+  min-height: calc(100dvh - 70px - env(safe-area-inset-bottom));
+  border: 1px solid #3e678d;
+  border-radius: 7px 7px 0 0;
+  padding: 5px;
+  background: linear-gradient(135deg, rgb(220 242 255 / 60%), rgb(74 144 196 / 72%));
+  box-shadow:
+    0 8px 30px rgb(0 21 52 / 38%),
+    inset 0 0 0 1px rgb(255 255 255 / 82%);
+}
+
+.windows7-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 3px 7px 7px;
+  color: #10283c;
+  font-size: 13px;
+  text-shadow:
+    0 0 5px white,
+    0 0 10px white;
+}
+
+.windows7-titlebar-icon {
+  display: grid;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid #5487b2;
+  border-radius: 3px;
+  background: linear-gradient(#f0fcff, #7cbdde 50%, #3885ae 51%, #a6e3f4);
+  color: #0e446b;
+  box-shadow: inset 0 0 0 1px #dff6ff;
+}
+
+.windows7-titlebar-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windows7-toolbar {
+  min-height: 60px;
+  height: auto;
+  padding: 8px 10px;
+  gap: 8px;
+  border: 1px solid #718b9f !important;
+  border-radius: 0 !important;
+  background: linear-gradient(#fbfdff 0%, #e7f0fa 50%, #dce7f3 51%, #f3f7fc) !important;
+  color: #1e1e1e !important;
+  box-shadow: inset 0 1px 0 #fff !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.windows7-toolbar a[aria-label="VOTO. dashboard"] {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.windows7-toolbar a[aria-label="Assistente"] {
+  border: 1px solid #8e9cab;
+  border-radius: 3px;
+  background: linear-gradient(#fafafa, #e4e4e4 50%, #f3f3f3);
+}
+
+.windows7-content {
+  margin: 0;
+  border: 1px solid #718b9f;
+  border-top: 0;
+  background: #fff;
+  padding: 0 16px 28px !important;
+  color: #1e1e1e;
+}
+
+.windows7-content h1 {
+  font-size: 23px;
+  font-weight: 400;
+  color: #173d63;
+}
+
+.windows7-taskbar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 62px;
+  padding: 4px 12px max(4px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgb(240 252 255 / 88%);
+  background: linear-gradient(
+    180deg,
+    rgb(129 186 224 / 80%) 0%,
+    rgb(54 108 151 / 88%) 46%,
+    rgb(15 52 89 / 92%) 48%,
+    rgb(32 83 129 / 88%) 100%
+  );
+  color: #fff;
+  box-shadow:
+    0 -1px 0 #23476c,
+    inset 0 1px 0 rgb(255 255 255 / 30%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: blur(12px) saturate(130%);
+}
+
+.windows7-taskbar a,
+.windows7-taskbar button {
+  flex-shrink: 0;
+  color: #fff;
+  text-shadow: 0 1px 2px #183b5f;
+}
+
+.windows7-taskbar-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 54px;
+  min-height: 48px;
+  padding: 3px 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  font-size: 10px;
+}
+
+.windows7-taskbar-link svg {
+  width: 23px;
+  height: 23px;
+  filter: drop-shadow(0 1px 1px #224763);
+}
+
+.windows7-taskbar-link[aria-current="page"],
+.windows7-taskbar-link:hover {
+  border-color: rgb(226 247 255 / 85%);
+  background: linear-gradient(
+    rgb(242 252 255 / 42%),
+    rgb(181 222 250 / 15%) 49%,
+    rgb(18 65 101 / 22%) 50%,
+    rgb(124 213 255 / 38%)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgb(2 33 68 / 35%),
+    inset 0 -9px 13px -9px #8de9ff;
+}
+
+.windows7-start-button {
+  display: grid;
+  width: 50px;
+  min-height: 48px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.windows7-orb {
+  display: grid;
+  position: relative;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border: 1px solid #bdd9ed;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 18%,
+    #c1f1ff 0%,
+    #357dbe 34%,
+    #123d70 65%,
+    #78cef1 100%
+  );
+  box-shadow:
+    0 1px 4px #173a5e,
+    inset 0 0 0 1px #0b437c,
+    inset 0 2px 3px rgb(255 255 255 / 70%);
+}
+
+.windows7-start-button:hover .windows7-orb,
+.windows7-start-button[aria-expanded="true"] .windows7-orb {
+  box-shadow:
+    0 0 9px #82e8ff,
+    inset 0 0 0 1px #176398,
+    inset 0 2px 3px #fff;
+  filter: brightness(1.15);
+}
+
+.windows7-clock {
+  margin-left: auto;
+  min-width: 65px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #fff;
+  text-shadow: 0 1px 1px #183b5f;
+  font-variant-numeric: tabular-nums;
+}
+
+.windows7-start-menu {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  z-index: 45;
+  display: block;
+  width: min(430px, calc(100vw - 16px));
+  max-height: calc(100dvh - 90px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  padding: 7px;
+  border: 1px solid #395d79;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(
+    120deg,
+    rgb(208 234 254 / 97%),
+    rgb(97 149 193 / 97%) 60%,
+    rgb(32 80 124 / 98%)
+  );
+  box-shadow:
+    0 5px 24px rgb(0 20 45 / 45%),
+    inset 0 0 0 1px rgb(255 255 255 / 80%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.windows7-start-programs {
+  min-width: 0;
+  padding: 5px;
+  border: 1px solid #617b91;
+  border-radius: 4px;
+  background: #fff;
+  color: #1e1e1e;
+}
+
+.windows7-start-menu a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 43px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.windows7-start-menu a:hover,
+.windows7-start-menu a[aria-current="page"] {
+  border-color: #8db5d2;
+  background: linear-gradient(#f1f8fd, #d9ecfa);
+  color: #17374f;
+}
+
+.windows7-start-menu a svg {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+
+.windows7-start-sidebar {
+  min-width: 0;
+  padding: 10px 5px 5px 9px;
+  color: #fff;
+  text-shadow: 0 1px 2px #193d5b;
+}
+
+.windows7-start-profile {
+  padding: 4px 4px 15px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.windows7-start-avatar {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 9px;
+  place-items: center;
+  border: 2px solid #eef9ff;
+  border-radius: 5px;
+  background: linear-gradient(#d7edff, #5da2d8 50%, #31699d 51%, #a9d7f3);
+  box-shadow:
+    0 1px 5px #1b4369,
+    inset 0 0 0 1px #407ba8;
+  color: #fff;
+}
+
+.windows7-start-sidebar a:hover {
+  border-color: rgb(233 249 255 / 80%);
+  background: linear-gradient(rgb(245 252 255 / 26%), rgb(37 84 123 / 34%));
+  color: #fff;
+}
+
+@media (min-width: 768px) {
+  .windows7-shell {
+    margin: 28px auto 92px;
+    min-height: calc(100dvh - 120px);
+    border-radius: 7px;
+  }
+  .windows7-content {
+    border-radius: 0 0 2px 2px;
+  }
+  .windows7-taskbar {
+    min-height: 54px;
+    padding-top: 2px;
+  }
+}
+
+@media (max-width: 380px) {
+  .windows7-content {
+    padding-right: 10px !important;
+    padding-left: 10px !important;
+  }
+  .windows7-toolbar {
+    padding-right: 6px;
+    padding-left: 6px;
+    gap: 4px;
+  }
+  .windows7-toolbar > div:last-child {
+    gap: 4px;
+  }
+  .windows7-taskbar {
+    gap: 3px;
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+  .windows7-taskbar-link {
+    min-width: 49px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+  .windows7-start-columns {
+    grid-template-columns: minmax(0, 1fr) 115px;
+  }
+}
+
+/* Respect the existing transparency preference without changing the Aero layout. */
+:root[data-theme="windows-7"][data-glass="off"]:not([data-registry-style="didup"])
+  :is(.windows7-shell, .windows7-titlebar, .glass-panel, .windows7-start-menu, .windows7-taskbar) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root[data-theme="windows-7"][data-glass="off"]:not([data-registry-style="didup"]) .windows7-shell {
+  background: linear-gradient(135deg, #c8e4f8, #619dcb);
+}
+:root[data-theme="windows-7"][data-glass="off"]:not([data-registry-style="didup"])
+  .windows7-taskbar {
+  background: linear-gradient(#7baacb 0%, #416e9e 47%, #254c76 48%, #35618b);
+}
+:root[data-theme="windows-7"][data-glass="off"]:not([data-registry-style="didup"]) .glass-panel {
+  background: linear-gradient(#c8e4f8, #619dcb);
+}
+
+.windows7-header {
+  border: 0;
+  border-radius: 2px 2px 0 0;
+}
+.windows7-titlebar-brand {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  font-weight: 400;
+}
+.windows7-titlebar-route::before {
+  content: "— ";
+}
+.windows7-titlebar .windows7-orb {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(#eefaff, #8fc9e6);
+}
+.windows7-titlebar .windows7-orb-icon {
+  width: 14px;
+  height: 14px;
+}
+.windows7-toolbar-info {
+  min-width: 0;
+  flex: 1;
+}
+.windows7-toolbar-caption {
+  font-size: 12px;
+  color: #234c70;
+}
+.windows7-taskbar-inner {
+  gap: 7px;
+  min-height: 48px;
+}
+.windows7-taskbar-nav {
+  gap: 6px;
+}
+.windows7-start-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.windows7-orb-icon {
+  transform: rotate(-9deg);
+  filter: drop-shadow(0 1px 1px #10365f);
+}
+.windows7-start-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 2px 5px 6px;
+  color: #102a43;
+  font-size: 12px;
+  text-shadow: 0 0 4px #fff;
+}
+.windows7-start-close {
+  display: grid;
+  width: 32px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #6a89a1;
+  border-radius: 3px;
+  background: linear-gradient(#eff8ff, #a8cbe6 50%, #83b0d0 51%, #d8eafb);
+  color: #15334c;
+}
+.windows7-start-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 135px;
+}
+.windows7-start-student {
+  display: block;
+  font-weight: 600;
+}
+.windows7-start-profile-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.windows7-start-programs .windows7-start-link-icon {
+  color: #2173a2;
+}
+.windows7-start-programs .windows7-start-link:nth-child(3n + 2) .windows7-start-link-icon {
+  color: #38820d;
+}
+.windows7-start-programs .windows7-start-link:nth-child(3n + 3) .windows7-start-link-icon {
+  color: #b26a0a;
+}
+@media (max-width: 380px) {
+  .windows7-start-columns {
+    grid-template-columns: minmax(0, 1fr) 115px;
+  }
+}
+
+:root[data-theme="windows-7"][data-mode]:not([data-registry-style="didup"])
+  button[aria-pressed="true"] {
+  border-color: #3c7fb1;
+  box-shadow:
+    inset 0 0 0 1px #d0ebfb,
+    0 0 3px rgb(51 153 218 / 35%);
+}
+:root[data-theme="windows-7"][data-mode]:not([data-registry-style="didup"])
+  .windows7-content
+  :is(button.bg-primary-soft, button.bg-card.text-foreground),
+:root[data-theme="windows-7"][data-mode]:not([data-registry-style="didup"])
+  [role="tab"][data-state="active"] {
+  border: 1px solid #3c7fb1;
+  background: linear-gradient(#f2f9ff, #d9ecfa 48%, #bfddf2 49%, #e2f2ff);
+  color: #173d63;
+  box-shadow: inset 0 0 0 1px #e7f6ff;
+}
+
+:root[data-theme="windows-7"][data-glass="off"]:not([data-registry-style="didup"])
+  .windows7-start-menu {
+  background: linear-gradient(120deg, #d0eafe, #6195c1 60%, #20507c);
+}
