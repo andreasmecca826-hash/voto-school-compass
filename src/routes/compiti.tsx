@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarCheck, CalendarDays, Clock3, Share2, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarCheck, Clock3, Share2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { Chip, Empty, SectionTitle } from "@/components/voto/ui";
@@ -215,7 +215,12 @@ function DidupCompitiPage({
             <section key={group.key} aria-label={group.label}>
               <div className="flex items-center justify-between gap-3 px-5">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 shrink-0 text-[#08a5b5]" />
+                  <img
+                    src="/didup-calendar-reference.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 object-contain"
+                  />
                   <h2 className="truncate text-[12px] font-normal uppercase tracking-[0.035em]">
                     {group.label}
                   </h2>
