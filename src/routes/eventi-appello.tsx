@@ -73,6 +73,12 @@ function eventLabel(event: AttendanceEvent) {
   return "Uscita anticipata";
 }
 
+function eventDescription(event: AttendanceEvent) {
+  if (event.type === "absence") return "Assenza registrata";
+  if (event.type === "delay") return "Ritardo registrato";
+  return "Uscita anticipata registrata";
+}
+
 function eventIcon(event: AttendanceEvent) {
   if (event.type === "absence") return <LogIn className="h-6 w-6" strokeWidth={1.7} />;
   if (event.type === "delay") return <Clock3 className="h-6 w-6" strokeWidth={1.7} />;
@@ -249,10 +255,14 @@ function EventiAppello() {
                     >
                       {eventDateLabel(event.date)}
                     </time>
+                    <p className="mt-2 text-[16px] leading-5 text-white">
+                      {eventDescription(event)}
+                    </p>
                     <p
-                      className={`mt-2 text-[15px] ${justified ? "text-white/65" : "text-[#e46b62]"}`}
+                      className={`mt-1 text-[15px] ${justified ? "text-white/65" : "text-[#e46b62]"}`}
                     >
-                      {justified ? event.justificationStatus || "Giustificato" : "Da giustificare"}
+                      ({justified ? event.justificationStatus || "Giustificato" : "Da giustificare"}
+                      )
                     </p>
                   </div>
                 </li>
