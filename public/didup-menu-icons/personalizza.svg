@@ -1,10 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
-  <circle cx="36" cy="36" r="35" fill="#e3a63b"/>
-  <g transform="translate(15 15) scale(1.75)" fill="none" stroke="#fff" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/>
-    <circle cx="13.5" cy="6.5" r=".7" fill="#fff" stroke="none"/>
-    <circle cx="17.5" cy="10.5" r=".7" fill="#fff" stroke="none"/>
-    <circle cx="6.5" cy="12.5" r=".7" fill="#fff" stroke="none"/>
-    <circle cx="8.5" cy="7.5" r=".7" fill="#fff" stroke="none"/>
+  <image href="/didup-menu-icons-no-gray/personalizza-base.png" width="72" height="72"/>
+  <g transform="translate(12 12) scale(2)" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-1.3c-.6 0-1.1-.5-1.1-1.1 0-.3.1-.5.3-.7l.4-.4c.4-.4.7-1 .7-1.6A3.2 3.2 0 0 0 15 3z"/>
+    <circle cx="7.5" cy="10.5" r="1" fill="#fff" stroke="none"/>
+    <circle cx="10.5" cy="6.5" r="1" fill="#fff" stroke="none"/>
+    <circle cx="15" cy="6.5" r="1" fill="#fff" stroke="none"/>
   </g>
 </svg>
