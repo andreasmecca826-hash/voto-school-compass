@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as CompitiRouteImport } from './routes/compiti'
 import { Route as DiarioRouteImport } from './routes/diario'
+import { Route as EventiAppelloRouteImport } from './routes/eventi-appello'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
 import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
 import { Route as NoteRouteImport } from './routes/note'
@@ -43,6 +44,11 @@ const CompitiRoute = CompitiRouteImport.update({
 const DiarioRoute = DiarioRouteImport.update({
   id: '/diario',
   path: '/diario',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventiAppelloRoute = EventiAppelloRouteImport.update({
+  id: '/eventi-appello',
+  path: '/eventi-appello',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImpostazioniRoute = ImpostazioniRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/assistente': typeof AssistenteRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
+  '/eventi-appello': typeof EventiAppelloRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
   '/note': typeof NoteRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
+  '/eventi-appello': typeof EventiAppelloRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
   '/note': typeof NoteRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/assistente': typeof AssistenteRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
+  '/eventi-appello': typeof EventiAppelloRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
   '/note': typeof NoteRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/compiti'
     | '/diario'
+    | '/eventi-appello'
     | '/impostazioni'
     | '/interrogazioni'
     | '/note'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/compiti'
     | '/diario'
+    | '/eventi-appello'
     | '/impostazioni'
     | '/interrogazioni'
     | '/note'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/compiti'
     | '/diario'
+    | '/eventi-appello'
     | '/impostazioni'
     | '/interrogazioni'
     | '/note'
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   AssistenteRoute: typeof AssistenteRoute
   CompitiRoute: typeof CompitiRoute
   DiarioRoute: typeof DiarioRoute
+  EventiAppelloRoute: typeof EventiAppelloRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
   InterrogazioniRoute: typeof InterrogazioniRoute
   NoteRoute: typeof NoteRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/diario'
       fullPath: '/diario'
       preLoaderRoute: typeof DiarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eventi-appello': {
+      id: '/eventi-appello'
+      path: '/eventi-appello'
+      fullPath: '/eventi-appello'
+      preLoaderRoute: typeof EventiAppelloRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/impostazioni': {
@@ -340,6 +360,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistenteRoute: AssistenteRoute,
   CompitiRoute: CompitiRoute,
   DiarioRoute: DiarioRoute,
+  EventiAppelloRoute: EventiAppelloRoute,
   ImpostazioniRoute: ImpostazioniRoute,
   InterrogazioniRoute: InterrogazioniRoute,
   NoteRoute: NoteRoute,

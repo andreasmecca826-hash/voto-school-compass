@@ -14,4 +14,12 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("matches the dedicated Eventi appello page", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/eventi-appello");
+
+    expect(matches.at(-1)?.routeId).toBe("/eventi-appello");
+  });
 });

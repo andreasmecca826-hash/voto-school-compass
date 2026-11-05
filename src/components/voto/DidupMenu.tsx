@@ -32,7 +32,7 @@ const ITEMS: MenuItem[] = [
     color: "#00a4b8",
     icon: CalendarX2,
     iconImage: "/didup-menu-icons/eventi-appello.png",
-    to: "/interrogazioni",
+    to: "/eventi-appello",
   },
   {
     label: "Note",
