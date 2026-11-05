@@ -95,7 +95,6 @@ export function makeDemoRaw() {
             date: iso(-9),
             type: "scritto",
             weight: 1,
-            comment: "Reading comprehension",
           },
           { id: "e3", value: 9, date: iso(-2), type: "orale", weight: 0.5 },
         ],

@@ -77,12 +77,16 @@ function gradeCommentOrUndefined(
     ? ITALIAN_GRADE_WORDS[value]
     : numericLabel
       ? ITALIAN_GRADE_WORDS[Number(numericLabel[1])]
-      : undefined;
+      : ITALIAN_GRADE_WORDS[Math.floor(value)];
   const valueForms = [
     normalizedGradeText(label),
     normalizedGradeText(String(value)),
     normalizedGradeText(new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(value)),
     spokenGrade,
+    ...(value % 1 === 0.5 && spokenGrade
+      ? [`${spokenGrade} e mezzo`, `${spokenGrade} mezzo`]
+      : []),
+    ...(numericLabel?.[1] ? [normalizedGradeText(numericLabel[1])] : []),
   ].filter((form): form is string => Boolean(form));
 
   return valueForms.includes(normalizedComment) ? undefined : comment.trim();

@@ -8,6 +8,21 @@ describe("Conversione dei voti con segno", () => {
     expect(parseGradeValue("7-")).toBe(6.85);
   });
 
+  it("non mostra la forma testuale del voto come descrizione", () => {
+    const data = parseVotoData({
+      subjects: [
+        {
+          name: "Inglese",
+          grades: [
+            { id: "g1", value: "6½", date: "2026-10-19", type: "orale", comment: "sei e mezzo" },
+          ],
+        },
+      ],
+    });
+
+    expect(data.subjects[0]?.grades[0]?.comment).toBeUndefined();
+  });
+
   it("usa l'etichetta originale 7+ anche se il dato importato contiene il vecchio valore 7,25", () => {
     const data = parseVotoData({
       subjects: [
