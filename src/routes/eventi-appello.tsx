@@ -153,7 +153,7 @@ function EventiAppello() {
         aria-label="Riepilogo presenze"
         className="mx-5 mt-[14px] flex min-h-[84px] items-center justify-center gap-3 rounded-[12px] bg-[#252525] px-3 py-3"
       >
-        <div className="flex translate-x-1 items-center gap-2">
+        <div className="flex translate-x-1 items-center gap-4">
           <AttendanceCount
             value={Math.round(v.data.attendance.absenceDays)}
             label="ASS"
