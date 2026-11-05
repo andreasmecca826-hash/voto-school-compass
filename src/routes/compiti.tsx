@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarCheck, Clock3, Share2, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarCheck, Share2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { Chip, Empty, SectionTitle } from "@/components/voto/ui";
@@ -160,7 +160,7 @@ function DidupCompitiPage({
 
   return (
     <div className="didup-page mx-auto min-h-dvh w-full max-w-[480px] bg-black pb-[112px] text-white">
-      <header className="flex min-h-[112px] items-center justify-between gap-4 px-4 pb-4 pr-2 pt-7">
+      <header className="flex min-h-[112px] items-center justify-between gap-4 px-4 pb-4 pr-[14px] pt-7">
         <Link
           to="/"
           aria-label="Torna alla Home"
@@ -180,7 +180,7 @@ function DidupCompitiPage({
           src="/didup-profile-reference.png"
           alt=""
           aria-hidden="true"
-          className="h-[42px] w-[42px] shrink-0 rounded-full object-contain"
+          className="h-[43px] w-[43px] shrink-0 rounded-full object-contain"
         />
       </header>
 
@@ -267,7 +267,12 @@ function DidupCompitiPage({
                           description ? "mt-[26px]" : "mt-auto pt-6"
                         }`}
                       >
-                        <Clock3 className="h-4 w-4 shrink-0" />
+                        <img
+                          src="/didup-clock-reference.png"
+                          alt=""
+                          aria-hidden="true"
+                          className="h-4 w-4 shrink-0 object-contain"
+                        />
                         <span>
                           {assignment.assignedDate
                             ? `Assegnati il ${fmtDate(assignment.assignedDate, {
