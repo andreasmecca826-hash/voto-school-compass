@@ -146,8 +146,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "glassmorphism",
     label: "Glassmorphism",
-    description: "Superfici morbide",
-    sw: "linear-gradient(135deg,#24205b,#8ee7ff)",
+    description: "Vetro satinato, riflessi aurora e superfici traslucide",
+    sw: "radial-gradient(ellipse at 18% 20%,#63e4f3 0%,transparent 43%),radial-gradient(ellipse at 85% 15%,#9b78ff 0%,transparent 48%),linear-gradient(145deg,#17172f,#28365f)",
   },
   {
     id: "y2k",

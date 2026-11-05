@@ -2,6 +2,7 @@
 @source "../src";
 @import "tw-animate-css";
 @import "./themes/windows7.css";
+@import "./themes/glassmorphism.css";
 
 @custom-variant dark (&:is(.dark *));
 
