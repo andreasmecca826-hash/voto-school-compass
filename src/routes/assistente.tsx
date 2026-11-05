@@ -59,6 +59,10 @@ function Assistant() {
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
       ...v.data,
+      student: {
+        ...v.data.student,
+        name: v.displayName || v.data.student.name,
+      },
       assignments: v.data.assignments.map((item) => ({
         ...item,
         completed: v.isDone(item.id, item.completed),

@@ -26,6 +26,7 @@ import {
   Suspense,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -151,6 +152,32 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const [musicMounted, setMusicMounted] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
+  const pullStartY = useRef<number | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+
+  const handlePullStart = (event: React.TouchEvent<HTMLElement>) => {
+    if (v.loading || window.scrollY > 0 || event.touches.length !== 1) return;
+    pullStartY.current = event.touches[0]?.clientY ?? null;
+  };
+
+  const handlePullMove = (event: React.TouchEvent<HTMLElement>) => {
+    if (pullStartY.current === null || v.loading) return;
+    const currentY = event.touches[0]?.clientY ?? pullStartY.current;
+    const distance = currentY - pullStartY.current;
+    if (distance <= 0) {
+      setPullDistance(0);
+      return;
+    }
+    if (distance > 8) event.preventDefault();
+    setPullDistance(Math.min(84, distance * 0.55));
+  };
+
+  const handlePullEnd = () => {
+    const shouldRefresh = pullDistance >= 56 && !v.loading;
+    pullStartY.current = null;
+    setPullDistance(0);
+    if (shouldRefresh) void v.refresh();
+  };
 
   useEffect(() => {
     setMoreOpen(false);
@@ -242,7 +269,24 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>}
 
-        <main className={cn("flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28")}>
+        <main
+          className={cn("relative flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28")}
+          onTouchStart={handlePullStart}
+          onTouchMove={handlePullMove}
+          onTouchEnd={handlePullEnd}
+          onTouchCancel={handlePullEnd}
+        >
+          <div
+            className={cn(
+              "pointer-events-none flex items-center justify-center overflow-hidden text-xs font-medium text-primary transition-[height,opacity] duration-150",
+              pullDistance > 0 ? "opacity-100" : "opacity-0",
+            )}
+            style={{ height: pullDistance }}
+            aria-hidden={pullDistance === 0}
+          >
+            <RefreshCw className={cn("mr-2 h-4 w-4", pullDistance >= 56 && "rotate-180")} />
+            {pullDistance >= 56 ? "Rilascia per aggiornare" : "Trascina per aggiornare"}
+          </div>
           {v.ready ? (
             moreOpen ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
               v.registryStyle === "didup" && path === "/" ? <DidupDashboard /> : children
@@ -454,7 +498,7 @@ function MoreMenu({
   currentPath: string;
   onClose: () => void;
 }) {
-  const studentName = v.data.student.name || "Studente";
+  const studentName = v.displayName || v.data.student.name || "Studente";
   return (
     <section className="pt-4 pb-5" aria-label="Menu principale">
       <div className="mb-5 flex items-start justify-between">

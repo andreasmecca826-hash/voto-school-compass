@@ -95,4 +95,4 @@ export function averageHistory(subjects: Subject[]): number[] {
 }
 
 export const gradeTone = (v: number | null) =>
-  v === null ? "muted" : v >= 6 ? (v >= 8 ? "good" : "ok") : "bad";
+  v === null ? "muted" : v >= 6 ? "good" : v >= 5 ? "ok" : "bad";

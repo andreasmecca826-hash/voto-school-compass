@@ -131,6 +131,7 @@ function normalizeInterrogazioni(value: unknown): Interrogazione[] {
 interface Ctx {
   ready: boolean;
   data: VotoData;
+  displayName: string;
   source: DataSource;
   url: string;
   lastSync: string | null;
@@ -159,6 +160,7 @@ interface Ctx {
   disconnect: () => void;
   resetDemo: () => void;
   setDemoData: (data: VotoData) => void;
+  setDisplayName: (name: string) => void;
   setTarget: (n: number) => void;
   setAccent: (a: Accent) => void;
   setBg: (b: Bg) => void;
@@ -205,6 +207,7 @@ const EMPTY: VotoData = {
 export function VotoProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [data, setData] = useState<VotoData>(EMPTY);
+  const [displayName, setDisplayNameS] = useState("");
   const [source, setSource] = useState<DataSource>("demo");
   const [url, setUrl] = useState("");
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -271,6 +274,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setUrl(u);
     setCompletions(load(KEYS.completions, {}));
     setReadIds(load(KEYS.read, {}));
+    setDisplayNameS(load(KEYS.displayName, ""));
     setTargetS(load(KEYS.target, 8));
     setAccentS(load(KEYS.accent, "rosso"));
     setBgS(load(KEYS.bg, "nero"));
@@ -413,6 +417,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       density,
       reduceMotion,
       data,
+      displayName,
       source,
       url,
       lastSync,
@@ -496,6 +501,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setError(null);
         save(KEYS.demoData, next);
         toast.success("Dati demo aggiornati");
+      },
+      setDisplayName: (name) => {
+        const next = name.trim().replace(/\s+/g, " ").slice(0, 80);
+        setDisplayNameS(next);
+        save(KEYS.displayName, next || null);
       },
       setTarget: (n) => {
         setTargetS(n);
@@ -646,6 +656,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     [
       ready,
       data,
+      displayName,
       source,
       url,
       lastSync,

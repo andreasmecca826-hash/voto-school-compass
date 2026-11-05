@@ -39,6 +39,13 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("riconosce abbreviazioni e piccoli errori nel nome della materia", () => {
+    expect(answerQuestion("Che media ho in ing?", data)).toContain("Inglese");
+    expect(answerQuestion("Quanto devo prendere in ingese per puntare a 8?", data)).toContain(
+      "almeno 10",
+    );
+  });
+
   it("risponde su media generale, compiti e assenze", () => {
     expect(answerQuestion("Qual è la mia media generale?", data)).toContain("7,00");
     expect(answerQuestion("Quanti compiti devo fare?", data)).toContain("1 compito");

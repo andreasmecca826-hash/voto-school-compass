@@ -45,7 +45,7 @@ export function GradePill({ value, label, className }: { value: number | null; l
         "tabular inline-flex min-w-11 items-center justify-center rounded-lg px-2 py-1 font-display text-sm font-semibold",
         tone === "bad" && "bg-danger-soft text-danger",
         tone === "good" && "bg-success-soft text-success",
-        tone === "ok" && "bg-surface text-foreground",
+        tone === "ok" && "bg-warning/15 text-warning",
         tone === "muted" && "bg-surface text-muted-foreground",
         className,
       )}
