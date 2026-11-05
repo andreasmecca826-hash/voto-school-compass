@@ -101,14 +101,14 @@ const ITEMS: MenuItem[] = [
     label: "Personalizza",
     color: "#e3a63b",
     icon: Palette,
-    iconImage: "/didup-menu-icons/personalizza.svg",
+    iconImage: "/didup-menu-icons/personalizza.png",
     to: "/personalizza",
   },
   {
     label: "Impostazioni",
     color: "#3b75b8",
     icon: Settings,
-    iconImage: "/didup-menu-icons/impostazioni.svg",
+    iconImage: "/didup-menu-icons/impostazioni.png",
     to: "/impostazioni",
   },
 ];
