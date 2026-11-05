@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { calculateAbsencePlan } from "@/lib/voto/absence-calculator";
+import { calculateAbsencePlan, simulatedAbsenceHours } from "@/lib/voto/absence-calculator";
 
 describe("calculateAbsencePlan", () => {
+  it("converte il numero scelto di giornate aggiuntive in ore", () => {
+    expect(simulatedAbsenceHours(3, 6)).toBe(18);
+    expect(simulatedAbsenceHours(2.8, 5.5)).toBe(11);
+    expect(simulatedAbsenceHours(-1, 6)).toBe(0);
+  });
+
   it("calcola le ore residue e le giornate intere equivalenti", () => {
     const result = calculateAbsencePlan({
       absenceHours: 12,

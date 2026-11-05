@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadAbsenceHoursPerDay, saveAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
-import { calculateAbsencePlan } from "@/lib/voto/absence-calculator";
+import { calculateAbsencePlan, simulatedAbsenceHours } from "@/lib/voto/absence-calculator";
 import { fmt } from "@/lib/voto/calc";
 import { useVoto } from "@/lib/voto/store";
 
@@ -13,7 +13,7 @@ const numberLabel = (value: number) => fmt(Math.round(value * 100) / 100, 2);
 
 export function AbsenceCalculator() {
   const { attendance } = useVoto().data;
-  const [simulatedHoursInput, setSimulatedHoursInput] = useState("0");
+  const [simulatedDaysInput, setSimulatedDaysInput] = useState("0");
   const [hoursPerDayInput, setHoursPerDayInput] = useState("6");
   useEffect(() => {
     setHoursPerDayInput(String(loadAbsenceHoursPerDay()));
@@ -27,7 +27,10 @@ export function AbsenceCalculator() {
     absenceHours: attendance.absenceHours,
     absenceLimitHours: attendance.absenceLimitHours,
     annualHours: attendance.annualHours,
-    simulatedHours: numericInput(simulatedHoursInput),
+    simulatedHours: simulatedAbsenceHours(
+      numericInput(simulatedDaysInput),
+      numericInput(hoursPerDayInput),
+    ),
     hoursPerDay: numericInput(hoursPerDayInput),
   });
   const percent = calculation.currentAnnualPercentage;
@@ -87,11 +90,11 @@ export function AbsenceCalculator() {
           Simula altre assenze
         </h3>
         <NumberField
-          id="absence-extra-hours"
-          label="Ore aggiuntive da simulare"
-          value={simulatedHoursInput}
-          onChange={setSimulatedHoursInput}
-          step="0.5"
+          id="absence-extra-days"
+          label="Giornate aggiuntive da simulare"
+          value={simulatedDaysInput}
+          onChange={setSimulatedDaysInput}
+          step="1"
         />
         <NumberField
           id="absence-hours-per-day"

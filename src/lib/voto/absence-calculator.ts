@@ -25,6 +25,11 @@ export interface AbsenceCalculation {
 
 const nonNegative = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0);
 
+export function simulatedAbsenceHours(days: number, hoursPerDay: number): number {
+  const wholeDays = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0;
+  return wholeDays * nonNegative(hoursPerDay);
+}
+
 export function calculateAbsencePlan(input: AbsenceCalculationInput): AbsenceCalculation {
   const absenceHours = nonNegative(input.absenceHours);
   const absenceLimitHours = nonNegative(input.absenceLimitHours);

@@ -653,7 +653,8 @@ describe("Assistente locale", () => {
       schoolEndDate: "2026-06-08",
     });
     expect(configured).toContain("08/06/2026");
-    expect(configured).toContain("giorni di calendario");
+    expect(configured).toContain("giorni di lezione");
+    expect(configured).toContain("weekend e festività esclusi");
 
     const missing = answerQuestion("Quando finisce la scuola?", data, emptySchedule(), now);
     expect(missing).toContain("Studio Lab > Fine scuola");

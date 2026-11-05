@@ -1,6 +1,7 @@
 import { average, fmt, gradeTone, neededGrade, overallAverage } from "./calc";
 import { calculateAbsencePlan } from "./absence-calculator";
 import { DEFAULT_ABSENCE_HOURS_PER_DAY } from "./absence-preferences";
+import { schoolDaysUntilSchoolEnd, type SchoolClosurePeriod } from "./school-holidays";
 import { DAYS, emptySchedule, type DayId, type Schedule } from "./orario";
 import type { Interrogazione } from "./interrogazioni";
 import type { Flashcard } from "./study";
@@ -35,6 +36,7 @@ export interface AssistantContext {
   homeModules?: Array<{ id: string; enabled: boolean }>;
   flashcards?: Flashcard[];
   schoolEndDate?: string | undefined;
+  schoolClosures?: SchoolClosurePeriod[] | undefined;
   absenceHoursPerDay?: number | undefined;
 }
 
@@ -68,7 +70,11 @@ function subjectTokenMatches(queryToken: string, subjectToken: string): boolean 
   if (queryToken.length >= 3 && subjectToken.startsWith(queryToken)) return true;
   if (subjectToken.length >= 3 && queryToken.startsWith(subjectToken)) return true;
   const maxDistance = Math.max(queryToken.length, subjectToken.length) >= 7 ? 2 : 1;
-  return queryToken.length >= 4 && subjectToken.length >= 4 && editDistance(queryToken, subjectToken) <= maxDistance;
+  return (
+    queryToken.length >= 4 &&
+    subjectToken.length >= 4 &&
+    editDistance(queryToken, subjectToken) <= maxDistance
+  );
 }
 
 function findSubject(query: string, data: VotoData) {
@@ -329,14 +335,14 @@ export function answerQuestion(
   if (asksSchoolEnd) {
     const endDate = context.schoolEndDate;
     const dateLabel = displayDate(endDate);
-    const remainingDays = daysUntil(endDate, now);
+    const remainingDays = schoolDaysUntilSchoolEnd(endDate, now, context.schoolClosures);
     if (!endDate || !dateLabel || remainingDays === null)
       return "Per calcolare quando finisce la scuola, imposta prima la data ufficiale in Studio Lab > Fine scuola. La data non è nei dati sincronizzati e non la indovino.";
     if (remainingDays === 0) return `Oggi, ${dateLabel}, è l’ultimo giorno di scuola impostato.`;
     if (remainingDays > 0)
-      return `La fine delle lezioni è impostata per il ${dateLabel}: mancano ${remainingDays} ${remainingDays === 1 ? "giorno" : "giorni"} di calendario (weekend e festività inclusi).`;
+      return `La fine delle lezioni è impostata per il ${dateLabel}: mancano ${remainingDays} ${remainingDays === 1 ? "giorno" : "giorni"} di lezione (weekend e festività esclusi).`;
     const elapsedDays = Math.abs(remainingDays);
-    return `La data di fine lezioni impostata era il ${dateLabel}: è passata da ${elapsedDays} ${elapsedDays === 1 ? "giorno" : "giorni"}.`;
+    return `La data di fine lezioni impostata era il ${dateLabel}: è passata da ${elapsedDays} ${elapsedDays === 1 ? "giorno" : "giorni"} di lezione (weekend e festività esclusi).`;
   }
 
   if (

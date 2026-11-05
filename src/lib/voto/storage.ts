@@ -24,6 +24,7 @@ export const KEYS = {
   infraperiodalReports: "voto.infraperiodalReports",
   schoolEndDate: "voto.schoolEndDate",
   absenceHoursPerDay: "voto.absenceHoursPerDay",
+  schoolClosures: "voto.schoolClosures",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

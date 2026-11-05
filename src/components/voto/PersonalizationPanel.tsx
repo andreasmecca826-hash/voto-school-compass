@@ -140,8 +140,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "y2k",
     label: "Y2K",
-    description: "Cromato e colorato",
-    sw: "linear-gradient(135deg,#ff77c8,#76e6ff)",
+    description: "Portale web 2000: cromo, ciano e fucsia",
+    sw: "linear-gradient(135deg,#edfaff 0%,#829fba 18%,#192c56 38%,#ff63c5 57%,#53dcf5 76%,#f6fbff 100%)",
   },
   {
     id: "primavera",

@@ -447,20 +447,20 @@
   --theme-font-display: Manrope, sans-serif;
 }
 [data-theme="y2k"] {
-  --theme-bg-dark: oklch(0.16 0.06 330);
-  --theme-card-dark: oklch(0.28 0.09 330);
-  --theme-surface-dark: oklch(0.36 0.1 205);
-  --theme-bg-light: oklch(0.96 0.035 330);
-  --theme-card-light: oklch(1 0.015 330);
-  --theme-surface-light: oklch(0.9 0.05 205);
-  --theme-fg-dark: oklch(0.98 0.025 330);
-  --theme-fg-light: oklch(0.24 0.05 330);
-  --theme-muted-dark: oklch(0.75 0.06 330);
-  --theme-muted-light: oklch(0.46 0.045 330);
-  --theme-primary: oklch(0.78 0.18 335);
-  --theme-radius: 1.4rem;
-  --theme-font-sans: "Trebuchet MS", sans-serif;
-  --theme-font-display: "Trebuchet MS", sans-serif;
+  --theme-bg-dark: oklch(0.16 0.07 260);
+  --theme-card-dark: oklch(0.24 0.075 260);
+  --theme-surface-dark: oklch(0.34 0.09 205);
+  --theme-bg-light: oklch(0.94 0.04 220);
+  --theme-card-light: oklch(0.985 0.012 230);
+  --theme-surface-light: oklch(0.86 0.055 205);
+  --theme-fg-dark: oklch(0.98 0.018 220);
+  --theme-fg-light: oklch(0.2 0.055 265);
+  --theme-muted-dark: oklch(0.76 0.045 220);
+  --theme-muted-light: oklch(0.43 0.055 255);
+  --theme-primary: oklch(0.72 0.2 340);
+  --theme-radius: 0.4rem;
+  --theme-font-sans: Tahoma, Verdana, Arial, sans-serif;
+  --theme-font-display: "Trebuchet MS", Tahoma, sans-serif;
 }
 [data-theme="primavera"] {
   --theme-bg-dark: oklch(0.16 0.045 155);
@@ -887,7 +887,9 @@
   border: 5px solid #075d84;
   border-radius: 28px 28px 14px 14px;
   background: #08a9bd;
-  box-shadow: inset 0 -4px 0 rgb(0 60 96 / 0.45), 0 2px 0 #ffb83d;
+  box-shadow:
+    inset 0 -4px 0 rgb(0 60 96 / 0.45),
+    0 2px 0 #ffb83d;
 }
 .didup-backpack-body::before,
 .didup-backpack-body::after {
@@ -899,8 +901,12 @@
   border-radius: 3px;
   background: #ffb83d;
 }
-.didup-backpack-body::before { left: 2px; }
-.didup-backpack-body::after { right: 2px; }
+.didup-backpack-body::before {
+  left: 2px;
+}
+.didup-backpack-body::after {
+  right: 2px;
+}
 .didup-backpack-handle {
   position: absolute;
   left: 36px;
@@ -921,8 +927,12 @@
   border-radius: 0 0 15px 15px;
   z-index: 2;
 }
-.didup-backpack-strap.left { left: 11px; }
-.didup-backpack-strap.right { right: 11px; }
+.didup-backpack-strap.left {
+  left: 11px;
+}
+.didup-backpack-strap.right {
+  right: 11px;
+}
 .didup-backpack-pocket {
   position: absolute;
   left: 8px;
@@ -1028,4 +1038,139 @@
   box-shadow: 0 1px 3px oklch(0.2 0.03 245 / 0.08);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+/* Y2K: interfaccia da portale web dei primi anni 2000, con cromo e controlli a rilievo. */
+:root[data-theme="y2k"] {
+  --y2k-pink: #ff62c4;
+  --y2k-cyan: #62e4f5;
+  --y2k-chrome: #d9f4ff;
+  --y2k-shadow: #141033;
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--y2k-cyan) 30%, transparent) 1px,
+      transparent 1.5px
+    ),
+    radial-gradient(
+      ellipse at 12% -4%,
+      color-mix(in srgb, var(--y2k-pink) 23%, transparent),
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at 92% 18%,
+      color-mix(in srgb, var(--y2k-cyan) 24%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--color-background) 92%, #223c6a),
+      var(--color-background)
+    );
+  background-size:
+    24px 24px,
+    auto,
+    auto,
+    auto;
+  background-attachment: fixed;
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) .card-surface {
+  border: 2px solid transparent;
+  border-radius: 0.45rem;
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--color-card) 92%, white 8%), var(--color-card))
+      padding-box,
+    linear-gradient(
+        135deg,
+        white 0%,
+        var(--y2k-cyan) 28%,
+        #8878e8 56%,
+        var(--y2k-pink) 78%,
+        white 100%
+      )
+      border-box;
+  box-shadow:
+    0 3px 0 var(--y2k-shadow),
+    inset 0 1px 0 color-mix(in srgb, white 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--y2k-shadow) 30%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) .glass-panel {
+  color: #f7fbff;
+  background: linear-gradient(
+    180deg,
+    #e9faff 0%,
+    #9ab8cc 8%,
+    #46628d 20%,
+    #1b2e5a 58%,
+    #101a3c 100%
+  );
+  border-color: #f8feff;
+  box-shadow:
+    0 3px 0 var(--y2k-shadow),
+    inset 0 1px 0 white,
+    inset 0 -2px 0 color-mix(in srgb, #101a3c 45%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) button,
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) [role="button"] {
+  border-radius: 0.4rem;
+  border-color: color-mix(in srgb, var(--y2k-cyan) 42%, var(--color-border));
+  box-shadow:
+    0 2px 0 color-mix(in srgb, var(--y2k-shadow) 75%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 48%, transparent);
+  text-shadow: 0 1px 0 color-mix(in srgb, white 22%, transparent);
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) button:not(:disabled):hover,
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) [role="button"]:hover {
+  filter: brightness(1.1) saturate(1.12);
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) button:active,
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) [role="button"]:active {
+  transform: translateY(1px);
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) button.bg-primary,
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) button[data-variant="default"] {
+  border: 1px solid color-mix(in srgb, white 65%, var(--y2k-cyan));
+  background: linear-gradient(180deg, #fff 0%, var(--y2k-cyan) 12%, #42badb 52%, #3079b5 100%);
+  color: #10254d;
+  box-shadow:
+    0 2px 0 #17214c,
+    inset 0 1px 0 white,
+    inset 0 -1px 0 #3880a7;
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"])
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]),
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) select,
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) textarea {
+  border-radius: 0.3rem;
+  border-color: color-mix(in srgb, var(--y2k-cyan) 58%, var(--color-border));
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, var(--y2k-shadow) 18%, transparent),
+    0 1px 0 white;
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) h1,
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) h2 {
+  text-shadow: 0 1px 0 color-mix(in srgb, white 34%, transparent);
+}
+
+:root[data-theme="y2k"]:not([data-registry-style="didup"]) p a {
+  color: var(--y2k-cyan);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
