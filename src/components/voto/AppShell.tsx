@@ -541,7 +541,7 @@ function MoreMenu({
             {studentName}
           </p>
         </div>
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+        <span className="flex h-14 w-14 items-center justify-center text-primary">
           <GraduationCap className="h-7 w-7" />
         </span>
       </div>
@@ -551,7 +551,7 @@ function MoreMenu({
         className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left"
       >
         <Link to="/studio" onClick={onClose}>
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center text-primary">
             <Sparkles />
           </span>
           <span className="min-w-0 flex-1">
@@ -568,10 +568,9 @@ function MoreMenu({
           const cardContent = (
             <>
               <span
-                className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl"
-                style={{ backgroundColor: color }}
+                className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center"
               >
-                <Icon className="h-7 w-7 text-white" />
+                <Icon className="h-7 w-7" style={{ color }} />
               </span>
               <span className="pr-1">
                 <span className="block text-center text-base font-bold leading-tight">{label}</span>
