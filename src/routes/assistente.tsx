@@ -9,6 +9,7 @@ import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { loadAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
 import { clearScheduleDayIfUnchanged, DAYS, loadSchedule } from "@/lib/voto/orario";
+import { loadSchoolClosures } from "@/lib/voto/school-holidays";
 import { loadSchoolEndDate } from "@/lib/voto/school-end-date";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
@@ -59,6 +60,10 @@ function Assistant() {
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
       ...v.data,
+      student: {
+        ...v.data.student,
+        name: v.displayName || v.data.student.name,
+      },
       assignments: v.data.assignments.map((item) => ({
         ...item,
         completed: v.isDone(item.id, item.completed),
@@ -101,6 +106,7 @@ function Assistant() {
               homeModules: v.homeModules,
               flashcards: study.cards,
               schoolEndDate: loadSchoolEndDate(),
+              schoolClosures: loadSchoolClosures(),
               absenceHoursPerDay: loadAbsenceHoursPerDay(),
             });
     setMessages((current) => [

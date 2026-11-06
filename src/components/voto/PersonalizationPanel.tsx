@@ -126,6 +126,18 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "linear-gradient(135deg,#c0c0c0,#083c83)",
   },
   {
+    id: "windows-98",
+    label: "Windows 98",
+    description: "Grigio classico, blu navy e bordi in rilievo",
+    sw: "linear-gradient(135deg,#dfdfdf 0%,#c0c0c0 42%,#808080 48%,#000080 52%,#1084d0 100%)",
+  },
+  {
+    id: "windows-7",
+    label: "Windows 7",
+    description: "Aero originale, finestre chiare, menu Start e taskbar",
+    sw: "radial-gradient(ellipse at 28% 82%,#87e6f7 0%,transparent 44%),linear-gradient(155deg,#053c79 0%,#087fc3 46%,#55c8e8 67%,#0b5394 100%)",
+  },
+  {
     id: "dark-academia",
     label: "Dark Academia",
     description: "Carta e atmosfera classica",
@@ -134,14 +146,38 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "glassmorphism",
     label: "Glassmorphism",
-    description: "Superfici morbide",
-    sw: "linear-gradient(135deg,#24205b,#8ee7ff)",
+    description: "Vetro satinato, riflessi aurora e superfici traslucide",
+    sw: "radial-gradient(ellipse at 18% 20%,#63e4f3 0%,transparent 43%),radial-gradient(ellipse at 85% 15%,#9b78ff 0%,transparent 48%),linear-gradient(145deg,#17172f,#28365f)",
+  },
+  {
+    id: "casino",
+    label: "Casinò",
+    description: "Panno verde, oro satinato e dettagli color rubino",
+    sw: "radial-gradient(circle at 78% 30%,#f7d878 0 4%,transparent 5%),linear-gradient(135deg,#102d25,#1f6849 48%,#c59b3b 72%,#592c37)",
+  },
+  {
+    id: "calcio",
+    label: "Calcio",
+    description: "Campo verde, linee da stadio e luci della partita",
+    sw: "radial-gradient(ellipse at 50% 20%,#fff3b0 0%,transparent 35%),repeating-linear-gradient(90deg,#164c31 0 22%,#1f633b 22% 44%)",
+  },
+  {
+    id: "terminale",
+    label: "Terminale",
+    description: "Console scura, testo monospaziato e verde fosforo",
+    sw: "repeating-linear-gradient(0deg,#07140c 0 7px,#0b1c10 7px 8px),linear-gradient(135deg,#07140c,#144322)",
+  },
+  {
+    id: "pixel-arcade",
+    label: "Pixel Arcade",
+    description: "Console 8-bit, viola profondo e colori arcade",
+    sw: "linear-gradient(135deg,#211442 0 32%,#7146c7 32% 55%,#25d8ca 55% 75%,#f2cb4c 75%)",
   },
   {
     id: "y2k",
     label: "Y2K",
-    description: "Cromato e colorato",
-    sw: "linear-gradient(135deg,#ff77c8,#76e6ff)",
+    description: "Portale web 2000: cromo, ciano e fucsia",
+    sw: "linear-gradient(135deg,#edfaff 0%,#829fba 18%,#192c56 38%,#ff63c5 57%,#53dcf5 76%,#f6fbff 100%)",
   },
   {
     id: "primavera",
@@ -294,19 +330,21 @@ export function PersonalizationPanel() {
               Scegli l’aspetto VOTO o DidUP
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() => setView("typography")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Type className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Tipografia</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Font e dimensione dell’interfaccia
-            </span>
-          </button>
+          {v.theme === "original" && v.registryStyle === "voto" && (
+            <button
+              type="button"
+              onClick={() => setView("typography")}
+              className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <Type className="h-7 w-7" />
+              </span>
+              <span className="font-semibold">Tipografia</span>
+              <span className="text-center text-[11px] text-muted-foreground">
+                Font e dimensione dell’interfaccia
+              </span>
+            </button>
+          )}
           <button
             type="button"
             onClick={openMusic}
@@ -736,6 +774,19 @@ export function PersonalizationPanel() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+      )}
+      {v.theme === "windows-7" && (
+        <p className="mt-3 rounded-md border border-border bg-card p-3 text-xs text-muted-foreground">
+          Aero mantiene le finestre chiare, come Windows 7. La modalità chiara o scura cambia la
+          tinta del desktop e delle cornici; il menu Start raccoglie tutte le sezioni di VOTO.
+          {v.registryStyle === "didup" && " Per visualizzarlo, scegli lo stile del registro VOTO."}
+        </p>
+      )}
+      {v.theme !== "original" && (
+        <p className="mt-3 rounded-md border border-border bg-card p-3 text-[11px] text-muted-foreground">
+          Questo è un tema completo: colori, superfici, caratteri e arrotondamenti sono gestiti dal
+          tema. I font personalizzati sono disponibili solo con il tema Originale.
+        </p>
       )}
       {v.theme === "custom" && (
         <section className="card-surface mt-3 p-4">

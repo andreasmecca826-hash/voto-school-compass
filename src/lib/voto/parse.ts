@@ -77,12 +77,14 @@ function gradeCommentOrUndefined(
     ? ITALIAN_GRADE_WORDS[value]
     : numericLabel
       ? ITALIAN_GRADE_WORDS[Number(numericLabel[1])]
-      : undefined;
+      : ITALIAN_GRADE_WORDS[Math.floor(value)];
   const valueForms = [
     normalizedGradeText(label),
     normalizedGradeText(String(value)),
     normalizedGradeText(new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(value)),
     spokenGrade,
+    ...(value % 1 === 0.5 && spokenGrade ? [`${spokenGrade} e mezzo`, `${spokenGrade} mezzo`] : []),
+    ...(numericLabel?.[1] ? [normalizedGradeText(numericLabel[1])] : []),
   ].filter((form): form is string => Boolean(form));
 
   return valueForms.includes(normalizedComment) ? undefined : comment.trim();
@@ -141,7 +143,7 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
   if (typeof raw === "string") {
     const value = raw.trim();
     if (!value) return undefined;
-    const isInternalPath = /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
+    const isInternalPath = /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
     const name = isInternalPath
       ? value.split("/").at(-1)
       : value.split(/[/?#]/).filter(Boolean).at(-1);
@@ -151,14 +153,21 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
     };
   }
   if (!isObj(raw)) return undefined;
-  const path = str(raw["path"] ?? raw["attachmentPath"]);
+  const rawPath = str(raw["path"] ?? raw["attachmentPath"]);
+  const rawUrl = str(raw["url"] ?? raw["attachmentUrl"]);
+  const path =
+    rawPath && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/i.test(rawPath)
+      ? rawPath.replace(/^\/+/, "")
+      : undefined;
+  const url = rawUrl ?? (rawPath && /^https?:\/\//i.test(rawPath) ? rawPath : undefined);
   const name = str(
     raw["name"] ?? raw["fileName"] ?? raw["filename"] ?? raw["attachmentName"] ?? raw["nome"],
   );
-  if (!path && !name) return undefined;
+  if (!path && !url && !name) return undefined;
   return {
     ...(name ? { name } : {}),
     ...(path ? { path } : {}),
+    ...(url ? { url } : {}),
   };
 }
 
@@ -217,6 +226,7 @@ export function parseVotoData(raw: unknown): VotoData {
       subject: str(a["subject"]),
       dueDate: str(a["dueDate"]),
       dueTime: str(a["dueTime"]),
+      assignedDate: str(a["assignedDate"]) ?? str(a["assignmentDate"]),
       completed: a["completed"] === true,
       details: str(a["details"]) ?? str(a["description"]),
       teacher: str(a["teacher"]) ?? str(a["docente"]) ?? str(a["prof"]),
@@ -231,6 +241,14 @@ export function parseVotoData(raw: unknown): VotoData {
       const attachments = Array.isArray(rawAttachments)
         ? rawAttachments.map(parseCircularAttachment).filter((item) => item !== undefined)
         : undefined;
+      const legacyPath = str(n["attachmentPath"]);
+      const legacyInternalPath =
+        legacyPath && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/i.test(legacyPath)
+          ? legacyPath.replace(/^\/+/, "")
+          : undefined;
+      const legacyUrl =
+        str(n["attachmentUrl"]) ??
+        (legacyPath && /^https?:\/\//i.test(legacyPath) ? legacyPath : undefined);
       return {
         id: str(n["id"]) ?? `n-${i}`,
         type: notifType(n["type"]),
@@ -239,8 +257,8 @@ export function parseVotoData(raw: unknown): VotoData {
         date: str(n["date"]),
         subject: str(n["subject"]),
         teacher: str(n["teacher"]) ?? str(n["docente"]) ?? str(n["prof"]),
-        attachmentPath: str(n["attachmentPath"]),
-        attachmentUrl: str(n["attachmentUrl"]),
+        attachmentPath: legacyInternalPath,
+        attachmentUrl: legacyUrl,
         attachmentName: str(n["attachmentName"]),
         ...(attachments?.length ? { attachments } : {}),
         read: n["read"] === true,

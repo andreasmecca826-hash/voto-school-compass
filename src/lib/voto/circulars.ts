@@ -1,6 +1,6 @@
 import type { AppNotification, VotoData } from "./types";
 
-const INTERNAL_PDF_PATH = /^circulars\/[a-f0-9]{64}\.pdf$/;
+const INTERNAL_ATTACHMENT_PATH = /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/;
 const DEFAULT_SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
 // Publishable key: è destinata al client; non usare mai una service-role key nel browser.
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
@@ -22,7 +22,7 @@ function supabasePublishableKey() {
   );
 }
 
-async function signedPdfUrl(path: string): Promise<string | null> {
+async function signedAttachmentUrl(path: string): Promise<string | null> {
   const projectUrl = supabaseProjectUrl();
   const key = supabasePublishableKey();
   try {
@@ -135,21 +135,21 @@ export async function getCircularCheckStatus(after: string): Promise<CircularChe
   };
 }
 
-/** Firma solo i path già caricati nello storage privato; non invia mai URL Argo al server. */
+/** Firma solo i path già caricati nello storage privato; non invia mai URL DidUP al server. */
 export async function mirrorCirculars(data: VotoData): Promise<VotoData> {
   const notifications = await Promise.all(
     data.notifications.map(async (notification): Promise<AppNotification> => {
       if (
         notification.type !== "notice" ||
         !notification.attachmentPath ||
-        !INTERNAL_PDF_PATH.test(notification.attachmentPath)
+        !INTERNAL_ATTACHMENT_PATH.test(notification.attachmentPath)
       ) {
         return notification;
       }
 
       return {
         ...notification,
-        attachmentUrl: (await signedPdfUrl(notification.attachmentPath)) ?? undefined,
+        attachmentUrl: (await signedAttachmentUrl(notification.attachmentPath)) ?? undefined,
       };
     }),
   );

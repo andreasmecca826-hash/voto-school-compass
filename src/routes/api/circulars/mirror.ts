@@ -3,10 +3,10 @@ import { normalizeSupabaseUrl } from "@/lib/server/supabaseStorageAuth";
 
 const DEFAULT_SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
-const MAX_PDF_BYTES = 25 * 1024 * 1024;
-const PDF_REQUEST_TIMEOUT_MS = 45_000;
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+const ATTACHMENT_REQUEST_TIMEOUT_MS = 45_000;
 const validPath = (value: unknown): value is string =>
-  typeof value === "string" && /^circulars\/[a-f0-9]{64}\.pdf$/.test(value);
+  typeof value === "string" && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
 
 type SignedPdfResponse = {
   path?: unknown;
@@ -33,7 +33,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-class PdfTooLargeError extends Error {}
+class AttachmentTooLargeError extends Error {}
 
 async function cancelBody(body: ReadableStream<Uint8Array> | null) {
   try {
@@ -43,11 +43,11 @@ async function cancelBody(body: ReadableStream<Uint8Array> | null) {
   }
 }
 
-async function readLimitedPdf(response: Response) {
+async function readLimitedAttachment(response: Response) {
   const contentLength = Number(response.headers.get("content-length") ?? 0);
-  if (Number.isFinite(contentLength) && contentLength > MAX_PDF_BYTES) {
+  if (Number.isFinite(contentLength) && contentLength > MAX_ATTACHMENT_BYTES) {
     await cancelBody(response.body);
-    throw new PdfTooLargeError("Il PDF supera il limite di 25 MB.");
+    throw new AttachmentTooLargeError("L'allegato supera il limite di 25 MB.");
   }
 
   const reader = response.body?.getReader();
@@ -59,13 +59,13 @@ async function readLimitedPdf(response: Response) {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      if (totalBytes + value.byteLength > MAX_PDF_BYTES) {
+      if (totalBytes + value.byteLength > MAX_ATTACHMENT_BYTES) {
         try {
           await reader.cancel();
         } catch {
           // Il flusso viene annullato comunque al superamento del limite.
         }
-        throw new PdfTooLargeError("Il PDF supera il limite di 25 MB.");
+        throw new AttachmentTooLargeError("L'allegato supera il limite di 25 MB.");
       }
       chunks.push(value);
       totalBytes += value.byteLength;
@@ -84,7 +84,7 @@ async function readLimitedPdf(response: Response) {
 }
 
 function attachmentDisposition(value: string | null, path: string) {
-  const fallback = path.split("/").at(-1) ?? "circolare.pdf";
+  const fallback = path.split("/").at(-1) ?? "allegato";
   const filename = Array.from(value?.trim() || fallback, (char) => {
     const code = char.charCodeAt(0);
     return char === "\\" || char === "/" || char === '"' || code < 32 || code === 127 ? "_" : char;
@@ -92,7 +92,7 @@ function attachmentDisposition(value: string | null, path: string) {
     .join("")
     .replace(/\s+/g, " ")
     .slice(0, 120);
-  const withExtension = /\.pdf$/i.test(filename) ? filename : `${filename}.pdf`;
+  const withExtension = filename;
   const ascii = withExtension.normalize("NFKD").replace(/[^\x20-\x7e]/g, "_");
   const encoded = encodeURIComponent(withExtension).replace(
     /[!'()*]/g,
@@ -101,7 +101,7 @@ function attachmentDisposition(value: string | null, path: string) {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
-async function signedPdfUrl(
+async function signedAttachmentUrl(
   project: { url: string; key: string },
   path: string,
   signal: AbortSignal,
@@ -129,25 +129,28 @@ async function signedPdfUrl(
   return url;
 }
 
-async function readPrivatePdf(
+async function readPrivateAttachment(
   project: { url: string; key: string },
   path: string,
   downloadName?: string | null,
 ) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PDF_REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), ATTACHMENT_REQUEST_TIMEOUT_MS);
   try {
-    const signedUrl = await signedPdfUrl(project, path, controller.signal);
+    const signedUrl = await signedAttachmentUrl(project, path, controller.signal);
     const response = await fetch(signedUrl, { signal: controller.signal });
     if (!response.ok) {
       await cancelBody(response.body);
       throw new Error(`storage_http_${response.status}`);
     }
-    const bytes = await readLimitedPdf(response);
+    const bytes = await readLimitedAttachment(response);
+    const contentType = path.endsWith(".docx")
+      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      : "application/pdf";
     return new Response(bytes, {
       status: 200,
       headers: {
-        "content-type": "application/pdf",
+        "content-type": contentType,
         "content-disposition": downloadName ? attachmentDisposition(downloadName, path) : "inline",
         "content-length": String(bytes.byteLength),
         "cache-control": "private, max-age=300",
@@ -164,19 +167,20 @@ export const Route = createFileRoute("/api/circulars/mirror")({
       GET: async ({ request }) => {
         try {
           const params = new URL(request.url).searchParams;
-          const path = params.get("path");
-          if (!validPath(path)) return json({ error: "path non valido" }, 400);
+          const rawPath = params.get("path");
+          const path = rawPath?.replace(/^\/+/, "") ?? null;
+          if (!validPath(path)) return json({ error: "Path allegato non valido" }, 400);
           const downloadName =
             params.get("download") === "1" ? (params.get("filename") ?? "circolare.pdf") : null;
-          return await readPrivatePdf(config(), path, downloadName);
+          return await readPrivateAttachment(config(), path, downloadName);
         } catch (error) {
-          if (error instanceof PdfTooLargeError) {
+          if (error instanceof AttachmentTooLargeError) {
             return json({ error: error.message }, 413);
           }
           console.error("circular download failed", {
             errorType: error instanceof Error ? error.message : "UnknownError",
           });
-          return json({ error: "PDF non disponibile nello storage interno" }, 502);
+          return json({ error: "Allegato non disponibile nello storage interno" }, 502);
         }
       },
       POST: async () => json({ error: "Il download da link esterni è disabilitato." }, 410),

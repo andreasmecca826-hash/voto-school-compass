@@ -1,5 +1,6 @@
 export const KEYS = {
   url: "voto.url",
+  displayName: "voto.displayName",
   cache: "voto.cache",
   demoData: "voto.demoData",
   lastSync: "voto.lastSync",
@@ -23,6 +24,8 @@ export const KEYS = {
   infraperiodalReports: "voto.infraperiodalReports",
   schoolEndDate: "voto.schoolEndDate",
   absenceHoursPerDay: "voto.absenceHoursPerDay",
+  schoolClosures: "voto.schoolClosures",
+  schoolExcludeWeekends: "voto.schoolExcludeWeekends",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {

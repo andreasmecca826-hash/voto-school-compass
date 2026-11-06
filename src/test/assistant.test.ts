@@ -39,6 +39,13 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("riconosce abbreviazioni e piccoli errori nel nome della materia", () => {
+    expect(answerQuestion("Che media ho in ing?", data)).toContain("Inglese");
+    expect(answerQuestion("Quanto devo prendere in ingese per puntare a 8?", data)).toContain(
+      "almeno 10",
+    );
+  });
+
   it("risponde su media generale, compiti e assenze", () => {
     expect(answerQuestion("Qual è la mia media generale?", data)).toContain("7,00");
     expect(answerQuestion("Quanti compiti devo fare?", data)).toContain("1 compito");
@@ -646,7 +653,8 @@ describe("Assistente locale", () => {
       schoolEndDate: "2026-06-08",
     });
     expect(configured).toContain("08/06/2026");
-    expect(configured).toContain("giorni di calendario");
+    expect(configured).toContain("giorni di lezione");
+    expect(configured).toContain("weekend e festività esclusi");
 
     const missing = answerQuestion("Quando finisce la scuola?", data, emptySchedule(), now);
     expect(missing).toContain("Studio Lab > Fine scuola");

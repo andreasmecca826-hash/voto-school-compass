@@ -1,5 +1,4 @@
 import {
-  CalendarCheck2,
   CalendarX2,
   FileText,
 } from "lucide-react";
@@ -237,7 +236,12 @@ export function DidupDashboard() {
                 event.type === "absence" ? (
                   <AbsenceIcon />
                 ) : event.type === "delay" ? (
-                  <CalendarCheck2 className="h-5 w-5" />
+                  <img
+                    src="/didup-delay-icon.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-7 w-6 object-contain"
+                  />
                 ) : (
                   <CalendarX2 className="h-5 w-5" />
                 );

@@ -2,6 +2,21 @@ import { describe, expect, it } from "vitest";
 import { calculateAbsencePlan } from "@/lib/voto/absence-calculator";
 
 describe("calculateAbsencePlan", () => {
+  it("calcola il margine da valori attuali e ore aggiuntive personalizzati", () => {
+    const result = calculateAbsencePlan({
+      absenceHours: 90,
+      absenceLimitHours: 264,
+      annualHours: 990,
+      simulatedHours: 72,
+      hoursPerDay: 6,
+    });
+
+    expect(result.absenceHours).toBe(90);
+    expect(result.simulatedTotalHours).toBe(162);
+    expect(result.simulatedRemainingHours).toBe(102);
+    expect(result.fullDaysAfterSimulation).toBe(17);
+  });
+
   it("calcola le ore residue e le giornate intere equivalenti", () => {
     const result = calculateAbsencePlan({
       absenceHours: 12,

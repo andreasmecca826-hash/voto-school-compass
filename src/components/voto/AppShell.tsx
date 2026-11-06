@@ -26,6 +26,7 @@ import {
   Suspense,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { DidupDashboard } from "./DidupDashboard";
 import { DidupMenu } from "./DidupMenu";
+import { Windows7Orb, Windows7Taskbar } from "./Windows7Chrome";
 
 const NotificationsSheet = lazy(() =>
   import("./NotificationsSheet").then((module) => ({ default: module.NotificationsSheet })),
@@ -50,6 +52,7 @@ const MusicPanel = lazy(() =>
 );
 
 interface UiCtx {
+  openMenu: () => void;
   openNotifications: () => void;
   openSimulator: (subjectId?: string) => void;
   openSubject: (id: string) => void;
@@ -132,11 +135,23 @@ const MORE_NAV = [
     color: "#19aab6",
   },
 ] as const;
+const SEASONAL_THEMES = ["primavera", "estate", "autunno", "inverno"] as const;
+type SeasonalTheme = (typeof SEASONAL_THEMES)[number];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
   const now = useClock();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const isWindows7 = v.theme === "windows-7" && v.registryStyle !== "didup";
+  const seasonalTheme =
+    v.registryStyle === "voto" &&
+    SEASONAL_THEMES.includes(v.theme as SeasonalTheme)
+      ? (v.theme as SeasonalTheme)
+      : null;
+  const routeTitle = [...NAV, ...MORE_NAV,
+    { to: "/studio", label: "Studio Lab." },
+    { to: "/assistente", label: "Assistente" },
+  ].find(({ to }) => to === "/" ? path === "/" : path === to || path.startsWith(`${to}/`))?.label || "Registro scolastico";
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
@@ -150,6 +165,32 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const [musicMounted, setMusicMounted] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
+  const pullStartY = useRef<number | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+
+  const handlePullStart = (event: React.TouchEvent<HTMLElement>) => {
+    if (v.loading || window.scrollY > 0 || event.touches.length !== 1) return;
+    pullStartY.current = event.touches[0]?.clientY ?? null;
+  };
+
+  const handlePullMove = (event: React.TouchEvent<HTMLElement>) => {
+    if (pullStartY.current === null || v.loading) return;
+    const currentY = event.touches[0]?.clientY ?? pullStartY.current;
+    const distance = currentY - pullStartY.current;
+    if (distance <= 0) {
+      setPullDistance(0);
+      return;
+    }
+    if (distance > 8) event.preventDefault();
+    setPullDistance(Math.min(84, distance * 0.55));
+  };
+
+  const handlePullEnd = () => {
+    const shouldRefresh = pullDistance >= 56 && !v.loading;
+    pullStartY.current = null;
+    setPullDistance(0);
+    if (shouldRefresh) void v.refresh();
+  };
 
   useEffect(() => {
     setMoreOpen(false);
@@ -168,6 +209,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <Ui.Provider
       value={{
+        openMenu: () => setMoreOpen(true),
         openNotifications: () => {
           setMounted((current) => ({ ...current, notifications: true }));
           setNotif(true);
@@ -192,17 +234,27 @@ export function AppShell({ children }: { children: ReactNode }) {
           <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
         </Suspense>
       )}
-      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl">
-        {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className="glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]">
-          <div className="flex h-16 items-center justify-between px-5">
-            <div className="min-w-0">
-              <Link
+      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", v.registryStyle !== "didup" && "voto-shell", isWindows7 && "windows7-shell")}>
+        {seasonalTheme && <SeasonalAtmosphere theme={seasonalTheme} />}
+        {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className={cn("glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]", isWindows7 && "windows7-header")}>
+          {isWindows7 && (
+            <div className="windows7-titlebar">
+              <Link to="/" className="windows7-titlebar-brand" aria-label="VOTO. dashboard">
+                <Windows7Orb className="windows7-titlebar-icon" />
+                <span>VOTO</span>
+              </Link>
+              <span className="windows7-titlebar-title windows7-titlebar-route">{routeTitle}</span>
+            </div>
+          )}
+          <div className={cn("flex h-16 items-center justify-between px-5", isWindows7 && "windows7-toolbar")}>
+            <div className={cn("min-w-0", isWindows7 && "windows7-toolbar-info")}>
+              {isWindows7 ? <span className="windows7-toolbar-caption">Registro scolastico</span> : <Link
                 to="/"
                 className="font-display text-xl font-bold tracking-tight"
                 aria-label="VOTO. dashboard"
               >
                 VOTO<span className="text-primary">.</span>
-              </Link>
+              </Link>}
               <p className="truncate text-[11px] capitalize text-muted-foreground">
                 {dateLabel || "\u00a0"}
               </p>
@@ -246,16 +298,44 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>}
 
-        <main className={cn("flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28")}>
+        <main
+          className={cn("relative flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28", isWindows7 && "windows7-content")}
+          onTouchStart={handlePullStart}
+          onTouchMove={handlePullMove}
+          onTouchEnd={handlePullEnd}
+          onTouchCancel={handlePullEnd}
+        >
+          <div
+            className={cn(
+              "pointer-events-none flex items-center justify-center overflow-hidden text-xs font-medium text-primary transition-[height,opacity] duration-150",
+              pullDistance > 0 ? "opacity-100" : "opacity-0",
+            )}
+            style={{ height: pullDistance }}
+            aria-hidden={pullDistance === 0}
+          >
+            <RefreshCw className={cn("mr-2 h-4 w-4", pullDistance >= 56 && "rotate-180")} />
+            {pullDistance >= 56 ? "Rilascia per aggiornare" : "Trascina per aggiornare"}
+          </div>
           {v.ready ? (
-            moreOpen ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
+            moreOpen && !isWindows7 ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
               v.registryStyle === "didup" && path === "/" ? <DidupDashboard /> : children
           ) : (
             <ShellSkeleton />
           )}
         </main>
 
-        {v.registryStyle === "didup" ? <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} /> : <nav
+        {v.registryStyle === "didup" ? <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} /> : isWindows7 ? (
+          <Windows7Taskbar
+            navigation={NAV}
+            moreNavigation={MORE_NAV}
+            currentPath={path}
+            studentName={v.displayName || v.data.student.name || "Studente"}
+            now={now}
+            ready={v.ready}
+            open={moreOpen}
+            onOpenChange={setMoreOpen}
+          />
+        ) : <nav
           className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
           aria-label="Navigazione principale"
         >
@@ -348,6 +428,24 @@ export function AppShell({ children }: { children: ReactNode }) {
         </>
       )}
     </Ui.Provider>
+  );
+}
+
+function SeasonalAtmosphere({
+  theme,
+}: {
+  theme: "primavera" | "estate" | "autunno" | "inverno";
+}) {
+  const count = theme === "inverno" ? 14 : 8;
+  return (
+    <div className={cn("seasonal-atmosphere", `seasonal-atmosphere-${theme}`)} aria-hidden="true">
+      {theme === "estate" && <span className="seasonal-sun" />}
+      {Array.from({ length: count }, (_, index) => (
+        <span key={index} className="seasonal-particle" />
+      ))}
+      {theme === "estate" && <span className="seasonal-wave seasonal-wave-one" />}
+      {theme === "estate" && <span className="seasonal-wave seasonal-wave-two" />}
+    </div>
   );
 }
 
@@ -458,7 +556,7 @@ function MoreMenu({
   currentPath: string;
   onClose: () => void;
 }) {
-  const studentName = v.data.student.name || "Studente";
+  const studentName = v.displayName || v.data.student.name || "Studente";
   return (
     <section className="pt-4 pb-5" aria-label="Menu principale">
       <div className="mb-5 flex items-start justify-between">
@@ -475,7 +573,7 @@ function MoreMenu({
             {studentName}
           </p>
         </div>
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+        <span className="flex h-14 w-14 items-center justify-center text-primary">
           <GraduationCap className="h-7 w-7" />
         </span>
       </div>
@@ -485,7 +583,7 @@ function MoreMenu({
         className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left"
       >
         <Link to="/studio" onClick={onClose}>
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center text-primary">
             <Sparkles />
           </span>
           <span className="min-w-0 flex-1">
@@ -502,10 +600,9 @@ function MoreMenu({
           const cardContent = (
             <>
               <span
-                className="absolute right-0 top-0 flex h-16 w-16 items-center justify-center rounded-bl-[2rem] rounded-tr-2xl"
-                style={{ backgroundColor: color }}
+                className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center"
               >
-                <Icon className="h-7 w-7 text-white" />
+                <Icon className="h-7 w-7" style={{ color }} />
               </span>
               <span className="pr-1">
                 <span className="block text-center text-base font-bold leading-tight">{label}</span>

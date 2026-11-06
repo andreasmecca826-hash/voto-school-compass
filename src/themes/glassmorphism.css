@@ -1,0 +1,250 @@
+/* Glassmorphism: un sistema coerente di vetri satinati sopra un desktop aurora. */
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) {
+  --glass-edge: color-mix(in srgb, var(--color-foreground) 24%, transparent);
+  --glass-inset: color-mix(in srgb, white 24%, transparent);
+  --glass-shadow: 0 18px 48px -24px rgb(8 14 44 / 58%);
+  --glass-shadow-hover: 0 24px 56px -25px rgb(8 14 44 / 68%);
+}
+
+:root[data-theme="glassmorphism"][data-mode="scuro"]:not([data-registry-style="didup"]) {
+  --glass-edge: rgb(224 235 255 / 21%);
+  --glass-inset: rgb(255 255 255 / 20%);
+  --glass-shadow: 0 18px 50px -24px rgb(3 6 27 / 75%);
+  --glass-shadow-hover: 0 24px 60px -25px rgb(3 6 27 / 84%);
+}
+
+:root[data-theme="glassmorphism"][data-mode="chiaro"]:not([data-registry-style="didup"]) {
+  --glass-edge: rgb(255 255 255 / 74%);
+  --glass-inset: rgb(255 255 255 / 84%);
+  --glass-shadow: 0 18px 45px -25px rgb(47 61 123 / 32%);
+  --glass-shadow-hover: 0 22px 54px -24px rgb(47 61 123 / 42%);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) body {
+  min-height: 100vh;
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(
+      ellipse 60% 45% at 6% 8%,
+      color-mix(in srgb, #63e4f3 38%, transparent),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 54% 53% at 96% 10%,
+      color-mix(in srgb, #9b78ff 36%, transparent),
+      transparent 77%
+    ),
+    radial-gradient(
+      ellipse 62% 52% at 55% 104%,
+      color-mix(in srgb, #ed7dff 22%, transparent),
+      transparent 78%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--color-primary) 12%, var(--color-background)),
+      var(--color-background) 54%,
+      color-mix(in srgb, #5666d9 18%, var(--color-background))
+    );
+  background-attachment: fixed;
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) html {
+  background: var(--color-background);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) .glass-panel,
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) [role="dialog"],
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  [data-radix-popper-content-wrapper]
+  > div {
+  border-color: var(--glass-edge);
+  background:
+    linear-gradient(138deg, color-mix(in srgb, white 19%, transparent), transparent 43%),
+    color-mix(in srgb, var(--color-card) 69%, transparent);
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 var(--glass-inset);
+  -webkit-backdrop-filter: blur(28px) saturate(175%);
+  backdrop-filter: blur(28px) saturate(175%);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) .card-surface {
+  border-color: var(--glass-edge);
+  background:
+    linear-gradient(142deg, color-mix(in srgb, white 22%, transparent), transparent 46%),
+    linear-gradient(
+      320deg,
+      color-mix(in srgb, var(--color-primary) 9%, transparent),
+      transparent 58%
+    ),
+    color-mix(in srgb, var(--color-card) 58%, transparent);
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 var(--glass-inset),
+    inset 0 -1px 0 color-mix(in srgb, black 7%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(175%);
+  backdrop-filter: blur(26px) saturate(175%);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  .card-surface:has(button.press:hover),
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) button.card-surface:hover,
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) a.card-surface:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--glass-edge));
+  box-shadow:
+    var(--glass-shadow-hover),
+    inset 0 1px 0 var(--glass-inset);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) .windows7-shell,
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) main {
+  background: transparent;
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) :is(.bg-card, .bg-surface) {
+  background-color: color-mix(in srgb, var(--color-card) 55%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  :is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]),
+    select,
+    textarea
+  ) {
+  border-color: var(--glass-edge);
+  background-color: color-mix(in srgb, var(--color-card) 70%, transparent);
+  box-shadow:
+    inset 0 1px 2px rgb(14 20 60 / 9%),
+    0 1px 0 var(--glass-inset);
+  -webkit-backdrop-filter: blur(16px) saturate(145%);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  :is(input, select, textarea)::placeholder {
+  color: var(--color-muted-foreground);
+  opacity: 0.85;
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  button:not([role="switch"], [role="checkbox"], [role="radio"], [role="slider"]) {
+  border-color: color-mix(in srgb, var(--glass-edge) 78%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 19%, transparent);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  button:not(:disabled, [role="switch"], [role="checkbox"], [role="radio"], [role="slider"]):hover {
+  border-color: color-mix(in srgb, var(--color-primary) 52%, var(--glass-edge));
+  box-shadow:
+    0 8px 24px -14px color-mix(in srgb, var(--color-primary) 55%, transparent),
+    inset 0 1px 0 var(--glass-inset);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  :is(button.bg-primary, button[data-variant="default"], a.bg-primary) {
+  border-color: color-mix(in srgb, var(--color-primary) 58%, white 18%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, white 24%, var(--color-primary)),
+    color-mix(in srgb, var(--color-primary) 82%, #765fff)
+  );
+  color: var(--color-primary-foreground);
+  box-shadow:
+    0 8px 24px -12px color-mix(in srgb, var(--color-primary) 74%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 35%);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  :is([role="tablist"], [role="radiogroup"]) {
+  border-color: var(--glass-edge);
+  background: color-mix(in srgb, var(--color-card) 47%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-inset);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"])
+  :is([role="tab"][data-state="active"], button[aria-pressed="true"]) {
+  border-color: var(--glass-edge);
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, white 24%, transparent),
+    color-mix(in srgb, var(--color-primary) 19%, transparent)
+  );
+  box-shadow:
+    0 4px 16px -10px color-mix(in srgb, var(--color-primary) 65%, transparent),
+    inset 0 1px 0 var(--glass-inset);
+}
+
+:root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) hr {
+  border-color: color-mix(in srgb, var(--glass-edge) 76%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) .card-surface:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 640px) {
+  :root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) body {
+    background-attachment: scroll;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) .card-surface,
+  :root[data-theme="glassmorphism"]:not([data-registry-style="didup"]) .glass-panel {
+    -webkit-backdrop-filter: blur(12px) saturate(135%);
+    backdrop-filter: blur(12px) saturate(135%);
+  }
+}
+
+:root[data-theme="glassmorphism"][data-glass="off"]:not([data-registry-style="didup"])
+  .card-surface,
+:root[data-theme="glassmorphism"][data-glass="off"]:not([data-registry-style="didup"])
+  .glass-panel {
+  border-color: var(--color-border);
+  background: var(--color-card);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-theme="glassmorphism"][data-glass="off"]:not([data-registry-style="didup"])
+  :is(.bg-card, .bg-surface, [role="tablist"], [role="radiogroup"]) {
+  background-color: var(--color-card);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-theme="glassmorphism"][data-glass="off"]:not([data-registry-style="didup"])
+  :is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]),
+    select,
+    textarea
+  ) {
+  background-color: var(--color-card);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-theme="glassmorphism"][data-glass="off"]:not([data-registry-style="didup"])
+  :is([role="dialog"], [data-radix-popper-content-wrapper] > div) {
+  background: var(--color-card);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

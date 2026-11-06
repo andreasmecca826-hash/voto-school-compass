@@ -347,6 +347,25 @@ function Settings() {
     <div className="pt-3">
       <h1 className="font-display text-2xl font-semibold">Impostazioni</h1>
 
+      <SectionTitle>Profilo dell’app</SectionTitle>
+      <section className="card-surface p-4">
+        <label htmlFor="display-name" className="text-xs text-muted-foreground">
+          Nome visualizzato
+        </label>
+        <input
+          id="display-name"
+          type="text"
+          value={v.displayName}
+          onChange={(event) => v.setDisplayName(event.target.value)}
+          placeholder={v.data.student.name || "Es. Andrea Maria"}
+          maxLength={80}
+          className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+        />
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Viene usato solo per mostrare il tuo nome nell’app e non modifica il file JSON.
+        </p>
+      </section>
+
       <SectionTitle>Connessione GitHub</SectionTitle>
       <section className="card-surface p-4">
         <label htmlFor="url" className="flex items-center gap-2 text-xs text-muted-foreground">
