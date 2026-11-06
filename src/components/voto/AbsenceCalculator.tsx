@@ -64,7 +64,7 @@ export function AbsenceCalculator() {
       <p className="text-xs text-muted-foreground">
         Il registro stabilisce il limite in <strong>ore di assenza</strong>. I giorni sono mostrati
         come riferimento; per la simulazione vengono convertiti in ore usando le ore di lezione per
-        giornata. Le modifiche valgono solo per questo calcolo e non cambiano il JSON.
+        giornata. Le modifiche valgono solo per questo calcolo e non cambiano i dati Supabase.
       </p>
 
       <section

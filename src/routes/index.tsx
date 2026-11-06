@@ -154,7 +154,7 @@ function Dashboard() {
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-primary">Stai vedendo dati DEMO</p>
             <p className="text-[11px] text-muted-foreground">
-              Incolla il tuo URL JSON di GitHub per i dati reali.
+              Accedi con Supabase per visualizzare i dati scolastici reali.
             </p>
           </div>
           <ChevronRight className="h-4 w-4 text-primary" />

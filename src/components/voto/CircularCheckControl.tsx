@@ -22,7 +22,7 @@ export function CircularCheckControl() {
         setPendingCheckAt(saved);
         setCheckNotice({
           kind: "info",
-          text: "Hai un aggiornamento DidUP in corso. Verificane lo stato per ricaricare il JSON.",
+          text: "Hai un aggiornamento DidUP in corso. Verificane lo stato per aggiornare Supabase.",
         });
       } else {
         window.localStorage.removeItem(PENDING_CHECK_KEY);
@@ -45,7 +45,7 @@ export function CircularCheckControl() {
     if (result === null) {
       setCheckNotice({
         kind: "info",
-        text: "L’aggiornamento è ancora in corso. Usa ‘Verifica stato’ più tardi per ricaricare il JSON.",
+        text: "L’aggiornamento è ancora in corso. Usa ‘Verifica stato’ più tardi per aggiornare Supabase.",
       });
       return;
     }
@@ -60,7 +60,7 @@ export function CircularCheckControl() {
       return;
     }
     await v.refresh({ silent: true });
-    setCheckNotice({ kind: "success", text: "Aggiornamento DidUP terminato: JSON ricaricato." });
+    setCheckNotice({ kind: "success", text: "Aggiornamento DidUP terminato: dati Supabase aggiornati." });
   };
 
   const checkCirculars = async () => {
@@ -75,7 +75,7 @@ export function CircularCheckControl() {
       } catch {
         // Il polling resta attivo per questa sessione anche senza storage locale.
       }
-      setCheckNotice({ kind: "info", text: "Aggiornamento avviato. Attendo il nuovo JSON…" });
+      setCheckNotice({ kind: "info", text: "Aggiornamento avviato. Attendo i nuovi dati Supabase…" });
       await applyCheckResult(await watchCheck(requestedAt));
     } catch (error) {
       setCheckNotice({

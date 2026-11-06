@@ -309,7 +309,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     if (!u) {
       if (!silent)
         toast("Modalità demo", {
-          description: "Collega un URL JSON nelle Impostazioni per dati reali.",
+          description: "Accedi con Supabase nelle Impostazioni per visualizzare i dati reali.",
         });
       return false;
     }

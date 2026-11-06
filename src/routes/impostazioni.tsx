@@ -267,7 +267,7 @@ function Settings() {
       setDebugJson(JSON.stringify(parsed, null, 2));
     } catch (error) {
       toast.error("Dati demo non validi", {
-        description: error instanceof Error ? error.message : "Controlla il JSON.",
+        description: error instanceof Error ? error.message : "Controlla i dati demo.",
       });
     }
   };
@@ -349,7 +349,7 @@ function Settings() {
           className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
         />
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Viene usato solo per mostrare il tuo nome nell’app e non modifica il file JSON.
+          Viene usato solo per mostrare il tuo nome nell’app e non modifica i dati Supabase.
         </p>
       </section>
 
@@ -575,9 +575,9 @@ function Settings() {
             <div>
               <h2 className="text-sm font-semibold">Debug dati demo</h2>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Modifica, aggiungi o rimuovi direttamente nel JSON voti, compiti, diario, bacheca,
-                notifiche, materie e presenze. Questi dati restano solo su questo dispositivo e non
-                modificano DidUP.
+                Modifica, aggiungi o rimuovi direttamente i dati demo di voti, compiti, diario,
+                bacheca, notifiche, materie e presenze. Questi dati restano solo su questo
+                dispositivo e non modificano Supabase o DidUP.
               </p>
             </div>
           </div>
@@ -586,7 +586,7 @@ function Settings() {
             onChange={(event) => setDebugJson(event.target.value)}
             spellCheck={false}
             className="mt-3 min-h-[360px] w-full rounded-xl border border-input bg-background p-3 font-mono text-[10px] leading-relaxed text-foreground outline-none focus:border-primary"
-            aria-label="Dati demo in formato JSON"
+            aria-label="Dati demo"
           />
           <div className="mt-3 flex gap-2">
             <button
