@@ -80,10 +80,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       const normalizedEmail = email.trim().toLowerCase();
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: window.location.origin,
-        },
+        options: { shouldCreateUser: true },
       });
       if (otpError) throw otpError;
       setEmail(normalizedEmail);
@@ -198,8 +195,8 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         {step === "otp" && (
           <form onSubmit={verifyOtp} className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Abbiamo inviato un messaggio a {email}. Se contiene un link, aprilo; altrimenti
-              inserisci il codice qui sotto.
+              Abbiamo inviato un codice a {email}. Torna qui e inserisci il codice numerico: non
+              serve aprire il link dell’email.
             </p>
             <label className="block text-sm font-medium" htmlFor="email-otp">
               Codice email
