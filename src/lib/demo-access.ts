@@ -1,4 +1,4 @@
-const DEFAULT_DEMO_ACCESS_CODE = "VOTO-DEMO-DEV";
+const DEFAULT_DEMO_ACCESS_CODE = "21/06/27";
 
 export const DEMO_ACCESS_CODE =
   ((import.meta.env["VITE_DEMO_ACCESS_CODE"] as string | undefined) || DEFAULT_DEMO_ACCESS_CODE)
