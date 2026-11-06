@@ -201,7 +201,7 @@ function DidupCompitiPage({
               type="button"
               aria-pressed={sortBy === value}
               onClick={() => setSortBy(value)}
-              className={`min-h-[52px] px-2 text-[12px] font-normal uppercase tracking-[0.025em] transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+              className={`min-h-[48px] px-2 text-[12px] font-normal uppercase tracking-[0.025em] transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
                 sortBy === value ? "bg-[#08a5b5] text-white" : "text-white/90 hover:bg-white/10"
               }`}
             >
@@ -212,7 +212,7 @@ function DidupCompitiPage({
       </section>
 
       {groups.length ? sortBy === "subject" ? (
-        <div className="mt-[36px] space-y-4">
+        <div className="mt-[20px] space-y-0">
           {groups.map((group) => {
             const isOpen = Boolean(openSubjects[group.key]);
             const showAll = Boolean(showAllBySubject[group.key]);
@@ -220,7 +220,7 @@ function DidupCompitiPage({
             return (
               <section
                 key={group.key}
-                className="overflow-hidden rounded-[4px] bg-[#252525]"
+                className={`overflow-hidden rounded-[4px] bg-[#252525] ${isOpen ? "mt-4" : ""}`}
                 aria-label={group.label}
               >
                 <button
@@ -229,15 +229,15 @@ function DidupCompitiPage({
                   onClick={() =>
                     setOpenSubjects((current) => ({ ...current, [group.key]: !current[group.key] }))
                   }
-                  className="flex min-h-[106px] w-full items-center justify-between gap-4 border-b border-white/15 px-[38px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#08a5b5]"
+                  className="flex min-h-[58px] w-full items-center justify-between gap-4 border-b border-white/15 px-8 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#08a5b5]"
                 >
-                  <span className="text-[16px] font-normal uppercase leading-tight tracking-[0.035em]">
+                  <span className="text-[14px] font-normal uppercase leading-tight tracking-[0.035em]">
                     {group.label}
                   </span>
                   {isOpen ? (
-                    <ChevronUp className="h-5 w-5 shrink-0 text-white/65" />
+                    <ChevronUp className="h-4 w-4 shrink-0 text-white/65" />
                   ) : (
-                    <ChevronDown className="h-5 w-5 shrink-0 text-white/65" />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-white/65" />
                   )}
                 </button>
 
@@ -249,7 +249,7 @@ function DidupCompitiPage({
                         <article key={assignment.id} className="py-2">
                           <div className="space-y-1">
                             {assignment.assignedDate && (
-                              <div className="flex items-center gap-2 text-[13px] uppercase leading-5">
+                              <div className="flex items-center gap-2 text-[12px] uppercase leading-5">
                                 <img
                                   src="/didup-calendar-reference.png"
                                   alt=""
@@ -265,7 +265,7 @@ function DidupCompitiPage({
                               </div>
                             )}
                             {assignment.teacher && (
-                              <div className="flex items-center gap-2 text-[13px] uppercase leading-5">
+                              <div className="flex items-center gap-2 text-[12px] uppercase leading-5">
                                 <UserRound className="h-4 w-4 shrink-0 fill-[#4169a8] text-[#4169a8]" />
                                 <span>{assignment.teacher}</span>
                               </div>
@@ -273,7 +273,7 @@ function DidupCompitiPage({
                           </div>
 
                           {description && (
-                            <p className="mt-8 whitespace-pre-line text-[15px] leading-[1.45] text-white/90">
+                            <p className="mt-6 whitespace-pre-line text-[14px] leading-[1.45] text-white/90">
                               {description}
                             </p>
                           )}
