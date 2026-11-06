@@ -281,45 +281,49 @@ export function PersonalizationPanel() {
         <h1 className="font-display text-2xl font-semibold">Personalizza</h1>
         <p className="mt-1 text-xs text-muted-foreground">Scegli cosa vuoi modificare.</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setView("themes")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Palette className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Temi</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Colori, sfondi e aspetto
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("home")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Home className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Home</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Moduli e ordine della Home
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("experience")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <SlidersHorizontal className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Esperienza</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Formato e animazioni
-            </span>
-          </button>
+          {v.registryStyle === "voto" && (
+            <>
+              <button
+                type="button"
+                onClick={() => setView("themes")}
+                className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <Palette className="h-7 w-7" />
+                </span>
+                <span className="font-semibold">Temi</span>
+                <span className="text-center text-[11px] text-muted-foreground">
+                  Colori, sfondi e aspetto
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("home")}
+                className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <Home className="h-7 w-7" />
+                </span>
+                <span className="font-semibold">Home</span>
+                <span className="text-center text-[11px] text-muted-foreground">
+                  Moduli e ordine della Home
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("experience")}
+                className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <SlidersHorizontal className="h-7 w-7" />
+                </span>
+                <span className="font-semibold">Esperienza</span>
+                <span className="text-center text-[11px] text-muted-foreground">
+                  Formato e animazioni
+                </span>
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setView("registry")}
