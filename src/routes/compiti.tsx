@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarCheck, Share2, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarCheck, ChevronDown, ChevronUp, Share2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
 import { Chip, Empty, SectionTitle } from "@/components/voto/ui";
@@ -100,6 +100,8 @@ function DidupCompitiPage({
   studentName: string;
 }) {
   const [sortBy, setSortBy] = useState<DidupSort>("delivery");
+  const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
+  const [showAllBySubject, setShowAllBySubject] = useState<Record<string, boolean>>({});
 
   const groups = (() => {
     const sorted = [...assignments].sort((a, b) => {
@@ -135,7 +137,7 @@ function DidupCompitiPage({
         key: key || "no-due-date",
         label:
           sortBy === "subject"
-            ? `MATERIA: ${key}`
+            ? key
             : key
               ? `DA CONSEGNARE IL ${fmtDate(key, { day: "numeric", month: "long" }).toLocaleUpperCase("it-IT")}`
               : "SENZA DATA DI CONSEGNA",
@@ -209,7 +211,117 @@ function DidupCompitiPage({
         </div>
       </section>
 
-      {groups.length ? (
+      {groups.length ? sortBy === "subject" ? (
+        <div className="mt-[36px] space-y-4">
+          {groups.map((group) => {
+            const isOpen = Boolean(openSubjects[group.key]);
+            const showAll = Boolean(showAllBySubject[group.key]);
+            const visibleItems = showAll ? group.items : group.items.slice(0, 1);
+            return (
+              <section
+                key={group.key}
+                className="overflow-hidden rounded-[4px] bg-[#252525]"
+                aria-label={group.label}
+              >
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() =>
+                    setOpenSubjects((current) => ({ ...current, [group.key]: !current[group.key] }))
+                  }
+                  className="flex min-h-[106px] w-full items-center justify-between gap-4 border-b border-white/15 px-[38px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#08a5b5]"
+                >
+                  <span className="text-[16px] font-normal uppercase leading-tight tracking-[0.035em]">
+                    {group.label}
+                  </span>
+                  {isOpen ? (
+                    <ChevronUp className="h-5 w-5 shrink-0 text-white/65" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 shrink-0 text-white/65" />
+                  )}
+                </button>
+
+                {isOpen && (
+                  <div className="px-5 pb-5 pt-4">
+                    {visibleItems.map((assignment) => {
+                      const description = assignment.details || assignment.title;
+                      return (
+                        <article key={assignment.id} className="py-2">
+                          <div className="space-y-1">
+                            {assignment.assignedDate && (
+                              <div className="flex items-center gap-2 text-[13px] uppercase leading-5">
+                                <img
+                                  src="/didup-calendar-reference.png"
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="h-4 w-4 shrink-0 object-contain"
+                                />
+                                <span>
+                                  Assegnato il {fmtDate(assignment.assignedDate, {
+                                    day: "2-digit",
+                                    month: "long",
+                                  }).toLocaleUpperCase("it-IT")}
+                                </span>
+                              </div>
+                            )}
+                            {assignment.teacher && (
+                              <div className="flex items-center gap-2 text-[13px] uppercase leading-5">
+                                <UserRound className="h-4 w-4 shrink-0 fill-[#4169a8] text-[#4169a8]" />
+                                <span>{assignment.teacher}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {description && (
+                            <p className="mt-8 whitespace-pre-line text-[15px] leading-[1.45] text-white/90">
+                              {description}
+                            </p>
+                          )}
+
+                          {assignment.dueDate && (
+                            <div className="mt-6 flex items-center justify-end gap-2 text-[12px] uppercase tracking-wide text-[#08a5b5]">
+                              <img
+                                src="/didup-clock-reference.png"
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 shrink-0 object-contain"
+                              />
+                              <span>
+                                Consegna il {fmtDate(assignment.dueDate, {
+                                  weekday: "long",
+                                  day: "2-digit",
+                                  month: "long",
+                                }).toLocaleUpperCase("it-IT")}
+                              </span>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
+
+                    {group.items.length > 1 && (
+                      <div className="mt-5 flex justify-end border-t border-white/15 pt-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowAllBySubject((current) => ({
+                              ...current,
+                              [group.key]: !current[group.key],
+                            }))
+                          }
+                          className="rounded-full bg-[#08a5b5] px-5 py-2 text-[13px] italic text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        >
+                          {showAll ? "Mostra meno" : "Mostra tutto"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      ) : (
         <div className="mt-[56px] space-y-10">
           {groups.map((group) => (
             <section key={group.key} aria-label={group.label}>
