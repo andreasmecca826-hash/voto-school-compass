@@ -15,6 +15,10 @@ export function AbsenceCalculator() {
   const { attendance } = useVoto().data;
   const [currentDaysInput, setCurrentDaysInput] = useState(String(attendance.absenceDays));
   const [currentHoursInput, setCurrentHoursInput] = useState(String(attendance.absenceHours));
+  const [absenceLimitInput, setAbsenceLimitInput] = useState(
+    String(attendance.absenceLimitHours),
+  );
+  const [annualHoursInput, setAnnualHoursInput] = useState(String(attendance.annualHours));
   const [simulatedDaysInput, setSimulatedDaysInput] = useState("0");
   const [simulatedHoursInput, setSimulatedHoursInput] = useState("0");
   const [hoursPerDayInput, setHoursPerDayInput] = useState("6");
@@ -24,7 +28,14 @@ export function AbsenceCalculator() {
   useEffect(() => {
     setCurrentDaysInput(String(attendance.absenceDays));
     setCurrentHoursInput(String(attendance.absenceHours));
-  }, [attendance.absenceDays, attendance.absenceHours]);
+    setAbsenceLimitInput(String(attendance.absenceLimitHours));
+    setAnnualHoursInput(String(attendance.annualHours));
+  }, [
+    attendance.absenceDays,
+    attendance.absenceHours,
+    attendance.absenceLimitHours,
+    attendance.annualHours,
+  ]);
   const updateHoursPerDay = (value: string) => {
     setHoursPerDayInput(value);
     const parsed = numericInput(value);
@@ -32,8 +43,8 @@ export function AbsenceCalculator() {
   };
   const calculation = calculateAbsencePlan({
     absenceHours: numericInput(currentHoursInput),
-    absenceLimitHours: attendance.absenceLimitHours,
-    annualHours: attendance.annualHours,
+    absenceLimitHours: numericInput(absenceLimitInput),
+    annualHours: numericInput(annualHoursInput),
     // Il limite del registro è espresso in ore: convertiamo quindi i giorni
     // simulati usando le ore di lezione per giornata.
     simulatedHours:
@@ -74,7 +85,7 @@ export function AbsenceCalculator() {
         <div className="grid grid-cols-2 gap-2">
           <NumberField
             id="absence-current-days"
-            label="Giorni già assenti (riferimento)"
+            label="Giorni già assenti"
             value={currentDaysInput}
             onChange={setCurrentDaysInput}
             step="0.5"
@@ -87,6 +98,22 @@ export function AbsenceCalculator() {
             onChange={setCurrentHoursInput}
             step="0.5"
             help="Sono queste ore che vengono confrontate con il limite."
+          />
+          <NumberField
+            id="absence-limit-hours"
+            label="Limite massimo (ore)"
+            value={absenceLimitInput}
+            onChange={setAbsenceLimitInput}
+            step="0.5"
+            help="Puoi correggerlo se il limite del tuo istituto è diverso."
+          />
+          <NumberField
+            id="absence-annual-hours"
+            label="Monte ore annuale"
+            value={annualHoursInput}
+            onChange={setAnnualHoursInput}
+            step="0.5"
+            help="Serve per calcolare la percentuale di assenze."
           />
           <Metric
             label="Limite massimo"
