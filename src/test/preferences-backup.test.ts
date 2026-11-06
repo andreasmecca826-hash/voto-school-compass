@@ -12,7 +12,12 @@ const preferences = {
   density: "compact" as const,
   reduceMotion: true,
   theme: "diamante" as const,
-  customTheme: { ...DEFAULT_CUSTOM_THEME, primary: "#abcdef", radius: 1.2 },
+  customTheme: {
+    ...DEFAULT_CUSTOM_THEME,
+    primary: "#abcdef",
+    radius: 1.2,
+    backgroundImage: "data:image/webp;base64,AAAA",
+  },
   interfaceScale: 110,
   homeModules: DEFAULT_HOME_MODULES.map((module, index) => ({
     ...module,
@@ -49,6 +54,20 @@ describe("preferences backup", () => {
     };
     invalid.settings.customTheme.primary = "red; background: url(x)";
     expect(() => parsePreferencesBackup(JSON.stringify(invalid))).toThrow("colore");
+  });
+
+  it("accepts old backups without an image and rejects unsafe background URLs", () => {
+    const legacy = JSON.parse(createPreferencesBackup(preferences)) as {
+      settings: { customTheme: { backgroundImage?: string } };
+    };
+    delete legacy.settings.customTheme.backgroundImage;
+    expect(parsePreferencesBackup(JSON.stringify(legacy)).customTheme.backgroundImage).toBe("");
+
+    const invalid = JSON.parse(createPreferencesBackup(preferences)) as {
+      settings: { customTheme: { backgroundImage: string } };
+    };
+    invalid.settings.customTheme.backgroundImage = "data:image/svg+xml;base64,PHN2Zz4=";
+    expect(() => parsePreferencesBackup(JSON.stringify(invalid))).toThrow("sfondo");
   });
 
   it("normalizes out-of-range scales and media targets", () => {

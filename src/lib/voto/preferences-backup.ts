@@ -5,6 +5,10 @@ import {
   type HomeModuleConfig,
 } from "./home-customization";
 import type { Accent, Bg, CustomTheme, Density, Mode, Theme } from "./store";
+import {
+  isValidCustomThemeBackground,
+  sanitizeCustomThemeBackground,
+} from "./custom-theme-background";
 
 export const PREFERENCES_BACKUP_TYPE = "voto-preferences";
 export const PREFERENCES_BACKUP_VERSION = 1;
@@ -176,6 +180,12 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
     }
   }
   if (
+    customTheme["backgroundImage"] !== undefined &&
+    !isValidCustomThemeBackground(customTheme["backgroundImage"])
+  ) {
+    throw new Error("L’immagine di sfondo del tema personalizzato non è valida.");
+  }
+  if (
     typeof customTheme["radius"] !== "number" ||
     !Number.isFinite(customTheme["radius"]) ||
     !isOneOf(customTheme["font"], FONTS)
@@ -214,6 +224,7 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
         primary: customTheme["primary"] as string,
         radius: Math.min(1.5, Math.max(0.5, customTheme["radius"])),
         font: customTheme["font"],
+        backgroundImage: sanitizeCustomThemeBackground(customTheme["backgroundImage"]),
       },
     };
   } catch (error) {

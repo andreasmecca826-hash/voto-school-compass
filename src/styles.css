@@ -1092,6 +1092,14 @@
   --theme-font-display: var(--custom-font);
 }
 
+:root[data-theme="custom"]:not([data-registry-style="didup"]) body {
+  background-image: var(--custom-background-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
 :root[data-theme]:not([data-theme="original"]):not([data-registry-style="didup"]) {
   --background: var(--theme-bg-dark);
   --card: var(--theme-card-dark);

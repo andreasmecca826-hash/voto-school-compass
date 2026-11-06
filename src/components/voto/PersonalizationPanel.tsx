@@ -28,6 +28,7 @@ import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
 import { createHomeSettingsFile, parseHomeSettingsFile } from "@/lib/voto/home-settings-file";
+import { processCustomThemeBackground } from "@/lib/voto/custom-theme-background";
 import {
   useVoto,
   type Accent,
@@ -267,7 +268,9 @@ export function PersonalizationPanel() {
   const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
+  const [backgroundProcessing, setBackgroundProcessing] = useState(false);
   const homeSettingsInput = useRef<HTMLInputElement>(null);
+  const customBackgroundInput = useRef<HTMLInputElement>(null);
   const availableThemes = THEMES;
   const hiddenThemeName = availableThemes.slice(4).find((theme) => theme.id === v.theme)?.label;
   const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
@@ -804,6 +807,89 @@ export function PersonalizationPanel() {
             >
               Ripristina
             </button>
+          </div>
+          <div className="mb-4 rounded-xl border border-border bg-surface/30 p-3">
+            <h3 className="text-xs font-semibold">Immagine di sfondo</h3>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Scegli una foto dal dispositivo per personalizzare lo sfondo dell’app.
+            </p>
+            {v.customTheme.backgroundImage ? (
+              <div
+                role="img"
+                aria-label="Anteprima dello sfondo scelto"
+                className="mt-3 h-24 rounded-lg border border-border bg-cover bg-center"
+                style={{ backgroundImage: `url("${v.customTheme.backgroundImage}")` }}
+              />
+            ) : (
+              <div
+                className="mt-3 flex h-16 items-center justify-center rounded-lg border border-dashed border-border text-[11px] text-muted-foreground"
+                style={{
+                  backgroundColor:
+                    v.mode === "chiaro" ? v.customTheme.bgLight : v.customTheme.bgDark,
+                }}
+              >
+                Nessuna immagine selezionata
+              </div>
+            )}
+            <input
+              ref={customBackgroundInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              aria-label="Scegli un’immagine di sfondo"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (!file) return;
+                setBackgroundProcessing(true);
+                const fallbackColor =
+                  v.mode === "chiaro" ? v.customTheme.bgLight : v.customTheme.bgDark;
+                void processCustomThemeBackground(file, fallbackColor)
+                  .then((backgroundImage) => {
+                    v.setCustomTheme({ backgroundImage });
+                    toast.success("Sfondo aggiornato");
+                  })
+                  .catch((error: unknown) => {
+                    toast.error("Immagine non caricata", {
+                      description:
+                        error instanceof Error ? error.message : "Controlla il file e riprova.",
+                    });
+                  })
+                  .finally(() => setBackgroundProcessing(false));
+              }}
+            />
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                disabled={backgroundProcessing}
+                onClick={() => customBackgroundInput.current?.click()}
+                className="press flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                <Upload className="h-4 w-4" />
+                {backgroundProcessing
+                  ? "Ottimizzo…"
+                  : v.customTheme.backgroundImage
+                    ? "Cambia immagine"
+                    : "Scegli immagine"}
+              </button>
+              {v.customTheme.backgroundImage && (
+                <button
+                  type="button"
+                  disabled={backgroundProcessing}
+                  onClick={() => {
+                    v.setCustomTheme({ backgroundImage: "" });
+                    toast.success("Immagine rimossa");
+                  }}
+                  className="press min-h-10 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-60"
+                >
+                  Rimuovi
+                </button>
+              )}
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+              JPG, PNG o WebP. L’immagine viene compressa e salvata su questo dispositivo; è inclusa
+              nel backup delle preferenze e non viene caricata su Supabase.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {CUSTOM_COLORS.map((field) => (

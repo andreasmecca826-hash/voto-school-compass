@@ -15,6 +15,10 @@ import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
 import { SchoolAuthContext, type PrefetchedSchoolData } from "../school-auth-context";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
+import {
+  isValidCustomThemeBackground,
+  sanitizeCustomThemeBackground,
+} from "./custom-theme-background";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 import {
   DEFAULT_HOME_MODULES,
@@ -93,6 +97,7 @@ export type CustomTheme = {
   primary: string;
   radius: number;
   font: CustomFont;
+  backgroundImage: string;
 };
 
 const THEME_VALUES: Theme[] = [
@@ -166,6 +171,7 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
   primary: "#61a7ff",
   radius: 1,
   font: "theme",
+  backgroundImage: "",
 };
 
 function normalizeInterfaceScale(value: unknown): number {
@@ -365,6 +371,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
       ...savedCustomTheme,
+      backgroundImage: sanitizeCustomThemeBackground(savedCustomTheme.backgroundImage),
       font: oneOf(savedCustomTheme.font, ["theme", "sans", "display", "mono", "serif"], "theme"),
     });
     setInterfaceScaleS(normalizeInterfaceScale(load(KEYS.interfaceScale, 100)));
@@ -480,6 +487,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
             : customTheme.font === "display"
               ? '"Space Grotesk", sans-serif'
               : '"Manrope", sans-serif',
+      "--custom-background-image": isValidCustomThemeBackground(customTheme.backgroundImage)
+        ? customTheme.backgroundImage
+          ? `url("${customTheme.backgroundImage}")`
+          : "none"
+        : "none",
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
   }, [
