@@ -100,6 +100,13 @@ const MORE_NAV = [
     color: "#16a5b8",
   },
   {
+    to: "/bacheca",
+    label: "Bacheca",
+    description: "Circolari e avvisi della scuola",
+    icon: Newspaper,
+    color: "#16a5b8",
+  },
+  {
     to: "/note",
     label: "Note",
     description: "Note disciplinari",

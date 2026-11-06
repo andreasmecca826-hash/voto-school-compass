@@ -307,7 +307,7 @@ export function DidupDashboard() {
         })}
       </DidupScroller>
 
-      <DidupSectionTitle title="Bacheca" href="/" compact />
+      <DidupSectionTitle title="Bacheca" href="/bacheca" compact />
       <DidupScroller>
         {notices.length > 0 ? (
           notices.slice(0, 5).map((item) => {

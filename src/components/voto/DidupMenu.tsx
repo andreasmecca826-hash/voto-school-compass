@@ -95,7 +95,7 @@ const ITEMS: MenuItem[] = [
     color: "#00a4b8",
     icon: ClipboardList,
     iconImage: "/didup-menu-icons/bacheca.png",
-    to: "/",
+    to: "/bacheca",
   },
   {
     label: "Personalizza",
