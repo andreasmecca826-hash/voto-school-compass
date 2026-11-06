@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, FileText, Folder, Search, UserRound } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -63,28 +63,6 @@ function schoolYearStart(date: Date) {
 function displayFilterDate(value: string) {
   const [year, month, day] = value.split("-");
   return year && month && day ? `${day}-${month}-${year}` : "";
-}
-
-function CalendarIcon() {
-  return (
-    <svg className="h-12 w-12" viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="4" y="5" width="24" height="24" rx="3" fill="#4169a8" />
-      <path
-        d="M4 12h24M10 3v6m12-6v6"
-        fill="none"
-        stroke="#243f78"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <g fill="#243f78">
-        <rect x="9" y="16" width="4" height="4" rx="0.5" />
-        <rect x="16" y="16" width="4" height="4" rx="0.5" />
-        <rect x="23" y="16" width="2" height="4" rx="0.5" />
-        <rect x="9" y="22" width="4" height="4" rx="0.5" />
-        <rect x="16" y="22" width="4" height="4" rx="0.5" />
-      </g>
-    </svg>
-  );
 }
 
 function DidupBacheca() {
@@ -220,7 +198,12 @@ function DidupBacheca() {
                 {displayFilterDate(draftFilters.from)}
               </span>
               <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                <CalendarIcon />
+                <img
+                  src="/didup-icons/calendar.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-[38px] w-[40px] object-contain"
+                />
               </span>
             </div>
             <label htmlFor="bacheca-date-to" className="text-right text-[18px] text-white">
@@ -245,7 +228,12 @@ function DidupBacheca() {
                 {displayFilterDate(draftFilters.to)}
               </span>
               <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                <CalendarIcon />
+                <img
+                  src="/didup-icons/calendar.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-[38px] w-[40px] object-contain"
+                />
               </span>
             </div>
           </div>
@@ -285,30 +273,30 @@ function DidupBacheca() {
                 key={item.id}
                 className="didup-tile mb-[19px] flex min-h-[278px] flex-col rounded-[10px] px-[19px] pb-5 pt-[27px]"
               >
-                <div className="-ml-1 flex items-center gap-1">
-                  <UserRound
-                    className="h-[29px] w-[29px] shrink-0 fill-[#3e6695] text-[#3e6695]"
-                    strokeWidth={1.2}
+                <div className="relative h-[42px]">
+                  <img
+                    src="/didup-icons/person.png"
+                    alt=""
                     aria-hidden="true"
+                    className="absolute -left-[2px] top-[2px] h-[20px] w-[21px] object-contain"
                   />
-                  <div className="min-w-0">
-                    <p className="truncate text-[18px] font-semibold leading-5 uppercase">
-                      {item.teacher || "SCUOLA"}
-                    </p>
-                    <time
-                      dateTime={item.date}
-                      className="mt-1 block text-[15px] font-medium leading-4 text-[#0aa0b1]"
-                    >
-                      {shortDate(item.date)}
-                    </time>
-                  </div>
+                  <p className="absolute left-[28px] right-0 top-[1px] truncate text-[18px] font-semibold leading-5 uppercase">
+                    {item.teacher || "SCUOLA"}
+                  </p>
+                  <time
+                    dateTime={item.date}
+                    className="absolute -left-[1px] top-[28px] whitespace-nowrap text-[16px] font-medium leading-4 text-[#0aa0b1]"
+                  >
+                    {shortDate(item.date)}
+                  </time>
                 </div>
 
-                <div className="-ml-0.5 mt-[30px] flex items-center gap-3">
-                  <Folder
-                    className="h-8 w-8 shrink-0 fill-[#0aa0b1] text-[#0aa0b1]"
-                    strokeWidth={1.2}
+                <div className="-ml-[2px] mt-[30px] flex items-center gap-[12px]">
+                  <img
+                    src="/didup-icons/folder.png"
+                    alt=""
                     aria-hidden="true"
+                    className="h-[29px] w-[32px] shrink-0 object-contain"
                   />
                   <span className="text-[16px] tracking-[0.08em]">CIRCOLARI</span>
                 </div>
@@ -322,9 +310,14 @@ function DidupBacheca() {
                     type="button"
                     onClick={() => openNotice(item, v.markRead, setSelected)}
                     aria-label={`Apri circolare con ${count} ${count === 1 ? "allegato" : "allegati"}`}
-                    className="press -ml-1 mt-auto inline-flex min-h-10 items-center gap-2 pt-5 text-left text-[14px] text-white/90"
+                    className="press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90"
                   >
-                    <FileText className="h-7 w-6 shrink-0" strokeWidth={1.4} aria-hidden="true" />
+                    <img
+                      src="/didup-icons/file.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-[26px] w-[21px] shrink-0 object-contain"
+                    />
                     <span>{count}</span>
                   </button>
                 )}
@@ -333,7 +326,12 @@ function DidupBacheca() {
           })
         ) : (
           <div className="mx-1 mt-6 rounded-[14px] bg-[#292929] px-5 py-10 text-center">
-            <Folder className="mx-auto h-8 w-8 text-[#0aa0b1]" aria-hidden="true" />
+            <img
+              src="/didup-icons/folder.png"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto h-8 w-8 object-contain"
+            />
             <p className="mt-4 text-sm text-white/90">
               {hasActiveFilters
                 ? "Nessuna circolare corrisponde ai filtri scelti."
