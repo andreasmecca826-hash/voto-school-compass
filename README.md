@@ -19,6 +19,10 @@ npm run build
 
 Gli ultimi dati validi restano salvati sul dispositivo; i compiti completati sono salvati per ID e non vengono sovrascritti dagli aggiornamenti.
 
+## Monitoraggio errori (Sentry)
+
+VOTO invia a Sentry gli errori gestiti dal confine globale dell'interfaccia, solo nelle build di produzione. La configurazione invia tipo d'errore e stack trace, ma rimuove messaggi, richieste, breadcrumb, utente e contesto; replay e tracing sono disattivati. Il DSN client è una chiave pubblica di ingestione e può essere sostituito con `VITE_SENTRY_DSN` durante la build. Non configurare mai qui token Sentry o credenziali private.
+
 ## PDF delle circolari
 
 Il monitor DidUP acquisisce i PDF tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. Quando l'app apre una circolare con path interno, la Edge Function `mirror-circular` crea un URL firmato valido un'ora; la funzione accetta solo path PDF già presenti nel bucket e non scarica link esterni. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.

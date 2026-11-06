@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { captureVotoError } from "../lib/sentry";
 import { VotoProvider } from "@/lib/voto/store";
 import { SchoolPeriodsProvider } from "@/lib/voto/periods-context";
 import { StudyProvider } from "@/lib/voto/study-context";
@@ -39,6 +40,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
+    captureVotoError(error);
     const msg = String((error as Error | undefined)?.message ?? "");
     if (/dynamically imported module|Importing a module script failed|error loading dynamically/i.test(msg)) {
       const KEY = "voto.chunkReloadAt";
