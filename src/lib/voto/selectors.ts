@@ -2,16 +2,12 @@ import { daysBetween } from "./dates";
 import type { AppNotification, Assignment } from "./types";
 import type { Interrogazione } from "./interrogazioni";
 
-export function selectDashboardAssignments(
-  assignments: Assignment[],
-  now: Date,
-  isDone: (id: string, remote: boolean) => boolean,
-) {
+export function selectDashboardAssignments(assignments: Assignment[], now: Date) {
   return assignments
     .filter((assignment) => {
       if (!assignment.dueDate) return false;
       const distance = daysBetween(now, assignment.dueDate);
-      return distance <= 1 && (distance >= 0 || !isDone(assignment.id, assignment.completed));
+      return distance >= 0 && distance <= 1;
     })
     .sort((a, b) =>
       `${a.dueDate}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate}${b.dueTime ?? ""}`),
