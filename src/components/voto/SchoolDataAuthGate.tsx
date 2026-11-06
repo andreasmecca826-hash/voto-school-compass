@@ -64,6 +64,12 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         setSession(null);
         setStep("email");
         setError("");
+      } else if (event === "SIGNED_IN" && nextSession && mounted) {
+        setStep("checking");
+        setError("");
+        window.setTimeout(() => {
+          if (mounted) void activate(nextSession);
+        }, 0);
       }
     });
     return () => {
@@ -109,6 +115,24 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       await activate(data.session);
     } catch {
       setError("Codice email non valido o scaduto. Richiedine uno nuovo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function checkEmailLinkSession() {
+    setBusy(true);
+    setError("");
+    try {
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !data.session) {
+        throw sessionError ?? new Error("Link non ancora verificato.");
+      }
+      await activate(data.session);
+    } catch {
+      setError(
+        "Non trovo ancora una sessione attiva. Apri il link più recente ricevuto via email.",
+      );
     } finally {
       setBusy(false);
     }
@@ -199,7 +223,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
           <form onSubmit={verifyOtp} className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Abbiamo inviato un link a {email}. Aprilo per completare l’accesso; ti riporterà a
-              VOTO.
+              VOTO. Se hai già aperto il link, tocca il pulsante qui sotto.
             </p>
             <label className="block text-sm font-medium" htmlFor="email-otp">
               Codice email (se presente)
@@ -208,16 +232,24 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
               id="email-otp"
               inputMode="numeric"
               autoComplete="one-time-code"
-              required
               value={otp}
               onChange={(event) => setOtp(event.target.value)}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base tracking-[0.2em] outline-none focus:ring-2 focus:ring-primary"
             />
             <button
+              type="button"
               disabled={busy}
+              onClick={() => void checkEmailLinkSession()}
               className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {busy ? "Verifica…" : "Verifica e continua"}
+              {busy ? "Controllo…" : "Ho aperto il link: continua"}
+            </button>
+            <button
+              type="submit"
+              disabled={busy || !otp.trim()}
+              className="w-full rounded-xl border border-border px-4 py-3 font-semibold disabled:opacity-60"
+            >
+              {busy ? "Verifica…" : "Usa il codice email"}
             </button>
             <button
               type="button"
