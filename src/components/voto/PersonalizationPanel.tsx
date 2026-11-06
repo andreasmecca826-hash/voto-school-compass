@@ -140,8 +140,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "dark-academia",
     label: "Dark Academia",
-    description: "Carta e atmosfera classica",
-    sw: "linear-gradient(135deg,#201711,#c8a875)",
+    description: "Cuoio antico, pergamena e dettagli in ottone",
+    sw: "radial-gradient(circle at 72% 18%,#fff0c277 0 1px,transparent 8%),repeating-linear-gradient(0deg,transparent 0 6px,#d9bd8520 6px 7px),linear-gradient(90deg,#100a06 0 8%,#a1814f 8% 10%,#27180e 10% 15%,#4a301c 15% 84%,#c0a06a 84% 86%,#24160c 86% 93%,#100a06 93% 100%),linear-gradient(135deg,#20140d,#82603a,#1b1009)",
   },
   {
     id: "glassmorphism",
