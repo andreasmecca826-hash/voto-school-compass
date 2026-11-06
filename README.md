@@ -12,7 +12,7 @@ npm run build
 
 ## Dati scolastici privati
 
-Il monitor DidUP pubblica `grades.json`, `state.json` e `history.md` nel bucket privato Supabase `school-data`; il workflow li ripristina da lì prima di ogni esecuzione. VOTO accede ai voti tramite l'Edge Function `school-data`, che richiede una sessione Supabase valida e autorizza un solo account. L'accesso usa il codice OTP numerico inviato all'email (da inserire nell'app, senza aprire il link) e resta memorizzato sul dispositivo; al primo accesso va inserito anche il codice di attivazione monouso.
+Il monitor DidUP pubblica `grades.json`, `state.json` e `history.md` nel bucket privato Supabase `school-data`; il workflow li ripristina da lì prima di ogni esecuzione. VOTO accede ai voti tramite l'Edge Function `school-data`, che richiede una sessione Supabase valida e autorizza un solo account. L'accesso usa il link email con redirect esplicito a `https://voto-school-compass.lovable.app` (oppure un codice OTP, se presente nel template) e resta memorizzato sul dispositivo; al primo accesso va inserito anche il codice di attivazione monouso. Il dominio deve essere autorizzato nella configurazione URL di Supabase Auth.
 
 La chiave `SUPABASE_SERVICE_ROLE_KEY` resta solo nei secret GitHub Actions e nell'ambiente server Supabase: non inserirla mai nell'app o in variabili `VITE_`. Il client usa soltanto la chiave publishable. Gli ultimi dati validi sono mantenuti in cache locale per un'apertura rapida e per l'uso temporaneo offline.
 

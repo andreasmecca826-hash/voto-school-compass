@@ -80,7 +80,10 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       const normalizedEmail = email.trim().toLowerCase();
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
-        options: { shouldCreateUser: true },
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: "https://voto-school-compass.lovable.app",
+        },
       });
       if (otpError) throw otpError;
       setEmail(normalizedEmail);
@@ -187,7 +190,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
               disabled={busy}
               className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {busy ? "Invio…" : "Invia codice di accesso"}
+              {busy ? "Invio…" : "Invia link di accesso"}
             </button>
           </form>
         )}
@@ -195,11 +198,11 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         {step === "otp" && (
           <form onSubmit={verifyOtp} className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Abbiamo inviato un codice a {email}. Torna qui e inserisci il codice numerico: non
-              serve aprire il link dell’email.
+              Abbiamo inviato un link a {email}. Aprilo per completare l’accesso; ti riporterà a
+              VOTO.
             </p>
             <label className="block text-sm font-medium" htmlFor="email-otp">
-              Codice email
+              Codice email (se presente)
             </label>
             <input
               id="email-otp"
