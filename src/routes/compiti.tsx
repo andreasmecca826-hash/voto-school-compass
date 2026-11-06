@@ -6,6 +6,11 @@ import { Chip, Empty, SectionTitle } from "@/components/voto/ui";
 import { daysBetween, fmtDate } from "@/lib/voto/dates";
 import { useClock, useVoto } from "@/lib/voto/store";
 import type { Assignment } from "@/lib/voto/types";
+import {
+  groupDidupAssignments,
+  type AssignmentGroup,
+  type DidupSort,
+} from "@/lib/voto/didup-assignments";
 
 export const Route = createFileRoute("/compiti")({
   head: () => ({
@@ -84,14 +89,6 @@ function Compiti() {
   );
 }
 
-type DidupSort = "delivery" | "subject" | "assignment";
-
-interface AssignmentGroup {
-  key: string;
-  label: string;
-  items: Assignment[];
-}
-
 function DidupCompitiPage({
   assignments,
   studentName,
@@ -99,51 +96,10 @@ function DidupCompitiPage({
   assignments: Assignment[];
   studentName: string;
 }) {
-  const [sortBy, setSortBy] = useState<DidupSort>("delivery");
+  const [sortBy, setSortBy] = useState<DidupSort>("assignment");
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
   const [showAllBySubject, setShowAllBySubject] = useState<Record<string, boolean>>({});
-
-  const groups = (() => {
-    const sorted = [...assignments].sort((a, b) => {
-      if (sortBy === "subject")
-        return (
-          (a.subject || "").localeCompare(b.subject || "", "it") ||
-          (a.dueDate || "").localeCompare(b.dueDate || "")
-        );
-      if (sortBy === "assignment") return a.title.localeCompare(b.title, "it");
-      return (b.dueDate || "").localeCompare(a.dueDate || "");
-    });
-
-    if (sortBy === "assignment") {
-      return [{ key: "assignments", label: "ASSEGNAZIONI", items: sorted }];
-    }
-
-    const groupKey = (assignment: Assignment) =>
-      sortBy === "subject"
-        ? assignment.subject?.trim() || "Materia non specificata"
-        : assignment.dueDate?.slice(0, 10) || "";
-    const buckets = new Map<string, Assignment[]>();
-    sorted.forEach((assignment) => {
-      const key = groupKey(assignment);
-      buckets.set(key, [...(buckets.get(key) ?? []), assignment]);
-    });
-
-    return [...buckets.entries()]
-      .sort(([a], [b]) => {
-        if (sortBy === "subject") return a.localeCompare(b, "it");
-        return b.localeCompare(a);
-      })
-      .map(([key, items]) => ({
-        key: key || "no-due-date",
-        label:
-          sortBy === "subject"
-            ? key
-            : key
-              ? `DA CONSEGNARE IL ${fmtDate(key, { day: "numeric", month: "long" }).toLocaleUpperCase("it-IT")}`
-              : "SENZA DATA DI CONSEGNA",
-        items,
-      }));
-  })();
+  const groups = groupDidupAssignments(assignments, sortBy);
 
   function shareGroup(group: AssignmentGroup) {
     const text = group.items
@@ -355,6 +311,21 @@ function DidupCompitiPage({
                     (assignment.subject && assignment.title !== assignment.subject
                       ? assignment.title
                       : "");
+                  const assignmentFooter =
+                    sortBy === "assignment"
+                      ? assignment.dueDate
+                        ? `Da consegnare il ${fmtDate(assignment.dueDate, {
+                            weekday: "long",
+                            day: "2-digit",
+                            month: "long",
+                          }).toLocaleUpperCase("it-IT")}`
+                        : null
+                      : assignment.assignedDate
+                        ? `Assegnati il ${fmtDate(assignment.assignedDate, {
+                            day: "2-digit",
+                            month: "long",
+                          }).toLocaleUpperCase("it-IT")}`
+                        : "Assegnato";
                   return (
                     <li
                       key={assignment.id}
@@ -374,26 +345,25 @@ function DidupCompitiPage({
                           {description}
                         </p>
                       )}
-                      <div
-                        className={`flex items-center justify-end gap-2 text-[12px] uppercase tracking-wide text-[#08a5b5] ${
-                          description ? "mt-[26px]" : "mt-auto pt-6"
-                        }`}
-                      >
-                        <img
-                          src="/didup-clock-reference.png"
-                          alt=""
-                          aria-hidden="true"
-                          className="h-4 w-4 shrink-0 object-contain"
-                        />
-                        <span>
-                          {assignment.assignedDate
-                            ? `Assegnati il ${fmtDate(assignment.assignedDate, {
-                                day: "2-digit",
-                                month: "long",
-                              }).toLocaleUpperCase("it-IT")}`
-                            : "Assegnato"}
-                        </span>
-                      </div>
+                      {assignmentFooter && (
+                        <div
+                          className={`flex items-center justify-end gap-2 text-[12px] uppercase tracking-wide text-[#08a5b5] ${
+                            description ? "mt-[26px]" : "mt-auto pt-6"
+                          }`}
+                        >
+                          <img
+                            src={
+                              sortBy === "assignment"
+                                ? "/didup-clock-reference.png"
+                                : "/didup-calendar-reference.png"
+                            }
+                            alt=""
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 object-contain"
+                          />
+                          <span>{assignmentFooter}</span>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
