@@ -630,11 +630,15 @@
 :root[data-theme="primavera"]:not([data-registry-style="didup"]) body {
   background-color: var(--color-background);
   background-image:
+    radial-gradient(circle at 28% 22%, color-mix(in srgb, #ffb8d0 34%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 42% 20%, color-mix(in srgb, #ffeaa0 32%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 38%, color-mix(in srgb, #b8f2d0 34%, transparent) 0 3px, transparent 4px),
     radial-gradient(circle at 12% 8%, color-mix(in srgb, #f7a8c4 30%, transparent) 0 3px, transparent 4px),
     radial-gradient(circle at 86% 18%, color-mix(in srgb, #fff1a8 34%, transparent) 0 4px, transparent 5px),
     radial-gradient(ellipse at 50% -12%, color-mix(in srgb, #a9efc4 28%, transparent), transparent 58%),
     repeating-linear-gradient(135deg, transparent 0 46px, color-mix(in srgb, #8ed7a8 7%, transparent) 46px 48px),
     linear-gradient(155deg, color-mix(in srgb, #236746 20%, var(--color-background)), var(--color-background) 68%);
+  background-size: 170px 170px, 230px 230px, 280px 280px, auto, auto, auto, auto, auto;
   background-attachment: fixed;
 }
 :root[data-theme="primavera"]:not([data-registry-style="didup"]) .card-surface {
@@ -652,10 +656,14 @@
 :root[data-theme="estate"]:not([data-registry-style="didup"]) body {
   background-color: var(--color-background);
   background-image:
+    radial-gradient(circle at 50% 4%, color-mix(in srgb, #fff3bd 60%, transparent) 0 72px, transparent 150px),
+    radial-gradient(ellipse at 20% 96%, color-mix(in srgb, #52d8ef 18%, transparent), transparent 36%),
+    radial-gradient(ellipse at 78% 88%, color-mix(in srgb, #0c8bb2 18%, transparent), transparent 42%),
     radial-gradient(ellipse at 50% -10%, color-mix(in srgb, #ffe49b 42%, transparent), transparent 42%),
     radial-gradient(ellipse at 100% 72%, color-mix(in srgb, #42c8e8 22%, transparent), transparent 38%),
     repeating-linear-gradient(0deg, transparent 0 24px, color-mix(in srgb, #7ee5ef 7%, transparent) 24px 25px),
     linear-gradient(160deg, color-mix(in srgb, #087fa6 25%, var(--color-background)), var(--color-background) 64%);
+  background-size: auto, auto, auto, auto, auto, 100% 180px, auto;
   background-attachment: fixed;
 }
 :root[data-theme="estate"]:not([data-registry-style="didup"]) .card-surface {
@@ -673,10 +681,14 @@
 :root[data-theme="autunno"]:not([data-registry-style="didup"]) body {
   background-color: var(--color-background);
   background-image:
+    radial-gradient(ellipse at 22% 18%, color-mix(in srgb, #e6a247 22%, transparent) 0 5px, transparent 6px),
+    radial-gradient(ellipse at 76% 11%, color-mix(in srgb, #b94a32 25%, transparent) 0 4px, transparent 5px),
+    radial-gradient(ellipse at 64% 48%, color-mix(in srgb, #d7a044 18%, transparent) 0 6px, transparent 7px),
     radial-gradient(ellipse at 12% 0%, color-mix(in srgb, #e27c35 28%, transparent), transparent 40%),
     radial-gradient(ellipse at 92% 28%, color-mix(in srgb, #b73e35 20%, transparent), transparent 38%),
     repeating-linear-gradient(125deg, transparent 0 62px, color-mix(in srgb, #d9a441 8%, transparent) 62px 65px),
     linear-gradient(145deg, color-mix(in srgb, #542c1e 30%, var(--color-background)), var(--color-background) 70%);
+  background-size: 220px 260px, 280px 320px, 340px 380px, auto, auto, auto, auto;
   background-attachment: fixed;
 }
 :root[data-theme="autunno"]:not([data-registry-style="didup"]) .card-surface {
@@ -694,12 +706,15 @@
 :root[data-theme="inverno"]:not([data-registry-style="didup"]) body {
   background-color: var(--color-background);
   background-image:
+    radial-gradient(circle at 32% 42%, rgb(255 255 255 / 58%) 0 1px, transparent 2px),
+    radial-gradient(circle at 58% 66%, rgb(255 255 255 / 68%) 0 2px, transparent 3px),
+    radial-gradient(circle at 90% 52%, rgb(255 255 255 / 46%) 0 1px, transparent 2px),
     radial-gradient(circle at 14% 16%, rgb(255 255 255 / 70%) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 28%, rgb(255 255 255 / 55%) 0 2px, transparent 3px),
     radial-gradient(ellipse at 70% -8%, color-mix(in srgb, #9ce8ff 30%, transparent), transparent 46%),
     repeating-linear-gradient(135deg, transparent 0 54px, color-mix(in srgb, #bde7ff 7%, transparent) 54px 56px),
     linear-gradient(155deg, color-mix(in srgb, #173c70 30%, var(--color-background)), var(--color-background) 70%);
-  background-size: 180px 180px, 240px 240px, auto, auto, auto;
+  background-size: 310px 310px, 420px 420px, 520px 520px, 180px 180px, 240px 240px, auto, auto, auto;
   background-attachment: fixed;
 }
 :root[data-theme="inverno"]:not([data-registry-style="didup"]) .card-surface {
