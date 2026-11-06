@@ -330,19 +330,21 @@ export function PersonalizationPanel() {
               Scegli l’aspetto VOTO o DidUP
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() => setView("typography")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Type className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Tipografia</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Font e dimensione dell’interfaccia
-            </span>
-          </button>
+          {v.theme === "original" && v.registryStyle === "voto" && (
+            <button
+              type="button"
+              onClick={() => setView("typography")}
+              className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <Type className="h-7 w-7" />
+              </span>
+              <span className="font-semibold">Tipografia</span>
+              <span className="text-center text-[11px] text-muted-foreground">
+                Font e dimensione dell’interfaccia
+              </span>
+            </button>
+          )}
           <button
             type="button"
             onClick={openMusic}
@@ -778,6 +780,12 @@ export function PersonalizationPanel() {
           Aero mantiene le finestre chiare, come Windows 7. La modalità chiara o scura cambia la
           tinta del desktop e delle cornici; il menu Start raccoglie tutte le sezioni di VOTO.
           {v.registryStyle === "didup" && " Per visualizzarlo, scegli lo stile del registro VOTO."}
+        </p>
+      )}
+      {v.theme !== "original" && (
+        <p className="mt-3 rounded-md border border-border bg-card p-3 text-[11px] text-muted-foreground">
+          Questo è un tema completo: colori, superfici, caratteri e arrotondamenti sono gestiti dal
+          tema. I font personalizzati sono disponibili solo con il tema Originale.
         </p>
       )}
       {v.theme === "custom" && (

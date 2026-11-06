@@ -93,6 +93,64 @@ export type CustomTheme = {
   radius: number;
   font: CustomFont;
 };
+
+const THEME_VALUES: Theme[] = [
+  "original",
+  "lavender",
+  "cybercore",
+  "brutalist",
+  "retro-os",
+  "windows-98",
+  "windows-7",
+  "dark-academia",
+  "glassmorphism",
+  "casino",
+  "calcio",
+  "terminale",
+  "pixel-arcade",
+  "y2k",
+  "primavera",
+  "estate",
+  "autunno",
+  "inverno",
+  "tramonto",
+  "oro",
+  "diamante",
+  "custom",
+];
+const ACCENT_VALUES: Accent[] = [
+  "rosso",
+  "ambra",
+  "viola",
+  "blu",
+  "verde",
+  "azzurro",
+  "rosa",
+  "arancio",
+  "turchese",
+  "indaco",
+  "lime",
+  "oro",
+  "corallo",
+  "menta",
+  "mono",
+];
+const BG_VALUES: Bg[] = [
+  "nero",
+  "carbone",
+  "grafite",
+  "chiaro",
+  "rosso",
+  "oceano",
+  "notteblu",
+  "bosco",
+  "prugna",
+  "carta",
+];
+
+function oneOf<T extends string>(value: unknown, values: readonly T[], fallback: T): T {
+  return typeof value === "string" && values.includes(value as T) ? (value as T) : fallback;
+}
 export const DEFAULT_CUSTOM_THEME: CustomTheme = {
   bgDark: "#12151c",
   cardDark: "#1d2330",
@@ -282,22 +340,22 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setReadIds(load(KEYS.read, {}));
     setDisplayNameS(load(KEYS.displayName, ""));
     setTargetS(load(KEYS.target, 8));
-    setAccentS(load(KEYS.accent, "rosso"));
-    setBgS(load(KEYS.bg, "nero"));
-    setModeS(load(KEYS.mode, "scuro"));
     setGlassS(load(KEYS.glass, true));
     const savedDensity = load<Density>(KEYS.density, "standard");
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
     setReduceMotionS(load(KEYS.reduceMotion, false));
-    const savedTheme = load<Theme>(KEYS.theme, "original");
+    const savedTheme = oneOf(load<unknown>(KEYS.theme, "original"), THEME_VALUES, "original");
     setThemeS(savedTheme);
-    const savedRegistryStyle = load<RegistryStyle>(KEYS.registryStyle, "voto");
+    const savedRegistryStyle = load<unknown>(KEYS.registryStyle, "voto");
     setRegistryStyleS(savedRegistryStyle === "didup" ? "didup" : "voto");
+    setAccentS(oneOf(load<unknown>(KEYS.accent, "rosso"), ACCENT_VALUES, "rosso"));
+    setBgS(oneOf(load<unknown>(KEYS.bg, "nero"), BG_VALUES, "nero"));
+    setModeS(load<unknown>(KEYS.mode, "scuro") === "chiaro" ? "chiaro" : "scuro");
     const savedCustomTheme = load<Partial<CustomTheme>>(KEYS.customTheme, {});
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
       ...savedCustomTheme,
-      font: savedCustomTheme.font === "sans" ? "theme" : (savedCustomTheme.font ?? "theme"),
+      font: oneOf(savedCustomTheme.font, ["theme", "sans", "display", "mono", "serif"], "theme"),
     });
     setInterfaceScaleS(normalizeInterfaceScale(load(KEYS.interfaceScale, 100)));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
@@ -370,15 +428,19 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     const root = document.documentElement;
-    root.dataset["accent"] = accent;
-    root.dataset["bg"] = bg;
-    root.dataset["mode"] = mode;
-    root.dataset["glass"] = glass ? "on" : "off";
+    const didupActive = registryStyle === "didup";
+    root.dataset["accent"] = didupActive ? "turchese" : accent;
+    root.dataset["bg"] = didupActive ? "nero" : bg;
+    root.dataset["mode"] = didupActive ? "scuro" : mode;
+    root.dataset["glass"] = didupActive ? "off" : glass ? "on" : "off";
     root.dataset["density"] = density;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
-    root.dataset["theme"] = theme;
+    // DidUP ha una grafica propria: il tema VOTO resta memorizzato ma non
+    // deve colorare accidentalmente dashboard e pagine del registro.
+    root.dataset["theme"] = didupActive ? "original" : theme;
     root.dataset["registryStyle"] = registryStyle;
-    root.dataset["font"] = customTheme.font;
+    root.dataset["font"] =
+      registryStyle === "voto" && theme === "original" ? customTheme.font : "theme";
     root.style.fontSize = `${interfaceScale}%`;
     const custom: Record<string, string> = {
       "--custom-bg-dark": customTheme.bgDark,
