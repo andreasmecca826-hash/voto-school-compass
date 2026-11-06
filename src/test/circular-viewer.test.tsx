@@ -18,10 +18,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    expect(screen.getByTitle("allegato.pdf")).toHaveAttribute(
-      "src",
-      `/api/circulars/mirror?path=${encodeURIComponent(path)}`,
-    );
+    expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
   });
 
@@ -56,9 +53,6 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    expect(screen.getByTitle("circolare.pdf")).toHaveAttribute(
-      "src",
-      `/api/circulars/mirror?path=${encodeURIComponent(path)}`,
-    );
+    expect(screen.getByRole("document", { name: "circolare.pdf" })).toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
+import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -76,20 +77,16 @@ export function CircularViewer({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
-  const [previewFailed, setPreviewFailed] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setSelectedIndex(0);
-      setPreviewFailed(false);
-    }
+    if (open) setSelectedIndex(0);
   }, [open, title]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
   const internalPreviewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : undefined;
-  const previewUrl = previewFailed ? activeFile?.url : (internalPreviewUrl ?? activeFile?.url);
+  const previewUrl = internalPreviewUrl ?? activeFile?.url;
   const downloadUrl = activeFile?.path
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
@@ -173,24 +170,18 @@ export function CircularViewer({
             </div>
           </div>
         )}
-        {previewUrl && isPdf && !previewFailed ? (
-          <iframe
+        {previewUrl && isPdf ? (
+          <PdfCanvasPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
-            onError={() => {
-              if (activeFile?.url && activeFile.url !== internalPreviewUrl) setPreviewFailed(true);
-            }}
-            className="min-h-0 w-full flex-1 rounded-xl border border-border bg-white"
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
             <p>
-              {previewFailed
-                ? "L’anteprima interna non è riuscita. Usa Apri PDF o Scarica PDF."
-                : activeFile?.name
-                  ? "Questo formato non ha un’anteprima integrata. Usa il pulsante sotto per aprirlo o scaricarlo."
+              {activeFile?.name
+                ? "Questo formato non ha un’anteprima integrata. Usa il pulsante sotto per aprirlo o scaricarlo."
                 : "Questo allegato non è disponibile."}
             </p>
           </div>
@@ -231,7 +222,7 @@ export function CircularViewer({
         {downloadError && (
           <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>
         )}
-        {previewUrl && isPdf && !previewFailed && (
+        {previewUrl && isPdf && (
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
             Se l’anteprima non si carica, puoi scaricare il PDF.
           </p>
