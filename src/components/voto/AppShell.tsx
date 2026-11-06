@@ -176,31 +176,82 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [musicMounted, setMusicMounted] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const pullStartY = useRef<number | null>(null);
-  const [pullDistance, setPullDistance] = useState(0);
+  const pendingPullDistance = useRef(0);
+  const pullFrame = useRef<number | null>(null);
+  const pullIndicator = useRef<HTMLDivElement>(null);
+  const pullIcon = useRef<SVGSVGElement>(null);
+  const pullLabel = useRef<HTMLSpanElement>(null);
+
+  const applyPullDistance = (distance: number) => {
+    const boundedDistance = Math.max(0, Math.min(84, distance));
+    const indicator = pullIndicator.current;
+    if (indicator) {
+      indicator.style.height = `${boundedDistance}px`;
+      indicator.style.opacity = boundedDistance > 0 ? "1" : "0";
+      indicator.setAttribute("aria-hidden", String(boundedDistance === 0));
+    }
+    pullIcon.current?.classList.toggle("rotate-180", boundedDistance >= 56);
+    if (pullLabel.current) {
+      pullLabel.current.textContent =
+        boundedDistance >= 56 ? "Rilascia per aggiornare" : "Trascina per aggiornare";
+    }
+  };
+
+  const cancelPullFrame = () => {
+    if (pullFrame.current !== null) {
+      window.cancelAnimationFrame(pullFrame.current);
+      pullFrame.current = null;
+    }
+  };
+
+  const schedulePullDistance = (distance: number) => {
+    pendingPullDistance.current = Math.max(0, Math.min(84, distance));
+    if (pullFrame.current !== null) return;
+    pullFrame.current = window.requestAnimationFrame(() => {
+      pullFrame.current = null;
+      applyPullDistance(pendingPullDistance.current);
+    });
+  };
+
+  const resetPullGesture = () => {
+    cancelPullFrame();
+    pullStartY.current = null;
+    pendingPullDistance.current = 0;
+    applyPullDistance(0);
+  };
 
   const handlePullStart = (event: React.TouchEvent<HTMLElement>) => {
-    if (v.loading || window.scrollY > 0 || event.touches.length !== 1) return;
+    if (v.loading || window.scrollY > 0 || event.touches.length !== 1) {
+      resetPullGesture();
+      return;
+    }
+    resetPullGesture();
     pullStartY.current = event.touches[0]?.clientY ?? null;
   };
 
   const handlePullMove = (event: React.TouchEvent<HTMLElement>) => {
-    if (pullStartY.current === null || v.loading) return;
+    if (pullStartY.current === null) return;
+    if (v.loading || event.touches.length !== 1) {
+      resetPullGesture();
+      return;
+    }
     const currentY = event.touches[0]?.clientY ?? pullStartY.current;
     const distance = currentY - pullStartY.current;
     if (distance <= 0) {
-      setPullDistance(0);
+      schedulePullDistance(0);
       return;
     }
     if (distance > 8) event.preventDefault();
-    setPullDistance(Math.min(84, distance * 0.55));
+    schedulePullDistance(distance * 0.55);
   };
 
   const handlePullEnd = () => {
-    const shouldRefresh = pullDistance >= 56 && !v.loading;
-    pullStartY.current = null;
-    setPullDistance(0);
+    const shouldRefresh = pendingPullDistance.current >= 56 && !v.loading;
+    resetPullGesture();
     if (shouldRefresh) void v.refresh();
   };
+
+  const handlePullCancel = () => resetPullGesture();
 
   useEffect(() => {
     setMoreOpen(false);
@@ -212,6 +263,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     root.dataset["mode"] = v.mode;
     root.dataset["registryStyle"] = v.registryStyle;
   }, [v.theme, v.mode, v.registryStyle]);
+
+  useEffect(
+    () => () => {
+      if (pullFrame.current !== null) window.cancelAnimationFrame(pullFrame.current);
+    },
+    [],
+  );
 
   const dateLabel = v.ready
     ? now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })
@@ -344,18 +402,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           onTouchStart={handlePullStart}
           onTouchMove={handlePullMove}
           onTouchEnd={handlePullEnd}
-          onTouchCancel={handlePullEnd}
+          onTouchCancel={handlePullCancel}
         >
           <div
-            className={cn(
-              "pointer-events-none flex items-center justify-center overflow-hidden text-xs font-medium text-primary transition-[height,opacity] duration-150",
-              pullDistance > 0 ? "opacity-100" : "opacity-0",
-            )}
-            style={{ height: pullDistance }}
-            aria-hidden={pullDistance === 0}
+            ref={pullIndicator}
+            className="pointer-events-none flex items-center justify-center overflow-hidden text-xs font-medium text-primary opacity-0 transition-[height,opacity] duration-150"
+            style={{ height: 0, opacity: 0 }}
+            aria-hidden={true}
           >
-            <RefreshCw className={cn("mr-2 h-4 w-4", pullDistance >= 56 && "rotate-180")} />
-            {pullDistance >= 56 ? "Rilascia per aggiornare" : "Trascina per aggiornare"}
+            <RefreshCw ref={pullIcon} className="mr-2 h-4 w-4" />
+            <span ref={pullLabel}>Trascina per aggiornare</span>
           </div>
           {v.ready ? (
             moreOpen && !isWindows7 ? (
