@@ -74,7 +74,7 @@ const ITEMS: MenuItem[] = [
     color: "#ff565d",
     icon: CalendarCheck2,
     iconImage: "/didup-menu-icons/promemoria.png",
-    to: "/",
+    to: "/promemoria",
   },
   {
     label: "Orario",
