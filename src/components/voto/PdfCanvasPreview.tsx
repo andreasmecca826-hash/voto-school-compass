@@ -68,7 +68,6 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
 
   return (
     <div
-      ref={containerRef}
       role="document"
       aria-label={title}
       aria-busy={status === "loading"}
@@ -82,6 +81,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           Anteprima non disponibile. Usa Apri PDF o Scarica PDF.
         </p>
       )}
+      <div ref={containerRef} className="space-y-3" aria-hidden={status !== "ready"} />
       {status === "ready" && pageCount > 0 && (
         <span className="sr-only">{pageCount} pagine</span>
       )}
