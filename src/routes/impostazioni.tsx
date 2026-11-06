@@ -2,9 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Bug,
   CalendarDays,
-  ChevronDown,
   ChevronUp,
-  Copy,
   Download,
   Eye,
   EyeOff,
@@ -53,19 +51,6 @@ export const Route = createFileRoute("/impostazioni")({
   }),
   component: Settings,
 });
-
-const SCHEMA = `{
-  "student": {"name":"Studente","className":"4B","schoolYear":"2026/2027"},
-  "updatedAt": "2026-10-25T08:30:00+02:00",
-  "previousAverage": 7.35,
-  "attendance": {"absenceDays":14,"absenceHours":84,"delays":1,"earlyExits":0,"annualHours":990,"absenceLimitHours":264},
-  "subjects": [
-    {"id":"matematica","name":"Matematica","color":"#E85D5D",
-     "grades":[{"id":"g1","value":7.5,"date":"2026-10-20","type":"scritto","weight":1,"comment":"Equazioni"}]}
-  ],
-  "assignments": [{"id":"a1","title":"Esercizi pagina 42","subject":"Matematica","dueDate":"2026-10-25","dueTime":"18:00","completed":false,"details":"esercizi 1-8"}],
-  "notifications": [{"id":"n1","type":"note","title":"Avviso","message":"...","date":"2026-10-24","read":false}]
-}`;
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -246,7 +231,6 @@ function Settings() {
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
   const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
-  const [showSchema, setShowSchema] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
@@ -623,44 +607,6 @@ function Settings() {
         </section>
       )}
 
-      {canResetDemoData(v.source, v.url) && (
-        <>
-          <SectionTitle>Schema JSON</SectionTitle>
-          <button
-            type="button"
-            onClick={() => setShowSchema((x) => !x)}
-            className="press flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
-          >
-            {showSchema ? "Nascondi schema JSON" : "Visualizza schema JSON"}
-            <ChevronDown
-              className={cn("h-4 w-4 transition-transform", showSchema && "rotate-180")}
-            />
-          </button>
-          {showSchema && (
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() =>
-                  navigator.clipboard.writeText(SCHEMA).then(
-                    () => toast.success("Schema copiato"),
-                    () => toast.error("Copia non riuscita"),
-                  )
-                }
-                className="press mb-2 inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-primary"
-              >
-                <Copy className="h-3.5 w-3.5" /> Copia schema
-              </button>
-              <pre className="card-surface no-scrollbar overflow-x-auto p-4 font-mono text-[10.5px] leading-relaxed text-muted-foreground">
-                {SCHEMA}
-              </pre>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Voti non numerici vengono ignorati; "7+" = 7,15 e "7-" = 6,85. Il peso predefinito è
-                1.
-              </p>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

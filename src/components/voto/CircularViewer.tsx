@@ -42,7 +42,12 @@ function mergeAttachments(
       : -1;
     if (existingIndex >= 0) {
       const existing = merged[existingIndex];
-      if (!existing.path && file.path) merged[existingIndex] = file;
+      merged[existingIndex] = {
+        ...file,
+        ...existing,
+        ...(existing.path || !file.path ? {} : { path: file.path }),
+        ...(existing.url || !file.url ? {} : { url: file.url }),
+      };
       continue;
     }
     merged.push(file);
@@ -71,15 +76,20 @@ export function CircularViewer({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
+  const [previewFailed, setPreviewFailed] = useState(false);
 
   useEffect(() => {
-    if (open) setSelectedIndex(0);
+    if (open) {
+      setSelectedIndex(0);
+      setPreviewFailed(false);
+    }
   }, [open, title]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
-  const previewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : activeFile?.url;
+  const internalPreviewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : undefined;
+  const previewUrl = previewFailed ? activeFile?.url : (internalPreviewUrl ?? activeFile?.url);
   const downloadUrl = activeFile?.path
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
@@ -163,25 +173,40 @@ export function CircularViewer({
             </div>
           </div>
         )}
-        {previewUrl && isPdf ? (
+        {previewUrl && isPdf && !previewFailed ? (
           <iframe
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
+            onError={() => {
+              if (activeFile?.url && activeFile.url !== internalPreviewUrl) setPreviewFailed(true);
+            }}
             className="min-h-0 w-full flex-1 rounded-xl border border-border bg-white"
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
             <p>
-              {activeFile?.name
-                ? "Questo formato non ha un’anteprima integrata. Usa il pulsante sotto per aprirlo o scaricarlo."
+              {previewFailed
+                ? "L’anteprima interna non è riuscita. Usa Apri PDF o Scarica PDF."
+                : activeFile?.name
+                  ? "Questo formato non ha un’anteprima integrata. Usa il pulsante sotto per aprirlo o scaricarlo."
                 : "Questo allegato non è disponibile."}
             </p>
           </div>
         )}
         {downloadUrl && (
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {isPdf && previewUrl && (
+              <button
+                type="button"
+                onClick={openAttachment}
+                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Apri PDF
+              </button>
+            )}
             {!isPdf && previewUrl && (
               <button
                 type="button"
@@ -196,7 +221,7 @@ export function CircularViewer({
               type="button"
               onClick={downloadAttachment}
               disabled={isDownloading}
-              className={`press inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground ${!isPdf ? "sm:col-start-2" : "sm:col-span-2"}`}
+              className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
             >
               <Download className="h-4 w-4" />
               {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
@@ -206,7 +231,7 @@ export function CircularViewer({
         {downloadError && (
           <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>
         )}
-        {previewUrl && isPdf && (
+        {previewUrl && isPdf && !previewFailed && (
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
             Se l’anteprima non si carica, puoi scaricare il PDF.
           </p>
