@@ -24,4 +24,21 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
   });
+
+  it("offre apertura e download separati per un DOCX", () => {
+    const path = `circulars/${"b".repeat(64)}.docx`;
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare DOCX"
+        fileName="modulo.docx"
+        path={path}
+        url={undefined}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
+  });
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, FileText, X } from "lucide-react";
+import { Download, ExternalLink, FileText, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -96,6 +96,11 @@ export function CircularViewer({
     }
   }
 
+  function openAttachment() {
+    if (!previewUrl) return;
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -159,15 +164,27 @@ export function CircularViewer({
           </div>
         )}
         {downloadUrl && (
-          <button
-            type="button"
-            onClick={downloadAttachment}
-            disabled={isDownloading}
-            className="press mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
-          >
-            <Download className="h-4 w-4" />
-            {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
-          </button>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {!isPdf && previewUrl && (
+              <button
+                type="button"
+                onClick={openAttachment}
+                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Apri DOCX
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={downloadAttachment}
+              disabled={isDownloading}
+              className={`press inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground ${!isPdf ? "sm:col-start-2" : "sm:col-span-2"}`}
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
+            </button>
+          </div>
         )}
         {downloadError && (
           <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>
