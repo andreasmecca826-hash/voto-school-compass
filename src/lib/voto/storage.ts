@@ -3,6 +3,7 @@ export const KEYS = {
   displayName: "voto.displayName",
   cache: "voto.cache",
   demoData: "voto.demoData",
+  demoMode: "voto.demoMode",
   lastSync: "voto.lastSync",
   completions: "voto.completions",
   read: "voto.read",

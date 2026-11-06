@@ -64,6 +64,21 @@ function mockAuthSession() {
 }
 
 describe("bootstrap dati scolastici", () => {
+  it("entra in modalità demo senza una sessione Supabase", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as never);
+    localStorage.setItem(KEYS.demoMode, "true");
+
+    renderProtectedApp();
+
+    expect(await screen.findByText(/^true:demo:/)).toBeInTheDocument();
+  });
+
   it("riusa il fetch del gate se la cache è di un altro account", async () => {
     mockAuthSession();
     localStorage.setItem(
