@@ -135,12 +135,19 @@ const MORE_NAV = [
     color: "#19aab6",
   },
 ] as const;
+const SEASONAL_THEMES = ["primavera", "estate", "autunno", "inverno"] as const;
+type SeasonalTheme = (typeof SEASONAL_THEMES)[number];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
   const now = useClock();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isWindows7 = v.theme === "windows-7" && v.registryStyle !== "didup";
+  const seasonalTheme =
+    v.registryStyle === "voto" &&
+    SEASONAL_THEMES.includes(v.theme as SeasonalTheme)
+      ? (v.theme as SeasonalTheme)
+      : null;
   const routeTitle = [...NAV, ...MORE_NAV,
     { to: "/studio", label: "Studio Lab." },
     { to: "/assistente", label: "Assistente" },
@@ -189,6 +196,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     setMoreOpen(false);
   }, [path]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = v.theme;
+    root.dataset.mode = v.mode;
+    root.dataset.registryStyle = v.registryStyle;
+  }, [v.theme, v.mode, v.registryStyle]);
+
   const dateLabel = v.ready
     ? now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })
     : "";
@@ -221,7 +235,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
         </Suspense>
       )}
-      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", isWindows7 && "windows7-shell")}>
+      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", v.registryStyle !== "didup" && "voto-shell", isWindows7 && "windows7-shell")}>
+        {seasonalTheme && <SeasonalAtmosphere theme={seasonalTheme} />}
         {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className={cn("glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]", isWindows7 && "windows7-header")}>
           {isWindows7 && (
             <div className="windows7-titlebar">
@@ -414,6 +429,24 @@ export function AppShell({ children }: { children: ReactNode }) {
         </>
       )}
     </Ui.Provider>
+  );
+}
+
+function SeasonalAtmosphere({
+  theme,
+}: {
+  theme: "primavera" | "estate" | "autunno" | "inverno";
+}) {
+  const count = theme === "inverno" ? 14 : 8;
+  return (
+    <div className={cn("seasonal-atmosphere", `seasonal-atmosphere-${theme}`)} aria-hidden="true">
+      {theme === "estate" && <span className="seasonal-sun" />}
+      {Array.from({ length: count }, (_, index) => (
+        <span key={index} className="seasonal-particle" />
+      ))}
+      {theme === "estate" && <span className="seasonal-wave seasonal-wave-one" />}
+      {theme === "estate" && <span className="seasonal-wave seasonal-wave-two" />}
+    </div>
   );
 }
 

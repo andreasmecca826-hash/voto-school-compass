@@ -87,13 +87,13 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     id: "oro",
     label: "Oro",
     description: "Ossidiana, oro satinato e riflessi champagne",
-    sw: "radial-gradient(circle at 78% 24%,#fff4bd 0 3%,transparent 4%),linear-gradient(125deg,#17110a 0%,#513a14 34%,#d3a533 49%,#fff0a3 56%,#9a6d1c 67%,#24190b 100%)",
+    sw: "radial-gradient(ellipse at 16% 14%,#fff8d8 0 1.5%,#f2d16f 2.3%,transparent 19%),repeating-linear-gradient(0deg,#fff3c21a 0 1px,transparent 1px 3px),linear-gradient(102deg,#33220a 0%,#8b6420 13%,#eed06a 17%,#694710 25%,#d6ad4a 38%,#fff1b0 43%,#8b6320 51%,#d3ae54 67%,#6a4914 80%,#e7c762 91%,#221708 100%)",
   },
   {
     id: "diamante",
     label: "Diamante",
     description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
-    sw: "linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
+    sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "tramonto",
@@ -140,8 +140,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "dark-academia",
     label: "Dark Academia",
-    description: "Carta e atmosfera classica",
-    sw: "linear-gradient(135deg,#201711,#c8a875)",
+    description: "Cuoio antico, pergamena e dettagli in ottone",
+    sw: "radial-gradient(circle at 72% 18%,#fff0c277 0 1px,transparent 8%),repeating-linear-gradient(0deg,transparent 0 6px,#d9bd8520 6px 7px),linear-gradient(90deg,#100a06 0 8%,#a1814f 8% 10%,#27180e 10% 15%,#4a301c 15% 84%,#c0a06a 84% 86%,#24160c 86% 93%,#100a06 93% 100%),linear-gradient(135deg,#20140d,#82603a,#1b1009)",
   },
   {
     id: "glassmorphism",
@@ -330,19 +330,21 @@ export function PersonalizationPanel() {
               Scegli l’aspetto VOTO o DidUP
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() => setView("typography")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Type className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Tipografia</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Font e dimensione dell’interfaccia
-            </span>
-          </button>
+          {v.theme === "original" && v.registryStyle === "voto" && (
+            <button
+              type="button"
+              onClick={() => setView("typography")}
+              className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <Type className="h-7 w-7" />
+              </span>
+              <span className="font-semibold">Tipografia</span>
+              <span className="text-center text-[11px] text-muted-foreground">
+                Font e dimensione dell’interfaccia
+              </span>
+            </button>
+          )}
           <button
             type="button"
             onClick={openMusic}
@@ -778,6 +780,12 @@ export function PersonalizationPanel() {
           Aero mantiene le finestre chiare, come Windows 7. La modalità chiara o scura cambia la
           tinta del desktop e delle cornici; il menu Start raccoglie tutte le sezioni di VOTO.
           {v.registryStyle === "didup" && " Per visualizzarlo, scegli lo stile del registro VOTO."}
+        </p>
+      )}
+      {v.theme !== "original" && (
+        <p className="mt-3 rounded-md border border-border bg-card p-3 text-[11px] text-muted-foreground">
+          Questo è un tema completo: colori, superfici, caratteri e arrotondamenti sono gestiti dal
+          tema. I font personalizzati sono disponibili solo con il tema Originale.
         </p>
       )}
       {v.theme === "custom" && (

@@ -449,7 +449,7 @@
   --theme-font-sans: "Segoe UI", Tahoma, Arial, sans-serif;
   --theme-font-display: "Segoe UI", Tahoma, Arial, sans-serif;
 }
-[data-theme="dark-academia"] {
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"]) {
   --theme-bg-dark: oklch(0.13 0.025 55);
   --theme-card-dark: oklch(0.2 0.035 55);
   --theme-surface-dark: oklch(0.26 0.045 55);
@@ -625,6 +625,242 @@
   --theme-font-sans: Manrope, sans-serif;
   --theme-font-display: Manrope, sans-serif;
 }
+
+/* Stagioni: ogni tema ha ambiente, texture, superfici e controlli propri. */
+:root[data-theme="primavera"]:not([data-registry-style="didup"]) body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(circle at 28% 22%, color-mix(in srgb, #ffb8d0 34%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 42% 20%, color-mix(in srgb, #ffeaa0 32%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 38%, color-mix(in srgb, #b8f2d0 34%, transparent) 0 3px, transparent 4px),
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, #f7a8c4 30%, transparent) 0 3px, transparent 4px),
+    radial-gradient(circle at 86% 18%, color-mix(in srgb, #fff1a8 34%, transparent) 0 4px, transparent 5px),
+    radial-gradient(ellipse at 50% -12%, color-mix(in srgb, #a9efc4 28%, transparent), transparent 58%),
+    repeating-linear-gradient(135deg, transparent 0 46px, color-mix(in srgb, #8ed7a8 7%, transparent) 46px 48px),
+    linear-gradient(155deg, color-mix(in srgb, #236746 20%, var(--color-background)), var(--color-background) 68%);
+  background-size: 170px 170px, 230px 230px, 280px 280px, auto, auto, auto, auto, auto;
+  background-attachment: fixed;
+}
+:root[data-theme="primavera"]:not([data-registry-style="didup"]) .card-surface {
+  border-color: color-mix(in srgb, #e98fb1 42%, var(--color-border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, #f7a8c4 15%, transparent), transparent 52%),
+    color-mix(in srgb, var(--color-card) 84%, transparent);
+  box-shadow: 0 14px 30px -22px color-mix(in srgb, #4bbd7c 70%, transparent), inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+:root[data-theme="primavera"]:not([data-registry-style="didup"]) .glass-panel {
+  border-color: color-mix(in srgb, #81d49d 42%, var(--color-border));
+  background: linear-gradient(110deg, color-mix(in srgb, #f7a8c4 14%, transparent), transparent 68%), color-mix(in srgb, var(--color-card) 92%, transparent);
+}
+
+:root[data-theme="estate"]:not([data-registry-style="didup"]) body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(circle at 50% 4%, color-mix(in srgb, #fff3bd 60%, transparent) 0 72px, transparent 150px),
+    radial-gradient(ellipse at 20% 96%, color-mix(in srgb, #52d8ef 18%, transparent), transparent 36%),
+    radial-gradient(ellipse at 78% 88%, color-mix(in srgb, #0c8bb2 18%, transparent), transparent 42%),
+    radial-gradient(ellipse at 50% -10%, color-mix(in srgb, #ffe49b 42%, transparent), transparent 42%),
+    radial-gradient(ellipse at 100% 72%, color-mix(in srgb, #42c8e8 22%, transparent), transparent 38%),
+    repeating-linear-gradient(0deg, transparent 0 24px, color-mix(in srgb, #7ee5ef 7%, transparent) 24px 25px),
+    linear-gradient(160deg, color-mix(in srgb, #087fa6 25%, var(--color-background)), var(--color-background) 64%);
+  background-size: auto, auto, auto, auto, auto, 100% 180px, auto;
+  background-attachment: fixed;
+}
+:root[data-theme="estate"]:not([data-registry-style="didup"]) .card-surface {
+  border-color: color-mix(in srgb, #f5bd55 48%, var(--color-border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, #fff0a8 17%, transparent), transparent 45%),
+    color-mix(in srgb, var(--color-card) 84%, transparent);
+  box-shadow: 0 16px 32px -24px color-mix(in srgb, #057a9e 76%, transparent), inset 0 1px 0 rgb(255 255 255 / 25%);
+}
+:root[data-theme="estate"]:not([data-registry-style="didup"]) .glass-panel {
+  border-color: color-mix(in srgb, #65d6e8 46%, var(--color-border));
+  background: linear-gradient(120deg, color-mix(in srgb, #fff0a8 16%, transparent), transparent 65%), color-mix(in srgb, var(--color-card) 90%, transparent);
+}
+
+:root[data-theme="autunno"]:not([data-registry-style="didup"]) body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(ellipse at 22% 18%, color-mix(in srgb, #e6a247 22%, transparent) 0 5px, transparent 6px),
+    radial-gradient(ellipse at 76% 11%, color-mix(in srgb, #b94a32 25%, transparent) 0 4px, transparent 5px),
+    radial-gradient(ellipse at 64% 48%, color-mix(in srgb, #d7a044 18%, transparent) 0 6px, transparent 7px),
+    radial-gradient(ellipse at 12% 0%, color-mix(in srgb, #e27c35 28%, transparent), transparent 40%),
+    radial-gradient(ellipse at 92% 28%, color-mix(in srgb, #b73e35 20%, transparent), transparent 38%),
+    repeating-linear-gradient(125deg, transparent 0 62px, color-mix(in srgb, #d9a441 8%, transparent) 62px 65px),
+    linear-gradient(145deg, color-mix(in srgb, #542c1e 30%, var(--color-background)), var(--color-background) 70%);
+  background-size: 220px 260px, 280px 320px, 340px 380px, auto, auto, auto, auto;
+  background-attachment: fixed;
+}
+:root[data-theme="autunno"]:not([data-registry-style="didup"]) .card-surface {
+  border-color: color-mix(in srgb, #d97932 50%, var(--color-border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, #eaa04b 15%, transparent), transparent 48%),
+    color-mix(in srgb, var(--color-card) 84%, transparent);
+  box-shadow: 0 15px 30px -22px color-mix(in srgb, #7e3627 78%, transparent), inset 0 1px 0 rgb(255 221 164 / 15%);
+}
+:root[data-theme="autunno"]:not([data-registry-style="didup"]) .glass-panel {
+  border-color: color-mix(in srgb, #e0a14d 44%, var(--color-border));
+  background: linear-gradient(120deg, color-mix(in srgb, #c75b36 15%, transparent), transparent 68%), color-mix(in srgb, var(--color-card) 94%, transparent);
+}
+
+:root[data-theme="inverno"]:not([data-registry-style="didup"]) body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(circle at 32% 42%, rgb(255 255 255 / 58%) 0 1px, transparent 2px),
+    radial-gradient(circle at 58% 66%, rgb(255 255 255 / 68%) 0 2px, transparent 3px),
+    radial-gradient(circle at 90% 52%, rgb(255 255 255 / 46%) 0 1px, transparent 2px),
+    radial-gradient(circle at 14% 16%, rgb(255 255 255 / 70%) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 28%, rgb(255 255 255 / 55%) 0 2px, transparent 3px),
+    radial-gradient(ellipse at 70% -8%, color-mix(in srgb, #9ce8ff 30%, transparent), transparent 46%),
+    repeating-linear-gradient(135deg, transparent 0 54px, color-mix(in srgb, #bde7ff 7%, transparent) 54px 56px),
+    linear-gradient(155deg, color-mix(in srgb, #173c70 30%, var(--color-background)), var(--color-background) 70%);
+  background-size: 310px 310px, 420px 420px, 520px 520px, 180px 180px, 240px 240px, auto, auto, auto;
+  background-attachment: fixed;
+}
+:root[data-theme="inverno"]:not([data-registry-style="didup"]) .card-surface {
+  border-color: color-mix(in srgb, #9cddf5 48%, var(--color-border));
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 13%), transparent 42%),
+    linear-gradient(315deg, color-mix(in srgb, #65b9e5 13%, transparent), transparent 60%),
+    color-mix(in srgb, var(--color-card) 84%, transparent);
+  box-shadow: 0 16px 34px -24px color-mix(in srgb, #2b9bd0 82%, transparent), inset 0 1px 0 rgb(255 255 255 / 28%);
+}
+:root[data-theme="inverno"]:not([data-registry-style="didup"]) .glass-panel {
+  border-color: color-mix(in srgb, #a8eaff 48%, var(--color-border));
+  background: linear-gradient(120deg, rgb(255 255 255 / 12%), transparent 68%), color-mix(in srgb, var(--color-card) 90%, transparent);
+}
+
+:root:is([data-theme="primavera"], [data-theme="estate"], [data-theme="autunno"], [data-theme="inverno"]):not([data-registry-style="didup"])
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]), select, textarea) {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+  background-color: color-mix(in srgb, var(--color-card) 94%, transparent);
+}
+:root:is([data-theme="primavera"], [data-theme="estate"], [data-theme="autunno"], [data-theme="inverno"]):not([data-registry-style="didup"])
+  .voto-shell {
+  background-color: var(--color-background);
+  background-image: inherit;
+  background-position: inherit;
+  background-size: inherit;
+  background-attachment: local;
+}
+:root:is([data-theme="primavera"], [data-theme="estate"], [data-theme="autunno"], [data-theme="inverno"]):not([data-registry-style="didup"])
+  body > #root {
+  min-height: 100dvh;
+  background-color: var(--color-background);
+  background-image: inherit;
+  background-position: inherit;
+  background-size: inherit;
+}
+:root[data-theme="primavera"]:not([data-registry-style="didup"]) .voto-shell::before,
+:root[data-theme="estate"]:not([data-registry-style="didup"]) .voto-shell::before,
+:root[data-theme="autunno"]:not([data-registry-style="didup"]) .voto-shell::before,
+:root[data-theme="inverno"]:not([data-registry-style="didup"]) .voto-shell::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.95;
+}
+:root[data-theme="primavera"]:not([data-registry-style="didup"]) .voto-shell::before {
+  background-image:
+    radial-gradient(circle at 12% 18%, #ff9fc4 0 5px, transparent 6px),
+    radial-gradient(circle at 15% 18%, #ffd97d 0 3px, transparent 4px),
+    radial-gradient(circle at 86% 29%, #fff0a6 0 5px, transparent 6px),
+    radial-gradient(circle at 82% 32%, #b9f1c6 0 3px, transparent 4px);
+  background-size: 230px 260px, 230px 260px, 310px 330px, 310px 330px;
+}
+:root[data-theme="estate"]:not([data-registry-style="didup"]) .voto-shell::before {
+  background:
+    radial-gradient(circle at 86% 10%, #ffe99b 0 46px, transparent 47px),
+    radial-gradient(ellipse at 8% 82%, rgb(65 210 236 / 42%), transparent 28%),
+    repeating-linear-gradient(165deg, transparent 0 42px, rgb(103 222 239 / 25%) 42px 44px);
+}
+:root[data-theme="autunno"]:not([data-registry-style="didup"]) .voto-shell::before {
+  background-image:
+    radial-gradient(ellipse at 12% 22%, #e59b3d 0 8px, transparent 9px),
+    radial-gradient(ellipse at 88% 34%, #c95738 0 7px, transparent 8px),
+    radial-gradient(ellipse at 8% 72%, #d47a30 0 9px, transparent 10px),
+    radial-gradient(ellipse at 92% 78%, #e0b14f 0 7px, transparent 8px);
+  background-size: 240px 310px, 300px 360px, 340px 430px, 380px 470px;
+}
+:root[data-theme="inverno"]:not([data-registry-style="didup"]) .voto-shell::before {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgb(255 255 255 / 90%) 0 4px, transparent 5px),
+    radial-gradient(circle at 88% 25%, rgb(255 255 255 / 82%) 0 5px, transparent 6px),
+    radial-gradient(circle at 20% 76%, rgb(190 236 255 / 86%) 0 4px, transparent 5px),
+    radial-gradient(circle at 82% 72%, rgb(255 255 255 / 78%) 0 3px, transparent 4px);
+  background-size: 210px 240px, 280px 300px, 330px 360px, 390px 430px;
+}
+.seasonal-atmosphere {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.voto-shell > main {
+  z-index: 1;
+}
+.seasonal-particle {
+  position: absolute;
+  display: block;
+}
+.seasonal-atmosphere-primavera .seasonal-particle {
+  width: 15px;
+  height: 15px;
+  border-radius: 50% 0 50% 50%;
+  background: #f79abd;
+  box-shadow: 0 0 16px rgb(247 154 189 / 60%);
+  transform: rotate(28deg);
+}
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(1) { top: 22%; left: 7%; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(2) { top: 34%; right: 6%; background: #ffe18a; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(3) { top: 51%; left: 4%; background: #b5edc2; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(4) { top: 67%; right: 9%; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(5) { top: 78%; left: 12%; background: #ffe18a; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(6) { top: 13%; right: 18%; background: #b5edc2; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(7) { top: 43%; right: 1%; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(8) { top: 88%; right: 23%; background: #ffe18a; }
+.seasonal-atmosphere-estate .seasonal-sun {
+  position: absolute; top: 8%; right: 7%; width: 86px; height: 86px; border-radius: 50%;
+  background: #ffe28a; box-shadow: 0 0 44px 18px rgb(255 226 138 / 38%);
+}
+.seasonal-atmosphere-estate .seasonal-particle {
+  width: 12px; height: 12px; border: 2px solid rgb(126 228 239 / 80%); border-radius: 50%;
+}
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(2) { top: 29%; left: 10%; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(3) { top: 48%; right: 10%; width: 18px; height: 18px; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(4) { top: 76%; left: 7%; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(5) { top: 84%; right: 20%; width: 8px; height: 8px; }
+.seasonal-atmosphere-estate .seasonal-wave { position: absolute; right: -14%; left: -14%; height: 42px; border-top: 3px solid rgb(92 221 236 / 45%); border-radius: 50%; transform: rotate(-4deg); }
+.seasonal-wave-one { top: 72%; }
+.seasonal-wave-two { top: 76%; opacity: 0.6; }
+.seasonal-atmosphere-autunno .seasonal-particle {
+  width: 22px; height: 14px; border-radius: 100% 0 100% 0; background: #d87832;
+  box-shadow: 0 0 13px rgb(216 120 50 / 42%); transform: rotate(24deg);
+}
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(1) { top: 18%; left: 5%; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(2) { top: 29%; right: 6%; background: #b94d35; transform: rotate(-25deg); }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(3) { top: 47%; left: 3%; background: #e0a343; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(4) { top: 61%; right: 4%; background: #b94d35; transform: rotate(-32deg); }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(5) { top: 78%; left: 9%; background: #e0a343; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(6) { top: 86%; right: 14%; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(7) { top: 39%; right: 0%; background: #b94d35; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(8) { top: 12%; right: 22%; background: #e0a343; }
+.seasonal-atmosphere-inverno .seasonal-particle {
+  width: 10px; height: 10px; border-radius: 50%; background: rgb(255 255 255 / 92%);
+  box-shadow: 0 0 13px rgb(177 231 255 / 85%);
+}
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(1) { top: 12%; left: 7%; width: 15px; height: 15px; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(2) { top: 19%; right: 8%; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(3) { top: 32%; left: 4%; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(4) { top: 42%; right: 5%; width: 14px; height: 14px; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(5) { top: 57%; left: 9%; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(6) { top: 68%; right: 10%; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(7) { top: 79%; left: 5%; width: 14px; height: 14px; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(8) { top: 88%; right: 7%; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(n + 9) { opacity: 0.72; }
 [data-theme="tramonto"] {
   --theme-bg-dark: oklch(0.15 0.05 350);
   --theme-card-dark: oklch(0.23 0.07 350);
@@ -641,7 +877,7 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: "Space Grotesk", sans-serif;
 }
-[data-theme="oro"] {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) {
   --theme-bg-dark: oklch(0.105 0.025 58);
   --theme-card-dark: oklch(0.175 0.035 66);
   --theme-surface-dark: oklch(0.25 0.055 73);
@@ -657,7 +893,7 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: Georgia, "Times New Roman", serif;
 }
-[data-theme="oro"] body {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) body {
   background-image:
     radial-gradient(
       ellipse at 18% 0%,
@@ -676,7 +912,7 @@
       transparent 73px 145px
     );
 }
-[data-theme="oro"] .card-surface {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .card-surface {
   background:
     linear-gradient(
       145deg,
@@ -695,13 +931,54 @@
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 22%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
-[data-theme="oro"] .glass-panel {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .glass-panel {
   border-color: color-mix(in srgb, var(--theme-primary) 38%, transparent);
   box-shadow:
     0 12px 30px -20px color-mix(in srgb, var(--theme-primary) 70%, transparent),
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 20%, transparent);
 }
-[data-theme="diamante"] {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .bg-primary {
+  background-image: linear-gradient(
+    155deg,
+    color-mix(in srgb, white 22%, transparent),
+    transparent 48%,
+    color-mix(in srgb, #6b4b15 16%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
+    0 4px 12px -7px color-mix(in srgb, var(--theme-primary) 74%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .bg-primary-soft {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, transparent);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 17%, transparent),
+    color-mix(in srgb, var(--theme-primary) 4%, transparent)
+  );
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) :is(
+  button[aria-pressed="true"],
+  [role="tab"][aria-selected="true"],
+  [data-sidebar="menu-button"][data-active="true"]
+) {
+  border-color: color-mix(in srgb, var(--theme-primary) 64%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-primary) 22%, transparent),
+    0 0 12px -7px color-mix(in srgb, var(--theme-primary) 74%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) nav:not(.didup-bottom) [aria-current="page"] > span {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+    0 2px 10px -5px color-mix(in srgb, var(--theme-primary) 75%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) [role="progressbar"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 26%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) [data-radix-progress-indicator] {
+  background-image: linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), transparent 70%);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) {
   --theme-bg-dark: oklch(0.105 0.05 255);
   --theme-card-dark: oklch(0.175 0.065 248);
   --theme-surface-dark: oklch(0.255 0.085 230);
@@ -717,7 +994,7 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: "Space Grotesk", sans-serif;
 }
-[data-theme="diamante"] body {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) body {
   background-image:
     radial-gradient(
       ellipse at 82% 0%,
@@ -736,7 +1013,7 @@
       transparent 79px 156px
     );
 }
-[data-theme="diamante"] .card-surface {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .card-surface {
   background:
     linear-gradient(145deg, color-mix(in srgb, oklch(1 0 0) 15%, transparent), transparent 38%),
     linear-gradient(
@@ -751,11 +1028,52 @@
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 34%, transparent),
     inset 1px 0 0 color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
-[data-theme="diamante"] .glass-panel {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .glass-panel {
   border-color: color-mix(in srgb, var(--theme-primary) 40%, transparent);
   box-shadow:
     0 12px 30px -20px color-mix(in srgb, var(--theme-primary) 72%, transparent),
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 28%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .bg-primary {
+  background-image: linear-gradient(
+    115deg,
+    color-mix(in srgb, white 28%, transparent),
+    transparent 44%,
+    color-mix(in srgb, #4eaee9 14%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--theme-primary) 82%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .bg-primary-soft {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, white 12%, transparent),
+    color-mix(in srgb, var(--theme-primary) 10%, transparent)
+  );
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) :is(
+  button[aria-pressed="true"],
+  [role="tab"][aria-selected="true"],
+  [data-sidebar="menu-button"][data-active="true"]
+) {
+  border-color: color-mix(in srgb, var(--theme-primary) 66%, white 34%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-primary) 30%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--theme-primary) 90%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) nav:not(.didup-bottom) [aria-current="page"] > span {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 40%, white 60%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 36%, transparent),
+    0 0 12px -6px color-mix(in srgb, var(--theme-primary) 86%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) [role="progressbar"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 32%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) [data-radix-progress-indicator] {
+  background-image: linear-gradient(115deg, color-mix(in srgb, white 26%, transparent), transparent 58%);
 }
 [data-theme="custom"] {
   --theme-bg-dark: var(--custom-bg-dark);
@@ -774,7 +1092,7 @@
   --theme-font-display: var(--custom-font);
 }
 
-[data-theme]:not([data-theme="original"]) {
+:root[data-theme]:not([data-theme="original"]):not([data-registry-style="didup"]) {
   --background: var(--theme-bg-dark);
   --card: var(--theme-card-dark);
   --surface: var(--theme-surface-dark);
@@ -810,7 +1128,7 @@
   --font-sans: Georgia, "Times New Roman", serif;
   --font-display: Georgia, "Times New Roman", serif;
 }
-[data-mode="chiaro"][data-theme]:not([data-theme="original"]) {
+:root[data-mode="chiaro"][data-theme]:not([data-theme="original"]):not([data-registry-style="didup"]) {
   color-scheme: light;
   --background: var(--theme-bg-light);
   --card: var(--theme-card-light);
@@ -885,7 +1203,7 @@
   box-shadow: inset 1px 1px 0 #808080;
 }
 
-[data-theme="dark-academia"] .card-surface {
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"]) .card-surface {
   border-style: double;
 }
 [data-theme="y2k"] .card-surface {
@@ -1401,4 +1719,497 @@
   .bg-primary-soft
   :is(.text-primary, .text-foreground, .text-muted-foreground) {
   color: white;
+}
+
+
+/* Finiture materiche dei Temi completi: dettagli statici, solo nel layout VOTO. */
+:root[data-theme="oro"]:not([data-registry-style="didup"]) {
+  --oro-luce: #fff0b7;
+  --oro-metallo: #d1a447;
+  --oro-ombra: #563a10;
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) body {
+  background-image:
+    radial-gradient(
+      circle at 17% 7%,
+      rgb(255 247 206 / 25%) 0 1px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 82% 23%,
+      rgb(255 225 145 / 16%) 0 1px,
+      transparent 3px
+    ),
+    radial-gradient(
+      ellipse at 18% 0%,
+      color-mix(in srgb, var(--oro-metallo) 17%, transparent),
+      transparent 38%
+    ),
+    repeating-linear-gradient(
+      92deg,
+      transparent 0 3px,
+      color-mix(in srgb, var(--oro-luce) 2%, transparent) 3px 4px
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 72px,
+      color-mix(in srgb, var(--theme-primary) 2.5%, transparent) 72px 73px,
+      transparent 73px 145px
+    );
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  .card-surface {
+  background:
+    linear-gradient(
+      103deg,
+      transparent 0 22%,
+      color-mix(in srgb, var(--oro-luce) 14%, transparent) 22.3% 22.7%,
+      transparent 23.1% 100%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 2px,
+      color-mix(in srgb, var(--oro-luce) 2.4%, transparent) 2px 3px
+    ),
+    radial-gradient(
+      ellipse at 9% -14%,
+      color-mix(in srgb, var(--oro-luce) 22%, transparent),
+      transparent 43%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-primary) 16%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      320deg,
+      color-mix(in srgb, var(--oro-ombra) 14%, transparent),
+      transparent 54%
+    ),
+    color-mix(in srgb, var(--color-card) 76%, transparent);
+  border-color: color-mix(in srgb, var(--oro-metallo) 58%, transparent);
+  box-shadow:
+    0 16px 32px -22px color-mix(in srgb, var(--oro-metallo) 70%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 36%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--oro-luce) 9%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--oro-ombra) 28%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  .glass-panel {
+  background-image:
+    linear-gradient(
+      116deg,
+      color-mix(in srgb, var(--oro-luce) 10%, transparent),
+      transparent 34% 66%,
+      color-mix(in srgb, var(--oro-metallo) 7%, transparent)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--oro-luce) 1.7%, transparent) 5px 6px
+    );
+  border-color: color-mix(in srgb, var(--oro-metallo) 52%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 26%, transparent),
+    0 12px 30px -20px color-mix(in srgb, var(--oro-metallo) 60%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary {
+  background-image:
+    linear-gradient(
+      102deg,
+      transparent 0 14%,
+      color-mix(in srgb, var(--oro-luce) 38%, transparent) 14.5% 15.2%,
+      transparent 15.8% 39%,
+      color-mix(in srgb, var(--oro-luce) 22%, transparent) 39.5% 40%,
+      transparent 41% 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--oro-luce) 4%, transparent) 6px 7px
+    ),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, white 22%, transparent),
+      transparent 48%,
+      color-mix(in srgb, var(--oro-ombra) 16%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--oro-ombra) 24%, transparent),
+    0 4px 12px -7px color-mix(in srgb, var(--oro-metallo) 74%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  nav:not(.didup-bottom)
+  [aria-current="page"]
+  > span {
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--oro-luce) 12%, transparent),
+    transparent 58%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 34%, transparent),
+    0 2px 10px -5px color-mix(in srgb, var(--oro-metallo) 75%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  [data-radix-progress-indicator] {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--oro-luce) 11%, transparent) 5px 6px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, white 24%, transparent),
+      transparent 70%
+    );
+}
+
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) {
+  --diamante-luce: #f3fdff;
+  --diamante-ghiaccio: #9cdef8;
+  --diamante-zaffiro: #347cad;
+  --diamante-ombra: #0b1a30;
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) body {
+  background-image:
+    radial-gradient(
+      circle at 82% 8%,
+      rgb(255 255 255 / 84%) 0 1px,
+      rgb(156 222 248 / 35%) 2px 4px,
+      transparent 9px
+    ),
+    radial-gradient(
+      circle at 18% 35%,
+      rgb(222 248 255 / 35%) 0 1px,
+      transparent 5px
+    ),
+    conic-gradient(
+      from 208deg at 82% 8%,
+      transparent 0deg 43deg,
+      rgb(255 255 255 / 16%) 43.5deg 44.3deg,
+      transparent 45deg 136deg,
+      rgb(156 222 248 / 10%) 136.5deg 137.2deg,
+      transparent 138deg 224deg,
+      rgb(255 255 255 / 12%) 224.5deg 225.2deg,
+      transparent 226deg
+    ),
+    radial-gradient(
+      ellipse at 82% 0%,
+      color-mix(in srgb, var(--theme-primary) 24%, transparent),
+      transparent 38%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 78px,
+      color-mix(in srgb, var(--theme-primary) 3%, transparent) 78px 79px,
+      transparent 79px 156px
+    );
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  .card-surface {
+  background:
+    radial-gradient(
+      circle at 84% 14%,
+      color-mix(in srgb, var(--diamante-luce) 88%, transparent) 0 1px,
+      color-mix(in srgb, var(--diamante-ghiaccio) 30%, transparent) 2px 5px,
+      transparent 9px
+    ),
+    conic-gradient(
+      from 228deg at 84% 14%,
+      color-mix(in srgb, var(--diamante-luce) 12%, transparent) 0deg 34deg,
+      transparent 34deg 70deg,
+      color-mix(in srgb, var(--diamante-ghiaccio) 14%, transparent) 70deg 110deg,
+      transparent 110deg 159deg,
+      color-mix(in srgb, var(--diamante-zaffiro) 13%, transparent) 159deg 202deg,
+      transparent 202deg 270deg,
+      color-mix(in srgb, var(--diamante-luce) 9%, transparent) 270deg 315deg,
+      transparent 315deg 360deg
+    ),
+    linear-gradient(
+      132deg,
+      transparent 0 24%,
+      color-mix(in srgb, var(--diamante-luce) 10%, transparent) 24.2% 24.55%,
+      transparent 24.9% 100%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--diamante-luce) 15%, transparent),
+      transparent 38%
+    ),
+    linear-gradient(
+      315deg,
+      color-mix(in srgb, var(--theme-primary) 15%, transparent),
+      transparent 58%
+    ),
+    color-mix(in srgb, var(--color-card) 76%, transparent);
+  border-color: color-mix(in srgb, var(--diamante-ghiaccio) 58%, transparent);
+  box-shadow:
+    0 16px 34px -22px
+      color-mix(in srgb, var(--diamante-ghiaccio) 78%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 42%, transparent),
+    inset 1px 0 0 color-mix(in srgb, var(--diamante-ghiaccio) 28%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--diamante-ombra) 24%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  .glass-panel {
+  background-image:
+    linear-gradient(
+      122deg,
+      color-mix(in srgb, var(--diamante-luce) 15%, transparent),
+      transparent 31% 62%,
+      color-mix(in srgb, var(--diamante-ghiaccio) 9%, transparent)
+    ),
+    linear-gradient(
+      312deg,
+      color-mix(in srgb, var(--diamante-zaffiro) 8%, transparent),
+      transparent 54%
+    );
+  border-color: color-mix(in srgb, var(--diamante-ghiaccio) 54%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 38%, transparent),
+    inset 1px 0 0 color-mix(in srgb, var(--diamante-ghiaccio) 20%, transparent),
+    0 12px 30px -20px
+      color-mix(in srgb, var(--diamante-ghiaccio) 70%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary {
+  background-image:
+    radial-gradient(
+      circle at 15% 17%,
+      color-mix(in srgb, var(--diamante-luce) 85%, transparent) 0 1px,
+      transparent 4px
+    ),
+    conic-gradient(
+      from 225deg at 16% 18%,
+      color-mix(in srgb, var(--diamante-luce) 18%, transparent) 0deg 38deg,
+      transparent 38deg 112deg,
+      color-mix(in srgb, var(--diamante-ghiaccio) 15%, transparent) 112deg
+        160deg,
+      transparent 160deg 250deg,
+      color-mix(in srgb, var(--diamante-luce) 10%, transparent) 250deg 292deg,
+      transparent 292deg
+    ),
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, white 28%, transparent),
+      transparent 44%,
+      color-mix(in srgb, var(--diamante-zaffiro) 14%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 46%, transparent),
+    inset 1px 0 0 color-mix(in srgb, var(--diamante-ghiaccio) 26%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--theme-primary) 82%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  nav:not(.didup-bottom)
+  [aria-current="page"]
+  > span {
+  background-image: linear-gradient(
+    132deg,
+    color-mix(in srgb, var(--diamante-luce) 16%, transparent),
+    transparent 46%,
+    color-mix(in srgb, var(--diamante-ghiaccio) 8%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 42%, transparent),
+    0 0 12px -6px color-mix(in srgb, var(--diamante-ghiaccio) 86%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  [data-radix-progress-indicator] {
+  background-image: linear-gradient(
+    125deg,
+    transparent 0 22%,
+    color-mix(in srgb, var(--diamante-luce) 30%, transparent) 22.5% 24%,
+    transparent 24.5% 62%,
+    color-mix(in srgb, var(--diamante-ghiaccio) 16%, transparent) 62.5% 64%,
+    transparent 64.5% 100%
+  );
+}
+
+
+/* Dark Academia: biblioteca antica, cuoio vissuto, pergamena e ottone. */
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"]) {
+  --academia-cuoi: #382419;
+  --academia-legno: #1b1009;
+  --academia-ottone: #b3935d;
+  --academia-pergamena: #ead8b2;
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"]) body {
+  background-image:
+    radial-gradient(
+      ellipse at 14% -5%,
+      color-mix(in srgb, var(--academia-ottone) 18%, transparent),
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at 96% 48%,
+      color-mix(in srgb, var(--academia-cuoi) 20%, transparent),
+      transparent 48%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 138px,
+      color-mix(in srgb, var(--academia-ottone) 3.5%, transparent) 138px 140px,
+      transparent 140px 278px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 76px,
+      color-mix(in srgb, var(--academia-ottone) 1.8%, transparent) 76px 78px,
+      transparent 78px 154px
+    ),
+    repeating-linear-gradient(
+      94deg,
+      transparent 0 4px,
+      color-mix(in srgb, var(--academia-pergamena) 1.2%, transparent) 4px 5px
+    );
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  .card-surface {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--academia-ottone) 30%, transparent) 0 2px,
+      color-mix(in srgb, var(--academia-legno) 22%, transparent) 2px 6px,
+      transparent 6px 100%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 25px,
+      color-mix(in srgb, var(--academia-pergamena) 2.2%, transparent) 25px 26px
+    ),
+    radial-gradient(
+      ellipse at 12% 0%,
+      color-mix(in srgb, var(--academia-ottone) 12%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--academia-pergamena) 5%, transparent),
+      transparent 38% 76%,
+      color-mix(in srgb, var(--academia-legno) 18%, transparent)
+    ),
+    color-mix(in srgb, var(--color-card) 93%, var(--academia-cuoi));
+  border-style: double;
+  border-width: 3px;
+  border-color: color-mix(
+    in srgb,
+    var(--academia-ottone) 55%,
+    var(--color-border)
+  );
+  box-shadow:
+    0 16px 30px -24px rgb(0 0 0 / 78%),
+    inset 0 1px 0 color-mix(in srgb, var(--academia-pergamena) 17%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--academia-ottone) 12%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--academia-legno) 30%, transparent);
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  .glass-panel {
+  background-image:
+    radial-gradient(
+      ellipse at 15% 0%,
+      color-mix(in srgb, var(--academia-pergamena) 11%, transparent),
+      transparent 50%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 8px,
+      color-mix(in srgb, var(--academia-ottone) 1.6%, transparent) 8px 9px
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--academia-cuoi) 14%, transparent),
+      transparent 68%
+    );
+  border-color: color-mix(
+    in srgb,
+    var(--academia-ottone) 42%,
+    var(--color-border)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--academia-pergamena) 20%, transparent),
+    0 12px 28px -22px rgb(0 0 0 / 72%);
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary {
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--academia-pergamena) 20%, transparent),
+      transparent 43%,
+      color-mix(in srgb, var(--academia-legno) 18%, transparent)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--academia-pergamena) 2.5%, transparent) 7px 8px
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--academia-pergamena) 30%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--academia-legno) 28%, transparent),
+    0 4px 12px -8px color-mix(in srgb, var(--academia-ottone) 65%, transparent);
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary-soft {
+  border-color: color-mix(in srgb, var(--academia-ottone) 35%, transparent);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--academia-pergamena) 9%, transparent),
+    transparent 56%,
+    color-mix(in srgb, var(--academia-cuoi) 12%, transparent)
+  );
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  nav:not(.didup-bottom)
+  [aria-current="page"]
+  > span {
+  border: 1px solid color-mix(in srgb, var(--academia-ottone) 46%, transparent);
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--academia-pergamena) 10%, transparent),
+    transparent 58%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--academia-pergamena) 24%, transparent),
+    0 2px 10px -6px color-mix(in srgb, var(--academia-ottone) 72%, transparent);
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  [role="progressbar"] {
+  border: 1px solid color-mix(in srgb, var(--academia-ottone) 30%, transparent);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 35%);
+}
+:root[data-theme="dark-academia"]:not([data-registry-style="didup"])
+  .voto-shell
+  [data-radix-progress-indicator] {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--academia-pergamena) 9%, transparent) 6px 7px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--academia-pergamena) 22%, transparent),
+      transparent 72%
+    );
 }
