@@ -545,7 +545,7 @@ function DidupBottomNav({
 
   return (
     <nav
-      className="didup-bottom fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] items-end justify-around px-7 pb-3 pt-2"
+      className="didup-bottom fixed inset-x-0 bottom-0 z-30 mx-auto grid w-full max-w-[480px] grid-cols-3 items-end px-0 pb-3 pt-2"
       aria-label="Navigazione DidUP"
     >
       <Link
@@ -555,7 +555,7 @@ function DidupBottomNav({
         }}
         aria-current={homeActive ? "page" : undefined}
         className={cn(
-          "flex flex-col items-center gap-1 text-xs",
+          "flex w-full flex-col items-center gap-1 text-[14px]",
           homeActive ? "text-white" : "text-white/65",
         )}
       >
@@ -581,7 +581,7 @@ function DidupBottomNav({
         }}
         aria-current={diaryActive ? "page" : undefined}
         className={cn(
-          "flex flex-col items-center gap-1 text-xs",
+          "flex w-full flex-col items-center gap-1 text-[14px]",
           diaryActive ? "text-white" : "text-white/65",
         )}
       >
@@ -607,14 +607,14 @@ function DidupBottomNav({
         aria-current={menuActive ? "page" : undefined}
         aria-label="Menu"
         className={cn(
-          "flex flex-col items-center gap-1 text-xs",
+          "flex w-full flex-col items-center gap-1 text-[14px]",
           menuActive ? "text-white" : "text-white/65",
         )}
       >
         <span
           className={cn(
             "flex h-11 w-11 items-center justify-center rounded-full",
-            menuActive && "bg-[#f5b52e]",
+            menuActive && "h-14 w-14 bg-[#f5b52e]",
           )}
         >
           <DidupMenuIcon active={menuActive} />

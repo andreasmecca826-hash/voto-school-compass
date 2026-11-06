@@ -60,6 +60,33 @@ function schoolYearStart(date: Date) {
   return `${year}-09-01`;
 }
 
+function displayFilterDate(value: string) {
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}-${month}-${year}` : "";
+}
+
+function CalendarIcon() {
+  return (
+    <svg className="h-12 w-12" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="4" y="5" width="24" height="24" rx="3" fill="#4169a8" />
+      <path
+        d="M4 12h24M10 3v6m12-6v6"
+        fill="none"
+        stroke="#243f78"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <g fill="#243f78">
+        <rect x="9" y="16" width="4" height="4" rx="0.5" />
+        <rect x="16" y="16" width="4" height="4" rx="0.5" />
+        <rect x="23" y="16" width="2" height="4" rx="0.5" />
+        <rect x="9" y="22" width="4" height="4" rx="0.5" />
+        <rect x="16" y="22" width="4" height="4" rx="0.5" />
+      </g>
+    </svg>
+  );
+}
+
 function DidupBacheca() {
   const v = useVoto();
   const today = new Date();
@@ -116,7 +143,7 @@ function DidupBacheca() {
 
   return (
     <div className="didup-page min-h-dvh bg-black pb-[112px] text-white">
-      <header className="flex items-center gap-4 px-4 pb-7 pt-5">
+      <header className="flex items-center gap-[42px] pl-4 pr-[17px] pb-[44px] pt-[21px]">
         <Link
           to="/"
           aria-label="Torna alla home"
@@ -125,29 +152,37 @@ function DidupBacheca() {
           <ArrowLeft className="h-7 w-7" strokeWidth={1.7} />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="text-[26px] font-normal leading-none tracking-tight">BACHECA</h1>
-          <p className="mt-2 truncate text-[14px] leading-none text-white/85">{studentName}</p>
+          <h1 className="text-[24px] font-normal leading-none tracking-tight">BACHECA</h1>
+          <p className="mt-[2px] truncate text-[14px] leading-none text-white/85">{studentName}</p>
         </div>
         <img
           src="/didup-profile.jpg"
           alt=""
           aria-hidden="true"
-          className="h-[50px] w-[50px] shrink-0 object-cover"
+          className="-translate-y-[4px] h-[62px] w-[62px] shrink-0 object-cover"
         />
       </header>
 
       <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-        <DialogContent className="max-h-[78dvh] w-[min(70vw,380px)] max-w-[380px] scale-[1.12] gap-0 overflow-y-auto rounded-[16px] border-0 bg-[#292929] px-6 pb-6 pt-9 text-white shadow-xl sm:rounded-[16px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-10 [&>button]:w-10 [&>button]:opacity-100 [&>button>svg]:h-8 [&>button>svg]:w-8">
-          <DialogTitle className="text-left text-[16px] font-normal tracking-wide text-white">
+        <DialogContent
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+            top: "calc(50% + 5px)",
+          }}
+          className="flex max-h-[78dvh] w-[min(73vw,350px)] max-w-[350px] flex-col items-stretch gap-0 overflow-y-auto rounded-[11px] border-0 bg-[#292929] px-6 pb-[19px] pt-[40px] text-white shadow-xl sm:rounded-[11px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-9 [&>button]:w-9 [&>button]:opacity-100 [&>button>svg]:h-5 [&>button>svg]:w-5"
+        >
+          <DialogTitle className="text-left text-[18px] font-normal tracking-wide text-white">
             FILTRA
           </DialogTitle>
           <DialogDescription className="sr-only">
             Filtra le circolari per testo e intervallo di date.
           </DialogDescription>
 
-          <div className="mt-7 flex items-center gap-4">
+          <div className="-ml-6 mt-[46px] flex items-center gap-[18px]">
             <Search
-              className="h-[58px] w-[58px] shrink-0 text-white"
+              className="-ml-[3px] h-[68px] w-[68px] shrink-0 text-white"
               strokeWidth={2.5}
               aria-hidden="true"
             />
@@ -158,39 +193,61 @@ function DidupBacheca() {
               }
               placeholder="Cerca..."
               aria-label="Cerca circolari"
-              className="h-[46px] min-w-0 flex-1 rounded-[11px] border border-white bg-[#333638] px-3 text-[15px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
+              className="h-[60px] min-w-0 flex-1 rounded-[10px] border border-white bg-[#333638] px-5 text-[18px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
             />
           </div>
 
-          <div className="mt-9 grid grid-cols-[44px_minmax(0,1fr)] items-center gap-x-3 gap-y-5">
-            <label htmlFor="bacheca-date-from" className="text-[15px] text-white">
+          <div className="-ml-[9px] mt-[48px] grid grid-cols-[26px_minmax(0,1fr)] items-center gap-x-[41px] gap-y-[52px]">
+            <label htmlFor="bacheca-date-from" className="text-right text-[18px] text-white">
               Dal:
             </label>
-            <input
-              id="bacheca-date-from"
-              type="date"
-              value={draftFilters.from}
-              onChange={(event) => {
-                setDraftFilters((current) => ({ ...current, from: event.target.value }));
-                setFilterError("");
-              }}
-              aria-label="Data iniziale"
-              className="h-[46px] min-w-0 w-full rounded-[11px] border border-white bg-[#333638] px-3 text-[15px] text-white outline-none [color-scheme:dark] focus:border-[#0aa0b1]"
-            />
-            <label htmlFor="bacheca-date-to" className="text-[15px] text-white">
+            <div className="relative mr-[1px] h-[60px] min-w-0 rounded-[10px] border border-white bg-[#333638] focus-within:border-[#0aa0b1]">
+              <input
+                id="bacheca-date-from"
+                type="date"
+                value={draftFilters.from}
+                onChange={(event) => {
+                  setDraftFilters((current) => ({ ...current, from: event.target.value }));
+                  setFilterError("");
+                }}
+                aria-label="Data iniziale"
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-5 right-12 top-1/2 -translate-y-1/2 truncate text-[19px] text-white"
+              >
+                {displayFilterDate(draftFilters.from)}
+              </span>
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+                <CalendarIcon />
+              </span>
+            </div>
+            <label htmlFor="bacheca-date-to" className="text-right text-[18px] text-white">
               Al:
             </label>
-            <input
-              id="bacheca-date-to"
-              type="date"
-              value={draftFilters.to}
-              onChange={(event) => {
-                setDraftFilters((current) => ({ ...current, to: event.target.value }));
-                setFilterError("");
-              }}
-              aria-label="Data finale"
-              className="h-[46px] min-w-0 w-full rounded-[11px] border border-white bg-[#333638] px-3 text-[15px] text-white outline-none [color-scheme:dark] focus:border-[#0aa0b1]"
-            />
+            <div className="relative mr-[1px] h-[60px] min-w-0 rounded-[10px] border border-white bg-[#333638] focus-within:border-[#0aa0b1]">
+              <input
+                id="bacheca-date-to"
+                type="date"
+                value={draftFilters.to}
+                onChange={(event) => {
+                  setDraftFilters((current) => ({ ...current, to: event.target.value }));
+                  setFilterError("");
+                }}
+                aria-label="Data finale"
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-5 right-12 top-1/2 -translate-y-1/2 truncate text-[19px] text-white"
+              >
+                {displayFilterDate(draftFilters.to)}
+              </span>
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+                <CalendarIcon />
+              </span>
+            </div>
           </div>
 
           {filterError && <p className="mt-3 text-center text-xs text-red-300">{filterError}</p>}
@@ -198,59 +255,65 @@ function DidupBacheca() {
           <button
             type="button"
             onClick={applyFilters}
-            className="press mt-7 h-[48px] w-full rounded-[13px] bg-[#00a6b7] text-[14px] font-medium tracking-wide text-white"
+            className="press mt-[38px] h-[50px] self-center rounded-[13px] bg-[#00a6b7] text-[16px] font-medium tracking-wide text-white"
+            style={{
+              width: "min(238px, 100%)",
+              height: "50px",
+              alignSelf: "center",
+              flexShrink: 0,
+            }}
           >
             APPLICA
           </button>
           <button
             type="button"
             onClick={clearFilters}
-            className="press mt-5 min-h-10 w-full text-[14px] tracking-wide text-white/85"
+            className="press mt-[27px] min-h-10 w-full whitespace-nowrap text-[17px] tracking-wide text-white/85"
+            style={{ width: "100%", textAlign: "center", alignSelf: "stretch" }}
           >
             AZZERA FILTRO
           </button>
         </DialogContent>
       </Dialog>
 
-      <main className="px-3">
+      <main className="px-[19px]">
         {filtered.length ? (
           filtered.map((item) => {
             const count = attachmentCount(item);
             return (
               <article
                 key={item.id}
-                className="didup-tile mb-4 flex min-h-[250px] flex-col px-5 pb-5 pt-6"
-                style={{ borderRadius: 14 }}
+                className="didup-tile mb-[19px] flex min-h-[278px] flex-col rounded-[10px] px-[19px] pb-5 pt-[27px]"
               >
-                <div className="flex items-center gap-3">
+                <div className="-ml-1 flex items-center gap-1">
                   <UserRound
                     className="h-[29px] w-[29px] shrink-0 fill-[#3e6695] text-[#3e6695]"
                     strokeWidth={1.2}
                     aria-hidden="true"
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-[16px] font-semibold leading-5 uppercase">
+                    <p className="truncate text-[18px] font-semibold leading-5 uppercase">
                       {item.teacher || "SCUOLA"}
                     </p>
                     <time
                       dateTime={item.date}
-                      className="mt-1 block text-[13px] font-medium leading-4 text-[#0aa0b1]"
+                      className="mt-1 block text-[15px] font-medium leading-4 text-[#0aa0b1]"
                     >
                       {shortDate(item.date)}
                     </time>
                   </div>
                 </div>
 
-                <div className="mt-8 flex items-center gap-4">
+                <div className="-ml-0.5 mt-[30px] flex items-center gap-3">
                   <Folder
                     className="h-8 w-8 shrink-0 fill-[#0aa0b1] text-[#0aa0b1]"
                     strokeWidth={1.2}
                     aria-hidden="true"
                   />
-                  <span className="text-[15px] tracking-[0.08em]">CIRCOLARI</span>
+                  <span className="text-[16px] tracking-[0.08em]">CIRCOLARI</span>
                 </div>
 
-                <p className="mt-7 break-words text-[16px] leading-[1.45] text-white/95">
+                <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
                   {item.message || item.title}
                 </p>
 
@@ -259,9 +322,9 @@ function DidupBacheca() {
                     type="button"
                     onClick={() => openNotice(item, v.markRead, setSelected)}
                     aria-label={`Apri circolare con ${count} ${count === 1 ? "allegato" : "allegati"}`}
-                    className="press mt-auto inline-flex min-h-10 items-center gap-3 pt-5 text-left text-[14px] text-white/90"
+                    className="press -ml-1 mt-auto inline-flex min-h-10 items-center gap-2 pt-5 text-left text-[14px] text-white/90"
                   >
-                    <FileText className="h-8 w-7 shrink-0" strokeWidth={1.4} aria-hidden="true" />
+                    <FileText className="h-7 w-6 shrink-0" strokeWidth={1.4} aria-hidden="true" />
                     <span>{count}</span>
                   </button>
                 )}
@@ -285,8 +348,8 @@ function DidupBacheca() {
         onClick={openFilter}
         aria-label="Filtra la bacheca"
         aria-expanded={filterOpen}
-        className="press fixed bottom-[180px] z-30 flex h-[58px] w-[58px] items-center justify-center rounded-[18px] bg-[#0aa0b1] text-white shadow-lg"
-        style={{ right: "max(16px, calc((100vw - 480px) / 2 + 16px))" }}
+        className="press fixed bottom-[120px] z-30 flex h-[70px] w-[70px] items-center justify-center rounded-[18px] bg-[#0aa0b1] text-white shadow-lg"
+        style={{ right: "max(20px, calc((100vw - 480px) / 2 + 20px))" }}
       >
         <Search className="h-7 w-7" />
       </button>
