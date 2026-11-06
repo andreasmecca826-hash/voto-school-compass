@@ -94,8 +94,22 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       if (otpError) throw otpError;
       setEmail(normalizedEmail);
       setStep("otp");
-    } catch {
-      setError("Non riesco a inviare il codice. Controlla l’indirizzo email e riprova.");
+    } catch (caught) {
+      const status =
+        typeof caught === "object" && caught !== null && "status" in caught
+          ? caught.status
+          : undefined;
+      const code =
+        typeof caught === "object" && caught !== null && "code" in caught ? caught.code : undefined;
+      if (status === 429 || code === "over_email_send_rate_limit") {
+        setError(
+          "Limite temporaneo di invio email raggiunto. Attendi prima di richiedere un altro link.",
+        );
+      } else if (caught instanceof Error && /redirect url/i.test(caught.message)) {
+        setError("Il link di ritorno non è autorizzato. Contatta l’assistenza VOTO.");
+      } else {
+        setError("Non riesco a inviare il link. Controlla l’indirizzo email e riprova.");
+      }
     } finally {
       setBusy(false);
     }
