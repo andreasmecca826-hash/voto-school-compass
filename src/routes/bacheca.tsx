@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, FileText, Folder, Search, UserRound, X } from "lucide-react";
+import { ArrowLeft, FileText, Folder, Search, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
-import { fmtDate } from "@/lib/voto/dates";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { fmtDate, toIso } from "@/lib/voto/dates";
 import { useVoto } from "@/lib/voto/store";
 import type { AppNotification } from "@/lib/voto/types";
 
@@ -52,21 +53,65 @@ function openNotice(
   markRead([item.id]);
 }
 
+type BachecaFilters = { query: string; from: string; to: string };
+
+function schoolYearStart(date: Date) {
+  const year = date.getMonth() >= 8 ? date.getFullYear() : date.getFullYear() - 1;
+  return `${year}-09-01`;
+}
+
 function DidupBacheca() {
   const v = useVoto();
-  const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
+  const today = new Date();
+  const defaultFilters = {
+    query: "",
+    from: schoolYearStart(today),
+    to: toIso(today),
+  };
+  const [filters, setFilters] = useState<BachecaFilters>(defaultFilters);
+  const [draftFilters, setDraftFilters] = useState<BachecaFilters>(defaultFilters);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterError, setFilterError] = useState("");
   const [selected, setSelected] = useState<AppNotification | null>(null);
   const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
   const filtered = useMemo(() => {
-    const value = query.trim().toLocaleLowerCase("it-IT");
-    if (!value) return notices;
-    return notices.filter((item) =>
-      [item.title, item.message, item.teacher, item.subject, item.date]
-        .filter(Boolean)
-        .some((field) => field!.toLocaleLowerCase("it-IT").includes(value)),
-    );
-  }, [notices, query]);
+    const query = filters.query.trim().toLocaleLowerCase("it-IT");
+    return notices.filter((item) => {
+      if (
+        query &&
+        ![item.title, item.message, item.teacher, item.subject]
+          .filter(Boolean)
+          .some((field) => field!.toLocaleLowerCase("it-IT").includes(query))
+      ) {
+        return false;
+      }
+      const date = item.date?.slice(0, 10) ?? "";
+      if (filters.from && (!date || date < filters.from)) return false;
+      if (filters.to && (!date || date > filters.to)) return false;
+      return true;
+    });
+  }, [notices, filters]);
+  const hasActiveFilters = Boolean(filters.query || filters.from || filters.to);
+  const openFilter = () => {
+    setDraftFilters(filters);
+    setFilterError("");
+    setFilterOpen(true);
+  };
+  const applyFilters = () => {
+    if (draftFilters.from && draftFilters.to && draftFilters.from > draftFilters.to) {
+      setFilterError("La data iniziale deve precedere quella finale.");
+      return;
+    }
+    setFilters(draftFilters);
+    setFilterOpen(false);
+  };
+  const clearFilters = () => {
+    const cleared = { query: "", from: "", to: "" };
+    setFilters(cleared);
+    setDraftFilters(cleared);
+    setFilterError("");
+    setFilterOpen(false);
+  };
   const studentName = (v.data.student.name || "STUDENTE").toLocaleUpperCase("it-IT");
 
   return (
@@ -91,29 +136,81 @@ function DidupBacheca() {
         />
       </header>
 
-      {searchOpen && (
-        <div className="mx-4 mb-5 flex h-11 items-center gap-3 rounded-xl bg-[#292929] px-3">
-          <Search className="h-4 w-4 shrink-0 text-[#0aa0b1]" aria-hidden="true" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Cerca in bacheca"
-            aria-label="Cerca in bacheca"
-            className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/45"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              aria-label="Cancella ricerca"
-              className="press text-white/70"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      )}
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent className="w-[min(78vw,380px)] max-w-[380px] gap-0 overflow-y-auto rounded-[14px] border-0 bg-[#292929] px-5 pb-5 pt-8 text-white shadow-xl sm:rounded-[14px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-9 [&>button]:w-9 [&>button]:opacity-100 [&>button>svg]:h-7 [&>button>svg]:w-7">
+          <DialogTitle className="text-left text-[16px] font-normal tracking-wide text-white">
+            FILTRA
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Filtra le circolari per testo e intervallo di date.
+          </DialogDescription>
+
+          <div className="mt-7 flex items-center gap-4">
+            <Search
+              className="h-[58px] w-[58px] shrink-0 text-white"
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+            <input
+              value={draftFilters.query}
+              onChange={(event) =>
+                setDraftFilters((current) => ({ ...current, query: event.target.value }))
+              }
+              placeholder="Cerca..."
+              aria-label="Cerca circolari"
+              className="h-[46px] min-w-0 flex-1 rounded-[11px] border border-white bg-[#333638] px-3 text-[15px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
+            />
+          </div>
+
+          <div className="mt-9 grid grid-cols-[44px_minmax(0,1fr)] items-center gap-x-3 gap-y-5">
+            <label htmlFor="bacheca-date-from" className="text-[15px] text-white">
+              Dal:
+            </label>
+            <input
+              id="bacheca-date-from"
+              type="date"
+              value={draftFilters.from}
+              onChange={(event) => {
+                setDraftFilters((current) => ({ ...current, from: event.target.value }));
+                setFilterError("");
+              }}
+              aria-label="Data iniziale"
+              className="h-[46px] min-w-0 w-full rounded-[11px] border border-white bg-[#333638] px-3 text-[15px] text-white outline-none [color-scheme:dark] focus:border-[#0aa0b1]"
+            />
+            <label htmlFor="bacheca-date-to" className="text-[15px] text-white">
+              Al:
+            </label>
+            <input
+              id="bacheca-date-to"
+              type="date"
+              value={draftFilters.to}
+              onChange={(event) => {
+                setDraftFilters((current) => ({ ...current, to: event.target.value }));
+                setFilterError("");
+              }}
+              aria-label="Data finale"
+              className="h-[46px] min-w-0 w-full rounded-[11px] border border-white bg-[#333638] px-3 text-[15px] text-white outline-none [color-scheme:dark] focus:border-[#0aa0b1]"
+            />
+          </div>
+
+          {filterError && <p className="mt-3 text-center text-xs text-red-300">{filterError}</p>}
+
+          <button
+            type="button"
+            onClick={applyFilters}
+            className="press mt-7 h-[48px] w-full rounded-[13px] bg-[#00a6b7] text-[14px] font-medium tracking-wide text-white"
+          >
+            APPLICA
+          </button>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="press mt-5 min-h-10 w-full text-[14px] tracking-wide text-white/85"
+          >
+            AZZERA FILTRO
+          </button>
+        </DialogContent>
+      </Dialog>
 
       <main className="px-3">
         {filtered.length ? (
@@ -175,8 +272,8 @@ function DidupBacheca() {
           <div className="mx-1 mt-6 rounded-[14px] bg-[#292929] px-5 py-10 text-center">
             <Folder className="mx-auto h-8 w-8 text-[#0aa0b1]" aria-hidden="true" />
             <p className="mt-4 text-sm text-white/90">
-              {query
-                ? "Nessuna circolare corrisponde alla ricerca."
+              {hasActiveFilters
+                ? "Nessuna circolare corrisponde ai filtri scelti."
                 : "Nessuna circolare in bacheca."}
             </p>
           </div>
@@ -185,13 +282,13 @@ function DidupBacheca() {
 
       <button
         type="button"
-        onClick={() => setSearchOpen((open) => !open)}
-        aria-label={searchOpen ? "Chiudi la ricerca" : "Cerca in bacheca"}
-        aria-expanded={searchOpen}
+        onClick={openFilter}
+        aria-label="Filtra la bacheca"
+        aria-expanded={filterOpen}
         className="press fixed bottom-[180px] z-30 flex h-[58px] w-[58px] items-center justify-center rounded-[18px] bg-[#0aa0b1] text-white shadow-lg"
         style={{ right: "max(16px, calc((100vw - 480px) / 2 + 16px))" }}
       >
-        {searchOpen ? <X className="h-7 w-7" /> : <Search className="h-7 w-7" />}
+        <Search className="h-7 w-7" />
       </button>
 
       <CircularViewer
