@@ -87,13 +87,13 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     id: "oro",
     label: "Oro",
     description: "Ossidiana, oro satinato e riflessi champagne",
-    sw: "radial-gradient(circle at 78% 24%,#fff4bd 0 3%,transparent 4%),linear-gradient(125deg,#17110a 0%,#513a14 34%,#d3a533 49%,#fff0a3 56%,#9a6d1c 67%,#24190b 100%)",
+    sw: "radial-gradient(ellipse at 20% 8%,#fff4bd55,transparent 42%),repeating-linear-gradient(135deg,transparent 0 20px,#f5d98718 20px 21px,transparent 21px 42px),linear-gradient(125deg,#17110a 0%,#513a14 34%,#d3a533 49%,#fff0a3 56%,#9a6d1c 67%,#24190b 100%)",
   },
   {
     id: "diamante",
     label: "Diamante",
     description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
-    sw: "linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
+    sw: "radial-gradient(circle at 72% 22%,#fff 0 1.6%,#c9f1ffbb 2.5%,transparent 17%),repeating-linear-gradient(135deg,transparent 0 19px,#e7faff22 19px 20px,transparent 20px 40px),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "tramonto",

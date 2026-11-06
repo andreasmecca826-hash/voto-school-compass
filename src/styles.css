@@ -602,6 +602,47 @@
     0 12px 30px -20px color-mix(in srgb, var(--theme-primary) 70%, transparent),
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 20%, transparent);
 }
+[data-theme="oro"] .bg-primary {
+  background-image: linear-gradient(
+    155deg,
+    color-mix(in srgb, white 22%, transparent),
+    transparent 48%,
+    color-mix(in srgb, #6b4b15 16%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
+    0 4px 12px -7px color-mix(in srgb, var(--theme-primary) 74%, transparent);
+}
+[data-theme="oro"] .bg-primary-soft {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, transparent);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 17%, transparent),
+    color-mix(in srgb, var(--theme-primary) 4%, transparent)
+  );
+}
+[data-theme="oro"] :is(
+  button[aria-pressed="true"],
+  [role="tab"][aria-selected="true"],
+  [data-sidebar="menu-button"][data-active="true"]
+) {
+  border-color: color-mix(in srgb, var(--theme-primary) 64%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-primary) 22%, transparent),
+    0 0 12px -7px color-mix(in srgb, var(--theme-primary) 74%, transparent);
+}
+[data-theme="oro"] nav:not(.didup-bottom) [aria-current="page"] > span {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+    0 2px 10px -5px color-mix(in srgb, var(--theme-primary) 75%, transparent);
+}
+[data-theme="oro"] [role="progressbar"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 26%, transparent);
+}
+[data-theme="oro"] [data-radix-progress-indicator] {
+  background-image: linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), transparent 70%);
+}
 [data-theme="diamante"] {
   --theme-bg-dark: oklch(0.105 0.05 255);
   --theme-card-dark: oklch(0.175 0.065 248);
@@ -657,6 +698,47 @@
   box-shadow:
     0 12px 30px -20px color-mix(in srgb, var(--theme-primary) 72%, transparent),
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 28%, transparent);
+}
+[data-theme="diamante"] .bg-primary {
+  background-image: linear-gradient(
+    115deg,
+    color-mix(in srgb, white 28%, transparent),
+    transparent 44%,
+    color-mix(in srgb, #4eaee9 14%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--theme-primary) 82%, transparent);
+}
+[data-theme="diamante"] .bg-primary-soft {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, white 12%, transparent),
+    color-mix(in srgb, var(--theme-primary) 10%, transparent)
+  );
+}
+[data-theme="diamante"] :is(
+  button[aria-pressed="true"],
+  [role="tab"][aria-selected="true"],
+  [data-sidebar="menu-button"][data-active="true"]
+) {
+  border-color: color-mix(in srgb, var(--theme-primary) 66%, white 34%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-primary) 30%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--theme-primary) 90%, transparent);
+}
+[data-theme="diamante"] nav:not(.didup-bottom) [aria-current="page"] > span {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 40%, white 60%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 36%, transparent),
+    0 0 12px -6px color-mix(in srgb, var(--theme-primary) 86%, transparent);
+}
+[data-theme="diamante"] [role="progressbar"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 32%, transparent);
+}
+[data-theme="diamante"] [data-radix-progress-indicator] {
+  background-image: linear-gradient(115deg, color-mix(in srgb, white 26%, transparent), transparent 58%);
 }
 [data-theme="custom"] {
   --theme-bg-dark: var(--custom-bg-dark);
