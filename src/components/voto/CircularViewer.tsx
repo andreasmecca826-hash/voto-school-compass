@@ -29,6 +29,27 @@ function internalPdfUrl(path: string, download = false, filename?: string) {
   return `/api/circulars/mirror?${params.toString()}`;
 }
 
+function mergeAttachments(
+  attachments: CircularAttachment[] | undefined,
+  fallback: CircularAttachment,
+): CircularAttachment[] {
+  const merged: CircularAttachment[] = [];
+  for (const file of [...(attachments ?? []), fallback]) {
+    if (!file.name && !file.path && !file.url) continue;
+    const name = file.name?.trim().toLocaleLowerCase("it-IT");
+    const existingIndex = name
+      ? merged.findIndex((item) => item.name?.trim().toLocaleLowerCase("it-IT") === name)
+      : -1;
+    if (existingIndex >= 0) {
+      const existing = merged[existingIndex];
+      if (!existing.path && file.path) merged[existingIndex] = file;
+      continue;
+    }
+    merged.push(file);
+  }
+  return merged;
+}
+
 export function CircularViewer({
   open,
   onOpenChange,
@@ -46,11 +67,7 @@ export function CircularViewer({
   path?: string | undefined;
   attachments?: CircularAttachment[] | undefined;
 }) {
-  const files = attachments?.length
-    ? attachments
-    : fileName || path || url
-      ? [{ name: fileName, path, url }]
-      : [];
+  const files = mergeAttachments(attachments, { name: fileName, path, url });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();

@@ -41,4 +41,24 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
   });
+
+  it("preferisce il path PDF interno al duplicato esterno", () => {
+    const path = `circulars/${"c".repeat(64)}.pdf`;
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare con allegati misti"
+        fileName="circolare.pdf"
+        path={path}
+        url={undefined}
+        attachments={[{ name: "circolare.pdf", url: "https://example.invalid/file.pdf" }]}
+      />,
+    );
+
+    expect(screen.getByTitle("circolare.pdf")).toHaveAttribute(
+      "src",
+      `/api/circulars/mirror?path=${encodeURIComponent(path)}`,
+    );
+  });
 });
