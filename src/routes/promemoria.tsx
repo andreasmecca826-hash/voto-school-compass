@@ -50,24 +50,22 @@ function DidupPromemoria() {
       key={reminder.id}
       className="min-h-[162px] border-b border-[#414141] bg-[#262729] px-[26px] pb-[18px] pt-[26px] last:border-b-0"
     >
-      <div className="flex items-start gap-[9px]">
-        <div className="flex shrink-0 flex-col items-start">
-          <img
-            src="/didup-icons/person.png"
-            alt=""
-            aria-hidden="true"
-            className="h-[20px] w-[21px] object-contain"
-          />
-          <time
-            dateTime={reminder.date}
-            className="mt-[5px] whitespace-nowrap text-[15px] font-medium leading-4 text-[#0aa0b1]"
-          >
-            {reminderDate(reminder.date)}
-          </time>
-        </div>
-        <p className="pt-[1px] text-[18px] font-semibold leading-5 uppercase">
+      <div className="relative h-[44px]">
+        <img
+          src="/didup-icons/person.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-0 top-[2px] h-[20px] w-[21px] object-contain"
+        />
+        <p className="absolute left-[28px] right-0 top-[1px] truncate text-[18px] font-semibold leading-5 uppercase">
           {reminder.teacher || reminder.subject || "SCUOLA"}
         </p>
+        <time
+          dateTime={reminder.date}
+          className="absolute left-0 top-[25px] whitespace-nowrap text-[15px] font-medium leading-4 text-[#0aa0b1]"
+        >
+          {reminderDate(reminder.date)}
+        </time>
       </div>
       <p className="mt-[32px] whitespace-pre-line break-words text-[18px] leading-[1.4] text-white/90">
         {reminder.message?.trim() || reminder.title}
