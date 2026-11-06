@@ -137,7 +137,7 @@ function DidupBacheca() {
       </header>
 
       <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-        <DialogContent className="w-[min(78vw,380px)] max-w-[380px] gap-0 overflow-y-auto rounded-[14px] border-0 bg-[#292929] px-5 pb-5 pt-8 text-white shadow-xl sm:rounded-[14px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-9 [&>button]:w-9 [&>button]:opacity-100 [&>button>svg]:h-7 [&>button>svg]:w-7">
+        <DialogContent className="max-h-[78dvh] w-[min(70vw,380px)] max-w-[380px] scale-[1.12] gap-0 overflow-y-auto rounded-[16px] border-0 bg-[#292929] px-6 pb-6 pt-9 text-white shadow-xl sm:rounded-[16px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-10 [&>button]:w-10 [&>button]:opacity-100 [&>button>svg]:h-8 [&>button>svg]:w-8">
           <DialogTitle className="text-left text-[16px] font-normal tracking-wide text-white">
             FILTRA
           </DialogTitle>
