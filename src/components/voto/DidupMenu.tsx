@@ -84,10 +84,10 @@ const ITEMS: MenuItem[] = [
     to: "/orario",
   },
   {
-    label: "Ricevimento docenti",
+    label: "Condivisione",
     color: "#8ab971",
     icon: UsersRound,
-    iconImage: "/didup-menu-icons/ricevimento-docenti.png",
+    iconImage: "/didup-menu-icons/condivisione.png",
     to: "/professori",
   },
   {
