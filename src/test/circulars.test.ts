@@ -5,9 +5,11 @@ import {
   requestCircularCheck,
 } from "@/lib/voto/circulars";
 import type { VotoData } from "@/lib/voto/types";
+import { supabase } from "@/lib/supabase-auth";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 const emptyData = (notifications: VotoData["notifications"]): VotoData => ({
@@ -49,6 +51,10 @@ describe("mirrorCirculars", () => {
   });
 
   it("requests a short-lived URL only for an internally stored PDF", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "test-user-token" } as never },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
     const signedUrl =
       "https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/circulars/circulars/file.pdf?token=test";
     const fetchMock = vi.fn().mockResolvedValue(
@@ -77,6 +83,7 @@ describe("mirrorCirculars", () => {
         method: "POST",
         headers: expect.objectContaining({
           apikey: "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1",
+          Authorization: "Bearer test-user-token",
         }),
         body: JSON.stringify({ path }),
       }),
@@ -110,13 +117,10 @@ describe("circular check trigger", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({ ok: false, error: "recent", retryAfterSeconds: 70 }),
-          {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          },
-        ),
+        new Response(JSON.stringify({ ok: false, error: "recent", retryAfterSeconds: 70 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
       ),
     );
 

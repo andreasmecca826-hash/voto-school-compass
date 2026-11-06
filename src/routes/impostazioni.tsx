@@ -8,8 +8,6 @@ import {
   Download,
   Eye,
   EyeOff,
-  Github,
-  Loader2,
   Moon,
   RotateCcw,
   Save,
@@ -21,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
+import { useSchoolAuth } from "@/lib/school-auth-context";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
 import { canResetDemoData } from "@/lib/voto/demo";
@@ -41,9 +40,15 @@ export const Route = createFileRoute("/impostazioni")({
   head: () => ({
     meta: [
       { title: "Impostazioni — VOTO." },
-      { name: "description", content: "Connessione GitHub, tema e informazioni app." },
+      {
+        name: "description",
+        content: "Accesso privato ai dati scolastici, tema e informazioni app.",
+      },
       { property: "og:title", content: "Impostazioni — VOTO." },
-      { property: "og:description", content: "Connessione GitHub, tema e informazioni app." },
+      {
+        property: "og:description",
+        content: "Accesso privato ai dati scolastici, tema e informazioni app.",
+      },
     ],
   }),
   component: Settings,
@@ -229,7 +234,7 @@ function addDaysToDateValue(value: string, days: number): string {
 
 function Settings() {
   const v = useVoto();
-  const [input, setInput] = useState(v.url);
+  const auth = useSchoolAuth();
   const [calendarFrom, setCalendarFrom] = useState("");
   const [calendarTo, setCalendarTo] = useState("");
   const [calendarInclude, setCalendarInclude] = useState({
@@ -238,7 +243,6 @@ function Settings() {
     reminders: true,
   });
   const preferencesInput = useRef<HTMLInputElement>(null);
-  const [testing, setTesting] = useState(false);
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
   const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
@@ -247,7 +251,6 @@ function Settings() {
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
   useEffect(() => {
-    setInput(v.url);
     if (!canResetDemoData(v.source, v.url)) {
       setDebugOpen(false);
       debugTaps.current = { count: 0, last: 0 };
@@ -366,43 +369,10 @@ function Settings() {
         </p>
       </section>
 
-      <SectionTitle>Connessione GitHub</SectionTitle>
+      <SectionTitle>Accesso ai dati privati</SectionTitle>
       <section className="card-surface p-4">
-        <label htmlFor="url" className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Github className="h-4 w-4" /> URL raw del file JSON (https)
-        </label>
-        <input
-          id="url"
-          type="url"
-          inputMode="url"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="https://raw.githubusercontent.com/utente/repo/main/voto.json"
-          className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 font-mono text-xs"
-        />
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            disabled={testing || !input.trim()}
-            onClick={async () => {
-              setTesting(true);
-              await v.connect(input);
-              setTesting(false);
-            }}
-            className="press flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
-          >
-            {testing && <Loader2 className="h-4 w-4 animate-spin" />} Testa e salva
-          </button>
-          {v.url && (
-            <button
-              type="button"
-              onClick={v.disconnect}
-              className="press h-11 rounded-xl border border-border px-4 text-sm"
-            >
-              Scollega
-            </button>
-          )}
-        </div>
+        <p className="text-xs text-muted-foreground">Account autorizzato</p>
+        <p className="mt-1 break-all text-sm font-medium">{auth.email || "Account Supabase"}</p>
         <p
           className={cn(
             "mt-3 text-xs",
@@ -415,11 +385,17 @@ function Settings() {
           Ultima sincronizzazione: {fmtTime(v.lastSync)}
         </p>
         <div className="mt-4 flex gap-2 rounded-xl bg-surface p-3 text-[11px] text-muted-foreground">
-          <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />
-          Un repository pubblico rende i dati visibili a chiunque abbia l'URL. Evita nome completo,
-          credenziali o dati personali: preferisci dati pseudonimizzati. Nessun token viene salvato
-          nell'app.
+          <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />I dati sono letti da uno storage
+          privato e l’Edge Function li consegna solo all’account autorizzato. La sessione resta sul
+          dispositivo; non inserire credenziali DidUP nell’app.
         </div>
+        <button
+          type="button"
+          onClick={() => void auth.signOut()}
+          className="press mt-4 h-11 w-full rounded-xl border border-border text-sm font-medium"
+        >
+          Esci dall’account
+        </button>
       </section>
 
       <AppPinLockSettings />

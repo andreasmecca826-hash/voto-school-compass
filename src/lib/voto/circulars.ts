@@ -1,36 +1,23 @@
 import type { AppNotification, VotoData } from "./types";
+import { supabase } from "../supabase-auth";
+import { supabaseProjectUrl, supabasePublishableKey } from "../supabase-config";
+export { supabaseProjectUrl, supabasePublishableKey } from "../supabase-config";
 
 const INTERNAL_ATTACHMENT_PATH = /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/;
-const DEFAULT_SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
-// Publishable key: è destinata al client; non usare mai una service-role key nel browser.
-const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
 
 type SignedUrlResponse = { path?: unknown; signedUrl?: unknown };
-
-function supabaseProjectUrl() {
-  const raw = (import.meta.env["VITE_SUPABASE_URL"] as string | undefined)?.trim();
-  if (!raw) return DEFAULT_SUPABASE_URL;
-  if (/^[a-z0-9]{20}$/i.test(raw)) return `https://${raw}.supabase.co`;
-  return raw.replace(/\/+$/, "");
-}
-
-function supabasePublishableKey() {
-  return (
-    (import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined) ||
-    (import.meta.env["VITE_SUPABASE_ANON_KEY"] as string | undefined) ||
-    DEFAULT_SUPABASE_PUBLISHABLE_KEY
-  );
-}
 
 async function signedAttachmentUrl(path: string): Promise<string | null> {
   const projectUrl = supabaseProjectUrl();
   const key = supabasePublishableKey();
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return null;
   try {
     const response = await fetch(`${projectUrl}/functions/v1/mirror-circular`, {
       method: "POST",
       headers: {
         apikey: key,
-        Authorization: `Bearer ${key}`,
+        Authorization: `Bearer ${data.session.access_token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ path }),
@@ -78,11 +65,12 @@ async function checkResponse(response: Response): Promise<CheckPayload> {
   }
 }
 
-function checkRequestHeaders() {
+async function checkRequestHeaders() {
   const key = supabasePublishableKey();
+  const { data } = await supabase.auth.getSession();
   return {
     apikey: key,
-    Authorization: `Bearer ${key}`,
+    Authorization: `Bearer ${data.session?.access_token ?? key}`,
     "Content-Type": "application/json",
   };
 }
@@ -94,7 +82,7 @@ export async function requestCircularCheck(): Promise<string> {
   try {
     response = await fetch(CIRCULAR_CHECK_ENDPOINT, {
       method: "POST",
-      headers: checkRequestHeaders(),
+      headers: await checkRequestHeaders(),
       body: "{}",
     });
   } catch {
@@ -120,7 +108,7 @@ export async function getCircularCheckStatus(after: string): Promise<CircularChe
   url.searchParams.set("after", after);
   let response: Response;
   try {
-    response = await fetch(url, { headers: checkRequestHeaders(), cache: "no-store" });
+    response = await fetch(url, { headers: await checkRequestHeaders(), cache: "no-store" });
   } catch {
     throw new Error("Impossibile leggere lo stato del controllo.");
   }

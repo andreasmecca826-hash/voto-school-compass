@@ -144,14 +144,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isWindows7 = v.theme === "windows-7" && v.registryStyle !== "didup";
   const seasonalTheme =
-    v.registryStyle === "voto" &&
-    SEASONAL_THEMES.includes(v.theme as SeasonalTheme)
+    v.registryStyle === "voto" && SEASONAL_THEMES.includes(v.theme as SeasonalTheme)
       ? (v.theme as SeasonalTheme)
       : null;
-  const routeTitle = [...NAV, ...MORE_NAV,
-    { to: "/studio", label: "Studio Lab." },
-    { to: "/assistente", label: "Assistente" },
-  ].find(({ to }) => to === "/" ? path === "/" : path === to || path.startsWith(`${to}/`))?.label || "Registro scolastico";
+  const routeTitle =
+    [
+      ...NAV,
+      ...MORE_NAV,
+      { to: "/studio", label: "Studio Lab." },
+      { to: "/assistente", label: "Assistente" },
+    ].find(({ to }) => (to === "/" ? path === "/" : path === to || path.startsWith(`${to}/`)))
+      ?.label || "Registro scolastico";
   const [notif, setNotif] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [sim, setSim] = useState<{ open: boolean; subjectId?: string | undefined }>({
@@ -198,9 +201,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.theme = v.theme;
-    root.dataset.mode = v.mode;
-    root.dataset.registryStyle = v.registryStyle;
+    root.dataset["theme"] = v.theme;
+    root.dataset["mode"] = v.mode;
+    root.dataset["registryStyle"] = v.registryStyle;
   }, [v.theme, v.mode, v.registryStyle]);
 
   const dateLabel = v.ready
@@ -235,72 +238,102 @@ export function AppShell({ children }: { children: ReactNode }) {
           <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
         </Suspense>
       )}
-      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", v.registryStyle !== "didup" && "voto-shell", isWindows7 && "windows7-shell")}>
+      <div
+        className={cn(
+          "mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl",
+          v.registryStyle !== "didup" && "voto-shell",
+          isWindows7 && "windows7-shell",
+        )}
+      >
         {seasonalTheme && <SeasonalAtmosphere theme={seasonalTheme} />}
-        {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className={cn("glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]", isWindows7 && "windows7-header")}>
-          {isWindows7 && (
-            <div className="windows7-titlebar">
-              <Link to="/" className="windows7-titlebar-brand" aria-label="VOTO. dashboard">
-                <Windows7Orb className="windows7-titlebar-icon" />
-                <span>VOTO</span>
-              </Link>
-              <span className="windows7-titlebar-title windows7-titlebar-route">{routeTitle}</span>
-            </div>
-          )}
-          <div className={cn("flex h-16 items-center justify-between px-5", isWindows7 && "windows7-toolbar")}>
-            <div className={cn("min-w-0", isWindows7 && "windows7-toolbar-info")}>
-              {isWindows7 ? <span className="windows7-toolbar-caption">Registro scolastico</span> : <Link
-                to="/"
-                className="font-display text-xl font-bold tracking-tight"
-                aria-label="VOTO. dashboard"
-              >
-                VOTO<span className="text-primary">.</span>
-              </Link>}
-              <p className="truncate text-[11px] capitalize text-muted-foreground">
-                {dateLabel || "\u00a0"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {v.source === "demo" && v.ready && (
-                <span className="rounded-md border border-primary/40 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-widest text-primary">
-                  DEMO
+        {v.registryStyle === "didup" ? (
+          <div className="hidden" aria-hidden="true" />
+        ) : (
+          <header
+            className={cn(
+              "glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]",
+              isWindows7 && "windows7-header",
+            )}
+          >
+            {isWindows7 && (
+              <div className="windows7-titlebar">
+                <Link to="/" className="windows7-titlebar-brand" aria-label="VOTO. dashboard">
+                  <Windows7Orb className="windows7-titlebar-icon" />
+                  <span>VOTO</span>
+                </Link>
+                <span className="windows7-titlebar-title windows7-titlebar-route">
+                  {routeTitle}
                 </span>
+              </div>
+            )}
+            <div
+              className={cn(
+                "flex h-16 items-center justify-between px-5",
+                isWindows7 && "windows7-toolbar",
               )}
-              <Link
-                to="/assistente"
-                className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-                aria-label="Assistente"
-              >
-                <MessageCircle className="h-[18px] w-[18px]" />
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  setMounted((current) => ({ ...current, notifications: true }));
-                  setNotif(true);
-                }}
-                className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-                aria-label="Novità"
-                title="Novità"
-              >
-                <Newspaper className="h-[18px] w-[18px]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => v.refresh()}
-                disabled={v.loading}
-                className="press flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium disabled:opacity-70"
-                aria-label="Aggiorna dati"
-              >
-                <RefreshCw className={cn("h-4 w-4", v.loading && "animate-spin")} />
-                Aggiorna
-              </button>
+            >
+              <div className={cn("min-w-0", isWindows7 && "windows7-toolbar-info")}>
+                {isWindows7 ? (
+                  <span className="windows7-toolbar-caption">Registro scolastico</span>
+                ) : (
+                  <Link
+                    to="/"
+                    className="font-display text-xl font-bold tracking-tight"
+                    aria-label="VOTO. dashboard"
+                  >
+                    VOTO<span className="text-primary">.</span>
+                  </Link>
+                )}
+                <p className="truncate text-[11px] capitalize text-muted-foreground">
+                  {dateLabel || "\u00a0"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {v.source === "demo" && v.ready && (
+                  <span className="rounded-md border border-primary/40 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-widest text-primary">
+                    DEMO
+                  </span>
+                )}
+                <Link
+                  to="/assistente"
+                  className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+                  aria-label="Assistente"
+                >
+                  <MessageCircle className="h-[18px] w-[18px]" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMounted((current) => ({ ...current, notifications: true }));
+                    setNotif(true);
+                  }}
+                  className="press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+                  aria-label="Novità"
+                  title="Novità"
+                >
+                  <Newspaper className="h-[18px] w-[18px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => v.refresh()}
+                  disabled={v.loading}
+                  className="press flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium disabled:opacity-70"
+                  aria-label="Aggiorna dati"
+                >
+                  <RefreshCw className={cn("h-4 w-4", v.loading && "animate-spin")} />
+                  Aggiorna
+                </button>
+              </div>
             </div>
-          </div>
-        </header>}
+          </header>
+        )}
 
         <main
-          className={cn("relative flex-1", v.registryStyle === "didup" ? "px-0" : "px-5 pb-28", isWindows7 && "windows7-content")}
+          className={cn(
+            "relative flex-1",
+            v.registryStyle === "didup" ? "px-0" : "px-5 pb-28",
+            isWindows7 && "windows7-content",
+          )}
           onTouchStart={handlePullStart}
           onTouchMove={handlePullMove}
           onTouchEnd={handlePullEnd}
@@ -318,14 +351,29 @@ export function AppShell({ children }: { children: ReactNode }) {
             {pullDistance >= 56 ? "Rilascia per aggiornare" : "Trascina per aggiornare"}
           </div>
           {v.ready ? (
-            moreOpen && !isWindows7 ? (v.registryStyle === "didup" ? <DidupMenu /> : <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />) :
-              v.registryStyle === "didup" && path === "/" ? <DidupDashboard /> : children
+            moreOpen && !isWindows7 ? (
+              v.registryStyle === "didup" ? (
+                <DidupMenu />
+              ) : (
+                <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />
+              )
+            ) : v.registryStyle === "didup" && path === "/" ? (
+              <DidupDashboard />
+            ) : (
+              children
+            )
           ) : (
             <ShellSkeleton />
           )}
         </main>
 
-        {v.registryStyle === "didup" ? <DidupBottomNav path={path} moreOpen={moreOpen} onMenu={() => setMoreOpen((open) => !open)} /> : isWindows7 ? (
+        {v.registryStyle === "didup" ? (
+          <DidupBottomNav
+            path={path}
+            moreOpen={moreOpen}
+            onMenu={() => setMoreOpen((open) => !open)}
+          />
+        ) : isWindows7 ? (
           <Windows7Taskbar
             navigation={NAV}
             moreNavigation={MORE_NAV}
@@ -336,65 +384,67 @@ export function AppShell({ children }: { children: ReactNode }) {
             open={moreOpen}
             onOpenChange={setMoreOpen}
           />
-        ) : <nav
-          className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
-          aria-label="Navigazione principale"
-        >
-          <ul className="grid grid-cols-3">
-            {NAV.map(({ to, label, icon: Icon }) => {
-              const active = to === "/" ? path === "/" : path.startsWith(to);
-              return (
-                <li key={to}>
-                  <Link
-                    to={to}
-                    onClick={() => setMoreOpen(false)}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "press flex h-16 flex-col items-center justify-center gap-1 text-[10.5px] font-medium",
-                      active ? "text-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    <span
+        ) : (
+          <nav
+            className="glass-panel safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t bg-background/60 md:bottom-6 md:rounded-b-[2rem]"
+            aria-label="Navigazione principale"
+          >
+            <ul className="grid grid-cols-3">
+              {NAV.map(({ to, label, icon: Icon }) => {
+                const active = to === "/" ? path === "/" : path.startsWith(to);
+                return (
+                  <li key={to}>
+                    <Link
+                      to={to}
+                      onClick={() => setMoreOpen(false)}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
-                        active && "bg-primary-soft text-primary",
+                        "press flex h-16 flex-col items-center justify-center gap-1 text-[10.5px] font-medium",
+                        active ? "text-foreground" : "text-muted-foreground",
                       )}
                     >
-                      <Icon className="h-[19px] w-[19px]" />
-                    </span>
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-            <li>
-              <button
-                type="button"
-                onClick={() => setMoreOpen((open) => !open)}
-                aria-expanded={moreOpen}
-                aria-label="Menu Altro"
-                className={cn(
-                  "press flex h-16 w-full flex-col items-center justify-center gap-1 text-[10.5px] font-medium",
-                  moreOpen ? "text-foreground" : "text-muted-foreground",
-                )}
-              >
-                <span
+                      <span
+                        className={cn(
+                          "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                          active && "bg-primary-soft text-primary",
+                        )}
+                      >
+                        <Icon className="h-[19px] w-[19px]" />
+                      </span>
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen((open) => !open)}
+                  aria-expanded={moreOpen}
+                  aria-label="Menu Altro"
                   className={cn(
-                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
-                    moreOpen && "bg-primary-soft text-primary",
+                    "press flex h-16 w-full flex-col items-center justify-center gap-1 text-[10.5px] font-medium",
+                    moreOpen ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {moreOpen ? (
-                    <X className="h-[19px] w-[19px]" />
-                  ) : (
-                    <Menu className="h-[19px] w-[19px]" />
-                  )}
-                </span>
-                Altro
-              </button>
-            </li>
-          </ul>
-        </nav>}
+                  <span
+                    className={cn(
+                      "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                      moreOpen && "bg-primary-soft text-primary",
+                    )}
+                  >
+                    {moreOpen ? (
+                      <X className="h-[19px] w-[19px]" />
+                    ) : (
+                      <Menu className="h-[19px] w-[19px]" />
+                    )}
+                  </span>
+                  Altro
+                </button>
+              </li>
+            </ul>
+          </nav>
+        )}
       </div>
 
       {v.ready && (mounted.notifications || mounted.simulator || mounted.subject) && (
@@ -432,11 +482,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function SeasonalAtmosphere({
-  theme,
-}: {
-  theme: "primavera" | "estate" | "autunno" | "inverno";
-}) {
+function SeasonalAtmosphere({ theme }: { theme: "primavera" | "estate" | "autunno" | "inverno" }) {
   const count = theme === "inverno" ? 14 : 8;
   return (
     <div className={cn("seasonal-atmosphere", `seasonal-atmosphere-${theme}`)} aria-hidden="true">
@@ -501,10 +547,23 @@ function DidupBottomNav({
           if (moreOpen) onMenu();
         }}
         aria-current={homeActive ? "page" : undefined}
-        className={cn("flex flex-col items-center gap-1 text-xs", homeActive ? "text-white" : "text-white/65")}
+        className={cn(
+          "flex flex-col items-center gap-1 text-xs",
+          homeActive ? "text-white" : "text-white/65",
+        )}
       >
-        <span className={cn("relative flex h-11 w-11 items-center justify-center rounded-full", homeActive && "bg-[#4169a8]")}>
-          <img src="/didup-nav-home.png" alt="" aria-hidden="true" className={cn("h-7 w-7 object-contain", homeActive && "brightness-0 invert")} />
+        <span
+          className={cn(
+            "relative flex h-11 w-11 items-center justify-center rounded-full",
+            homeActive && "bg-[#4169a8]",
+          )}
+        >
+          <img
+            src="/didup-nav-home.png"
+            alt=""
+            aria-hidden="true"
+            className={cn("h-7 w-7 object-contain", homeActive && "brightness-0 invert")}
+          />
         </span>
         Home
       </Link>
@@ -514,10 +573,23 @@ function DidupBottomNav({
           if (moreOpen) onMenu();
         }}
         aria-current={diaryActive ? "page" : undefined}
-        className={cn("flex flex-col items-center gap-1 text-xs", diaryActive ? "text-white" : "text-white/65")}
+        className={cn(
+          "flex flex-col items-center gap-1 text-xs",
+          diaryActive ? "text-white" : "text-white/65",
+        )}
       >
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", diaryActive && "bg-[#4169a8]")}>
-          <img src="/didup-nav-diary.png" alt="" aria-hidden="true" className={cn("h-7 w-7 object-contain", diaryActive && "brightness-0 invert")} />
+        <span
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-full",
+            diaryActive && "bg-[#4169a8]",
+          )}
+        >
+          <img
+            src="/didup-nav-diary.png"
+            alt=""
+            aria-hidden="true"
+            className={cn("h-7 w-7 object-contain", diaryActive && "brightness-0 invert")}
+          />
         </span>
         Diario
       </Link>
@@ -527,9 +599,17 @@ function DidupBottomNav({
         aria-expanded={moreOpen}
         aria-current={menuActive ? "page" : undefined}
         aria-label="Menu"
-        className={cn("flex flex-col items-center gap-1 text-xs", menuActive ? "text-white" : "text-white/65")}
+        className={cn(
+          "flex flex-col items-center gap-1 text-xs",
+          menuActive ? "text-white" : "text-white/65",
+        )}
       >
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-full", menuActive && "bg-[#f5b52e]")}>
+        <span
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-full",
+            menuActive && "bg-[#f5b52e]",
+          )}
+        >
           <DidupMenuIcon active={menuActive} />
         </span>
         Menu
@@ -540,10 +620,17 @@ function DidupBottomNav({
 
 function DidupMenuIcon({ active }: { active: boolean }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className={cn("h-6 w-6", active ? "text-white" : "text-[#263b88]")} fill="currentColor">
-      {[5, 12, 19].flatMap((x) => [5, 12, 19].map((y) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r={x === 12 && y === 12 ? 1.8 : 1.35} />
-      )))}
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className={cn("h-6 w-6", active ? "text-white" : "text-[#263b88]")}
+      fill="currentColor"
+    >
+      {[5, 12, 19].flatMap((x) =>
+        [5, 12, 19].map((y) => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r={x === 12 && y === 12 ? 1.8 : 1.35} />
+        )),
+      )}
     </svg>
   );
 }
@@ -600,9 +687,7 @@ function MoreMenu({
           const active = currentPath.startsWith(to);
           const cardContent = (
             <>
-              <span
-                className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center"
-              >
+              <span className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center">
                 <Icon className="h-7 w-7" style={{ color }} />
               </span>
               <span className="pr-1">
