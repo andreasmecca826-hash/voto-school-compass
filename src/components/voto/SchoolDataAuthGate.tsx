@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { claimSchoolDataAccess, PRIVATE_SCHOOL_DATA_URL, supabase } from "@/lib/supabase-auth";
-import { SchoolAuthContext } from "@/lib/school-auth-context";
+import { SchoolAuthContext, type PrefetchedSchoolData } from "@/lib/school-auth-context";
 import { fetchVotoData } from "@/lib/voto/parse";
 import { KEYS, load, save } from "@/lib/voto/storage";
 
@@ -16,8 +16,22 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   const [claimCode, setClaimCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const sessionRef = useRef<Session | null>(null);
+  const prefetchedDataRef = useRef<(PrefetchedSchoolData & { ownerId: string }) | null>(null);
+
+  const consumePrefetchedData = useCallback((): PrefetchedSchoolData | null => {
+    const pending = prefetchedDataRef.current;
+    if (!pending) return null;
+    if (pending.ownerId !== sessionRef.current?.user.id) {
+      prefetchedDataRef.current = null;
+      return null;
+    }
+    prefetchedDataRef.current = null;
+    return { url: pending.url, data: pending.data, lastSync: pending.lastSync };
+  }, []);
 
   async function activate(userSession: Session) {
+    sessionRef.current = userSession;
     setSession(userSession);
     save(KEYS.url, PRIVATE_SCHOOL_DATA_URL);
     const cached = load<unknown>(KEYS.cache, null);
@@ -26,11 +40,19 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       setStep("ready");
       return;
     }
+    prefetchedDataRef.current = null;
     try {
       const data = await fetchVotoData(PRIVATE_SCHOOL_DATA_URL);
+      const lastSync = new Date().toISOString();
       save(KEYS.cache, data);
-      save(KEYS.lastSync, new Date().toISOString());
+      save(KEYS.lastSync, lastSync);
       save(OWNER_KEY, userSession.user.id);
+      prefetchedDataRef.current = {
+        ownerId: userSession.user.id,
+        url: PRIVATE_SCHOOL_DATA_URL,
+        data,
+        lastSync,
+      };
       setError("");
       setStep("ready");
     } catch (caught) {
@@ -39,6 +61,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         setStep("claim");
         setError("");
       } else if (message.startsWith("PRIVATE_DATA_UNAUTHENTICATED:")) {
+        sessionRef.current = null;
         setSession(null);
         setStep("email");
         setError("La sessione è scaduta. Accedi di nuovo.");
@@ -61,6 +84,8 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     });
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === "SIGNED_OUT" && mounted) {
+        sessionRef.current = null;
+        prefetchedDataRef.current = null;
         setSession(null);
         setStep("email");
         setError("");
@@ -169,15 +194,19 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     }
   }
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
+    sessionRef.current = null;
+    prefetchedDataRef.current = null;
     await supabase.auth.signOut();
     setSession(null);
     setStep("email");
-  }
+  }, []);
 
   if (step === "ready") {
     return (
-      <SchoolAuthContext.Provider value={{ email: session?.user.email ?? "", signOut }}>
+      <SchoolAuthContext.Provider
+        value={{ email: session?.user.email ?? "", signOut, consumePrefetchedData }}
+      >
         {children}
       </SchoolAuthContext.Provider>
     );

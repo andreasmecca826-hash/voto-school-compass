@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData, normalizeCachedGradeValues } from "./parse";
 import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
+import { SchoolAuthContext, type PrefetchedSchoolData } from "../school-auth-context";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
@@ -269,6 +270,8 @@ const EMPTY: VotoData = {
 };
 
 export function VotoProvider({ children }: { children: ReactNode }) {
+  const consumePrefetchedData = useContext(SchoolAuthContext)?.consumePrefetchedData;
+  const prefetchedDataRef = useRef<PrefetchedSchoolData | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const [data, setData] = useState<VotoData>(EMPTY);
   const [displayName, setDisplayNameS] = useState("");
@@ -328,7 +331,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const u = load<string>(KEYS.url, "");
+    const storedUrl = load<string>(KEYS.url, "");
+    if (prefetchedDataRef.current === undefined) {
+      prefetchedDataRef.current = consumePrefetchedData?.() ?? null;
+    }
+    const candidate = prefetchedDataRef.current;
+    const prefetchedData =
+      candidate && (!storedUrl || candidate.url === storedUrl) ? candidate : null;
+    const u = storedUrl || prefetchedData?.url || "";
     const rawCache = load<VotoData | null>(KEYS.cache, null);
     const cache =
       rawCache && Array.isArray(rawCache.subjects)
@@ -363,7 +373,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
     const demoData = load<VotoData | null>(KEYS.demoData, null);
-    if (u && cache && Array.isArray(cache.subjects)) {
+    if (u && prefetchedData) {
+      const normalizedData = normalizeCachedGradeValues(prefetchedData.data);
+      setData(normalizedData);
+      setSource("remote");
+      setLastSync(prefetchedData.lastSync);
+      setError(null);
+      if (normalizedData !== prefetchedData.data) save(KEYS.cache, normalizedData);
+    } else if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
       setSource("cache");
       if (cache !== rawCache) save(KEYS.cache, cache);
@@ -378,10 +395,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     }
     setNow(new Date());
     setReady(true);
-    if (u) void refreshImpl(u, true);
+    if (u && !prefetchedData) void refreshImpl(u, true);
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
-  }, [refreshImpl]);
+  }, [refreshImpl, consumePrefetchedData]);
 
   useEffect(() => {
     if (!ready || !url) return;
