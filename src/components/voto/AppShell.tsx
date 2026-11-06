@@ -221,7 +221,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <MusicPanel open={musicOpen} onClose={() => setMusicOpen(false)} />
         </Suspense>
       )}
-      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", isWindows7 && "windows7-shell")}>
+      <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border md:shadow-2xl", v.registryStyle !== "didup" && "voto-shell", isWindows7 && "windows7-shell")}>
         {v.registryStyle === "didup" ? <div className="hidden" aria-hidden="true" /> : <header className={cn("glass-panel safe-top sticky top-0 z-30 border-b bg-background/60 md:rounded-t-[2rem]", isWindows7 && "windows7-header")}>
           {isWindows7 && (
             <div className="windows7-titlebar">

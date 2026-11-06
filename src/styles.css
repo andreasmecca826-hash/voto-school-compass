@@ -735,6 +735,14 @@
   border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
   background-color: color-mix(in srgb, var(--color-card) 94%, transparent);
 }
+:root:is([data-theme="primavera"], [data-theme="estate"], [data-theme="autunno"], [data-theme="inverno"]):not([data-registry-style="didup"])
+  .voto-shell {
+  background-color: var(--color-background);
+  background-image: inherit;
+  background-position: inherit;
+  background-size: inherit;
+  background-attachment: local;
+}
 [data-theme="tramonto"] {
   --theme-bg-dark: oklch(0.15 0.05 350);
   --theme-card-dark: oklch(0.23 0.07 350);
