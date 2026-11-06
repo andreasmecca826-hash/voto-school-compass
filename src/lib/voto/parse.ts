@@ -11,7 +11,7 @@ import type {
   Subject,
   VotoData,
 } from "./types";
-import { mirrorCirculars, supabasePublishableKey } from "./circulars";
+import { supabasePublishableKey } from "./circulars";
 import { PRIVATE_SCHOOL_DATA_URL, supabase } from "../supabase-auth";
 
 export class SchemaError extends Error {}
@@ -401,5 +401,5 @@ export async function fetchVotoData(url: string, timeoutMs = 10000): Promise<Vot
   } catch {
     throw new SchemaError("Il file non è JSON valido.");
   }
-  return mirrorCirculars(parseVotoData(json));
+  return parseVotoData(json);
 }
