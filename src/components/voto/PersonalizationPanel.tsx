@@ -87,13 +87,13 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     id: "oro",
     label: "Oro",
     description: "Ossidiana, oro satinato e riflessi champagne",
-    sw: "radial-gradient(ellipse at 20% 8%,#fff4bd55,transparent 42%),repeating-linear-gradient(135deg,transparent 0 20px,#f5d98718 20px 21px,transparent 21px 42px),linear-gradient(125deg,#17110a 0%,#513a14 34%,#d3a533 49%,#fff0a3 56%,#9a6d1c 67%,#24190b 100%)",
+    sw: "radial-gradient(ellipse at 16% 14%,#fff8d8 0 1.5%,#f2d16f 2.3%,transparent 19%),repeating-linear-gradient(0deg,#fff3c21a 0 1px,transparent 1px 3px),linear-gradient(102deg,#33220a 0%,#8b6420 13%,#eed06a 17%,#694710 25%,#d6ad4a 38%,#fff1b0 43%,#8b6320 51%,#d3ae54 67%,#6a4914 80%,#e7c762 91%,#221708 100%)",
   },
   {
     id: "diamante",
     label: "Diamante",
     description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
-    sw: "radial-gradient(circle at 72% 22%,#fff 0 1.6%,#c9f1ffbb 2.5%,transparent 17%),repeating-linear-gradient(135deg,transparent 0 19px,#e7faff22 19px 20px,transparent 20px 40px),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
+    sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "tramonto",

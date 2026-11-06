@@ -877,7 +877,7 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: "Space Grotesk", sans-serif;
 }
-[data-theme="oro"] {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) {
   --theme-bg-dark: oklch(0.105 0.025 58);
   --theme-card-dark: oklch(0.175 0.035 66);
   --theme-surface-dark: oklch(0.25 0.055 73);
@@ -893,7 +893,7 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: Georgia, "Times New Roman", serif;
 }
-[data-theme="oro"] body {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) body {
   background-image:
     radial-gradient(
       ellipse at 18% 0%,
@@ -912,7 +912,7 @@
       transparent 73px 145px
     );
 }
-[data-theme="oro"] .card-surface {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .card-surface {
   background:
     linear-gradient(
       145deg,
@@ -931,13 +931,13 @@
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 22%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
-[data-theme="oro"] .glass-panel {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .glass-panel {
   border-color: color-mix(in srgb, var(--theme-primary) 38%, transparent);
   box-shadow:
     0 12px 30px -20px color-mix(in srgb, var(--theme-primary) 70%, transparent),
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 20%, transparent);
 }
-[data-theme="oro"] .bg-primary {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .bg-primary {
   background-image: linear-gradient(
     155deg,
     color-mix(in srgb, white 22%, transparent),
@@ -948,7 +948,7 @@
     inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
     0 4px 12px -7px color-mix(in srgb, var(--theme-primary) 74%, transparent);
 }
-[data-theme="oro"] .bg-primary-soft {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) .bg-primary-soft {
   border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, transparent);
   background-image: linear-gradient(
     135deg,
@@ -956,7 +956,7 @@
     color-mix(in srgb, var(--theme-primary) 4%, transparent)
   );
 }
-[data-theme="oro"] :is(
+:root[data-theme="oro"]:not([data-registry-style="didup"]) :is(
   button[aria-pressed="true"],
   [role="tab"][aria-selected="true"],
   [data-sidebar="menu-button"][data-active="true"]
@@ -966,19 +966,19 @@
     0 0 0 1px color-mix(in srgb, var(--theme-primary) 22%, transparent),
     0 0 12px -7px color-mix(in srgb, var(--theme-primary) 74%, transparent);
 }
-[data-theme="oro"] nav:not(.didup-bottom) [aria-current="page"] > span {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) nav:not(.didup-bottom) [aria-current="page"] > span {
   border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
     0 2px 10px -5px color-mix(in srgb, var(--theme-primary) 75%, transparent);
 }
-[data-theme="oro"] [role="progressbar"] {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) [role="progressbar"] {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 26%, transparent);
 }
-[data-theme="oro"] [data-radix-progress-indicator] {
+:root[data-theme="oro"]:not([data-registry-style="didup"]) [data-radix-progress-indicator] {
   background-image: linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), transparent 70%);
 }
-[data-theme="diamante"] {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) {
   --theme-bg-dark: oklch(0.105 0.05 255);
   --theme-card-dark: oklch(0.175 0.065 248);
   --theme-surface-dark: oklch(0.255 0.085 230);
@@ -994,7 +994,7 @@
   --theme-font-sans: "Manrope", sans-serif;
   --theme-font-display: "Space Grotesk", sans-serif;
 }
-[data-theme="diamante"] body {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) body {
   background-image:
     radial-gradient(
       ellipse at 82% 0%,
@@ -1013,7 +1013,7 @@
       transparent 79px 156px
     );
 }
-[data-theme="diamante"] .card-surface {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .card-surface {
   background:
     linear-gradient(145deg, color-mix(in srgb, oklch(1 0 0) 15%, transparent), transparent 38%),
     linear-gradient(
@@ -1028,13 +1028,13 @@
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 34%, transparent),
     inset 1px 0 0 color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
-[data-theme="diamante"] .glass-panel {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .glass-panel {
   border-color: color-mix(in srgb, var(--theme-primary) 40%, transparent);
   box-shadow:
     0 12px 30px -20px color-mix(in srgb, var(--theme-primary) 72%, transparent),
     inset 0 1px 0 color-mix(in srgb, oklch(1 0 0) 28%, transparent);
 }
-[data-theme="diamante"] .bg-primary {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .bg-primary {
   background-image: linear-gradient(
     115deg,
     color-mix(in srgb, white 28%, transparent),
@@ -1045,7 +1045,7 @@
     inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
     0 0 14px -8px color-mix(in srgb, var(--theme-primary) 82%, transparent);
 }
-[data-theme="diamante"] .bg-primary-soft {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) .bg-primary-soft {
   border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
   background-image: linear-gradient(
     135deg,
@@ -1053,7 +1053,7 @@
     color-mix(in srgb, var(--theme-primary) 10%, transparent)
   );
 }
-[data-theme="diamante"] :is(
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) :is(
   button[aria-pressed="true"],
   [role="tab"][aria-selected="true"],
   [data-sidebar="menu-button"][data-active="true"]
@@ -1063,16 +1063,16 @@
     0 0 0 1px color-mix(in srgb, var(--theme-primary) 30%, transparent),
     0 0 14px -8px color-mix(in srgb, var(--theme-primary) 90%, transparent);
 }
-[data-theme="diamante"] nav:not(.didup-bottom) [aria-current="page"] > span {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) nav:not(.didup-bottom) [aria-current="page"] > span {
   border: 1px solid color-mix(in srgb, var(--theme-primary) 40%, white 60%);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 36%, transparent),
     0 0 12px -6px color-mix(in srgb, var(--theme-primary) 86%, transparent);
 }
-[data-theme="diamante"] [role="progressbar"] {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) [role="progressbar"] {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 32%, transparent);
 }
-[data-theme="diamante"] [data-radix-progress-indicator] {
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) [data-radix-progress-indicator] {
   background-image: linear-gradient(115deg, color-mix(in srgb, white 26%, transparent), transparent 58%);
 }
 [data-theme="custom"] {
@@ -1092,7 +1092,7 @@
   --theme-font-display: var(--custom-font);
 }
 
-[data-theme]:not([data-theme="original"]) {
+:root[data-theme]:not([data-theme="original"]):not([data-registry-style="didup"]) {
   --background: var(--theme-bg-dark);
   --card: var(--theme-card-dark);
   --surface: var(--theme-surface-dark);
@@ -1128,7 +1128,7 @@
   --font-sans: Georgia, "Times New Roman", serif;
   --font-display: Georgia, "Times New Roman", serif;
 }
-[data-mode="chiaro"][data-theme]:not([data-theme="original"]) {
+:root[data-mode="chiaro"][data-theme]:not([data-theme="original"]):not([data-registry-style="didup"]) {
   color-scheme: light;
   --background: var(--theme-bg-light);
   --card: var(--theme-card-light);
@@ -1719,4 +1719,323 @@
   .bg-primary-soft
   :is(.text-primary, .text-foreground, .text-muted-foreground) {
   color: white;
+}
+
+
+/* Finiture materiche dei Temi completi: dettagli statici, solo nel layout VOTO. */
+:root[data-theme="oro"]:not([data-registry-style="didup"]) {
+  --oro-luce: #fff0b7;
+  --oro-metallo: #d1a447;
+  --oro-ombra: #563a10;
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"]) body {
+  background-image:
+    radial-gradient(
+      circle at 17% 7%,
+      rgb(255 247 206 / 25%) 0 1px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 82% 23%,
+      rgb(255 225 145 / 16%) 0 1px,
+      transparent 3px
+    ),
+    radial-gradient(
+      ellipse at 18% 0%,
+      color-mix(in srgb, var(--oro-metallo) 17%, transparent),
+      transparent 38%
+    ),
+    repeating-linear-gradient(
+      92deg,
+      transparent 0 3px,
+      color-mix(in srgb, var(--oro-luce) 2%, transparent) 3px 4px
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 72px,
+      color-mix(in srgb, var(--theme-primary) 2.5%, transparent) 72px 73px,
+      transparent 73px 145px
+    );
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  .card-surface {
+  background:
+    linear-gradient(
+      103deg,
+      transparent 0 22%,
+      color-mix(in srgb, var(--oro-luce) 14%, transparent) 22.3% 22.7%,
+      transparent 23.1% 100%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 2px,
+      color-mix(in srgb, var(--oro-luce) 2.4%, transparent) 2px 3px
+    ),
+    radial-gradient(
+      ellipse at 9% -14%,
+      color-mix(in srgb, var(--oro-luce) 22%, transparent),
+      transparent 43%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-primary) 16%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      320deg,
+      color-mix(in srgb, var(--oro-ombra) 14%, transparent),
+      transparent 54%
+    ),
+    color-mix(in srgb, var(--color-card) 76%, transparent);
+  border-color: color-mix(in srgb, var(--oro-metallo) 58%, transparent);
+  box-shadow:
+    0 16px 32px -22px color-mix(in srgb, var(--oro-metallo) 70%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 36%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--oro-luce) 9%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--oro-ombra) 28%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  .glass-panel {
+  background-image:
+    linear-gradient(
+      116deg,
+      color-mix(in srgb, var(--oro-luce) 10%, transparent),
+      transparent 34% 66%,
+      color-mix(in srgb, var(--oro-metallo) 7%, transparent)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--oro-luce) 1.7%, transparent) 5px 6px
+    );
+  border-color: color-mix(in srgb, var(--oro-metallo) 52%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 26%, transparent),
+    0 12px 30px -20px color-mix(in srgb, var(--oro-metallo) 60%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary {
+  background-image:
+    linear-gradient(
+      102deg,
+      transparent 0 14%,
+      color-mix(in srgb, var(--oro-luce) 38%, transparent) 14.5% 15.2%,
+      transparent 15.8% 39%,
+      color-mix(in srgb, var(--oro-luce) 22%, transparent) 39.5% 40%,
+      transparent 41% 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--oro-luce) 4%, transparent) 6px 7px
+    ),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, white 22%, transparent),
+      transparent 48%,
+      color-mix(in srgb, var(--oro-ombra) 16%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--oro-ombra) 24%, transparent),
+    0 4px 12px -7px color-mix(in srgb, var(--oro-metallo) 74%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  nav:not(.didup-bottom)
+  [aria-current="page"]
+  > span {
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--oro-luce) 12%, transparent),
+    transparent 58%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--oro-luce) 34%, transparent),
+    0 2px 10px -5px color-mix(in srgb, var(--oro-metallo) 75%, transparent);
+}
+:root[data-theme="oro"]:not([data-registry-style="didup"])
+  .voto-shell
+  [data-radix-progress-indicator] {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--oro-luce) 11%, transparent) 5px 6px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, white 24%, transparent),
+      transparent 70%
+    );
+}
+
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) {
+  --diamante-luce: #f3fdff;
+  --diamante-ghiaccio: #9cdef8;
+  --diamante-zaffiro: #347cad;
+  --diamante-ombra: #0b1a30;
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"]) body {
+  background-image:
+    radial-gradient(
+      circle at 82% 8%,
+      rgb(255 255 255 / 84%) 0 1px,
+      rgb(156 222 248 / 35%) 2px 4px,
+      transparent 9px
+    ),
+    radial-gradient(
+      circle at 18% 35%,
+      rgb(222 248 255 / 35%) 0 1px,
+      transparent 5px
+    ),
+    conic-gradient(
+      from 208deg at 82% 8%,
+      transparent 0deg 43deg,
+      rgb(255 255 255 / 16%) 43.5deg 44.3deg,
+      transparent 45deg 136deg,
+      rgb(156 222 248 / 10%) 136.5deg 137.2deg,
+      transparent 138deg 224deg,
+      rgb(255 255 255 / 12%) 224.5deg 225.2deg,
+      transparent 226deg
+    ),
+    radial-gradient(
+      ellipse at 82% 0%,
+      color-mix(in srgb, var(--theme-primary) 24%, transparent),
+      transparent 38%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 78px,
+      color-mix(in srgb, var(--theme-primary) 3%, transparent) 78px 79px,
+      transparent 79px 156px
+    );
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  .card-surface {
+  background:
+    radial-gradient(
+      circle at 84% 14%,
+      color-mix(in srgb, var(--diamante-luce) 88%, transparent) 0 1px,
+      color-mix(in srgb, var(--diamante-ghiaccio) 30%, transparent) 2px 5px,
+      transparent 9px
+    ),
+    conic-gradient(
+      from 228deg at 84% 14%,
+      color-mix(in srgb, var(--diamante-luce) 12%, transparent) 0deg 34deg,
+      transparent 34deg 70deg,
+      color-mix(in srgb, var(--diamante-ghiaccio) 14%, transparent) 70deg 110deg,
+      transparent 110deg 159deg,
+      color-mix(in srgb, var(--diamante-zaffiro) 13%, transparent) 159deg 202deg,
+      transparent 202deg 270deg,
+      color-mix(in srgb, var(--diamante-luce) 9%, transparent) 270deg 315deg,
+      transparent 315deg 360deg
+    ),
+    linear-gradient(
+      132deg,
+      transparent 0 24%,
+      color-mix(in srgb, var(--diamante-luce) 10%, transparent) 24.2% 24.55%,
+      transparent 24.9% 100%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--diamante-luce) 15%, transparent),
+      transparent 38%
+    ),
+    linear-gradient(
+      315deg,
+      color-mix(in srgb, var(--theme-primary) 15%, transparent),
+      transparent 58%
+    ),
+    color-mix(in srgb, var(--color-card) 76%, transparent);
+  border-color: color-mix(in srgb, var(--diamante-ghiaccio) 58%, transparent);
+  box-shadow:
+    0 16px 34px -22px
+      color-mix(in srgb, var(--diamante-ghiaccio) 78%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 42%, transparent),
+    inset 1px 0 0 color-mix(in srgb, var(--diamante-ghiaccio) 28%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--diamante-ombra) 24%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  .glass-panel {
+  background-image:
+    linear-gradient(
+      122deg,
+      color-mix(in srgb, var(--diamante-luce) 15%, transparent),
+      transparent 31% 62%,
+      color-mix(in srgb, var(--diamante-ghiaccio) 9%, transparent)
+    ),
+    linear-gradient(
+      312deg,
+      color-mix(in srgb, var(--diamante-zaffiro) 8%, transparent),
+      transparent 54%
+    );
+  border-color: color-mix(in srgb, var(--diamante-ghiaccio) 54%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 38%, transparent),
+    inset 1px 0 0 color-mix(in srgb, var(--diamante-ghiaccio) 20%, transparent),
+    0 12px 30px -20px
+      color-mix(in srgb, var(--diamante-ghiaccio) 70%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary {
+  background-image:
+    radial-gradient(
+      circle at 15% 17%,
+      color-mix(in srgb, var(--diamante-luce) 85%, transparent) 0 1px,
+      transparent 4px
+    ),
+    conic-gradient(
+      from 225deg at 16% 18%,
+      color-mix(in srgb, var(--diamante-luce) 18%, transparent) 0deg 38deg,
+      transparent 38deg 112deg,
+      color-mix(in srgb, var(--diamante-ghiaccio) 15%, transparent) 112deg
+        160deg,
+      transparent 160deg 250deg,
+      color-mix(in srgb, var(--diamante-luce) 10%, transparent) 250deg 292deg,
+      transparent 292deg
+    ),
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, white 28%, transparent),
+      transparent 44%,
+      color-mix(in srgb, var(--diamante-zaffiro) 14%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 46%, transparent),
+    inset 1px 0 0 color-mix(in srgb, var(--diamante-ghiaccio) 26%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--theme-primary) 82%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  nav:not(.didup-bottom)
+  [aria-current="page"]
+  > span {
+  background-image: linear-gradient(
+    132deg,
+    color-mix(in srgb, var(--diamante-luce) 16%, transparent),
+    transparent 46%,
+    color-mix(in srgb, var(--diamante-ghiaccio) 8%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--diamante-luce) 42%, transparent),
+    0 0 12px -6px color-mix(in srgb, var(--diamante-ghiaccio) 86%, transparent);
+}
+:root[data-theme="diamante"]:not([data-registry-style="didup"])
+  .voto-shell
+  [data-radix-progress-indicator] {
+  background-image: linear-gradient(
+    125deg,
+    transparent 0 22%,
+    color-mix(in srgb, var(--diamante-luce) 30%, transparent) 22.5% 24%,
+    transparent 24.5% 62%,
+    color-mix(in srgb, var(--diamante-ghiaccio) 16%, transparent) 62.5% 64%,
+    transparent 64.5% 100%
+  );
 }

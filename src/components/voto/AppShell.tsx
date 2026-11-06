@@ -200,7 +200,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     root.dataset.theme = v.theme;
     root.dataset.mode = v.mode;
-  }, [v.theme, v.mode]);
+    root.dataset.registryStyle = v.registryStyle;
+  }, [v.theme, v.mode, v.registryStyle]);
 
   const dateLabel = v.ready
     ? now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })

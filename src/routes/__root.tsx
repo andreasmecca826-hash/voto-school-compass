@@ -113,6 +113,7 @@ function RootShell({ children }: { children: ReactNode }) {
       data-bg="nero"
       data-theme="original"
       data-mode="scuro"
+      data-registry-style="voto"
     >
       <head>
         <HeadContent />
