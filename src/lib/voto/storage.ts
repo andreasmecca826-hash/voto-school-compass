@@ -17,6 +17,8 @@ export const KEYS = {
   theme: "voto.theme",
   registryStyle: "voto.registryStyle",
   customTheme: "voto.customTheme",
+  emojiThemeEmojis: "voto.emojiThemeEmojis",
+  emojiThemeBackgroundColors: "voto.emojiThemeBackgroundColors",
   homeModules: "voto.homeModules",
   homeScale: "voto.homeScale",
   homeAverageHidden: "voto.homeAverageHidden",

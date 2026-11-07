@@ -424,6 +424,9 @@ function Settings() {
               v.setReduceMotion(backup.reduceMotion);
               v.setTheme(backup.theme);
               v.setCustomTheme(backup.customTheme);
+              v.setEmojiThemeEmojis(backup.emojiThemeEmojis);
+              v.setEmojiThemeBackgroundColor("scuro", backup.emojiThemeBackgroundColors.scuro);
+              v.setEmojiThemeBackgroundColor("chiaro", backup.emojiThemeBackgroundColors.chiaro);
               v.setInterfaceScale(backup.interfaceScale);
               v.setHomeCustomization({
                 homeModules: backup.homeModules,
@@ -452,6 +455,8 @@ function Settings() {
                 reduceMotion: v.reduceMotion,
                 theme: v.theme,
                 customTheme: v.customTheme,
+                emojiThemeEmojis: v.emojiThemeEmojis,
+                emojiThemeBackgroundColors: v.emojiThemeBackgroundColors,
                 interfaceScale: v.interfaceScale,
                 homeModules: v.homeModules,
                 homeScale: v.homeScale,

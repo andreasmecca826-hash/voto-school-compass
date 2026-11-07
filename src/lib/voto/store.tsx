@@ -19,6 +19,14 @@ import {
   isValidCustomThemeBackground,
   sanitizeCustomThemeBackground,
 } from "./custom-theme-background";
+import {
+  createEmojiThemePattern,
+  DEFAULT_EMOJI_THEME_BACKGROUND_COLORS,
+  DEFAULT_EMOJI_THEME_EMOJIS,
+  normalizeEmojiThemeBackgroundColors,
+  normalizeEmojiThemeEmojis,
+  type EmojiThemeBackgroundColors,
+} from "./emoji-theme";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 import {
   DEFAULT_HOME_MODULES,
@@ -60,6 +68,7 @@ export type Mode = "chiaro" | "scuro";
 export type Density = "standard" | "compact";
 export type Theme =
   | "original"
+  | "emoji"
   | "lavender"
   | "cybercore"
   | "brutalist"
@@ -102,6 +111,7 @@ export type CustomTheme = {
 
 const THEME_VALUES: Theme[] = [
   "original",
+  "emoji",
   "lavender",
   "cybercore",
   "brutalist",
@@ -218,6 +228,8 @@ interface Ctx {
   theme: Theme;
   registryStyle: RegistryStyle;
   customTheme: CustomTheme;
+  emojiThemeEmojis: string[];
+  emojiThemeBackgroundColors: EmojiThemeBackgroundColors;
   interfaceScale: number;
   homeModules: HomeModuleConfig[];
   homeScale: number;
@@ -242,6 +254,8 @@ interface Ctx {
   setTheme: (theme: Theme) => void;
   setRegistryStyle: (style: RegistryStyle) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
+  setEmojiThemeEmojis: (emojis: string[]) => void;
+  setEmojiThemeBackgroundColor: (mode: Mode, color: string) => void;
   setInterfaceScale: (scale: number) => void;
   resetCustomTheme: () => void;
   toggleHomeModule: (id: HomeModuleId) => void;
@@ -298,6 +312,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeS] = useState<Theme>("original");
   const [registryStyle, setRegistryStyleS] = useState<RegistryStyle>("voto");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
+  const [emojiThemeEmojis, setEmojiThemeEmojisS] = useState<string[]>([
+    ...DEFAULT_EMOJI_THEME_EMOJIS,
+  ]);
+  const [emojiThemeBackgroundColors, setEmojiThemeBackgroundColorsS] =
+    useState<EmojiThemeBackgroundColors>({ ...DEFAULT_EMOJI_THEME_BACKGROUND_COLORS });
   const [interfaceScale, setInterfaceScaleS] = useState(100);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
   const [homeScale, setHomeScaleS] = useState(100);
@@ -374,6 +393,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       backgroundImage: sanitizeCustomThemeBackground(savedCustomTheme.backgroundImage),
       font: oneOf(savedCustomTheme.font, ["theme", "sans", "display", "mono", "serif"], "theme"),
     });
+    setEmojiThemeEmojisS(
+      normalizeEmojiThemeEmojis(load<unknown>(KEYS.emojiThemeEmojis, DEFAULT_EMOJI_THEME_EMOJIS)),
+    );
+    setEmojiThemeBackgroundColorsS(
+      normalizeEmojiThemeBackgroundColors(
+        load<unknown>(KEYS.emojiThemeBackgroundColors, DEFAULT_EMOJI_THEME_BACKGROUND_COLORS),
+      ),
+    );
     setInterfaceScaleS(normalizeInterfaceScale(load(KEYS.interfaceScale, 100)));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
     setHomeScaleS(normalizeHomeScale(load(KEYS.homeScale, 100)));
@@ -492,6 +519,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           ? `url("${customTheme.backgroundImage}")`
           : "none"
         : "none",
+      "--emoji-theme-pattern": createEmojiThemePattern(emojiThemeEmojis),
+      "--emoji-theme-bg-dark": emojiThemeBackgroundColors.scuro,
+      "--emoji-theme-bg-light": emojiThemeBackgroundColors.chiaro,
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
   }, [
@@ -504,6 +534,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     theme,
     registryStyle,
     customTheme,
+    emojiThemeEmojis,
+    emojiThemeBackgroundColors,
     interfaceScale,
     ready,
   ]);
@@ -528,6 +560,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       theme,
       registryStyle,
       customTheme,
+      emojiThemeEmojis,
+      emojiThemeBackgroundColors,
       interfaceScale,
       homeModules,
       homeScale,
@@ -644,6 +678,17 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setCustomThemeS((current) => {
           const next = { ...current, ...patch };
           save(KEYS.customTheme, next);
+          return next;
+        }),
+      setEmojiThemeEmojis: (emojis) => {
+        const next = normalizeEmojiThemeEmojis(emojis);
+        setEmojiThemeEmojisS(next);
+        save(KEYS.emojiThemeEmojis, next);
+      },
+      setEmojiThemeBackgroundColor: (selectedMode, color) =>
+        setEmojiThemeBackgroundColorsS((current) => {
+          const next = normalizeEmojiThemeBackgroundColors({ ...current, [selectedMode]: color });
+          save(KEYS.emojiThemeBackgroundColors, next);
           return next;
         }),
       setInterfaceScale: (scale) => {
@@ -766,6 +811,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       glass,
       theme,
       customTheme,
+      emojiThemeEmojis,
+      emojiThemeBackgroundColors,
       homeModules,
       interrogazioni,
       completions,
