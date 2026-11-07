@@ -58,6 +58,14 @@ final class WidgetData {
         .remove(ACCESS_TOKEN_KEY).remove(REFRESH_TOKEN_KEY).remove(EXPIRES_AT_KEY).apply();
   }
 
+  static void saveOAuthSession(Context context, String accessToken, String refreshToken, long expiresIn) throws Exception {
+    JSONObject result = new JSONObject();
+    result.put("access_token", accessToken);
+    result.put("refresh_token", refreshToken);
+    result.put("expires_in", expiresIn > 0 ? expiresIn : 3600L);
+    saveSession(context, result);
+  }
+
   static void refresh(Context context) {
     update(context, new ComponentName(context, SmallWidgetProvider.class), false);
     update(context, new ComponentName(context, LargeWidgetProvider.class), true);

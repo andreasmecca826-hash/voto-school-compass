@@ -9,6 +9,7 @@
         <TextView android:text="Widget grande" android:textColor="#D8E2F2" android:layout_marginTop="14dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Spinner android:id="@+id/large_mode" android:entries="@array/widget_modes" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/save_button" android:text="Accedi e aggiorna widget" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <Button android:id="@+id/github_button" android:text="Accedi con GitHub" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/logout_button" android:text="Disconnetti questo dispositivo" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <TextView android:id="@+id/status" android:textColor="#D8E2F2" android:layout_marginTop="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
     </LinearLayout>
