@@ -149,6 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
   const now = useClock();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const isNavigating = useRouterState({ select: (s) => s.status === "pending" });
   const isWindows7 = v.theme === "windows-7" && v.registryStyle !== "didup";
   const seasonalTheme =
     v.registryStyle === "voto" && SEASONAL_THEMES.includes(v.theme as SeasonalTheme)
@@ -414,7 +415,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span ref={pullLabel}>Trascina per aggiornare</span>
           </div>
           {v.ready ? (
-            moreOpen && !isWindows7 ? (
+            isNavigating ? (
+              <NavigationLoading didup={v.registryStyle === "didup"} />
+            ) : moreOpen && !isWindows7 ? (
               v.registryStyle === "didup" ? (
                 <DidupMenu />
               ) : (
@@ -582,6 +585,21 @@ function ShellSkeleton() {
       {[0, 1, 2].map((i) => (
         <Skeleton key={i} className="h-16 rounded-2xl bg-card" />
       ))}
+    </div>
+  );
+}
+
+function NavigationLoading({ didup }: { didup: boolean }) {
+  return (
+    <div
+      role="status"
+      aria-label="Caricamento schermata"
+      className={cn(
+        "flex min-h-[calc(100dvh-8rem)] items-center justify-center text-xs text-muted-foreground",
+        didup && "bg-black text-white/65",
+      )}
+    >
+      Caricamento…
     </div>
   );
 }
