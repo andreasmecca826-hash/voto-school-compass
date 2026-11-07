@@ -39,13 +39,28 @@ const remoteData = {
 };
 
 function StateProbe() {
-  const { ready, source, data, performanceMode, setPerformanceMode } = useVoto();
+  const {
+    ready,
+    source,
+    data,
+    performanceMode,
+    performanceOptions,
+    setPerformanceMode,
+    setPerformanceOption,
+  } = useVoto();
   return (
     <>
       <p>{`${ready}:${source}:${data.notifications[0]?.title ?? "nessuna circolare"}`}</p>
       <output data-testid="performance-mode">{String(performanceMode)}</output>
+      <output data-testid="performance-options">{JSON.stringify(performanceOptions)}</output>
       <button type="button" onClick={() => setPerformanceMode(!performanceMode)}>
         Toggle performance mode
+      </button>
+      <button
+        type="button"
+        onClick={() => setPerformanceOption("wallpapers", !performanceOptions.wallpapers)}
+      >
+        Toggle wallpaper optimization
       </button>
     </>
   );
@@ -103,6 +118,10 @@ describe("bootstrap dati scolastici", () => {
     expect(await screen.findByTestId("performance-mode")).toHaveTextContent("true");
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute("data-performance", "on");
+      expect(document.documentElement).toHaveAttribute("data-performance-blur", "on");
+      expect(document.documentElement).toHaveAttribute("data-performance-animations", "on");
+      expect(document.documentElement).toHaveAttribute("data-performance-shadows", "on");
+      expect(document.documentElement).toHaveAttribute("data-performance-wallpapers", "on");
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Toggle performance mode" }));
@@ -110,6 +129,41 @@ describe("bootstrap dati scolastici", () => {
       expect(screen.getByTestId("performance-mode")).toHaveTextContent("false");
       expect(document.documentElement).toHaveAttribute("data-performance", "off");
       expect(localStorage.getItem(KEYS.performanceMode)).toBe("false");
+    });
+  });
+
+  it("ripristina e salva separatamente le opzioni prestazioni", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as never);
+    localStorage.setItem(KEYS.demoMode, "true");
+    localStorage.setItem(KEYS.performanceMode, "true");
+    localStorage.setItem(
+      KEYS.performanceOptions,
+      JSON.stringify({ blur: true, animations: false, wallpapers: false }),
+    );
+
+    renderProtectedApp();
+
+    expect(await screen.findByTestId("performance-options")).toHaveTextContent(
+      JSON.stringify({ blur: true, animations: false, shadows: true, wallpapers: false }),
+    );
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-performance-blur", "on");
+      expect(document.documentElement).toHaveAttribute("data-performance-animations", "off");
+      expect(document.documentElement).toHaveAttribute("data-performance-shadows", "on");
+      expect(document.documentElement).toHaveAttribute("data-performance-wallpapers", "off");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle wallpaper optimization" }));
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-performance-wallpapers", "on");
+      expect(JSON.parse(localStorage.getItem(KEYS.performanceOptions) ?? "{}"))
+        .toHaveProperty("wallpapers", true);
     });
   });
 

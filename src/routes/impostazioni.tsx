@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   Gauge,
+  SlidersHorizontal,
   Moon,
   RotateCcw,
   Save,
@@ -16,6 +17,13 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
 import { useSchoolAuth } from "@/lib/school-auth-context";
@@ -32,6 +40,7 @@ import {
   type CustomTheme,
   type HomeModuleId,
   type Mode,
+  type PerformanceOption,
   type Theme,
 } from "@/lib/voto/store";
 
@@ -203,6 +212,32 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];
+const PERFORMANCE_OPTION_META: {
+  id: PerformanceOption;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "blur",
+    label: "Sfocature",
+    description: "Disattiva gli effetti di sfocatura e vetro.",
+  },
+  {
+    id: "animations",
+    label: "Animazioni e transizioni",
+    description: "Riduce animazioni, transizioni e scorrimento morbido.",
+  },
+  {
+    id: "shadows",
+    label: "Ombre",
+    description: "Rimuove le ombre da schede, pulsanti e testo.",
+  },
+  {
+    id: "wallpapers",
+    label: "Sfondi decorativi",
+    description: "Nasconde temporaneamente gli sfondi Emoji e le immagini Custom.",
+  },
+];
 
 function localDateValue(date: Date): string {
   const year = date.getFullYear();
@@ -232,6 +267,7 @@ function Settings() {
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
   const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
+  const [performanceDialogOpen, setPerformanceDialogOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
@@ -374,8 +410,8 @@ function Settings() {
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">Modalità prestazioni</span>
             <span className="mt-1 block text-xs text-muted-foreground">
-              Alleggerisce sfocature, ombre, animazioni e sfondi fissi per rendere l’app più fluida
-              sui telefoni meno recenti.
+              Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
+              per rendere l’app più fluida sui telefoni meno recenti.
             </span>
           </span>
           <span
@@ -393,7 +429,69 @@ function Settings() {
             />
           </span>
         </button>
+        <button
+          type="button"
+          onClick={() => setPerformanceDialogOpen(true)}
+          className="mt-3 flex min-h-11 w-full items-center gap-3 rounded-xl border border-border px-3 text-left transition-colors hover:bg-surface"
+          aria-haspopup="dialog"
+        >
+          <SlidersHorizontal className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 flex-1 text-xs font-semibold">Personalizza effetti</span>
+          <span className="text-[11px] text-muted-foreground">
+            {Object.values(v.performanceOptions).filter(Boolean).length} di 4 selezionati
+          </span>
+        </button>
       </section>
+      <Dialog open={performanceDialogOpen} onOpenChange={setPerformanceDialogOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-h-[85dvh] overflow-y-auto rounded-2xl p-5 sm:max-w-md">
+          <DialogHeader className="pr-6 text-left">
+            <DialogTitle>Personalizza prestazioni</DialogTitle>
+            <DialogDescription>
+              Scegli quali effetti alleggerire. Le selezioni si applicano quando Modalità
+              prestazioni è attiva.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="divide-y divide-border rounded-xl border border-border px-3">
+            {PERFORMANCE_OPTION_META.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="switch"
+                aria-checked={v.performanceOptions[option.id]}
+                onClick={() =>
+                  v.setPerformanceOption(option.id, !v.performanceOptions[option.id])
+                }
+                className="flex min-h-[68px] w-full items-center gap-3 py-2 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">{option.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                    {option.description}
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                    v.performanceOptions[option.id] ? "bg-primary" : "bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                      v.performanceOptions[option.id] ? "translate-x-[22px]" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Puoi cambiare queste scelte in qualsiasi momento. I tuoi temi e sfondi non vengono
+            eliminati.
+          </p>
+        </DialogContent>
+      </Dialog>
 
       <SectionTitle>Accesso ai dati privati</SectionTitle>
       <section className="card-surface p-4">

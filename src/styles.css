@@ -1455,20 +1455,30 @@
   transition-duration: 0.01ms !important;
 }
 
-:root[data-performance="on"] *,
-:root[data-performance="on"] *::before,
-:root[data-performance="on"] *::after {
+:root[data-performance-blur="on"] *,
+:root[data-performance-blur="on"] *::before,
+:root[data-performance-blur="on"] *::after {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+}
+
+:root[data-performance-animations="on"] *,
+:root[data-performance-animations="on"] *::before,
+:root[data-performance-animations="on"] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
-  box-shadow: none !important;
   scroll-behavior: auto !important;
-  text-shadow: none !important;
   transition-duration: 0.01ms !important;
 }
 
-:root[data-performance="on"] body {
+:root[data-performance-shadows="on"] *,
+:root[data-performance-shadows="on"] *::before,
+:root[data-performance-shadows="on"] *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+:root[data-performance-wallpapers="on"] body {
   background-attachment: scroll !important;
 }
 
@@ -2277,4 +2287,10 @@
 
 :root[data-theme="emoji"]:not([data-registry-style="didup"]) .card-surface {
   box-shadow: 0 12px 28px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+:root[data-performance-wallpapers="on"][data-theme="emoji"]:not([data-registry-style="didup"]) body,
+:root[data-performance-wallpapers="on"][data-theme="custom"]:not([data-registry-style="didup"]) body {
+  background-image: none !important;
+  background-attachment: scroll !important;
 }

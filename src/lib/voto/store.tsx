@@ -66,6 +66,24 @@ export type Bg =
   | "carta";
 export type Mode = "chiaro" | "scuro";
 export type Density = "standard" | "compact";
+export type PerformanceOption = "blur" | "animations" | "shadows" | "wallpapers";
+export type PerformanceOptions = Record<PerformanceOption, boolean>;
+const DEFAULT_PERFORMANCE_OPTIONS: PerformanceOptions = {
+  blur: true,
+  animations: true,
+  shadows: true,
+  wallpapers: true,
+};
+
+function normalizePerformanceOptions(value: unknown): PerformanceOptions {
+  const candidate = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    blur: typeof candidate["blur"] === "boolean" ? candidate["blur"] : true,
+    animations: typeof candidate["animations"] === "boolean" ? candidate["animations"] : true,
+    shadows: typeof candidate["shadows"] === "boolean" ? candidate["shadows"] : true,
+    wallpapers: typeof candidate["wallpapers"] === "boolean" ? candidate["wallpapers"] : true,
+  };
+}
 export type Theme =
   | "original"
   | "emoji"
@@ -226,6 +244,7 @@ interface Ctx {
   density: Density;
   reduceMotion: boolean;
   performanceMode: boolean;
+  performanceOptions: PerformanceOptions;
   theme: Theme;
   registryStyle: RegistryStyle;
   customTheme: CustomTheme;
@@ -253,6 +272,7 @@ interface Ctx {
   setDensity: (density: Density) => void;
   setReduceMotion: (enabled: boolean) => void;
   setPerformanceMode: (enabled: boolean) => void;
+  setPerformanceOption: (option: PerformanceOption, enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
   setRegistryStyle: (style: RegistryStyle) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
@@ -312,6 +332,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [density, setDensityS] = useState<Density>("standard");
   const [reduceMotion, setReduceMotionS] = useState(false);
   const [performanceMode, setPerformanceModeS] = useState(false);
+  const [performanceOptions, setPerformanceOptionsS] = useState<PerformanceOptions>({
+    ...DEFAULT_PERFORMANCE_OPTIONS,
+  });
   const [theme, setThemeS] = useState<Theme>("original");
   const [registryStyle, setRegistryStyleS] = useState<RegistryStyle>("voto");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
@@ -383,6 +406,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
     setReduceMotionS(load(KEYS.reduceMotion, false));
     setPerformanceModeS(load<unknown>(KEYS.performanceMode, false) === true);
+    setPerformanceOptionsS(
+      normalizePerformanceOptions(load<unknown>(KEYS.performanceOptions, DEFAULT_PERFORMANCE_OPTIONS)),
+    );
     const savedTheme = oneOf(load<unknown>(KEYS.theme, "original"), THEME_VALUES, "original");
     setThemeS(savedTheme);
     const savedRegistryStyle = load<unknown>(KEYS.registryStyle, "voto");
@@ -491,6 +517,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["density"] = density;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
     root.dataset["performance"] = performanceMode ? "on" : "off";
+    root.dataset["performanceBlur"] = performanceMode && performanceOptions.blur ? "on" : "off";
+    root.dataset["performanceAnimations"] =
+      performanceMode && performanceOptions.animations ? "on" : "off";
+    root.dataset["performanceShadows"] =
+      performanceMode && performanceOptions.shadows ? "on" : "off";
+    root.dataset["performanceWallpapers"] =
+      performanceMode && performanceOptions.wallpapers ? "on" : "off";
     // DidUP ha una grafica propria: il tema VOTO resta memorizzato ma non
     // deve colorare accidentalmente dashboard e pagine del registro.
     root.dataset["theme"] = didupActive ? "original" : theme;
@@ -537,6 +570,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     density,
     reduceMotion,
     performanceMode,
+    performanceOptions,
     theme,
     registryStyle,
     customTheme,
@@ -552,6 +586,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       density,
       reduceMotion,
       performanceMode,
+      performanceOptions,
       data,
       displayName,
       source,
@@ -676,6 +711,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setPerformanceMode: (enabled) => {
         setPerformanceModeS(enabled);
         save(KEYS.performanceMode, enabled);
+      },
+      setPerformanceOption: (option, enabled) => {
+        setPerformanceOptionsS((current) => {
+          const next = { ...current, [option]: enabled };
+          save(KEYS.performanceOptions, next);
+          return next;
+        });
       },
       setTheme: (next) => {
         setThemeS(next);
@@ -832,6 +874,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       density,
       reduceMotion,
       performanceMode,
+      performanceOptions,
       refreshImpl,
       homeScale,
       interfaceScale,

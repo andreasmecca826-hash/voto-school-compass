@@ -15,6 +15,7 @@ export const KEYS = {
   density: "voto.density",
   reduceMotion: "voto.reduceMotion",
   performanceMode: "voto.performanceMode",
+  performanceOptions: "voto.performanceOptions",
   theme: "voto.theme",
   registryStyle: "voto.registryStyle",
   customTheme: "voto.customTheme",
