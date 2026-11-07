@@ -793,9 +793,11 @@
   background-size: 210px 240px, 280px 300px, 330px 360px, 390px 430px;
 }
 .seasonal-atmosphere {
-  position: absolute;
+  position: fixed;
   z-index: 0;
   inset: 0;
+  width: 100vw;
+  height: 100dvh;
   overflow: hidden;
   pointer-events: none;
 }
@@ -822,6 +824,22 @@
 .seasonal-atmosphere-primavera .seasonal-particle:nth-child(6) { top: 13%; right: 18%; background: #b5edc2; }
 .seasonal-atmosphere-primavera .seasonal-particle:nth-child(7) { top: 43%; right: 1%; }
 .seasonal-atmosphere-primavera .seasonal-particle:nth-child(8) { top: 88%; right: 23%; background: #ffe18a; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(n + 9) {
+  width: 10px;
+  height: 10px;
+  background: #f79abd;
+  animation: seasonal-drift 8s ease-in-out infinite;
+}
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(9) { top: 8%; left: 31%; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(10) { top: 27%; left: 52%; background: #ffe18a; animation-delay: -2s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(11) { top: 64%; left: 38%; background: #b5edc2; animation-delay: -4s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(12) { top: 91%; left: 66%; animation-delay: -6s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(13) { top: 47%; left: 74%; background: #ffe18a; animation-delay: -1s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(14) { top: 73%; left: 56%; background: #b5edc2; animation-delay: -3s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(15) { top: 16%; left: 70%; animation-delay: -5s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(16) { top: 84%; left: 29%; background: #ffe18a; animation-delay: -7s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(17) { top: 38%; left: 24%; background: #b5edc2; animation-delay: -2.5s; }
+.seasonal-atmosphere-primavera .seasonal-particle:nth-child(18) { top: 56%; left: 88%; animation-delay: -4.5s; }
 .seasonal-atmosphere-estate .seasonal-sun {
   position: absolute; top: 8%; right: 7%; width: 86px; height: 86px; border-radius: 50%;
   background: #ffe28a; box-shadow: 0 0 44px 18px rgb(255 226 138 / 38%);
@@ -833,6 +851,14 @@
 .seasonal-atmosphere-estate .seasonal-particle:nth-child(3) { top: 48%; right: 10%; width: 18px; height: 18px; }
 .seasonal-atmosphere-estate .seasonal-particle:nth-child(4) { top: 76%; left: 7%; }
 .seasonal-atmosphere-estate .seasonal-particle:nth-child(5) { top: 84%; right: 20%; width: 8px; height: 8px; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(n + 6) { animation: seasonal-float 7s ease-in-out infinite; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(6) { top: 20%; left: 31%; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(7) { top: 38%; left: 67%; animation-delay: -2s; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(8) { top: 61%; left: 27%; animation-delay: -4s; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(9) { top: 88%; left: 72%; animation-delay: -6s; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(10) { top: 52%; left: 48%; animation-delay: -1s; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(11) { top: 14%; left: 77%; animation-delay: -3s; }
+.seasonal-atmosphere-estate .seasonal-particle:nth-child(12) { top: 76%; left: 43%; animation-delay: -5s; }
 .seasonal-atmosphere-estate .seasonal-wave { position: absolute; right: -14%; left: -14%; height: 42px; border-top: 3px solid rgb(92 221 236 / 45%); border-radius: 50%; transform: rotate(-4deg); }
 .seasonal-wave-one { top: 72%; }
 .seasonal-wave-two { top: 76%; opacity: 0.6; }
@@ -848,6 +874,17 @@
 .seasonal-atmosphere-autunno .seasonal-particle:nth-child(6) { top: 86%; right: 14%; }
 .seasonal-atmosphere-autunno .seasonal-particle:nth-child(7) { top: 39%; right: 0%; background: #b94d35; }
 .seasonal-atmosphere-autunno .seasonal-particle:nth-child(8) { top: 12%; right: 22%; background: #e0a343; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(n + 9) { animation: seasonal-fall 10s ease-in-out infinite; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(9) { top: 8%; left: 29%; background: #b94d35; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(10) { top: 35%; left: 45%; background: #e0a343; animation-delay: -3s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(11) { top: 53%; left: 73%; animation-delay: -5s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(12) { top: 92%; left: 35%; background: #b94d35; animation-delay: -7s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(13) { top: 70%; left: 57%; background: #e0a343; animation-delay: -2s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(14) { top: 24%; left: 67%; animation-delay: -4s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(15) { top: 44%; left: 21%; background: #e0a343; animation-delay: -6s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(16) { top: 82%; left: 82%; background: #b94d35; animation-delay: -8s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(17) { top: 15%; left: 52%; animation-delay: -1s; }
+.seasonal-atmosphere-autunno .seasonal-particle:nth-child(18) { top: 62%; left: 91%; background: #e0a343; animation-delay: -4.5s; }
 .seasonal-atmosphere-inverno .seasonal-particle {
   width: 10px; height: 10px; border-radius: 50%; background: rgb(255 255 255 / 92%);
   box-shadow: 0 0 13px rgb(177 231 255 / 85%);
@@ -860,7 +897,25 @@
 .seasonal-atmosphere-inverno .seasonal-particle:nth-child(6) { top: 68%; right: 10%; }
 .seasonal-atmosphere-inverno .seasonal-particle:nth-child(7) { top: 79%; left: 5%; width: 14px; height: 14px; }
 .seasonal-atmosphere-inverno .seasonal-particle:nth-child(8) { top: 88%; right: 7%; }
-.seasonal-atmosphere-inverno .seasonal-particle:nth-child(n + 9) { opacity: 0.72; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(n + 9) { opacity: 0.72; animation: seasonal-snow 12s linear infinite; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(9) { top: 8%; left: 24%; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(10) { top: 15%; left: 48%; animation-delay: -2s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(11) { top: 27%; left: 74%; animation-delay: -4s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(12) { top: 36%; left: 36%; animation-delay: -6s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(13) { top: 48%; left: 60%; animation-delay: -8s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(14) { top: 59%; left: 24%; animation-delay: -10s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(15) { top: 67%; left: 78%; animation-delay: -3s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(16) { top: 74%; left: 47%; animation-delay: -5s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(17) { top: 85%; left: 66%; animation-delay: -7s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(18) { top: 93%; left: 18%; animation-delay: -9s; }
+.seasonal-atmosphere-inverno .seasonal-particle:nth-child(n + 19) { width: 6px; height: 6px; }
+@keyframes seasonal-drift { 50% { transform: translate3d(12px, 8px, 0) rotate(150deg); } }
+@keyframes seasonal-float { 50% { transform: translate3d(0, -14px, 0); } }
+@keyframes seasonal-fall { 50% { transform: translate3d(18px, 24px, 0) rotate(180deg); } }
+@keyframes seasonal-snow { 50% { transform: translate3d(14px, 30px, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .seasonal-atmosphere .seasonal-particle { animation: none !important; }
+}
 [data-theme="tramonto"] {
   --theme-bg-dark: oklch(0.15 0.05 350);
   --theme-card-dark: oklch(0.23 0.07 350);

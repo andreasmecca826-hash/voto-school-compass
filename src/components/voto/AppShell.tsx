@@ -548,8 +548,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function SeasonalAtmosphere({ theme }: { theme: "primavera" | "estate" | "autunno" | "inverno" }) {
-  const count = theme === "inverno" ? 14 : 8;
+function SeasonalAtmosphere({
+  theme,
+}: {
+  theme: "primavera" | "estate" | "autunno" | "inverno";
+}) {
+  const count = theme === "inverno" ? 28 : theme === "estate" ? 12 : 18;
   return (
     <div className={cn("seasonal-atmosphere", `seasonal-atmosphere-${theme}`)} aria-hidden="true">
       {theme === "estate" && <span className="seasonal-sun" />}
