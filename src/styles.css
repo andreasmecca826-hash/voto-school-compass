@@ -1576,6 +1576,37 @@
   background-attachment: scroll !important;
 }
 
+/* Windows 7: profilo Aero leggero per dispositivi mobili e browser meno potenti. */
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) body {
+  background-attachment: scroll;
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) body::before {
+  box-shadow: none;
+  opacity: 0.72;
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .glass-panel,
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .windows7-taskbar {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .glass-panel {
+  background: linear-gradient(180deg, rgb(224 242 253 / 96%), rgb(111 169 208 / 94%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 88%);
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .windows7-taskbar {
+  background: linear-gradient(180deg, rgb(129 186 224 / 96%), rgb(54 108 151 / 98%) 48%, rgb(32 83 129 / 98%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%);
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .windows7-shell {
+  box-shadow: 0 5px 16px rgb(0 21 52 / 28%), inset 0 0 0 1px rgb(255 255 255 / 82%);
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .windows7-taskbar-link svg {
+  filter: none;
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) :is(button, a) {
+  text-shadow: none;
+}
+
 /* Profilo di registro sobrio: ispirato a DidUP, senza riprodurne marchio o schermate ufficiali. */
 :root[data-registry-style="didup"] {
   --radius: 0.65rem;
