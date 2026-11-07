@@ -15,6 +15,8 @@ public class MainActivity extends Activity {
   private TextView status;
   private Spinner small;
   private Spinner large;
+  private Spinner defaultTheme;
+  private Spinner defaultInterfaceTheme;
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
@@ -27,15 +29,20 @@ public class MainActivity extends Activity {
     status = (TextView) findViewById(R.id.status);
     small = (Spinner) findViewById(R.id.small_mode);
     large = (Spinner) findViewById(R.id.large_mode);
+    defaultTheme = (Spinner) findViewById(R.id.default_theme);
+    defaultInterfaceTheme = (Spinner) findViewById(R.id.default_interface_theme);
     final Button refresh = (Button) findViewById(R.id.refresh_button);
     final Button github = (Button) findViewById(R.id.github_button);
     final Button logout = (Button) findViewById(R.id.logout_button);
     android.content.SharedPreferences prefs = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE);
     small.setSelection(prefs.getInt(WidgetConfigureActivity.SMALL_MODE_KEY, 0));
     large.setSelection(prefs.getInt(WidgetConfigureActivity.LARGE_MODE_KEY, 5));
+    defaultTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
+    defaultInterfaceTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     refresh.setOnClickListener(v -> {
       refresh.setEnabled(false);
       status.setText("Aggiornamento dei widget in corso…");
+      savePreferences();
       WidgetData.refresh(this);
       refresh.postDelayed(() -> {
         refresh.setEnabled(true);
@@ -56,7 +63,10 @@ public class MainActivity extends Activity {
   private void savePreferences() {
     getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
         .putInt(WidgetConfigureActivity.SMALL_MODE_KEY, small.getSelectedItemPosition())
-        .putInt(WidgetConfigureActivity.LARGE_MODE_KEY, large.getSelectedItemPosition()).apply();
+        .putInt(WidgetConfigureActivity.LARGE_MODE_KEY, large.getSelectedItemPosition())
+        .putInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, defaultTheme.getSelectedItemPosition())
+        .putInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, defaultInterfaceTheme.getSelectedItemPosition())
+        .apply();
     WidgetData.refresh(this);
   }
 

@@ -6,6 +6,10 @@
         <Spinner android:id="@+id/small_mode" android:entries="@array/widget_modes" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <TextView android:text="Widget grande" android:textColor="#D8E2F2" android:layout_marginTop="14dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Spinner android:id="@+id/large_mode" android:entries="@array/widget_modes" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <TextView android:text="Tema colore predefinito" android:textColor="#D8E2F2" android:layout_marginTop="14dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <Spinner android:id="@+id/default_theme" android:entries="@array/widget_themes" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <TextView android:text="Tema interfaccia predefinito" android:textColor="#D8E2F2" android:layout_marginTop="14dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <Spinner android:id="@+id/default_interface_theme" android:entries="@array/widget_interface_themes" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/github_button" android:text="Accedi con GitHub" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/refresh_button" android:text="Aggiorna widget adesso" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/logout_button" android:text="Disconnetti questo dispositivo" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />

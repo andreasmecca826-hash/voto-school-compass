@@ -216,8 +216,8 @@ final class WidgetData {
     RemoteViews views = new RemoteViews(context.getPackageName(), layout);
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
-    int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, 0);
-    int interfaceTheme = prefs.getInt(WidgetConfigureActivity.INTERFACE_THEME_KEY + id, 0);
+    int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
+    int interfaceTheme = prefs.getInt(WidgetConfigureActivity.INTERFACE_THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     int textSize = prefs.getInt(WidgetConfigureActivity.TEXT_SIZE_KEY + id, 1);
     boolean showUpdated = prefs.getBoolean(WidgetConfigureActivity.SHOW_UPDATED_KEY + id, true);
     String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : mode == 6 ? values[6] : mode == 7 ? values[7] : mode == 8 ? values[8] : mode == 9 ? values[9] : mode == 10 ? values[10] : values[0] + "\n" + values[6] + "\n" + values[7] + "\n" + values[3] + " · " + values[4] + " · " + values[5];

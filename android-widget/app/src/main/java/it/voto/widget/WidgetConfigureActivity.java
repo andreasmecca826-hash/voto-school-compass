@@ -18,6 +18,8 @@ public class WidgetConfigureActivity extends Activity {
   public static final String LARGE_MODE_KEY = "large_mode";
   public static final String SMALL_THEME_KEY = "small_theme";
   public static final String LARGE_THEME_KEY = "large_theme";
+  public static final String DEFAULT_THEME_KEY = "default_theme";
+  public static final String DEFAULT_INTERFACE_THEME_KEY = "default_interface_theme";
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
