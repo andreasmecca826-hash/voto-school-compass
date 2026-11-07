@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, GraduationCap, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, GraduationCap, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Empty, SectionTitle } from "@/components/voto/ui";
 import { fmt } from "@/lib/voto/calc";
@@ -39,6 +39,7 @@ function ScrutiniInfraperiodali() {
   const [createOpen, setCreateOpen] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [subjectDraft, setSubjectDraft] = useState("");
+  const [didupOpen, setDidupOpen] = useState(false);
 
   useEffect(() => {
     if (!v.ready) return;
@@ -127,6 +128,15 @@ function ScrutiniInfraperiodali() {
       </div>
     ) : (
       <div className="pt-3 text-sm text-muted-foreground">Caricamento delle pagelle…</div>
+    );
+  }
+
+  if (v.registryStyle === "didup" && !didupOpen) {
+    return (
+      <DidupScrutiniLanding
+        studentName={v.data.student.name}
+        onOpenInfraperiodal={() => setDidupOpen(true)}
+      />
     );
   }
 
@@ -408,5 +418,47 @@ function DidupScrutiniHeader({ studentName }: { studentName?: string }) {
       </div>
       <img src="/didup-profile.jpg" alt="" className="h-[50px] w-[50px] shrink-0 object-cover" />
     </header>
+  );
+}
+
+function DidupScrutiniLanding({
+  studentName,
+  onOpenInfraperiodal,
+}: {
+  studentName?: string;
+  onOpenInfraperiodal: () => void;
+}) {
+  return (
+    <div className="didup-page min-h-dvh bg-black px-2 pb-[100px] text-white">
+      <DidupScrutiniHeader studentName={studentName} />
+      <div className="mt-[78px] px-1">
+        <DidupScrutiniRow label="PRIMO TRIMESTRE" />
+        <DidupScrutiniRow label="SCRUTINIO FINALE" />
+        <DidupScrutiniRow label="SCRUTINIO INFRAPERIODALE" onClick={onOpenInfraperiodal} />
+      </div>
+    </div>
+  );
+}
+
+function DidupScrutiniRow({ label, onClick }: { label: string; onClick?: () => void }) {
+  const content = (
+    <>
+      <span className="text-[19px] font-extrabold tracking-tight">{label}</span>
+      <ChevronRight className="h-7 w-7 shrink-0" strokeWidth={1.7} />
+    </>
+  );
+
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press flex min-h-[122px] w-full items-center justify-between border-b border-white/25 px-7 text-left"
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="flex min-h-[122px] items-center justify-between border-b border-white/25 px-7">
+      {content}
+    </div>
   );
 }
