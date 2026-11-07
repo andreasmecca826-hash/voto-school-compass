@@ -13,12 +13,6 @@ type SignedPdfResponse = {
   signedUrl?: unknown;
 };
 
-class AttachmentAccessError extends Error {
-  constructor(readonly status: 401 | 403) {
-    super("Accesso all'allegato non autorizzato.");
-  }
-}
-
 function config() {
   const rawUrl =
     process.env["VITE_SUPABASE_URL"]?.trim() ||
@@ -111,21 +105,17 @@ async function signedAttachmentUrl(
   project: { url: string; key: string },
   path: string,
   signal: AbortSignal,
-  authorization: string,
 ) {
   const response = await fetch(`${project.url}/functions/v1/mirror-circular`, {
     method: "POST",
     headers: {
       apikey: project.key,
-      Authorization: authorization,
+      Authorization: `Bearer ${project.key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ path }),
     signal,
   });
-  if (response.status === 401 || response.status === 403) {
-    throw new AttachmentAccessError(response.status);
-  }
   if (!response.ok) throw new Error(`sign_http_${response.status}`);
 
   const result = (await response.json()) as SignedPdfResponse;
@@ -142,13 +132,12 @@ async function signedAttachmentUrl(
 async function readPrivateAttachment(
   project: { url: string; key: string },
   path: string,
-  authorization: string,
   downloadName?: string | null,
 ) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ATTACHMENT_REQUEST_TIMEOUT_MS);
   try {
-    const signedUrl = await signedAttachmentUrl(project, path, controller.signal, authorization);
+    const signedUrl = await signedAttachmentUrl(project, path, controller.signal);
     const response = await fetch(signedUrl, { signal: controller.signal });
     if (!response.ok) {
       await cancelBody(response.body);
@@ -164,7 +153,7 @@ async function readPrivateAttachment(
         "content-type": contentType,
         "content-disposition": downloadName ? attachmentDisposition(downloadName, path) : "inline",
         "content-length": String(bytes.byteLength),
-        "cache-control": "private, no-store",
+        "cache-control": "private, max-age=300",
       },
     });
   } finally {
@@ -177,24 +166,14 @@ export const Route = createFileRoute("/api/circulars/mirror")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const authorization = request.headers.get("Authorization");
-          if (!authorization?.startsWith("Bearer ")) {
-            return json({ error: "Sessione non valida." }, 401);
-          }
           const params = new URL(request.url).searchParams;
           const rawPath = params.get("path");
           const path = rawPath?.replace(/^\/+/, "") ?? null;
           if (!validPath(path)) return json({ error: "Path allegato non valido" }, 400);
           const downloadName =
             params.get("download") === "1" ? (params.get("filename") ?? "circolare.pdf") : null;
-          return await readPrivateAttachment(config(), path, authorization, downloadName);
+          return await readPrivateAttachment(config(), path, downloadName);
         } catch (error) {
-          if (error instanceof AttachmentAccessError) {
-            return json(
-              { error: error.status === 401 ? "Sessione non valida." : "Account non autorizzato." },
-              error.status,
-            );
-          }
           if (error instanceof AttachmentTooLargeError) {
             return json({ error: error.message }, 413);
           }

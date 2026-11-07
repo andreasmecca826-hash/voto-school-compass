@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, ExternalLink, FileText, X } from "lucide-react";
 import {
   Sheet,
@@ -8,7 +8,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
-import { supabase } from "@/lib/supabase-auth";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 function safeAttachmentFilename(value?: string) {
@@ -29,16 +28,6 @@ function internalPdfUrl(path: string, download = false, filename?: string) {
     params.set("filename", filename ?? "circolare.pdf");
   }
   return `/api/circulars/mirror?${params.toString()}`;
-}
-
-async function fetchInternalAttachment(url: string) {
-  const { data, error } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
-  if (error || !accessToken) throw new Error("Sessione non disponibile.");
-  return fetch(url, {
-    credentials: "same-origin",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
 }
 
 function mergeAttachments(
@@ -103,13 +92,6 @@ export function CircularViewer({
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
 
-  const loadInternalPreview = useCallback(async () => {
-    if (!activeFile?.path) throw new Error("Allegato non disponibile.");
-    const response = await fetchInternalAttachment(internalPdfUrl(activeFile.path));
-    if (!response.ok) throw new Error(`preview_${response.status}`);
-    return response.arrayBuffer();
-  }, [activeFile?.path]);
-
   async function downloadAttachment() {
     if (!downloadUrl || isDownloading) return;
     if (!activeFile?.path) {
@@ -119,9 +101,7 @@ export function CircularViewer({
     setIsDownloading(true);
     setDownloadError(undefined);
     try {
-      const response = activeFile?.path
-        ? await fetchInternalAttachment(downloadUrl)
-        : await fetch(downloadUrl, { credentials: "same-origin" });
+      const response = await fetch(downloadUrl, { credentials: "same-origin" });
       if (!response.ok) throw new Error(`download_${response.status}`);
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -142,28 +122,7 @@ export function CircularViewer({
 
   function openAttachment() {
     if (!previewUrl) return;
-    if (!activeFile?.path) {
-      window.open(previewUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
-    const popup = window.open("about:blank", "_blank");
-    if (!popup) {
-      setDownloadError("Il browser ha bloccato l’apertura. Usa il pulsante Scarica.");
-      return;
-    }
-    popup.opener = null;
-    setDownloadError(undefined);
-    void fetchInternalAttachment(previewUrl)
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`open_${response.status}`);
-        const objectUrl = URL.createObjectURL(await response.blob());
-        popup.location.href = objectUrl;
-        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
-      })
-      .catch(() => {
-        popup.close();
-        setDownloadError("Apertura non riuscita. Riprova o scarica l’allegato.");
-      });
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -216,7 +175,6 @@ export function CircularViewer({
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
-            loadData={activeFile?.path ? loadInternalPreview : undefined}
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">

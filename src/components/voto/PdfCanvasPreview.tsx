@@ -4,10 +4,9 @@ type PdfCanvasPreviewProps = {
   src: string;
   title: string;
   onError?: () => void;
-  loadData?: () => Promise<ArrayBuffer>;
 };
 
-export function PdfCanvasPreview({ src, title, onError, loadData }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [pageCount, setPageCount] = useState(0);
@@ -27,9 +26,7 @@ export function PdfCanvasPreview({ src, title, onError, loadData }: PdfCanvasPre
           "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
           import.meta.url,
         ).toString();
-        const loadingTask = loadData
-          ? pdfjs.getDocument({ data: new Uint8Array(await loadData()) })
-          : pdfjs.getDocument({ url: src, withCredentials: true });
+        const loadingTask = pdfjs.getDocument({ url: src, withCredentials: true });
         const pdf = await loadingTask.promise;
         if (cancelled) {
           await pdf.destroy();
@@ -67,7 +64,7 @@ export function PdfCanvasPreview({ src, title, onError, loadData }: PdfCanvasPre
       cancelled = true;
       container.replaceChildren();
     };
-  }, [src, title, onError, loadData]);
+  }, [src, title, onError]);
 
   return (
     <div
@@ -85,7 +82,9 @@ export function PdfCanvasPreview({ src, title, onError, loadData }: PdfCanvasPre
         </p>
       )}
       <div ref={containerRef} className="space-y-3" aria-hidden={status !== "ready"} />
-      {status === "ready" && pageCount > 0 && <span className="sr-only">{pageCount} pagine</span>}
+      {status === "ready" && pageCount > 0 && (
+        <span className="sr-only">{pageCount} pagine</span>
+      )}
     </div>
   );
 }

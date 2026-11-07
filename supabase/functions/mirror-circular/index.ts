@@ -41,27 +41,6 @@ function storageHeaders(key: string) {
   return headers;
 }
 
-async function authenticatedUserId(request: Request, url: string, key: string) {
-  const authorization = request.headers.get("Authorization");
-  if (!authorization?.startsWith("Bearer ")) return null;
-  const response = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: key, Authorization: authorization },
-  });
-  if (!response.ok) return null;
-  const user = await response.json();
-  return typeof user?.id === "string" ? user.id : null;
-}
-
-async function isOwner(url: string, key: string, userId: string) {
-  const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
-    method: "POST",
-    headers: storageHeaders(key),
-    body: JSON.stringify({ p_user_id: userId }),
-  });
-  if (!response.ok) return false;
-  return (await response.json()) === true;
-}
-
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") {
@@ -85,18 +64,13 @@ Deno.serve(async (request: Request) => {
 
   try {
     const projectUrl = normalizeProjectUrl(rawUrl);
-    const userId = await authenticatedUserId(request, projectUrl, serviceKey);
-    if (!userId) return jsonResponse({ error: "Sessione non valida" }, 401);
-    if (!(await isOwner(projectUrl, serviceKey, userId))) {
-      return jsonResponse({ error: "Account non autorizzato" }, 403);
-    }
     const objectPath = path.split("/").map(encodeURIComponent).join("/");
     const response = await fetch(
       `${projectUrl}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${objectPath}`,
       {
         method: "POST",
         headers: storageHeaders(serviceKey),
-        body: JSON.stringify({ expiresIn: 300 }),
+        body: JSON.stringify({ expiresIn: 3600 }),
       },
     );
     if (!response.ok) {
