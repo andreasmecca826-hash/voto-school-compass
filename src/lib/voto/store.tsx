@@ -491,8 +491,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       }
 
       const deadline = Date.now() + 10 * 60 * 1000;
+      let pollInterval = 5_000;
       while (!cancelled && Date.now() < deadline) {
-        await wait(5_000);
+        await wait(pollInterval);
+        pollInterval = Math.min(pollInterval * 2, 30_000);
         if (cancelled) return;
         try {
           const status = await getCircularCheckStatus(requestedAt);
