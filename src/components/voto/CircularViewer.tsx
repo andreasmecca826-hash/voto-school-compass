@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, FileText, X } from "lucide-react";
+import { Download, ExternalLink, FileText, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -8,6 +8,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
+import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -29,6 +30,32 @@ function internalPdfUrl(path: string, download = false, filename?: string) {
   return `/api/circulars/mirror?${params.toString()}`;
 }
 
+function mergeAttachments(
+  attachments: CircularAttachment[] | undefined,
+  fallback: CircularAttachment,
+): CircularAttachment[] {
+  const merged: CircularAttachment[] = [];
+  for (const file of [...(attachments ?? []), fallback]) {
+    if (!file.name && !file.path && !file.url) continue;
+    const name = file.name?.trim().toLocaleLowerCase("it-IT");
+    const existingIndex = name
+      ? merged.findIndex((item) => item.name?.trim().toLocaleLowerCase("it-IT") === name)
+      : -1;
+    if (existingIndex >= 0) {
+      const existing = merged[existingIndex];
+      merged[existingIndex] = {
+        ...file,
+        ...existing,
+        ...(existing.path || !file.path ? {} : { path: file.path }),
+        ...(existing.url || !file.url ? {} : { url: file.url }),
+      };
+      continue;
+    }
+    merged.push(file);
+  }
+  return merged;
+}
+
 export function CircularViewer({
   open,
   onOpenChange,
@@ -46,11 +73,7 @@ export function CircularViewer({
   path?: string | undefined;
   attachments?: CircularAttachment[] | undefined;
 }) {
-  const files = attachments?.length
-    ? attachments
-    : fileName || path || url
-      ? [{ name: fileName, path, url }]
-      : [];
+  const files = mergeAttachments(attachments, { name: fileName, path, url });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
@@ -62,7 +85,8 @@ export function CircularViewer({
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
-  const previewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : activeFile?.url;
+  const internalPreviewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : undefined;
+  const previewUrl = internalPreviewUrl ?? activeFile?.url;
   const downloadUrl = activeFile?.path
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
@@ -94,6 +118,11 @@ export function CircularViewer({
     } finally {
       setIsDownloading(false);
     }
+  }
+
+  function openAttachment() {
+    if (!previewUrl) return;
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -142,11 +171,10 @@ export function CircularViewer({
           </div>
         )}
         {previewUrl && isPdf ? (
-          <iframe
+          <PdfCanvasPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
-            className="min-h-0 w-full flex-1 rounded-xl border border-border bg-white"
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -159,15 +187,37 @@ export function CircularViewer({
           </div>
         )}
         {downloadUrl && (
-          <button
-            type="button"
-            onClick={downloadAttachment}
-            disabled={isDownloading}
-            className="press mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
-          >
-            <Download className="h-4 w-4" />
-            {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
-          </button>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {isPdf && previewUrl && (
+              <button
+                type="button"
+                onClick={openAttachment}
+                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Apri PDF
+              </button>
+            )}
+            {!isPdf && previewUrl && (
+              <button
+                type="button"
+                onClick={openAttachment}
+                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Apri DOCX
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={downloadAttachment}
+              disabled={isDownloading}
+              className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
+            </button>
+          </div>
         )}
         {downloadError && (
           <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>

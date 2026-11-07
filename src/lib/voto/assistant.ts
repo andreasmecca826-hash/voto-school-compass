@@ -272,6 +272,18 @@ export function answerQuestion(
     return "Posso consultare i conteggi delle assenze presenti nei dati caricati, ma non inviare una giustificazione. Per giustificare un’assenza usa DidUP Famiglia con l’account genitore, se la funzione è abilitata dalla scuola.";
   }
 
+  const asksNtfyMessage =
+    normalized.includes("ntfy") ||
+    normalized.includes("notifica push") ||
+    normalized.includes("notifiche push") ||
+    (normalized.includes("notific") &&
+      ["messaggio", "testo", "mostra", "dice", "perche", "diverso"].some((term) =>
+        normalized.includes(term),
+      ));
+  if (asksNtfyMessage) {
+    return "Le notifiche ntfy del monitor sono brevi: «Ci sono novità in bacheca», «Ci sono novità nei voti» o «Ci sono novità nei compiti». Per leggere i dettagli apri la sezione corrispondente in VOTO. Da questa chat non posso cambiare il topic o le impostazioni ntfy.";
+  }
+
   if (
     normalized.includes("cosa sai fare") ||
     normalized.includes("cosa puoi fare") ||
@@ -280,7 +292,16 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e alcune preferenze locali. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+  }
+
+  if (
+    (normalized.includes("pagell") || normalized.includes("scrutin")) &&
+    ["ufficial", "promosso", "promozione", "ammesso", "ammissione"].some((term) =>
+      normalized.includes(term),
+    )
+  ) {
+    return "No: in Menu > Scrutini infraperiodali, primo trimestre e scrutinio finale mostrano riepiloghi indicativi calcolati dai voti registrati nel periodo; non sono valutazioni ufficiali della scuola. La pagella infraperiodale è invece compilabile manualmente. Per l’esito ufficiale controlla DidUP o le comunicazioni della scuola.";
   }
 
   const asksWhereToFind =
@@ -294,6 +315,7 @@ export function answerQuestion(
       [["assenza", "presenz", "ritardo"], "Dashboard, modulo Presenze"],
       [["orario", "lezion"], "Orario"],
       [["interrogaz"], "Interrogazioni"],
+      [["scrutin", "pagell"], "Menu > Scrutini infraperiodali"],
       [["diario", "attivita"], "Diario"],
       [["nota"], "Note"],
       [["promemoria"], "Promemoria"],

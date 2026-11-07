@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarPlus, Check, ChevronDown, Clock3 } from "lucide-react";
-import { useMemo } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Empty } from "@/components/voto/ui";
 import { fmtDate } from "@/lib/voto/dates";
 import { selectPastReminders, selectUpcomingReminders } from "@/lib/voto/selectors";
@@ -18,6 +19,125 @@ export const Route = createFileRoute("/promemoria")({
 });
 
 function Promemoria() {
+  const v = useVoto();
+  return v.registryStyle === "didup" ? <DidupPromemoria /> : <StandardPromemoria />;
+}
+
+function reminderDate(value?: string) {
+  if (!value) return "DATA NON DISPONIBILE";
+  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "DATA NON DISPONIBILE";
+  return fmtDate(value, { day: "2-digit", month: "short", year: "2-digit" })
+    .replace(/[.]/g, "")
+    .toLocaleUpperCase("it-IT");
+}
+
+function DidupPromemoria() {
+  const v = useVoto();
+  const now = useClock();
+  const upcoming = useMemo(
+    () => selectUpcomingReminders(v.data.notifications, now),
+    [now, v.data.notifications],
+  );
+  const past = useMemo(
+    () => [...selectPastReminders(v.data.notifications, now, 30)].reverse(),
+    [now, v.data.notifications],
+  );
+  const [showPast, setShowPast] = useState(true);
+  const studentName = (v.data.student.name || "STUDENTE").toLocaleUpperCase("it-IT");
+  const renderReminder = (reminder: (typeof upcoming)[number]) => (
+    <li
+      key={reminder.id}
+      className="min-h-[162px] border-b border-[#414141] bg-[#262729] px-[26px] pb-[18px] pt-[26px] last:border-b-0"
+    >
+      <div className="relative h-[44px]">
+        <img
+          src="/didup-icons/person.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-0 top-[2px] h-[20px] w-[21px] object-contain"
+        />
+        <p className="absolute left-[28px] right-0 top-[1px] truncate text-[18px] font-semibold leading-5 uppercase">
+          {reminder.teacher || reminder.subject || "SCUOLA"}
+        </p>
+        <time
+          dateTime={reminder.date}
+          className="absolute left-0 top-[25px] whitespace-nowrap text-[15px] font-medium leading-4 text-[#0aa0b1]"
+        >
+          {reminderDate(reminder.date)}
+        </time>
+      </div>
+      <p className="mt-[32px] whitespace-pre-line break-words text-[18px] leading-[1.4] text-white/90">
+        {reminder.message?.trim() || reminder.title}
+      </p>
+    </li>
+  );
+
+  return (
+    <div className="didup-page min-h-dvh bg-black pb-[112px] text-white">
+      <header className="flex items-center gap-[42px] pl-4 pr-[17px] pb-[44px] pt-[21px]">
+        <Link
+          to="/"
+          aria-label="Torna alla home"
+          className="press flex h-10 w-8 shrink-0 items-center justify-start text-white"
+        >
+          <ArrowLeft className="h-7 w-7" strokeWidth={1.7} />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[24px] font-normal leading-none tracking-tight">PROMEMORIA</h1>
+          <p className="mt-[2px] truncate text-[14px] leading-none text-white/85">{studentName}</p>
+        </div>
+        <img
+          src="/didup-profile.jpg"
+          alt=""
+          aria-hidden="true"
+          className="-translate-y-[4px] h-[62px] w-[62px] shrink-0 object-cover"
+        />
+      </header>
+
+      {upcoming.length > 0 ? (
+        <ul aria-label="Promemoria futuri">{upcoming.map(renderReminder)}</ul>
+      ) : (
+        <p className="bg-[#262729] px-[39px] py-9 text-[17px] text-white/80">
+          Nessun promemoria futuro.
+        </p>
+      )}
+
+      <div className="flex min-h-[59px] items-center justify-between gap-4 bg-black px-[26px]">
+        <span className="text-[16px] italic tracking-wide text-white/90">
+          Mostra promemoria precedenti
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={showPast}
+          aria-label="Mostra promemoria precedenti"
+          onClick={() => setShowPast((current) => !current)}
+          className={`press relative h-[30px] w-[51px] shrink-0 rounded-full transition-colors ${
+            showPast ? "bg-[#0aa0b1]" : "bg-[#55585a]"
+          }`}
+        >
+          <span
+            className={`absolute top-[3px] h-[24px] w-[24px] rounded-full bg-white shadow-sm transition-[left] ${
+              showPast ? "left-[24px]" : "left-[3px]"
+            }`}
+          />
+        </button>
+      </div>
+
+      {showPast &&
+        (past.length > 0 ? (
+          <ul aria-label="Promemoria precedenti">{past.map(renderReminder)}</ul>
+        ) : (
+          <p className="border-t border-[#414141] bg-[#262729] px-[26px] py-5 text-[15px] text-white/75">
+            Nessun promemoria precedente negli ultimi 30 giorni.
+          </p>
+        ))}
+    </div>
+  );
+}
+
+function StandardPromemoria() {
   const v = useVoto();
   const now = useClock();
   const upcoming = useMemo(

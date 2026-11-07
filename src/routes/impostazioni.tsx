@@ -2,14 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Bug,
   CalendarDays,
-  ChevronDown,
   ChevronUp,
-  Copy,
   Download,
   Eye,
   EyeOff,
-  Github,
-  Loader2,
+  Gauge,
+  SlidersHorizontal,
   Moon,
   RotateCcw,
   Save,
@@ -19,8 +17,16 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
+import { useSchoolAuth } from "@/lib/school-auth-context";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
 import { canResetDemoData } from "@/lib/voto/demo";
@@ -34,6 +40,7 @@ import {
   type CustomTheme,
   type HomeModuleId,
   type Mode,
+  type PerformanceOption,
   type Theme,
 } from "@/lib/voto/store";
 
@@ -41,26 +48,19 @@ export const Route = createFileRoute("/impostazioni")({
   head: () => ({
     meta: [
       { title: "Impostazioni — VOTO." },
-      { name: "description", content: "Connessione GitHub, tema e informazioni app." },
+      {
+        name: "description",
+        content: "Accesso privato ai dati scolastici, tema e informazioni app.",
+      },
       { property: "og:title", content: "Impostazioni — VOTO." },
-      { property: "og:description", content: "Connessione GitHub, tema e informazioni app." },
+      {
+        property: "og:description",
+        content: "Accesso privato ai dati scolastici, tema e informazioni app.",
+      },
     ],
   }),
   component: Settings,
 });
-
-const SCHEMA = `{
-  "student": {"name":"Studente","className":"4B","schoolYear":"2026/2027"},
-  "updatedAt": "2026-10-25T08:30:00+02:00",
-  "previousAverage": 7.35,
-  "attendance": {"absenceDays":14,"absenceHours":84,"delays":1,"earlyExits":0,"annualHours":990,"absenceLimitHours":264},
-  "subjects": [
-    {"id":"matematica","name":"Matematica","color":"#E85D5D",
-     "grades":[{"id":"g1","value":7.5,"date":"2026-10-20","type":"scritto","weight":1,"comment":"Equazioni"}]}
-  ],
-  "assignments": [{"id":"a1","title":"Esercizi pagina 42","subject":"Matematica","dueDate":"2026-10-25","dueTime":"18:00","completed":false,"details":"esercizi 1-8"}],
-  "notifications": [{"id":"n1","type":"note","title":"Avviso","message":"...","date":"2026-10-24","read":false}]
-}`;
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -212,6 +212,32 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];
+const PERFORMANCE_OPTION_META: {
+  id: PerformanceOption;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "blur",
+    label: "Sfocature",
+    description: "Disattiva gli effetti di sfocatura e vetro.",
+  },
+  {
+    id: "animations",
+    label: "Animazioni e transizioni",
+    description: "Riduce animazioni, transizioni e scorrimento morbido.",
+  },
+  {
+    id: "shadows",
+    label: "Ombre",
+    description: "Rimuove le ombre da schede, pulsanti e testo.",
+  },
+  {
+    id: "wallpapers",
+    label: "Sfondi decorativi",
+    description: "Nasconde temporaneamente gli sfondi Emoji e le immagini Custom.",
+  },
+];
 
 function localDateValue(date: Date): string {
   const year = date.getFullYear();
@@ -229,7 +255,7 @@ function addDaysToDateValue(value: string, days: number): string {
 
 function Settings() {
   const v = useVoto();
-  const [input, setInput] = useState(v.url);
+  const auth = useSchoolAuth();
   const [calendarFrom, setCalendarFrom] = useState("");
   const [calendarTo, setCalendarTo] = useState("");
   const [calendarInclude, setCalendarInclude] = useState({
@@ -238,16 +264,14 @@ function Settings() {
     reminders: true,
   });
   const preferencesInput = useRef<HTMLInputElement>(null);
-  const [testing, setTesting] = useState(false);
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
   const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
-  const [showSchema, setShowSchema] = useState(false);
+  const [performanceDialogOpen, setPerformanceDialogOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
   useEffect(() => {
-    setInput(v.url);
     if (!canResetDemoData(v.source, v.url)) {
       setDebugOpen(false);
       debugTaps.current = { count: 0, last: 0 };
@@ -280,7 +304,7 @@ function Settings() {
       setDebugJson(JSON.stringify(parsed, null, 2));
     } catch (error) {
       toast.error("Dati demo non validi", {
-        description: error instanceof Error ? error.message : "Controlla il JSON.",
+        description: error instanceof Error ? error.message : "Controlla i dati demo.",
       });
     }
   };
@@ -343,8 +367,13 @@ function Settings() {
     }
   };
 
+  const pageClassName =
+    v.registryStyle === "didup"
+      ? "didup-page min-h-dvh bg-black px-2 pb-[100px] text-white"
+      : "pt-3";
+
   return (
-    <div className="pt-3">
+    <div className={pageClassName}>
       <h1 className="font-display text-2xl font-semibold">Impostazioni</h1>
 
       <SectionTitle>Profilo dell’app</SectionTitle>
@@ -362,47 +391,112 @@ function Settings() {
           className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
         />
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Viene usato solo per mostrare il tuo nome nell’app e non modifica il file JSON.
+          Viene usato solo per mostrare il tuo nome nell’app e non modifica i dati Supabase.
         </p>
       </section>
 
-      <SectionTitle>Connessione GitHub</SectionTitle>
+      <SectionTitle>Prestazioni</SectionTitle>
       <section className="card-surface p-4">
-        <label htmlFor="url" className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Github className="h-4 w-4" /> URL raw del file JSON (https)
-        </label>
-        <input
-          id="url"
-          type="url"
-          inputMode="url"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="https://raw.githubusercontent.com/utente/repo/main/voto.json"
-          className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 font-mono text-xs"
-        />
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            disabled={testing || !input.trim()}
-            onClick={async () => {
-              setTesting(true);
-              await v.connect(input);
-              setTesting(false);
-            }}
-            className="press flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        <button
+          type="button"
+          role="switch"
+          aria-checked={v.performanceMode}
+          onClick={() => v.setPerformanceMode(!v.performanceMode)}
+          className="flex min-h-14 w-full items-center gap-3 text-left"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <Gauge className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Modalità prestazioni</span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
+              per rendere l’app più fluida sui telefoni meno recenti.
+            </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+              v.performanceMode ? "bg-primary" : "bg-muted",
+            )}
           >
-            {testing && <Loader2 className="h-4 w-4 animate-spin" />} Testa e salva
-          </button>
-          {v.url && (
-            <button
-              type="button"
-              onClick={v.disconnect}
-              className="press h-11 rounded-xl border border-border px-4 text-sm"
-            >
-              Scollega
-            </button>
-          )}
-        </div>
+            <span
+              className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                v.performanceMode ? "translate-x-[22px]" : "translate-x-0.5",
+              )}
+            />
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPerformanceDialogOpen(true)}
+          className="mt-3 flex min-h-11 w-full items-center gap-3 rounded-xl border border-border px-3 text-left transition-colors hover:bg-surface"
+          aria-haspopup="dialog"
+        >
+          <SlidersHorizontal className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 flex-1 text-xs font-semibold">Personalizza effetti</span>
+          <span className="text-[11px] text-muted-foreground">
+            {Object.values(v.performanceOptions).filter(Boolean).length} di 4 selezionati
+          </span>
+        </button>
+      </section>
+      <Dialog open={performanceDialogOpen} onOpenChange={setPerformanceDialogOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-h-[85dvh] overflow-y-auto rounded-2xl p-5 sm:max-w-md">
+          <DialogHeader className="pr-6 text-left">
+            <DialogTitle>Personalizza prestazioni</DialogTitle>
+            <DialogDescription>
+              Scegli quali effetti alleggerire. Le selezioni si applicano quando Modalità
+              prestazioni è attiva.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="divide-y divide-border rounded-xl border border-border px-3">
+            {PERFORMANCE_OPTION_META.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="switch"
+                aria-checked={v.performanceOptions[option.id]}
+                onClick={() =>
+                  v.setPerformanceOption(option.id, !v.performanceOptions[option.id])
+                }
+                className="flex min-h-[68px] w-full items-center gap-3 py-2 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">{option.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                    {option.description}
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                    v.performanceOptions[option.id] ? "bg-primary" : "bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                      v.performanceOptions[option.id] ? "translate-x-[22px]" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Puoi cambiare queste scelte in qualsiasi momento. I tuoi temi e sfondi non vengono
+            eliminati.
+          </p>
+        </DialogContent>
+      </Dialog>
+
+      <SectionTitle>Accesso ai dati privati</SectionTitle>
+      <section className="card-surface p-4">
+        <p className="text-xs text-muted-foreground">Account autorizzato</p>
+        <p className="mt-1 break-all text-sm font-medium">{auth.email || "Account Supabase"}</p>
         <p
           className={cn(
             "mt-3 text-xs",
@@ -415,11 +509,17 @@ function Settings() {
           Ultima sincronizzazione: {fmtTime(v.lastSync)}
         </p>
         <div className="mt-4 flex gap-2 rounded-xl bg-surface p-3 text-[11px] text-muted-foreground">
-          <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />
-          Un repository pubblico rende i dati visibili a chiunque abbia l'URL. Evita nome completo,
-          credenziali o dati personali: preferisci dati pseudonimizzati. Nessun token viene salvato
-          nell'app.
+          <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />I dati sono letti da uno storage
+          privato e l’Edge Function li consegna solo all’account autorizzato. La sessione resta sul
+          dispositivo; non inserire credenziali DidUP nell’app.
         </div>
+        <button
+          type="button"
+          onClick={() => void auth.signOut()}
+          className="press mt-4 h-11 w-full rounded-xl border border-border text-sm font-medium"
+        >
+          Esci dall’account
+        </button>
       </section>
 
       <AppPinLockSettings />
@@ -459,6 +559,9 @@ function Settings() {
               v.setReduceMotion(backup.reduceMotion);
               v.setTheme(backup.theme);
               v.setCustomTheme(backup.customTheme);
+              v.setEmojiThemeEmojis(backup.emojiThemeEmojis);
+              v.setEmojiThemeBackgroundColor("scuro", backup.emojiThemeBackgroundColors.scuro);
+              v.setEmojiThemeBackgroundColor("chiaro", backup.emojiThemeBackgroundColors.chiaro);
               v.setInterfaceScale(backup.interfaceScale);
               v.setHomeCustomization({
                 homeModules: backup.homeModules,
@@ -487,6 +590,8 @@ function Settings() {
                 reduceMotion: v.reduceMotion,
                 theme: v.theme,
                 customTheme: v.customTheme,
+                emojiThemeEmojis: v.emojiThemeEmojis,
+                emojiThemeBackgroundColors: v.emojiThemeBackgroundColors,
                 interfaceScale: v.interfaceScale,
                 homeModules: v.homeModules,
                 homeScale: v.homeScale,
@@ -615,9 +720,9 @@ function Settings() {
             <div>
               <h2 className="text-sm font-semibold">Debug dati demo</h2>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Modifica, aggiungi o rimuovi direttamente nel JSON voti, compiti, diario, bacheca,
-                notifiche, materie e presenze. Questi dati restano solo su questo dispositivo e non
-                modificano DidUP.
+                Modifica, aggiungi o rimuovi direttamente i dati demo di voti, compiti, diario,
+                bacheca, notifiche, materie e presenze. Questi dati restano solo su questo
+                dispositivo e non modificano Supabase o DidUP.
               </p>
             </div>
           </div>
@@ -626,7 +731,7 @@ function Settings() {
             onChange={(event) => setDebugJson(event.target.value)}
             spellCheck={false}
             className="mt-3 min-h-[360px] w-full rounded-xl border border-input bg-background p-3 font-mono text-[10px] leading-relaxed text-foreground outline-none focus:border-primary"
-            aria-label="Dati demo in formato JSON"
+            aria-label="Dati demo"
           />
           <div className="mt-3 flex gap-2">
             <button
@@ -647,44 +752,6 @@ function Settings() {
         </section>
       )}
 
-      {canResetDemoData(v.source, v.url) && (
-        <>
-          <SectionTitle>Schema JSON</SectionTitle>
-          <button
-            type="button"
-            onClick={() => setShowSchema((x) => !x)}
-            className="press flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
-          >
-            {showSchema ? "Nascondi schema JSON" : "Visualizza schema JSON"}
-            <ChevronDown
-              className={cn("h-4 w-4 transition-transform", showSchema && "rotate-180")}
-            />
-          </button>
-          {showSchema && (
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() =>
-                  navigator.clipboard.writeText(SCHEMA).then(
-                    () => toast.success("Schema copiato"),
-                    () => toast.error("Copia non riuscita"),
-                  )
-                }
-                className="press mb-2 inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-primary"
-              >
-                <Copy className="h-3.5 w-3.5" /> Copia schema
-              </button>
-              <pre className="card-surface no-scrollbar overflow-x-auto p-4 font-mono text-[10.5px] leading-relaxed text-muted-foreground">
-                {SCHEMA}
-              </pre>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Voti non numerici vengono ignorati; "7+" = 7,15 e "7-" = 6,85. Il peso predefinito è
-                1.
-              </p>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

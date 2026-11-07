@@ -11,7 +11,8 @@ import type {
   Subject,
   VotoData,
 } from "./types";
-import { mirrorCirculars } from "./circulars";
+import { supabasePublishableKey } from "./circulars";
+import { PRIVATE_SCHOOL_DATA_URL, supabase } from "../supabase-auth";
 
 export class SchemaError extends Error {}
 
@@ -179,7 +180,7 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-");
 
 export function parseVotoData(raw: unknown): VotoData {
-  if (!isObj(raw)) throw new SchemaError("Il file non contiene un oggetto JSON valido.");
+  if (!isObj(raw)) throw new SchemaError("I dati Supabase ricevuti non hanno un formato valido.");
   if (!Array.isArray(raw["subjects"]))
     throw new SchemaError('Campo "subjects" mancante o non è un array.');
 
@@ -345,14 +346,29 @@ export function validateUrl(url: string): string | null {
 }
 
 export async function fetchVotoData(url: string, timeoutMs = 10000): Promise<VotoData> {
-  const err = validateUrl(url);
+  const privateSource = url === PRIVATE_SCHOOL_DATA_URL;
+  const err = privateSource ? null : validateUrl(url);
   if (err) throw new SchemaError(err);
+  let headers: Record<string, string> | undefined;
+  if (privateSource) {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session)
+      throw new Error("PRIVATE_DATA_UNAUTHENTICATED: Accedi per aggiornare i dati.");
+    headers = {
+      apikey: supabasePublishableKey(),
+      Authorization: `Bearer ${data.session.access_token}`,
+    };
+  }
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   const sep = url.includes("?") ? "&" : "?";
   let res: Response;
   try {
-    res = await fetch(`${url}${sep}_t=${Date.now()}`, { cache: "no-store", signal: ctrl.signal });
+    res = await fetch(`${url}${sep}_t=${Date.now()}`, {
+      cache: "no-store",
+      signal: ctrl.signal,
+      ...(headers ? { headers } : {}),
+    });
   } catch (e) {
     if ((e as Error).name === "AbortError")
       throw new Error("Tempo scaduto: il server non risponde.");
@@ -364,17 +380,26 @@ export async function fetchVotoData(url: string, timeoutMs = 10000): Promise<Vot
   } finally {
     clearTimeout(t);
   }
+  if (privateSource && res.status === 401) {
+    throw new Error("PRIVATE_DATA_UNAUTHENTICATED: La sessione è scaduta; accedi di nuovo.");
+  }
+  if (privateSource && res.status === 403) {
+    throw new Error("PRIVATE_DATA_FORBIDDEN: Questo account non è autorizzato al registro.");
+  }
+  if (privateSource && res.status === 503) {
+    throw new Error("I dati privati non sono ancora disponibili; riprova tra poco.");
+  }
   if (!res.ok)
     throw new Error(
       res.status === 404
-        ? "File non trovato (404). Controlla l'URL raw."
+        ? "Dati Supabase non trovati (404). Verifica che il servizio sia disponibile."
         : `Errore del server (${res.status}).`,
     );
   let json: unknown;
   try {
     json = await res.json();
   } catch {
-    throw new SchemaError("Il file non è JSON valido.");
+    throw new SchemaError("La risposta di Supabase non contiene dati validi.");
   }
-  return mirrorCirculars(parseVotoData(json));
+  return parseVotoData(json);
 }

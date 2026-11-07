@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/react";
 // A Sentry DSN is an ingestion key intended for client-side use. It is not an
 // authentication token; deployments may override it through VITE_SENTRY_DSN.
 const dsn =
-  import.meta.env.VITE_SENTRY_DSN ||
+  import.meta.env["VITE_SENTRY_DSN"] ||
   "https://c034116ce8cb726769bb1096abf142ef@o4512356425990144.ingest.de.sentry.io/4512385034879056";
 const enabled = import.meta.env.PROD && typeof window !== "undefined";
 
@@ -11,7 +11,6 @@ if (enabled) {
   Sentry.init({
     dsn,
     enabled,
-    sendDefaultPii: false,
     tracesSampleRate: 0,
     beforeSend(event) {
       // VOTO handles school records locally. Keep only exception types and

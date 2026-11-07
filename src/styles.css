@@ -1092,6 +1092,14 @@
   --theme-font-display: var(--custom-font);
 }
 
+:root[data-theme="custom"]:not([data-registry-style="didup"]) body {
+  background-image: var(--custom-background-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
 :root[data-theme]:not([data-theme="original"]):not([data-registry-style="didup"]) {
   --background: var(--theme-bg-dark);
   --card: var(--theme-card-dark);
@@ -1445,6 +1453,33 @@
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
   transition-duration: 0.01ms !important;
+}
+
+:root[data-performance-blur="on"] *,
+:root[data-performance-blur="on"] *::before,
+:root[data-performance-blur="on"] *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+:root[data-performance-animations="on"] *,
+:root[data-performance-animations="on"] *::before,
+:root[data-performance-animations="on"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+:root[data-performance-shadows="on"] *,
+:root[data-performance-shadows="on"] *::before,
+:root[data-performance-shadows="on"] *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+:root[data-performance-wallpapers="on"] body {
+  background-attachment: scroll !important;
 }
 
 /* Profilo di registro sobrio: ispirato a DidUP, senza riprodurne marchio o schermate ufficiali. */
@@ -2212,4 +2247,50 @@
       color-mix(in srgb, var(--academia-pergamena) 22%, transparent),
       transparent 72%
     );
+}
+
+
+:root[data-theme="emoji"]:not([data-registry-style="didup"]) {
+  --theme-bg-dark: var(--emoji-theme-bg-dark, #1d192a);
+  --theme-card-dark: #2b2539;
+  --theme-surface-dark: #393149;
+  --theme-fg-dark: #fff7f4;
+  --theme-muted-dark: #c9bbcd;
+  --theme-bg-light: var(--emoji-theme-bg-light, #fff4e9);
+  --theme-card-light: #fffdf9;
+  --theme-surface-light: #ffe7ee;
+  --theme-fg-light: #3d2d3d;
+  --theme-muted-light: #806c7d;
+  --theme-primary: #d85f91;
+  --theme-radius: 1.25rem;
+  --theme-font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --theme-font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-theme="emoji"]:not([data-registry-style="didup"]) body {
+  background-image:
+    var(--emoji-theme-pattern, none),
+    radial-gradient(
+      ellipse at 15% 5%,
+      color-mix(in srgb, var(--primary) 14%, transparent),
+      transparent 52%
+    );
+  background-position:
+    0 0,
+    center;
+  background-size:
+    240px 240px,
+    cover;
+  background-repeat: repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+:root[data-theme="emoji"]:not([data-registry-style="didup"]) .card-surface {
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+:root[data-performance-wallpapers="on"][data-theme="emoji"]:not([data-registry-style="didup"]) body,
+:root[data-performance-wallpapers="on"][data-theme="custom"]:not([data-registry-style="didup"]) body {
+  background-image: none !important;
+  background-attachment: scroll !important;
 }

@@ -22,21 +22,24 @@ describe("Dashboard selectors", () => {
       { id: "today", title: "Oggi", dueDate: "2026-10-26", dueTime: "18:00", completed: false },
     ];
 
-    expect(
-      selectDashboardAssignments(assignments, now, (_id, remote) => remote).map((item) => item.id),
-    ).toEqual(["today", "tomorrow"]);
+    expect(selectDashboardAssignments(assignments, now).map((item) => item.id)).toEqual([
+      "today",
+      "tomorrow",
+    ]);
   });
 
-  it("mantiene i compiti scaduti non completati e ignora quelli completati", () => {
+  it("esclude i compiti di ieri e mantiene quelli di oggi e domani", () => {
     const now = new Date(2026, 9, 26);
     const assignments = [
-      { id: "open", title: "Da fare", dueDate: "2026-10-25", completed: false },
-      { id: "done", title: "Fatto", dueDate: "2026-10-25", completed: true },
+      { id: "yesterday", title: "Ieri", dueDate: "2026-10-25", completed: false },
+      { id: "today", title: "Oggi", dueDate: "2026-10-26", completed: false },
+      { id: "tomorrow", title: "Domani", dueDate: "2026-10-27", completed: false },
     ];
 
-    expect(
-      selectDashboardAssignments(assignments, now, (_id, remote) => remote).map((item) => item.id),
-    ).toEqual(["open"]);
+    expect(selectDashboardAssignments(assignments, now).map((item) => item.id)).toEqual([
+      "today",
+      "tomorrow",
+    ]);
   });
 
   it("filtra notifiche e interrogazioni aperte con un limite", () => {

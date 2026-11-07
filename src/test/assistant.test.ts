@@ -33,6 +33,25 @@ const data: VotoData = {
 };
 
 describe("Assistente locale", () => {
+  it("spiega i messaggi generici delle notifiche ntfy", () => {
+    const answer = answerQuestion("Perché ntfy mostra un testo diverso?", data);
+
+    expect(answer).toContain("Ci sono novità in bacheca");
+    expect(answer).toContain("Ci sono novità nei voti");
+    expect(answer).toContain("Ci sono novità nei compiti");
+    expect(answer).toContain("apri la sezione corrispondente in VOTO");
+  });
+
+  it("indirizza alle pagelle e chiarisce che i riepiloghi non sono ufficiali", () => {
+    expect(answerQuestion("Dove trovo la pagella finale?", data)).toContain(
+      "Menu > Scrutini infraperiodali",
+    );
+    expect(answerQuestion("La pagella finale è ufficiale?", data)).toContain(
+      "non sono valutazioni ufficiali",
+    );
+    expect(answerQuestion("Cosa sai fare?", data)).toContain("riepiloghi indicativi delle pagelle");
+  });
+
   it("calcola il voto necessario per una materia e un obiettivo", () => {
     expect(answerQuestion("Quanto devo prendere in Inglese per arrivare a 8?", data)).toContain(
       "almeno 10",

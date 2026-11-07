@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_HOME_MODULES } from "@/lib/voto/home-customization";
 import { parsePreferencesBackup, createPreferencesBackup } from "@/lib/voto/preferences-backup";
+import { DEFAULT_EMOJI_THEME_BACKGROUND_COLORS } from "@/lib/voto/emoji-theme";
 import { DEFAULT_CUSTOM_THEME } from "@/lib/voto/store";
 
 const preferences = {
@@ -12,7 +13,14 @@ const preferences = {
   density: "compact" as const,
   reduceMotion: true,
   theme: "diamante" as const,
-  customTheme: { ...DEFAULT_CUSTOM_THEME, primary: "#abcdef", radius: 1.2 },
+  emojiThemeEmojis: ["📚", "✏️", "🎒", "✨"],
+  emojiThemeBackgroundColors: { scuro: "#34253b", chiaro: "#fff1f7" },
+  customTheme: {
+    ...DEFAULT_CUSTOM_THEME,
+    primary: "#abcdef",
+    radius: 1.2,
+    backgroundImage: "data:image/webp;base64,AAAA",
+  },
   interfaceScale: 110,
   homeModules: DEFAULT_HOME_MODULES.map((module, index) => ({
     ...module,
@@ -31,13 +39,18 @@ describe("preferences backup", () => {
     expect(contents).not.toContain("url");
   });
 
-  it.each(["windows-98", "windows-7", "casino", "calcio", "terminale", "pixel-arcade"] as const)(
-    "round-trips il tema %s",
-    (theme) => {
-      const parsed = parsePreferencesBackup(createPreferencesBackup({ ...preferences, theme }));
-      expect(parsed.theme).toBe(theme);
-    },
-  );
+  it.each([
+    "emoji",
+    "windows-98",
+    "windows-7",
+    "casino",
+    "calcio",
+    "terminale",
+    "pixel-arcade",
+  ] as const)("round-trips il tema %s", (theme) => {
+    const parsed = parsePreferencesBackup(createPreferencesBackup({ ...preferences, theme }));
+    expect(parsed.theme).toBe(theme);
+  });
 
   it("rejects malformed JSON, another file type and unsafe custom colors", () => {
     expect(() => parsePreferencesBackup("not json")).toThrow("JSON valido");
@@ -49,6 +62,35 @@ describe("preferences backup", () => {
     };
     invalid.settings.customTheme.primary = "red; background: url(x)";
     expect(() => parsePreferencesBackup(JSON.stringify(invalid))).toThrow("colore");
+  });
+
+  it("accepts old backups without an image and rejects unsafe background URLs", () => {
+    const legacy = JSON.parse(createPreferencesBackup(preferences)) as {
+      settings: {
+        customTheme: { backgroundImage?: string };
+        emojiThemeEmojis?: string[];
+        emojiThemeBackgroundColors?: { scuro: string; chiaro: string };
+      };
+    };
+    delete legacy.settings.customTheme.backgroundImage;
+    delete legacy.settings.emojiThemeEmojis;
+    delete legacy.settings.emojiThemeBackgroundColors;
+    const parsed = parsePreferencesBackup(JSON.stringify(legacy));
+    expect(parsed.customTheme.backgroundImage).toBe("");
+    expect(parsed.emojiThemeEmojis).toEqual(["📚", "✏️", "🎒", "✨"]);
+    expect(parsed.emojiThemeBackgroundColors).toEqual(DEFAULT_EMOJI_THEME_BACKGROUND_COLORS);
+
+    const invalid = JSON.parse(createPreferencesBackup(preferences)) as {
+      settings: { customTheme: { backgroundImage: string } };
+    };
+    invalid.settings.customTheme.backgroundImage = "data:image/svg+xml;base64,PHN2Zz4=";
+    expect(() => parsePreferencesBackup(JSON.stringify(invalid))).toThrow("sfondo");
+
+    const invalidEmojiColor = JSON.parse(createPreferencesBackup(preferences)) as {
+      settings: { emojiThemeBackgroundColors: { scuro: string; chiaro: string } };
+    };
+    invalidEmojiColor.settings.emojiThemeBackgroundColors.scuro = "url(unsafe)";
+    expect(() => parsePreferencesBackup(JSON.stringify(invalidEmojiColor))).toThrow("sfondo");
   });
 
   it("normalizes out-of-range scales and media targets", () => {

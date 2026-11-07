@@ -12,8 +12,21 @@ import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData, normalizeCachedGradeValues } from "./parse";
 import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
+import { SchoolAuthContext, type PrefetchedSchoolData } from "../school-auth-context";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
+import {
+  isValidCustomThemeBackground,
+  sanitizeCustomThemeBackground,
+} from "./custom-theme-background";
+import {
+  createEmojiThemePattern,
+  DEFAULT_EMOJI_THEME_BACKGROUND_COLORS,
+  DEFAULT_EMOJI_THEME_EMOJIS,
+  normalizeEmojiThemeBackgroundColors,
+  normalizeEmojiThemeEmojis,
+  type EmojiThemeBackgroundColors,
+} from "./emoji-theme";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 import {
   DEFAULT_HOME_MODULES,
@@ -53,8 +66,27 @@ export type Bg =
   | "carta";
 export type Mode = "chiaro" | "scuro";
 export type Density = "standard" | "compact";
+export type PerformanceOption = "blur" | "animations" | "shadows" | "wallpapers";
+export type PerformanceOptions = Record<PerformanceOption, boolean>;
+const DEFAULT_PERFORMANCE_OPTIONS: PerformanceOptions = {
+  blur: true,
+  animations: true,
+  shadows: true,
+  wallpapers: true,
+};
+
+function normalizePerformanceOptions(value: unknown): PerformanceOptions {
+  const candidate = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    blur: typeof candidate["blur"] === "boolean" ? candidate["blur"] : true,
+    animations: typeof candidate["animations"] === "boolean" ? candidate["animations"] : true,
+    shadows: typeof candidate["shadows"] === "boolean" ? candidate["shadows"] : true,
+    wallpapers: typeof candidate["wallpapers"] === "boolean" ? candidate["wallpapers"] : true,
+  };
+}
 export type Theme =
   | "original"
+  | "emoji"
   | "lavender"
   | "cybercore"
   | "brutalist"
@@ -92,10 +124,12 @@ export type CustomTheme = {
   primary: string;
   radius: number;
   font: CustomFont;
+  backgroundImage: string;
 };
 
 const THEME_VALUES: Theme[] = [
   "original",
+  "emoji",
   "lavender",
   "cybercore",
   "brutalist",
@@ -165,6 +199,7 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
   primary: "#61a7ff",
   radius: 1,
   font: "theme",
+  backgroundImage: "",
 };
 
 function normalizeInterfaceScale(value: unknown): number {
@@ -208,9 +243,13 @@ interface Ctx {
   glass: boolean;
   density: Density;
   reduceMotion: boolean;
+  performanceMode: boolean;
+  performanceOptions: PerformanceOptions;
   theme: Theme;
   registryStyle: RegistryStyle;
   customTheme: CustomTheme;
+  emojiThemeEmojis: string[];
+  emojiThemeBackgroundColors: EmojiThemeBackgroundColors;
   interfaceScale: number;
   homeModules: HomeModuleConfig[];
   homeScale: number;
@@ -232,9 +271,13 @@ interface Ctx {
   setGlass: (enabled: boolean) => void;
   setDensity: (density: Density) => void;
   setReduceMotion: (enabled: boolean) => void;
+  setPerformanceMode: (enabled: boolean) => void;
+  setPerformanceOption: (option: PerformanceOption, enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
   setRegistryStyle: (style: RegistryStyle) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
+  setEmojiThemeEmojis: (emojis: string[]) => void;
+  setEmojiThemeBackgroundColor: (mode: Mode, color: string) => void;
   setInterfaceScale: (scale: number) => void;
   resetCustomTheme: () => void;
   toggleHomeModule: (id: HomeModuleId) => void;
@@ -269,6 +312,8 @@ const EMPTY: VotoData = {
 };
 
 export function VotoProvider({ children }: { children: ReactNode }) {
+  const consumePrefetchedData = useContext(SchoolAuthContext)?.consumePrefetchedData;
+  const prefetchedDataRef = useRef<PrefetchedSchoolData | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const [data, setData] = useState<VotoData>(EMPTY);
   const [displayName, setDisplayNameS] = useState("");
@@ -286,9 +331,18 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [glass, setGlassS] = useState(true);
   const [density, setDensityS] = useState<Density>("standard");
   const [reduceMotion, setReduceMotionS] = useState(false);
+  const [performanceMode, setPerformanceModeS] = useState(false);
+  const [performanceOptions, setPerformanceOptionsS] = useState<PerformanceOptions>({
+    ...DEFAULT_PERFORMANCE_OPTIONS,
+  });
   const [theme, setThemeS] = useState<Theme>("original");
   const [registryStyle, setRegistryStyleS] = useState<RegistryStyle>("voto");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
+  const [emojiThemeEmojis, setEmojiThemeEmojisS] = useState<string[]>([
+    ...DEFAULT_EMOJI_THEME_EMOJIS,
+  ]);
+  const [emojiThemeBackgroundColors, setEmojiThemeBackgroundColorsS] =
+    useState<EmojiThemeBackgroundColors>({ ...DEFAULT_EMOJI_THEME_BACKGROUND_COLORS });
   const [interfaceScale, setInterfaceScaleS] = useState(100);
   const [homeModules, setHomeModulesS] = useState<HomeModuleConfig[]>(DEFAULT_HOME_MODULES);
   const [homeScale, setHomeScaleS] = useState(100);
@@ -300,7 +354,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     if (!u) {
       if (!silent)
         toast("Modalità demo", {
-          description: "Collega un URL JSON nelle Impostazioni per dati reali.",
+          description: "Accedi con Supabase nelle Impostazioni per visualizzare i dati reali.",
         });
       return false;
     }
@@ -328,7 +382,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const u = load<string>(KEYS.url, "");
+    const storedUrl = load<string>(KEYS.url, "");
+    if (prefetchedDataRef.current === undefined) {
+      prefetchedDataRef.current = consumePrefetchedData?.() ?? null;
+    }
+    const candidate = prefetchedDataRef.current;
+    const prefetchedData =
+      candidate && (!storedUrl || candidate.url === storedUrl) ? candidate : null;
+    const u = storedUrl || prefetchedData?.url || "";
     const rawCache = load<VotoData | null>(KEYS.cache, null);
     const cache =
       rawCache && Array.isArray(rawCache.subjects)
@@ -344,6 +405,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const savedDensity = load<Density>(KEYS.density, "standard");
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
     setReduceMotionS(load(KEYS.reduceMotion, false));
+    setPerformanceModeS(load<unknown>(KEYS.performanceMode, false) === true);
+    setPerformanceOptionsS(
+      normalizePerformanceOptions(load<unknown>(KEYS.performanceOptions, DEFAULT_PERFORMANCE_OPTIONS)),
+    );
     const savedTheme = oneOf(load<unknown>(KEYS.theme, "original"), THEME_VALUES, "original");
     setThemeS(savedTheme);
     const savedRegistryStyle = load<unknown>(KEYS.registryStyle, "voto");
@@ -355,15 +420,31 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setCustomThemeS({
       ...DEFAULT_CUSTOM_THEME,
       ...savedCustomTheme,
+      backgroundImage: sanitizeCustomThemeBackground(savedCustomTheme.backgroundImage),
       font: oneOf(savedCustomTheme.font, ["theme", "sans", "display", "mono", "serif"], "theme"),
     });
+    setEmojiThemeEmojisS(
+      normalizeEmojiThemeEmojis(load<unknown>(KEYS.emojiThemeEmojis, DEFAULT_EMOJI_THEME_EMOJIS)),
+    );
+    setEmojiThemeBackgroundColorsS(
+      normalizeEmojiThemeBackgroundColors(
+        load<unknown>(KEYS.emojiThemeBackgroundColors, DEFAULT_EMOJI_THEME_BACKGROUND_COLORS),
+      ),
+    );
     setInterfaceScaleS(normalizeInterfaceScale(load(KEYS.interfaceScale, 100)));
     setHomeModulesS(normalizeHomeModules(load(KEYS.homeModules, DEFAULT_HOME_MODULES)));
     setHomeScaleS(normalizeHomeScale(load(KEYS.homeScale, 100)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
     const demoData = load<VotoData | null>(KEYS.demoData, null);
-    if (u && cache && Array.isArray(cache.subjects)) {
+    if (u && prefetchedData) {
+      const normalizedData = normalizeCachedGradeValues(prefetchedData.data);
+      setData(normalizedData);
+      setSource("remote");
+      setLastSync(prefetchedData.lastSync);
+      setError(null);
+      if (normalizedData !== prefetchedData.data) save(KEYS.cache, normalizedData);
+    } else if (u && cache && Array.isArray(cache.subjects)) {
       setData(cache);
       setSource("cache");
       if (cache !== rawCache) save(KEYS.cache, cache);
@@ -378,10 +459,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     }
     setNow(new Date());
     setReady(true);
-    if (u) void refreshImpl(u, true);
+    if (u && !prefetchedData) void refreshImpl(u, true);
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
-  }, [refreshImpl]);
+  }, [refreshImpl, consumePrefetchedData]);
 
   useEffect(() => {
     if (!ready || !url) return;
@@ -435,6 +516,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["glass"] = didupActive ? "off" : glass ? "on" : "off";
     root.dataset["density"] = density;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
+    root.dataset["performance"] = performanceMode ? "on" : "off";
+    root.dataset["performanceBlur"] = performanceMode && performanceOptions.blur ? "on" : "off";
+    root.dataset["performanceAnimations"] =
+      performanceMode && performanceOptions.animations ? "on" : "off";
+    root.dataset["performanceShadows"] =
+      performanceMode && performanceOptions.shadows ? "on" : "off";
+    root.dataset["performanceWallpapers"] =
+      performanceMode && performanceOptions.wallpapers ? "on" : "off";
     // DidUP ha una grafica propria: il tema VOTO resta memorizzato ma non
     // deve colorare accidentalmente dashboard e pagine del registro.
     root.dataset["theme"] = didupActive ? "original" : theme;
@@ -463,6 +552,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
             : customTheme.font === "display"
               ? '"Space Grotesk", sans-serif'
               : '"Manrope", sans-serif',
+      "--custom-background-image": isValidCustomThemeBackground(customTheme.backgroundImage)
+        ? customTheme.backgroundImage
+          ? `url("${customTheme.backgroundImage}")`
+          : "none"
+        : "none",
+      "--emoji-theme-pattern": createEmojiThemePattern(emojiThemeEmojis),
+      "--emoji-theme-bg-dark": emojiThemeBackgroundColors.scuro,
+      "--emoji-theme-bg-light": emojiThemeBackgroundColors.chiaro,
     };
     Object.entries(custom).forEach(([key, value]) => root.style.setProperty(key, value));
   }, [
@@ -472,9 +569,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     glass,
     density,
     reduceMotion,
+    performanceMode,
+    performanceOptions,
     theme,
     registryStyle,
     customTheme,
+    emojiThemeEmojis,
+    emojiThemeBackgroundColors,
     interfaceScale,
     ready,
   ]);
@@ -484,6 +585,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       ready,
       density,
       reduceMotion,
+      performanceMode,
+      performanceOptions,
       data,
       displayName,
       source,
@@ -499,6 +602,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       theme,
       registryStyle,
       customTheme,
+      emojiThemeEmojis,
+      emojiThemeBackgroundColors,
       interfaceScale,
       homeModules,
       homeScale,
@@ -603,6 +708,17 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setReduceMotionS(enabled);
         save(KEYS.reduceMotion, enabled);
       },
+      setPerformanceMode: (enabled) => {
+        setPerformanceModeS(enabled);
+        save(KEYS.performanceMode, enabled);
+      },
+      setPerformanceOption: (option, enabled) => {
+        setPerformanceOptionsS((current) => {
+          const next = { ...current, [option]: enabled };
+          save(KEYS.performanceOptions, next);
+          return next;
+        });
+      },
       setTheme: (next) => {
         setThemeS(next);
         save(KEYS.theme, next);
@@ -615,6 +731,17 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setCustomThemeS((current) => {
           const next = { ...current, ...patch };
           save(KEYS.customTheme, next);
+          return next;
+        }),
+      setEmojiThemeEmojis: (emojis) => {
+        const next = normalizeEmojiThemeEmojis(emojis);
+        setEmojiThemeEmojisS(next);
+        save(KEYS.emojiThemeEmojis, next);
+      },
+      setEmojiThemeBackgroundColor: (selectedMode, color) =>
+        setEmojiThemeBackgroundColorsS((current) => {
+          const next = normalizeEmojiThemeBackgroundColors({ ...current, [selectedMode]: color });
+          save(KEYS.emojiThemeBackgroundColors, next);
           return next;
         }),
       setInterfaceScale: (scale) => {
@@ -737,6 +864,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       glass,
       theme,
       customTheme,
+      emojiThemeEmojis,
+      emojiThemeBackgroundColors,
       homeModules,
       interrogazioni,
       completions,
@@ -744,6 +873,8 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       registryStyle,
       density,
       reduceMotion,
+      performanceMode,
+      performanceOptions,
       refreshImpl,
       homeScale,
       interfaceScale,

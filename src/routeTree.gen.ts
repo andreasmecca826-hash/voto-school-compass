@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssistenteRouteImport } from './routes/assistente'
+import { Route as BachecaRouteImport } from './routes/bacheca'
 import { Route as CompitiRouteImport } from './routes/compiti'
 import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as EventiAppelloRouteImport } from './routes/eventi-appello'
@@ -34,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const AssistenteRoute = AssistenteRouteImport.update({
   id: '/assistente',
   path: '/assistente',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BachecaRoute = BachecaRouteImport.update({
+  id: '/bacheca',
+  path: '/bacheca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompitiRoute = CompitiRouteImport.update({
@@ -110,6 +116,7 @@ const ApiCircularsMirrorRoute = ApiCircularsMirrorRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
+  '/bacheca': typeof BachecaRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/eventi-appello': typeof EventiAppelloRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
+  '/bacheca': typeof BachecaRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/eventi-appello': typeof EventiAppelloRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
+  '/bacheca': typeof BachecaRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/eventi-appello': typeof EventiAppelloRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/assistente'
+    | '/bacheca'
     | '/compiti'
     | '/diario'
     | '/eventi-appello'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/assistente'
+    | '/bacheca'
     | '/compiti'
     | '/diario'
     | '/eventi-appello'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/assistente'
+    | '/bacheca'
     | '/compiti'
     | '/diario'
     | '/eventi-appello'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssistenteRoute: typeof AssistenteRoute
+  BachecaRoute: typeof BachecaRoute
   CompitiRoute: typeof CompitiRoute
   DiarioRoute: typeof DiarioRoute
   EventiAppelloRoute: typeof EventiAppelloRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/assistente'
       fullPath: '/assistente'
       preLoaderRoute: typeof AssistenteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bacheca': {
+      id: '/bacheca'
+      path: '/bacheca'
+      fullPath: '/bacheca'
+      preLoaderRoute: typeof BachecaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compiti': {
@@ -358,6 +378,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssistenteRoute: AssistenteRoute,
+  BachecaRoute: BachecaRoute,
   CompitiRoute: CompitiRoute,
   DiarioRoute: DiarioRoute,
   EventiAppelloRoute: EventiAppelloRoute,
