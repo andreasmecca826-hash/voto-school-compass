@@ -330,8 +330,13 @@ function Settings() {
     }
   };
 
+  const pageClassName =
+    v.registryStyle === "didup"
+      ? "didup-page min-h-dvh bg-black px-2 pb-[100px] text-white"
+      : "pt-3";
+
   return (
-    <div className="pt-3">
+    <div className={pageClassName}>
       <h1 className="font-display text-2xl font-semibold">Impostazioni</h1>
 
       <SectionTitle>Profilo dell’app</SectionTitle>

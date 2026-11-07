@@ -274,10 +274,14 @@ export function PersonalizationPanel() {
   const availableThemes = THEMES;
   const hiddenThemeName = availableThemes.slice(4).find((theme) => theme.id === v.theme)?.label;
   const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
+  const pageClassName =
+    v.registryStyle === "didup"
+      ? "didup-page min-h-dvh bg-black px-2 pb-[100px] text-white"
+      : "pt-3";
 
   if (view === "menu")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <h1 className="font-display text-2xl font-semibold">Personalizza</h1>
         <p className="mt-1 text-xs text-muted-foreground">Scegli cosa vuoi modificare.</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
@@ -371,7 +375,7 @@ export function PersonalizationPanel() {
 
   if (view === "typography")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Tipografia" />
         <SectionTitle>Font dell’app</SectionTitle>
         <p className="mb-3 text-[11px] text-muted-foreground">
@@ -460,7 +464,7 @@ export function PersonalizationPanel() {
 
   if (view === "experience")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Esperienza" />
         <SectionTitle>Formato delle schede</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
@@ -510,7 +514,7 @@ export function PersonalizationPanel() {
 
   if (view === "registry")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Stile del registro" />
         <SectionTitle>Identità visiva</SectionTitle>
         <p className="mb-3 text-[11px] text-muted-foreground">
@@ -563,7 +567,7 @@ export function PersonalizationPanel() {
 
   if (view === "home")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Home" />
         <SectionTitle>Moduli Home</SectionTitle>
         <section className="card-surface overflow-hidden p-2">
@@ -747,7 +751,7 @@ export function PersonalizationPanel() {
     );
 
   return (
-    <div className="pt-3">
+    <div className={pageClassName}>
       <BackButton onClick={() => setView("menu")} title="Temi" />
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
