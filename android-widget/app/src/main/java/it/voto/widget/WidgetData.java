@@ -20,6 +20,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 final class WidgetData {
@@ -70,6 +72,8 @@ final class WidgetData {
   static void refresh(Context context) {
     update(context, new ComponentName(context, SmallWidgetProvider.class), false);
     update(context, new ComponentName(context, LargeWidgetProvider.class), true);
+    update(context, new ComponentName(context, MediumWidgetProvider.class), false);
+    update(context, new ComponentName(context, WideWidgetProvider.class), true);
   }
 
   static void update(Context context, ComponentName provider, boolean large) {
@@ -85,7 +89,7 @@ final class WidgetData {
   private static String[] fetch(Context context) {
     try {
       String accessToken = validAccessToken(context);
-      if (accessToken.length() == 0) return new String[]{"Accedi dall'app", "", "", "", "", ""};
+      if (accessToken.length() == 0) return new String[]{"Accedi dall'app", "", "", "", "", "", "", "", "", "", ""};
       JSONObject root;
       try {
         root = requestJson(SCHOOL_DATA_URL, "GET", null, accessToken);
@@ -96,7 +100,7 @@ final class WidgetData {
       }
       return summarize(root);
     } catch (Exception e) {
-      return new String[]{"Dati non disponibili", messageFor(e), "", "", "", ""};
+      return new String[]{"Dati non disponibili", messageFor(e), "", "", "", "", "", "", "", "", ""};
     }
   }
 
@@ -193,10 +197,13 @@ final class WidgetData {
     }
     String average = subjectCount == 0 ? "—" : String.format(Locale.ITALIAN, "%.2f", subjectSum / subjectCount);
     JSONObject attendance = root.optJSONObject("attendance");
-    String attendanceText = attendance == null ? "Assenze non disponibili" : "Assenze: " + attendance.optInt("absenceDays", 0) + " giorni · Ritardi: " + attendance.optInt("delays", 0);
-    JSONArray notifications = root.optJSONArray("notifications"); int notes = 0, circulars = 0;
-    if (notifications != null) for (int i = 0; i < notifications.length(); i++) { JSONObject n = notifications.optJSONObject(i); if (n == null) continue; if ("note".equals(n.optString("type"))) notes++; if ("notice".equals(n.optString("type"))) circulars++; }
-    return new String[]{"Media " + average, latest.length() == 0 ? "Nessun voto" : "Ultimo: " + latest + " — " + latestSubject, "Aggiornato " + root.optString("updatedAt", "ora"), attendanceText, "Note: " + notes, "Circolari: " + circulars};
+    String attendanceText = attendance == null ? "Assenze non disponibili" : "Assenze: " + attendance.optInt("absenceDays", 0) + " giorni · " + attendance.optInt("absenceHours", 0) + " ore · Ritardi: " + attendance.optInt("delays", 0);
+    JSONArray notifications = root.optJSONArray("notifications"); int notes = 0, circulars = 0, unread = 0;
+    if (notifications != null) for (int i = 0; i < notifications.length(); i++) { JSONObject n = notifications.optJSONObject(i); if (n == null) continue; if ("note".equals(n.optString("type"))) notes++; if ("notice".equals(n.optString("type"))) circulars++; if (!n.optBoolean("read", false)) unread++; }
+    JSONArray assignments = root.optJSONArray("assignments"); int openAssignments = 0; String nextAssignment = "Nessun compito in sospeso"; String nextDate = "9999-99-99"; String today = new SimpleDateFormat("yyyy-MM-dd", Locale.ITALIAN).format(new Date());
+    if (assignments != null) for (int i = 0; i < assignments.length(); i++) { JSONObject a = assignments.optJSONObject(i); if (a == null || a.optBoolean("completed", false)) continue; openAssignments++; String due = a.optString("dueDate", ""); if (due.length() > 0 && due.compareTo(today) >= 0 && due.compareTo(nextDate) < 0) { nextDate = due; nextAssignment = a.optString("title", "Compito") + (a.optString("subject", "").length() > 0 ? " · " + a.optString("subject") : "") + " · " + due; } }
+    JSONObject student = root.optJSONObject("student"); String studentText = student == null ? "Studente" : student.optString("name", "Studente") + (student.optString("className", "").length() > 0 ? " · " + student.optString("className") : "");
+    return new String[]{"Media " + average, latest.length() == 0 ? "Nessun voto" : "Ultimo: " + latest + " — " + latestSubject, "Aggiornato " + root.optString("updatedAt", "ora"), attendanceText, "Note: " + notes, "Circolari: " + circulars, "Compiti aperti: " + openAssignments, nextAssignment, "Non lette: " + unread, studentText, "Materie valutate: " + subjectCount};
   }
 
   private static double grade(String value) { try { String s = value.trim().replace(',', '.').replace("½", ".5"); double delta = 0; if (s.endsWith("+")) { delta = .15; s = s.substring(0, s.length() - 1).trim(); } else if (s.endsWith("-")) { delta = -.15; s = s.substring(0, s.length() - 1).trim(); } if (s.contains("/")) { String[] parts = s.split("/"); return (Double.parseDouble(parts[0].trim()) + Double.parseDouble(parts[1].trim())) / 2 + delta; } return Double.parseDouble(s) + delta; } catch (Exception e) { return -1; } }
@@ -207,8 +214,8 @@ final class WidgetData {
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
     int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, 0);
-    String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : values[0] + "\n" + values[1] + "\n" + values[3] + "\n" + values[4] + " · " + values[5];
-    int background = theme == 1 ? Color.rgb(18, 53, 43) : theme == 2 ? Color.rgb(42, 28, 63) : theme == 3 ? Color.rgb(18, 18, 18) : theme == 4 ? Color.rgb(247, 244, 237) : Color.rgb(23, 32, 51);
+    String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : mode == 6 ? values[6] : mode == 7 ? values[7] : mode == 8 ? values[8] : mode == 9 ? values[9] : mode == 10 ? values[10] : values[0] + "\n" + values[6] + "\n" + values[7] + "\n" + values[3] + " · " + values[4] + " · " + values[5];
+    int background = theme == 1 ? Color.rgb(18, 53, 43) : theme == 2 ? Color.rgb(42, 28, 63) : theme == 3 ? Color.rgb(18, 18, 18) : theme == 4 ? Color.rgb(247, 244, 237) : theme == 5 ? Color.rgb(92, 45, 24) : theme == 6 ? Color.rgb(24, 61, 82) : theme == 7 ? Color.rgb(86, 24, 37) : theme == 8 ? Color.rgb(55, 59, 66) : Color.rgb(23, 32, 51);
     int foreground = theme == 4 ? Color.rgb(36, 42, 50) : Color.WHITE;
     int secondary = theme == 4 ? Color.rgb(78, 87, 99) : Color.rgb(216, 226, 242);
     int muted = theme == 4 ? Color.rgb(103, 111, 121) : Color.rgb(154, 170, 194);
