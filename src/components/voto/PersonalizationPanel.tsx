@@ -116,8 +116,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "lavender",
     label: "Lavender",
-    description: "Morbido e rilassato",
-    sw: "linear-gradient(135deg,#211832,#c4a7ff)",
+    description: "Aurora lilla, vetro satinato e bagliori viola",
+    sw: "radial-gradient(circle at 78% 22%,#f6c8ff 0 4%,transparent 5%),radial-gradient(circle at 24% 28%,#a995ff 0 3%,transparent 4%),linear-gradient(135deg,#17102d 0%,#4e2d73 42%,#b987e8 68%,#261540 100%)",
   },
   {
     id: "cybercore",
