@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.util.TypedValue;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import org.json.JSONArray;
@@ -214,6 +216,8 @@ final class WidgetData {
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
     int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, 0);
+    int textSize = prefs.getInt(WidgetConfigureActivity.TEXT_SIZE_KEY + id, 1);
+    boolean showUpdated = prefs.getBoolean(WidgetConfigureActivity.SHOW_UPDATED_KEY + id, true);
     String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : mode == 6 ? values[6] : mode == 7 ? values[7] : mode == 8 ? values[8] : mode == 9 ? values[9] : mode == 10 ? values[10] : values[0] + "\n" + values[6] + "\n" + values[7] + "\n" + values[3] + " · " + values[4] + " · " + values[5];
     int background = theme == 1 ? Color.rgb(18, 53, 43) : theme == 2 ? Color.rgb(42, 28, 63) : theme == 3 ? Color.rgb(18, 18, 18) : theme == 4 ? Color.rgb(247, 244, 237) : theme == 5 ? Color.rgb(92, 45, 24) : theme == 6 ? Color.rgb(24, 61, 82) : theme == 7 ? Color.rgb(86, 24, 37) : theme == 8 ? Color.rgb(55, 59, 66) : Color.rgb(23, 32, 51);
     int foreground = theme == 4 ? Color.rgb(36, 42, 50) : Color.WHITE;
@@ -224,6 +228,11 @@ final class WidgetData {
     views.setTextColor(R.id.summary, secondary);
     views.setTextColor(R.id.updated, muted);
     if (large) views.setTextColor(R.id.details, secondary);
+    float summarySize = textSize == 0 ? 13f : textSize == 2 ? 19f : 16f;
+    views.setTextViewTextSize(R.id.summary, TypedValue.COMPLEX_UNIT_SP, summarySize);
+    views.setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_SP, textSize == 0 ? 9f : 11f);
+    if (large) views.setTextViewTextSize(R.id.details, TypedValue.COMPLEX_UNIT_SP, textSize == 0 ? 11f : textSize == 2 ? 16f : 13f);
+    views.setViewVisibility(R.id.updated, showUpdated ? View.VISIBLE : View.GONE);
     views.setTextViewText(R.id.summary, text); views.setTextViewText(R.id.updated, values[2]); if (large) views.setTextViewText(R.id.details, mode == 5 ? values[1] : "");
     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"));
     int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);

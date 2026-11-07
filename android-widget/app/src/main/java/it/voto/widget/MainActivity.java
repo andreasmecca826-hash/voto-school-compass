@@ -31,6 +31,7 @@ public class MainActivity extends Activity {
     small = (Spinner) findViewById(R.id.small_mode);
     large = (Spinner) findViewById(R.id.large_mode);
     final Button save = (Button) findViewById(R.id.save_button);
+    final Button refresh = (Button) findViewById(R.id.refresh_button);
     final Button github = (Button) findViewById(R.id.github_button);
     final Button logout = (Button) findViewById(R.id.logout_button);
     android.content.SharedPreferences prefs = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE);
@@ -51,6 +52,15 @@ public class MainActivity extends Activity {
         password.setText("");
         status.setText("Accesso riuscito. Widget aggiornati.");
       });
+    });
+    refresh.setOnClickListener(v -> {
+      refresh.setEnabled(false);
+      status.setText("Aggiornamento dei widget in corso…");
+      WidgetData.refresh(this);
+      refresh.postDelayed(() -> {
+        refresh.setEnabled(true);
+        status.setText("Widget aggiornati. Se non cambia subito, attendi qualche secondo.");
+      }, 1200);
     });
     github.setOnClickListener(v -> {
       String redirect = Uri.encode("it.voto.widget://auth-callback");
