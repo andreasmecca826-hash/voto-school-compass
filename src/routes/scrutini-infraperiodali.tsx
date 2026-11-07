@@ -571,8 +571,17 @@ function DidupScrutinyReport({
   onBack: () => void;
 }) {
   return (
-    <div className="didup-page min-h-dvh bg-black pb-[100px] text-white">
-      <DidupScrutiniHeader studentName={studentName} title={title} onBack={onBack} />
+      <div className="didup-page min-h-dvh bg-black pb-[100px] text-white">
+        <DidupScrutiniHeader studentName={studentName} title={title} onBack={onBack} />
+      <section className="mx-2 mt-6 rounded-[14px] border border-[#3ed69d]/45 bg-[#18382d] px-4 py-3">
+        <p className="text-[14px] font-extrabold uppercase tracking-wide text-[#3ed69d]">
+          Previsione automatica
+        </p>
+        <p className="mt-1 text-[11px] leading-relaxed text-white/70">
+          VOTO calcola il voto previsto usando la media dei voti registrati nel periodo selezionato.
+          La previsione non modifica i dati e non è il voto ufficiale dello scrutinio.
+        </p>
+      </section>
       <ul className="mt-7 border-b border-[#3a3a3a] px-2">
         {rows.map((row) => (
           <li
@@ -587,7 +596,9 @@ function DidupScrutinyReport({
                 VOTI REGISTRATI: {row.gradeCount}
               </p>
             </div>
-            <span className="w-[62px] shrink-0 text-[12px] uppercase text-white/45">VOTO</span>
+            <span className="w-[62px] shrink-0 text-[10px] uppercase leading-tight text-white/45">
+              VOTO<br />previsto
+            </span>
             <span className="w-[42px] shrink-0 text-center text-[20px] font-bold text-[#3ed69d]">
               {row.grade === null ? "—" : row.grade}
             </span>
@@ -596,7 +607,7 @@ function DidupScrutinyReport({
       </ul>
       <section className="mx-2 mt-7 rounded-[14px] border-[3px] border-[#3ed69d] bg-[#262626] px-4 py-4">
         <h2 className="text-[17px] font-medium uppercase tracking-wide text-[#3ed69d]">
-          Riepilogo indicativo
+          Riepilogo della previsione
         </h2>
         <p className="mt-3 text-[14px] uppercase text-[#7189aa]">
           Media: {average === null ? "—" : fmt(average, 2)}
