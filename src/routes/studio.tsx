@@ -45,7 +45,7 @@ const TOOLS = [
     title: "Calcolo media e simulatore voti",
     subtitle: "Due strumenti per capire e pianificare i tuoi voti",
     icon: Calculator,
-    tone: "text-success bg-success-soft",
+    tone: "text-success bg-surface",
   },
   {
     id: "absence-calculator",
@@ -59,7 +59,7 @@ const TOOLS = [
     title: "Fine scuola",
     subtitle: "Imposta la data ufficiale e chiedi all’assistente quanto manca",
     icon: CalendarDays,
-    tone: "text-primary bg-primary-soft",
+    tone: "text-primary bg-surface",
   },
   {
     id: "wheel",
@@ -73,7 +73,7 @@ const TOOLS = [
     title: "Flashcard",
     subtitle: "Domanda. Risposta. Ripeti.",
     icon: Layers,
-    tone: "text-success bg-success-soft",
+    tone: "text-success bg-surface",
   },
 ] as const;
 

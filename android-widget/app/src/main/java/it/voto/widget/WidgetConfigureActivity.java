@@ -1,0 +1,6 @@
+package it.voto.widget;
+import android.app.Activity; import android.appwidget.AppWidgetManager; import android.content.Intent; import android.os.Bundle; import android.view.View; import android.widget.Button; import android.widget.Spinner;
+public class WidgetConfigureActivity extends Activity {
+  public static final String MODE_KEY="mode_"; public static final String SMALL_MODE_KEY="small_mode"; public static final String LARGE_MODE_KEY="large_mode";
+  @Override public void onCreate(Bundle state){ super.onCreate(state); setContentView(R.layout.widget_configure); final int id=getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,AppWidgetManager.INVALID_APPWIDGET_ID); if(id==AppWidgetManager.INVALID_APPWIDGET_ID){finish();return;} final Spinner s=(Spinner)findViewById(R.id.mode_spinner); int old=getSharedPreferences(WidgetData.PREFS,MODE_PRIVATE).getInt(MODE_KEY+id,0); s.setSelection(old); ((Button)findViewById(R.id.config_save)).setOnClickListener(v->{getSharedPreferences(WidgetData.PREFS,MODE_PRIVATE).edit().putInt(MODE_KEY+id,s.getSelectedItemPosition()).apply(); WidgetData.refresh(this); Intent result=new Intent(); result.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,id); setResult(RESULT_OK,result); finish();}); }
+}

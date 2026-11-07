@@ -1,4 +1,4 @@
-/** Schema documentato del file JSON letto da VOTO. */
+/** Schema documentato dei dati scolastici ricevuti da Supabase. */
 export type GradeType = "orale" | "scritto" | "pratico" | "altro";
 
 export interface Grade {

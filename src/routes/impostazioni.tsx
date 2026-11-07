@@ -7,6 +7,8 @@ import {
   Eye,
   EyeOff,
   Github,
+  Gauge,
+  SlidersHorizontal,
   Moon,
   RotateCcw,
   Save,
@@ -16,6 +18,13 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
 import { useSchoolAuth } from "@/lib/school-auth-context";
@@ -33,6 +42,7 @@ import {
   type CustomTheme,
   type HomeModuleId,
   type Mode,
+  type PerformanceOption,
   type Theme,
 } from "@/lib/voto/store";
 
@@ -204,6 +214,32 @@ const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "bacheca", label: "Bacheca" },
   { id: "obiettivo", label: "Obiettivo media" },
 ];
+const PERFORMANCE_OPTION_META: {
+  id: PerformanceOption;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "blur",
+    label: "Sfocature",
+    description: "Disattiva gli effetti di sfocatura e vetro.",
+  },
+  {
+    id: "animations",
+    label: "Animazioni e transizioni",
+    description: "Riduce animazioni, transizioni e scorrimento morbido.",
+  },
+  {
+    id: "shadows",
+    label: "Ombre",
+    description: "Rimuove le ombre da schede, pulsanti e testo.",
+  },
+  {
+    id: "wallpapers",
+    label: "Sfondi decorativi",
+    description: "Nasconde temporaneamente gli sfondi Emoji e le immagini Custom.",
+  },
+];
 
 function localDateValue(date: Date): string {
   const year = date.getFullYear();
@@ -235,6 +271,7 @@ function Settings() {
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
   const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
+  const [performanceDialogOpen, setPerformanceDialogOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
@@ -297,7 +334,7 @@ function Settings() {
       setDebugJson(JSON.stringify(parsed, null, 2));
     } catch (error) {
       toast.error("Dati demo non validi", {
-        description: error instanceof Error ? error.message : "Controlla il JSON.",
+        description: error instanceof Error ? error.message : "Controlla i dati demo.",
       });
     }
   };
@@ -360,8 +397,13 @@ function Settings() {
     }
   };
 
+  const pageClassName =
+    v.registryStyle === "didup"
+      ? "didup-page min-h-dvh bg-black px-2 pb-[100px] text-white"
+      : "pt-3";
+
   return (
-    <div className="pt-3">
+    <div className={pageClassName}>
       <h1 className="font-display text-2xl font-semibold">Impostazioni</h1>
 
       <SectionTitle>Profilo dell’app</SectionTitle>
@@ -379,9 +421,107 @@ function Settings() {
           className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
         />
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Viene usato solo per mostrare il tuo nome nell’app e non modifica il file JSON.
+          Viene usato solo per mostrare il tuo nome nell’app e non modifica i dati Supabase.
         </p>
       </section>
+
+      <SectionTitle>Prestazioni</SectionTitle>
+      <section className="card-surface p-4">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={v.performanceMode}
+          onClick={() => v.setPerformanceMode(!v.performanceMode)}
+          className="flex min-h-14 w-full items-center gap-3 text-left"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <Gauge className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Modalità prestazioni</span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
+              per rendere l’app più fluida sui telefoni meno recenti.
+            </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+              v.performanceMode ? "bg-primary" : "bg-muted",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                v.performanceMode ? "translate-x-[22px]" : "translate-x-0.5",
+              )}
+            />
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPerformanceDialogOpen(true)}
+          className="mt-3 flex min-h-11 w-full items-center gap-3 rounded-xl border border-border px-3 text-left transition-colors hover:bg-surface"
+          aria-haspopup="dialog"
+        >
+          <SlidersHorizontal className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 flex-1 text-xs font-semibold">Personalizza effetti</span>
+          <span className="text-[11px] text-muted-foreground">
+            {Object.values(v.performanceOptions).filter(Boolean).length} di 4 selezionati
+          </span>
+        </button>
+      </section>
+      <Dialog open={performanceDialogOpen} onOpenChange={setPerformanceDialogOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-h-[85dvh] overflow-y-auto rounded-2xl p-5 sm:max-w-md">
+          <DialogHeader className="pr-6 text-left">
+            <DialogTitle>Personalizza prestazioni</DialogTitle>
+            <DialogDescription>
+              Scegli quali effetti alleggerire. Le selezioni si applicano quando Modalità
+              prestazioni è attiva.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="divide-y divide-border rounded-xl border border-border px-3">
+            {PERFORMANCE_OPTION_META.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="switch"
+                aria-checked={v.performanceOptions[option.id]}
+                onClick={() =>
+                  v.setPerformanceOption(option.id, !v.performanceOptions[option.id])
+                }
+                className="flex min-h-[68px] w-full items-center gap-3 py-2 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">{option.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                    {option.description}
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                    v.performanceOptions[option.id] ? "bg-primary" : "bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                      v.performanceOptions[option.id] ? "translate-x-[22px]" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Puoi cambiare queste scelte in qualsiasi momento. I tuoi temi e sfondi non vengono
+            eliminati.
+          </p>
+        </DialogContent>
+      </Dialog>
 
       <SectionTitle>Accesso ai dati privati</SectionTitle>
       <section className="card-surface p-4">
@@ -472,6 +612,9 @@ function Settings() {
               v.setReduceMotion(backup.reduceMotion);
               v.setTheme(backup.theme);
               v.setCustomTheme(backup.customTheme);
+              v.setEmojiThemeEmojis(backup.emojiThemeEmojis);
+              v.setEmojiThemeBackgroundColor("scuro", backup.emojiThemeBackgroundColors.scuro);
+              v.setEmojiThemeBackgroundColor("chiaro", backup.emojiThemeBackgroundColors.chiaro);
               v.setInterfaceScale(backup.interfaceScale);
               v.setHomeCustomization({
                 homeModules: backup.homeModules,
@@ -500,6 +643,8 @@ function Settings() {
                 reduceMotion: v.reduceMotion,
                 theme: v.theme,
                 customTheme: v.customTheme,
+                emojiThemeEmojis: v.emojiThemeEmojis,
+                emojiThemeBackgroundColors: v.emojiThemeBackgroundColors,
                 interfaceScale: v.interfaceScale,
                 homeModules: v.homeModules,
                 homeScale: v.homeScale,
@@ -628,9 +773,9 @@ function Settings() {
             <div>
               <h2 className="text-sm font-semibold">Debug dati demo</h2>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Modifica, aggiungi o rimuovi direttamente nel JSON voti, compiti, diario, bacheca,
-                notifiche, materie e presenze. Questi dati restano solo su questo dispositivo e non
-                modificano DidUP.
+                Modifica, aggiungi o rimuovi direttamente i dati demo di voti, compiti, diario,
+                bacheca, notifiche, materie e presenze. Questi dati restano solo su questo
+                dispositivo e non modificano Supabase o DidUP.
               </p>
             </div>
           </div>
@@ -639,7 +784,7 @@ function Settings() {
             onChange={(event) => setDebugJson(event.target.value)}
             spellCheck={false}
             className="mt-3 min-h-[360px] w-full rounded-xl border border-input bg-background p-3 font-mono text-[10px] leading-relaxed text-foreground outline-none focus:border-primary"
-            aria-label="Dati demo in formato JSON"
+            aria-label="Dati demo"
           />
           <div className="mt-3 flex gap-2">
             <button

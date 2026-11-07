@@ -180,7 +180,7 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-");
 
 export function parseVotoData(raw: unknown): VotoData {
-  if (!isObj(raw)) throw new SchemaError("Il file non contiene un oggetto JSON valido.");
+  if (!isObj(raw)) throw new SchemaError("I dati Supabase ricevuti non hanno un formato valido.");
   if (!Array.isArray(raw["subjects"]))
     throw new SchemaError('Campo "subjects" mancante o non è un array.');
 
@@ -392,14 +392,14 @@ export async function fetchVotoData(url: string, timeoutMs = 10000): Promise<Vot
   if (!res.ok)
     throw new Error(
       res.status === 404
-        ? "File non trovato (404). Controlla l'URL raw."
+        ? "Dati Supabase non trovati (404). Verifica che il servizio sia disponibile."
         : `Errore del server (${res.status}).`,
     );
   let json: unknown;
   try {
     json = await res.json();
   } catch {
-    throw new SchemaError("Il file non è JSON valido.");
+    throw new SchemaError("La risposta di Supabase non contiene dati validi.");
   }
   return parseVotoData(json);
 }

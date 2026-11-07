@@ -13,6 +13,10 @@ import { loadSchoolClosures } from "@/lib/voto/school-holidays";
 import { loadSchoolEndDate } from "@/lib/voto/school-end-date";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
+import {
+  getRandomCompleteThemeIntent,
+  type RandomThemeConfirmation,
+} from "@/lib/voto/assistant-theme-actions";
 
 type PendingAction =
   | {
@@ -20,7 +24,8 @@ type PendingAction =
       day: NonNullable<ReturnType<typeof scheduleDayToClear>>;
       expectedLessons: string[];
     }
-  | { type: "assignment"; action: AssignmentConfirmation };
+  | { type: "assignment"; action: AssignmentConfirmation }
+  | { type: "theme"; action: RandomThemeConfirmation };
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -74,41 +79,46 @@ function Assistant() {
       })),
     };
     const assignmentIntent = getAssignmentActionIntent(clean, assistantData.assignments);
+    const randomThemeIntent = getRandomCompleteThemeIntent(clean, v.theme);
     const nextPendingAction: PendingAction | null = dayToClear
       ? { type: "clear-day", day: dayToClear, expectedLessons }
-      : assignmentIntent?.kind === "confirm"
-        ? { type: "assignment", action: assignmentIntent.action }
-        : null;
+      : randomThemeIntent?.kind === "confirm"
+        ? { type: "theme", action: randomThemeIntent.action }
+        : assignmentIntent?.kind === "confirm"
+          ? { type: "assignment", action: assignmentIntent.action }
+          : null;
     const lessonsToClear = expectedLessons
       .map((lesson, index) => (lesson.trim() ? `${index + 1}ª ora: ${lesson.trim()}` : null))
       .filter((lesson): lesson is string => lesson !== null);
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
-      : assignmentIntent?.kind === "confirm"
-        ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
-        : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
-          ? assignmentIntent.message
-          : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
-              source: v.source,
-              lastSync: v.lastSync,
-              syncError: v.error,
-              hasRemoteUrl: Boolean(v.url),
-              target: v.target,
-              theme: v.theme,
-              mode: v.mode,
-              accent: v.accent,
-              background: v.bg,
-              density: v.density,
-              reduceMotion: v.reduceMotion,
-              customFont: v.customTheme.font,
-              interfaceScale: v.interfaceScale,
-              homeScale: v.homeScale,
-              homeModules: v.homeModules,
-              flashcards: study.cards,
-              schoolEndDate: loadSchoolEndDate(),
-              schoolClosures: loadSchoolClosures(),
-              absenceHoursPerDay: loadAbsenceHoursPerDay(),
-            });
+      : randomThemeIntent?.kind === "confirm"
+        ? `Ho scelto a caso il tema completo “${randomThemeIntent.action.label}”. Vuoi applicarlo? Cambierà insieme colori, superfici, caratteri e arrotondamenti.`
+        : assignmentIntent?.kind === "confirm"
+          ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
+          : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
+            ? assignmentIntent.message
+            : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+                source: v.source,
+                lastSync: v.lastSync,
+                syncError: v.error,
+                hasRemoteUrl: Boolean(v.url),
+                target: v.target,
+                theme: v.theme,
+                mode: v.mode,
+                accent: v.accent,
+                background: v.bg,
+                density: v.density,
+                reduceMotion: v.reduceMotion,
+                customFont: v.customTheme.font,
+                interfaceScale: v.interfaceScale,
+                homeScale: v.homeScale,
+                homeModules: v.homeModules,
+                flashcards: study.cards,
+                schoolEndDate: loadSchoolEndDate(),
+                schoolClosures: loadSchoolClosures(),
+                absenceHoursPerDay: loadAbsenceHoursPerDay(),
+              });
     setMessages((current) => [
       ...current,
       { role: "user", text: clean },
@@ -134,6 +144,14 @@ function Assistant() {
           : clearResult === "empty"
             ? `L’orario di ${label} è già vuoto. Non ho modificato nulla.`
             : `L’orario di ${label} è cambiato mentre aspettavi. Non ho cancellato nulla; controllalo e chiedimi di nuovo se vuoi svuotarlo.`;
+    } else if (pendingAction.type === "theme") {
+      if (v.theme !== pendingAction.action.expectedTheme) {
+        result =
+          "Il tema è cambiato mentre aspettavi; non ho applicato quello sorteggiato. Se vuoi, chiedimi di nuovo un tema casuale.";
+      } else {
+        v.setTheme(pendingAction.action.theme);
+        result = `Fatto: ho applicato il tema completo “${pendingAction.action.label}”. Puoi cambiarlo in qualsiasi momento da Personalizza > Tema completo.`;
+      }
     } else {
       const assignment = v.data.assignments.find((item) => item.id === pendingAction.action.id);
       if (!assignment) {
@@ -234,6 +252,11 @@ function Assistant() {
                   <span className="mt-1 block">Il giorno risulta già vuoto.</span>
                 )}
               </>
+            ) : pendingAction.type === "theme" ? (
+              <>
+                Ho scelto il tema completo <strong>“{pendingAction.action.label}”</strong>. Vuoi
+                applicarlo? Palette, superfici, caratteri e arrotondamenti cambieranno insieme.
+              </>
             ) : (
               <>
                 Confermi di{" "}
@@ -253,9 +276,11 @@ function Assistant() {
           >
             {pendingAction.type === "clear-day"
               ? "Cancella"
-              : pendingAction.action.completed
-                ? "Segna completato"
-                : "Riapri"}
+              : pendingAction.type === "theme"
+                ? "Applica tema"
+                : pendingAction.action.completed
+                  ? "Segna completato"
+                  : "Riapri"}
           </button>
           <button
             type="button"
