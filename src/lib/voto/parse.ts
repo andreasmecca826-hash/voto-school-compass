@@ -183,13 +183,29 @@ export function parseVotoData(raw: unknown): VotoData {
   if (!isObj(raw)) throw new SchemaError("I dati Supabase ricevuti non hanno un formato valido.");
   if (!Array.isArray(raw["subjects"]))
     throw new SchemaError('Campo "subjects" mancante o non è un array.');
+  for (const key of ["assignments", "notifications", "diary", "attendanceEvents"] as const) {
+    const value = raw[key];
+    if (value != null && !Array.isArray(value)) {
+      throw new SchemaError(`Campo "${key}" ricevuto in un formato non valido.`);
+    }
+  }
+  if (raw["student"] != null && !isObj(raw["student"])) {
+    throw new SchemaError('Campo "student" ricevuto in un formato non valido.');
+  }
+  if (raw["attendance"] != null && !isObj(raw["attendance"])) {
+    throw new SchemaError('Campo "attendance" ricevuto in un formato non valido.');
+  }
 
   const subjects: Subject[] = (raw["subjects"] as unknown[]).map((sub, i) => {
     if (!isObj(sub)) throw new SchemaError(`subjects[${i}] non è un oggetto.`);
     const name = str(sub["name"]);
     if (!name) throw new SchemaError(`subjects[${i}] non ha un "name".`);
+    const rawGrades = sub["grades"];
+    if (rawGrades != null && !Array.isArray(rawGrades)) {
+      throw new SchemaError(`subjects[${i}].grades non è un array.`);
+    }
     const grades: Grade[] = [];
-    (Array.isArray(sub["grades"]) ? sub["grades"] : []).forEach((gr, j) => {
+    (Array.isArray(rawGrades) ? rawGrades : []).forEach((gr, j) => {
       if (!isObj(gr)) return;
       const label = str(gr["label"]);
       const value = parseGradeValue(isSignedGradeLabel(label) ? label : gr["value"]);
@@ -335,6 +351,62 @@ export function parseVotoData(raw: unknown): VotoData {
   };
 }
 
+function gradeCount(data: VotoData) {
+  return data.subjects.reduce((count, subject) => count + subject.grades.length, 0);
+}
+
+function validateSnapshotContinuity(previous: VotoData, next: VotoData, raw: unknown) {
+  const schoolYearChanged =
+    Boolean(previous.student.schoolYear) &&
+    Boolean(next.student.schoolYear) &&
+    previous.student.schoolYear !== next.student.schoolYear;
+  if (schoolYearChanged) return;
+  const payload = isObj(raw) ? raw : {};
+
+  for (const [key, label] of [
+    ["assignments", "compiti"],
+    ["notifications", "avvisi"],
+    ["diary", "diario"],
+    ["attendanceEvents", "assenze e ritardi"],
+  ] as const) {
+    if (previous[key].length > 0 && !Array.isArray(payload[key])) {
+      throw new SchemaError(
+        `La risposta del registro è incompleta: manca la sezione ${label}. Mantengo gli ultimi dati validi.`,
+      );
+    }
+  }
+
+  const previousAttendance = previous.attendance;
+  const hasAttendanceData =
+    previousAttendance.absenceDays > 0 ||
+    previousAttendance.absenceHours > 0 ||
+    previousAttendance.delays > 0 ||
+    previousAttendance.earlyExits > 0;
+  if (hasAttendanceData && !isObj(payload["attendance"])) {
+    throw new SchemaError(
+      "La risposta del registro è incompleta: manca la sezione presenze. Mantengo gli ultimi dati validi.",
+    );
+  }
+
+  if (previous.subjects.length > 0 && next.subjects.length === 0) {
+    throw new SchemaError(
+      "La risposta del registro non contiene materie; mantengo gli ultimi dati validi.",
+    );
+  }
+
+  if (gradeCount(previous) >= 3 && gradeCount(next) === 0) {
+    throw new SchemaError(
+      "La risposta del registro non contiene più i voti già salvati; mantengo gli ultimi dati validi.",
+    );
+  }
+
+  if (previous.student.name && !next.student.name) {
+    throw new SchemaError(
+      "La risposta del registro è incompleta: manca il nome dello studente. Mantengo gli ultimi dati validi.",
+    );
+  }
+}
+
 export function validateUrl(url: string): string | null {
   try {
     const u = new URL(url);
@@ -345,7 +417,11 @@ export function validateUrl(url: string): string | null {
   }
 }
 
-export async function fetchVotoData(url: string, timeoutMs = 10000): Promise<VotoData> {
+export async function fetchVotoData(
+  url: string,
+  timeoutMs = 10000,
+  previousData?: VotoData,
+): Promise<VotoData> {
   const privateSource = url === PRIVATE_SCHOOL_DATA_URL;
   const err = privateSource ? null : validateUrl(url);
   if (err) throw new SchemaError(err);
@@ -401,5 +477,12 @@ export async function fetchVotoData(url: string, timeoutMs = 10000): Promise<Vot
   } catch {
     throw new SchemaError("La risposta di Supabase non contiene dati validi.");
   }
-  return parseVotoData(json);
+  const parsed = parseVotoData(json);
+  if (privateSource && parsed.subjects.length === 0) {
+    throw new SchemaError(
+      "La risposta del registro non contiene materie; mantengo gli ultimi dati validi.",
+    );
+  }
+  if (previousData) validateSnapshotContinuity(previousData, parsed, json);
+  return parsed;
 }
