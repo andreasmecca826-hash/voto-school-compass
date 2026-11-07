@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -25,34 +24,15 @@ public class MainActivity extends Activity {
   }
 
   private void bindViews() {
-    final EditText email = (EditText) findViewById(R.id.email_input);
-    final EditText password = (EditText) findViewById(R.id.password_input);
     status = (TextView) findViewById(R.id.status);
     small = (Spinner) findViewById(R.id.small_mode);
     large = (Spinner) findViewById(R.id.large_mode);
-    final Button save = (Button) findViewById(R.id.save_button);
     final Button refresh = (Button) findViewById(R.id.refresh_button);
     final Button github = (Button) findViewById(R.id.github_button);
     final Button logout = (Button) findViewById(R.id.logout_button);
     android.content.SharedPreferences prefs = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE);
-    email.setText(prefs.getString(WidgetData.EMAIL_KEY, ""));
     small.setSelection(prefs.getInt(WidgetConfigureActivity.SMALL_MODE_KEY, 0));
     large.setSelection(prefs.getInt(WidgetConfigureActivity.LARGE_MODE_KEY, 5));
-
-    save.setOnClickListener(v -> {
-      String emailText = email.getText().toString().trim();
-      String passwordText = password.getText().toString();
-      if (!android.util.Patterns.EMAIL_ADDRESS.matcher(emailText).matches()) { status.setText("Inserisci un'email valida."); return; }
-      if (passwordText.length() < 6) { status.setText("La password deve avere almeno 6 caratteri."); return; }
-      save.setEnabled(false); status.setText("Accesso Supabase in corso…");
-      WidgetData.login(this, emailText, passwordText, error -> {
-        save.setEnabled(true);
-        if (error != null) { status.setText(error); return; }
-        savePreferences(emailText);
-        password.setText("");
-        status.setText("Accesso riuscito. Widget aggiornati.");
-      });
-    });
     refresh.setOnClickListener(v -> {
       refresh.setEnabled(false);
       status.setText("Aggiornamento dei widget in corso…");
@@ -73,9 +53,8 @@ public class MainActivity extends Activity {
     });
   }
 
-  private void savePreferences(String email) {
+  private void savePreferences() {
     getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
-        .putString(WidgetData.EMAIL_KEY, email)
         .putInt(WidgetConfigureActivity.SMALL_MODE_KEY, small.getSelectedItemPosition())
         .putInt(WidgetConfigureActivity.LARGE_MODE_KEY, large.getSelectedItemPosition()).apply();
     WidgetData.refresh(this);
@@ -100,7 +79,7 @@ public class MainActivity extends Activity {
       if (access == null || refresh == null) throw new Exception("La sessione GitHub non è stata restituita.");
       long expires = parseLong(values.get("expires_in"), 3600L);
       WidgetData.saveOAuthSession(this, access, refresh, expires);
-      savePreferences("");
+      savePreferences();
       status.setText("Accesso GitHub riuscito. Widget aggiornati.");
     } catch (Exception e) {
       status.setText("Login GitHub non riuscito: " + e.getMessage());

@@ -4,6 +4,8 @@
 <Spinner android:id="@+id/mode_spinner" android:entries="@array/widget_modes" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <TextView android:text="Tema colore" android:textColor="#D8E2F2" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <Spinner android:id="@+id/theme_spinner" android:entries="@array/widget_themes" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<TextView android:text="Tema interfaccia" android:textColor="#D8E2F2" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<Spinner android:id="@+id/interface_theme_spinner" android:entries="@array/widget_interface_themes" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <TextView android:text="Dimensione testo" android:textColor="#D8E2F2" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <Spinner android:id="@+id/text_size_spinner" android:entries="@array/widget_text_sizes" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <CheckBox android:id="@+id/show_updated_check" android:text="Mostra ultimo aggiornamento" android:textColor="#D8E2F2" android:checked="true" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
