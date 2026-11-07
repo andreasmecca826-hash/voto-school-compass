@@ -6,6 +6,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  Github,
   Moon,
   RotateCcw,
   Save,
@@ -24,6 +25,7 @@ import { canResetDemoData } from "@/lib/voto/demo";
 import { createCalendarIcs } from "@/lib/voto/calendar-export";
 import { createPreferencesBackup, parsePreferencesBackup } from "@/lib/voto/preferences-backup";
 import { parseVotoData } from "@/lib/voto/parse";
+import { supabase } from "@/lib/supabase-auth";
 import {
   useVoto,
   type Accent,
@@ -220,6 +222,8 @@ function addDaysToDateValue(value: string, days: number): string {
 function Settings() {
   const v = useVoto();
   const auth = useSchoolAuth();
+  const [githubLinked, setGithubLinked] = useState(false);
+  const [linkingGithub, setLinkingGithub] = useState(false);
   const [calendarFrom, setCalendarFrom] = useState("");
   const [calendarTo, setCalendarTo] = useState("");
   const [calendarInclude, setCalendarInclude] = useState({
@@ -234,6 +238,32 @@ function Settings() {
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
+
+  useEffect(() => {
+    let mounted = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setGithubLinked(data.user?.identities?.some((identity) => identity.provider === "github") ?? false);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const linkGithub = async () => {
+    setLinkingGithub(true);
+    try {
+      const { error } = await supabase.auth.linkIdentity({
+        provider: "github",
+        options: { redirectTo: window.location.href },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setLinkingGithub(false);
+      toast.error("Collegamento GitHub non riuscito", {
+        description: error instanceof Error ? error.message : "Riprova tra poco.",
+      });
+    }
+  };
   useEffect(() => {
     if (!canResetDemoData(v.source, v.url)) {
       setDebugOpen(false);
@@ -368,6 +398,29 @@ function Settings() {
         <p className="text-[11px] text-muted-foreground">
           Ultima sincronizzazione: {fmtTime(v.lastSync)}
         </p>
+        <div className="mt-4 rounded-xl border border-border p-3">
+          <div className="flex items-start gap-3">
+            <Github className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold">Accesso GitHub per il widget</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {githubLinked
+                  ? "GitHub è collegato a questo account Supabase. Il widget può usare Accedi con GitHub."
+                  : "Collega GitHub a questo account già autorizzato, senza creare un secondo account."}
+              </p>
+            </div>
+          </div>
+          {!githubLinked && (
+            <button
+              type="button"
+              onClick={() => void linkGithub()}
+              disabled={linkingGithub}
+              className="press mt-3 h-10 w-full rounded-xl bg-foreground px-3 text-sm font-medium text-background disabled:opacity-60"
+            >
+              {linkingGithub ? "Apertura di GitHub…" : "Collega account GitHub"}
+            </button>
+          )}
+        </div>
         <div className="mt-4 flex gap-2 rounded-xl bg-surface p-3 text-[11px] text-muted-foreground">
           <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />I dati sono letti da uno storage
           privato e l’Edge Function li consegna solo all’account autorizzato. La sessione resta sul
