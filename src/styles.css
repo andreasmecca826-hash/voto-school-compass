@@ -1606,6 +1606,23 @@
 :root[data-theme="windows-7"]:not([data-registry-style="didup"]) :is(button, a) {
   text-shadow: none;
 }
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .windows7-start-backdrop {
+  position: fixed;
+  z-index: 39;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  background: #07538e;
+  cursor: default;
+}
+:root[data-theme="windows-7"]:not([data-registry-style="didup"]) .windows7-start-menu {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: linear-gradient(120deg, #d0eafd, #6397c1 60%, #20507c);
+}
 
 /* Profilo di registro sobrio: ispirato a DidUP, senza riprodurne marchio o schermate ufficiali. */
 :root[data-registry-style="didup"] {

@@ -153,49 +153,57 @@ export function Windows7Taskbar({
           <span className="windows7-clock-date block">{dateLabel}</span>
         </time>
         {open && (
-          <div
-            ref={menuRef}
-            id={menuId}
-            role="dialog"
-            aria-modal="false"
-            aria-label="Menu Start"
-            className="windows7-start-menu absolute bottom-full left-0 mb-2 w-full"
-          >
-            <div className="windows7-start-heading">
-              <span>Menu Start</span>
-              <button
-                type="button"
-                className="windows7-start-close"
-                onClick={() => {
-                  close();
-                  startRef.current?.focus();
-                }}
-                aria-label="Chiudi menu Start"
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
-            <div className="windows7-start-columns">
-              <nav className="windows7-start-programs" aria-label="Applicazioni scolastiche">
-                {navigation.map(renderLink)}
-                {programs.map(renderLink)}
-                {renderLink({ to: "/studio", label: "Studio Lab.", icon: Sparkles })}
-                {renderLink({ to: "/assistente", label: "Assistente", icon: MessageCircle })}
-              </nav>
-              <aside className="windows7-start-sidebar" aria-label="Profilo e preferenze">
-                <div className="windows7-start-profile">
-                  <span className="windows7-start-avatar" aria-hidden="true">
-                    <GraduationCap className="h-8 w-8" />
-                  </span>
-                  <span className="windows7-start-student">{studentName}</span>
-                  <span className="windows7-start-profile-label">Registro scolastico VOTO</span>
-                </div>
-                <nav className="windows7-start-settings" aria-label="Preferenze">
-                  {settings.map(renderLink)}
+          <>
+            <button
+              type="button"
+              className="windows7-start-backdrop"
+              aria-label="Chiudi menu Start"
+              onClick={close}
+            />
+            <div
+              ref={menuRef}
+              id={menuId}
+              role="dialog"
+              aria-modal="false"
+              aria-label="Menu Start"
+              className="windows7-start-menu absolute bottom-full left-0 mb-2 w-full"
+            >
+              <div className="windows7-start-heading">
+                <span>Menu Start</span>
+                <button
+                  type="button"
+                  className="windows7-start-close"
+                  onClick={() => {
+                    close();
+                    startRef.current?.focus();
+                  }}
+                  aria-label="Chiudi menu Start"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+              <div className="windows7-start-columns">
+                <nav className="windows7-start-programs" aria-label="Applicazioni scolastiche">
+                  {navigation.map(renderLink)}
+                  {programs.map(renderLink)}
+                  {renderLink({ to: "/studio", label: "Studio Lab.", icon: Sparkles })}
+                  {renderLink({ to: "/assistente", label: "Assistente", icon: MessageCircle })}
                 </nav>
-              </aside>
+                <aside className="windows7-start-sidebar" aria-label="Profilo e preferenze">
+                  <div className="windows7-start-profile">
+                    <span className="windows7-start-avatar" aria-hidden="true">
+                      <GraduationCap className="h-8 w-8" />
+                    </span>
+                    <span className="windows7-start-student">{studentName}</span>
+                    <span className="windows7-start-profile-label">Registro scolastico VOTO</span>
+                  </div>
+                  <nav className="windows7-start-settings" aria-label="Preferenze">
+                    {settings.map(renderLink)}
+                  </nav>
+                </aside>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
