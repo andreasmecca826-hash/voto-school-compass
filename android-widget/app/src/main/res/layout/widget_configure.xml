@@ -2,5 +2,7 @@
 <TextView android:text="Configura widget VOTO" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <TextView android:text="Scegli cosa vuoi visualizzare in questo widget." android:textColor="#D8E2F2" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <Spinner android:id="@+id/mode_spinner" android:entries="@array/widget_modes" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<TextView android:text="Tema colore" android:textColor="#D8E2F2" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<Spinner android:id="@+id/theme_spinner" android:entries="@array/widget_themes" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <Button android:id="@+id/config_save" android:text="Salva" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 </LinearLayout>

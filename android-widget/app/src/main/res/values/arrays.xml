@@ -1,1 +1,4 @@
-<resources><string-array name="widget_modes"><item>Media generale</item><item>Ultimo voto</item><item>Assenze e ritardi</item><item>Note disciplinari</item><item>Circolari recenti</item><item>Dashboard completa</item></string-array></resources>
+<resources>
+    <string-array name="widget_modes"><item>Media generale</item><item>Ultimo voto</item><item>Assenze e ritardi</item><item>Note disciplinari</item><item>Circolari recenti</item><item>Dashboard completa</item></string-array>
+    <string-array name="widget_themes"><item>Blu notte</item><item>Verde bosco</item><item>Viola</item><item>Nero minimal</item><item>Carta chiara</item></string-array>
+</resources>
