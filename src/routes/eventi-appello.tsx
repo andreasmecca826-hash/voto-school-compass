@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { AttendanceEvent } from "@/lib/voto/types";
-import { useVoto } from "@/lib/voto/store";
+import { useVotoData } from "@/lib/voto/store";
 
 export const Route = createFileRoute("/eventi-appello")({
   head: () => ({
@@ -97,7 +97,7 @@ function eventDateLabel(iso: string) {
 }
 
 function EventiAppello() {
-  const v = useVoto();
+  const v = useVotoData();
   const events = useMemo(
     () => [...(v.data.attendanceEvents ?? [])].sort((a, b) => b.date.localeCompare(a.date)),
     [v.data.attendanceEvents],

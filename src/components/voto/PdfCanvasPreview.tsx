@@ -20,6 +20,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
     setPageCount(0);
 
     void (async () => {
+      let firstPageRendered = false;
       try {
         const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
         pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -33,6 +34,13 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           return;
         }
         setPageCount(pdf.numPages);
+        const performanceMode = document.documentElement.dataset["performance"] === "on";
+        const smallScreen =
+          typeof window.matchMedia === "function" &&
+          window.matchMedia("(max-width: 767px)").matches;
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const renderRatio =
+          performanceMode && smallScreen ? Math.min(devicePixelRatio, 1.5) : devicePixelRatio;
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);
           if (cancelled) break;
@@ -40,20 +48,31 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           const canvas = document.createElement("canvas");
           canvas.setAttribute("aria-label", `${title}, pagina ${pageNumber}`);
           canvas.className = "block h-auto w-full rounded-lg bg-white shadow-sm";
-          const ratio = window.devicePixelRatio || 1;
-          canvas.width = Math.ceil(viewport.width * ratio);
-          canvas.height = Math.ceil(viewport.height * ratio);
+          canvas.width = Math.ceil(viewport.width * renderRatio);
+          canvas.height = Math.ceil(viewport.height * renderRatio);
           canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
           const context = canvas.getContext("2d");
           if (!context) throw new Error("canvas_context_unavailable");
-          context.setTransform(ratio, 0, 0, ratio, 0, 0);
-          container.appendChild(canvas);
+          context.setTransform(renderRatio, 0, 0, renderRatio, 0, 0);
           await page.render({ canvasContext: context, viewport }).promise;
+          if (cancelled) break;
+          container.appendChild(canvas);
+          if (pageNumber === 1) {
+            firstPageRendered = true;
+            setStatus("ready");
+            await new Promise<void>((resolve) => {
+              if (typeof window.requestAnimationFrame === "function") {
+                window.requestAnimationFrame(() => resolve());
+              } else {
+                window.setTimeout(resolve, 0);
+              }
+            });
+          }
         }
         if (!cancelled) setStatus("ready");
         await pdf.destroy();
       } catch {
-        if (!cancelled) {
+        if (!cancelled && !firstPageRendered) {
           setStatus("error");
           onError?.();
         }
@@ -82,9 +101,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         </p>
       )}
       <div ref={containerRef} className="space-y-3" aria-hidden={status !== "ready"} />
-      {status === "ready" && pageCount > 0 && (
-        <span className="sr-only">{pageCount} pagine</span>
-      )}
+      {status === "ready" && pageCount > 0 && <span className="sr-only">{pageCount} pagine</span>}
     </div>
   );
 }

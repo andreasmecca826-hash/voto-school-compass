@@ -292,7 +292,13 @@ interface Ctx {
   removeInterrogazione: (id: string) => void;
 }
 
+type VotoDataContext = Pick<
+  Ctx,
+  "ready" | "data" | "displayName" | "source" | "url" | "lastSync" | "loading" | "error"
+>;
+
 const VotoCtx = createContext<Ctx | null>(null);
+const VotoDataCtx = createContext<VotoDataContext | null>(null);
 const ClockCtx = createContext<Date | null>(null);
 
 const EMPTY: VotoData = {
@@ -407,7 +413,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setReduceMotionS(load(KEYS.reduceMotion, false));
     setPerformanceModeS(load<unknown>(KEYS.performanceMode, false) === true);
     setPerformanceOptionsS(
-      normalizePerformanceOptions(load<unknown>(KEYS.performanceOptions, DEFAULT_PERFORMANCE_OPTIONS)),
+      normalizePerformanceOptions(
+        load<unknown>(KEYS.performanceOptions, DEFAULT_PERFORMANCE_OPTIONS),
+      ),
     );
     const savedTheme = oneOf(load<unknown>(KEYS.theme, "original"), THEME_VALUES, "original");
     setThemeS(savedTheme);
@@ -579,6 +587,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     interfaceScale,
     ready,
   ]);
+
+  const dataValue: VotoDataContext = useMemo(
+    () => ({ ready, data, displayName, source, url, lastSync, loading, error }),
+    [ready, data, displayName, source, url, lastSync, loading, error],
+  );
 
   const value: Ctx = useMemo(
     () => ({
@@ -883,7 +896,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 
   return (
     <ClockCtx.Provider value={now}>
-      <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>
+      <VotoDataCtx.Provider value={dataValue}>
+        <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>
+      </VotoDataCtx.Provider>
     </ClockCtx.Provider>
   );
 }
@@ -891,6 +906,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 export function useVoto() {
   const c = useContext(VotoCtx);
   if (!c) throw new Error("useVoto fuori dal provider");
+  return c;
+}
+
+export function useVotoData() {
+  const c = useContext(VotoDataCtx);
+  if (!c) throw new Error("useVotoData fuori dal provider");
   return c;
 }
 

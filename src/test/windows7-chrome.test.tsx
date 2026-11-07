@@ -29,6 +29,16 @@ vi.mock("@/lib/voto/store", () => ({
     displayName: "Ada Studente",
     data: { student: { name: "Ada" } },
   }),
+  useVotoData: () => ({
+    displayName: "Ada Studente",
+    source: "demo",
+    url: "",
+    lastSync: null,
+    loading: false,
+    error: null,
+    ready: true,
+    data: { student: { name: "Ada" } },
+  }),
   useClock: () => new Date(2026, 10, 5, 8, 4, 0),
 }));
 vi.mock("@/components/voto/DidupDashboard", () => ({
@@ -173,14 +183,14 @@ describe("Windows 7 chrome", () => {
     expect(screen.queryByText("Contenuto scolastico")).not.toBeInTheDocument();
   });
 
-  it("never applies Windows 7 chrome to DidUP", () => {
+  it("never applies Windows 7 chrome to DidUP", async () => {
     state.registryStyle = "didup";
     const { container } = render(page());
     expect(container.querySelector(".windows7-shell")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.getByText("Dashboard DidUP")).toBeVisible();
+    expect(await screen.findByText("Dashboard DidUP")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByText("Menu DidUP")).toBeVisible();
+    expect(await screen.findByText("Menu DidUP")).toBeVisible();
   });
 
   it("coalesces pull movement without rerendering page content and refreshes at the threshold", () => {
