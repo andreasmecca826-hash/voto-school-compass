@@ -434,16 +434,28 @@ function DidupScrutiniLanding({
       <div className="mt-[78px] px-1">
         <DidupScrutiniRow label="PRIMO TRIMESTRE" />
         <DidupScrutiniRow label="SCRUTINIO FINALE" />
-        <DidupScrutiniRow label="SCRUTINIO INFRAPERIODALE" onClick={onOpenInfraperiodal} />
+        <DidupScrutiniRow
+          label="SCRUTINIO INFRAPERIODALE"
+          onClick={onOpenInfraperiodal}
+          last
+        />
       </div>
     </div>
   );
 }
 
-function DidupScrutiniRow({ label, onClick }: { label: string; onClick?: () => void }) {
+function DidupScrutiniRow({
+  label,
+  onClick,
+  last = false,
+}: {
+  label: string;
+  onClick?: () => void;
+  last?: boolean;
+}) {
   const content = (
     <>
-      <span className="text-[19px] font-extrabold tracking-tight">{label}</span>
+      <span className="text-[17px] font-extrabold tracking-tight">{label}</span>
       <ChevronRight className="h-7 w-7 shrink-0" strokeWidth={1.7} />
     </>
   );
@@ -452,12 +464,20 @@ function DidupScrutiniRow({ label, onClick }: { label: string; onClick?: () => v
     <button
       type="button"
       onClick={onClick}
-      className="press flex min-h-[122px] w-full items-center justify-between border-b border-white/25 px-7 text-left"
+      className={cn(
+        "press flex min-h-[96px] w-full items-center justify-between px-7 text-left",
+        !last && "border-b border-white/25",
+      )}
     >
       {content}
     </button>
   ) : (
-    <div className="flex min-h-[122px] items-center justify-between border-b border-white/25 px-7">
+    <div
+      className={cn(
+        "flex min-h-[96px] items-center justify-between px-7",
+        !last && "border-b border-white/25",
+      )}
+    >
       {content}
     </div>
   );
