@@ -1455,6 +1455,23 @@
   transition-duration: 0.01ms !important;
 }
 
+:root[data-performance="on"] *,
+:root[data-performance="on"] *::before,
+:root[data-performance="on"] *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  box-shadow: none !important;
+  scroll-behavior: auto !important;
+  text-shadow: none !important;
+  transition-duration: 0.01ms !important;
+}
+
+:root[data-performance="on"] body {
+  background-attachment: scroll !important;
+}
+
 /* Profilo di registro sobrio: ispirato a DidUP, senza riprodurne marchio o schermate ufficiali. */
 :root[data-registry-style="didup"] {
   --radius: 0.65rem;

@@ -225,6 +225,7 @@ interface Ctx {
   glass: boolean;
   density: Density;
   reduceMotion: boolean;
+  performanceMode: boolean;
   theme: Theme;
   registryStyle: RegistryStyle;
   customTheme: CustomTheme;
@@ -251,6 +252,7 @@ interface Ctx {
   setGlass: (enabled: boolean) => void;
   setDensity: (density: Density) => void;
   setReduceMotion: (enabled: boolean) => void;
+  setPerformanceMode: (enabled: boolean) => void;
   setTheme: (theme: Theme) => void;
   setRegistryStyle: (style: RegistryStyle) => void;
   setCustomTheme: (patch: Partial<CustomTheme>) => void;
@@ -309,6 +311,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [glass, setGlassS] = useState(true);
   const [density, setDensityS] = useState<Density>("standard");
   const [reduceMotion, setReduceMotionS] = useState(false);
+  const [performanceMode, setPerformanceModeS] = useState(false);
   const [theme, setThemeS] = useState<Theme>("original");
   const [registryStyle, setRegistryStyleS] = useState<RegistryStyle>("voto");
   const [customTheme, setCustomThemeS] = useState<CustomTheme>(DEFAULT_CUSTOM_THEME);
@@ -379,6 +382,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const savedDensity = load<Density>(KEYS.density, "standard");
     setDensityS(savedDensity === "compact" ? "compact" : "standard");
     setReduceMotionS(load(KEYS.reduceMotion, false));
+    setPerformanceModeS(load<unknown>(KEYS.performanceMode, false) === true);
     const savedTheme = oneOf(load<unknown>(KEYS.theme, "original"), THEME_VALUES, "original");
     setThemeS(savedTheme);
     const savedRegistryStyle = load<unknown>(KEYS.registryStyle, "voto");
@@ -486,6 +490,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     root.dataset["glass"] = didupActive ? "off" : glass ? "on" : "off";
     root.dataset["density"] = density;
     root.dataset["reduceMotion"] = reduceMotion ? "on" : "off";
+    root.dataset["performance"] = performanceMode ? "on" : "off";
     // DidUP ha una grafica propria: il tema VOTO resta memorizzato ma non
     // deve colorare accidentalmente dashboard e pagine del registro.
     root.dataset["theme"] = didupActive ? "original" : theme;
@@ -531,6 +536,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     glass,
     density,
     reduceMotion,
+    performanceMode,
     theme,
     registryStyle,
     customTheme,
@@ -545,6 +551,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       ready,
       density,
       reduceMotion,
+      performanceMode,
       data,
       displayName,
       source,
@@ -665,6 +672,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setReduceMotion: (enabled) => {
         setReduceMotionS(enabled);
         save(KEYS.reduceMotion, enabled);
+      },
+      setPerformanceMode: (enabled) => {
+        setPerformanceModeS(enabled);
+        save(KEYS.performanceMode, enabled);
       },
       setTheme: (next) => {
         setThemeS(next);
@@ -820,6 +831,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       registryStyle,
       density,
       reduceMotion,
+      performanceMode,
       refreshImpl,
       homeScale,
       interfaceScale,

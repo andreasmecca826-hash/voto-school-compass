@@ -6,6 +6,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  Gauge,
   Moon,
   RotateCcw,
   Save,
@@ -356,6 +357,42 @@ function Settings() {
         <p className="mt-2 text-[11px] text-muted-foreground">
           Viene usato solo per mostrare il tuo nome nell’app e non modifica i dati Supabase.
         </p>
+      </section>
+
+      <SectionTitle>Prestazioni</SectionTitle>
+      <section className="card-surface p-4">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={v.performanceMode}
+          onClick={() => v.setPerformanceMode(!v.performanceMode)}
+          className="flex min-h-14 w-full items-center gap-3 text-left"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <Gauge className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Modalità prestazioni</span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Alleggerisce sfocature, ombre, animazioni e sfondi fissi per rendere l’app più fluida
+              sui telefoni meno recenti.
+            </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+              v.performanceMode ? "bg-primary" : "bg-muted",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                v.performanceMode ? "translate-x-[22px]" : "translate-x-0.5",
+              )}
+            />
+          </span>
+        </button>
       </section>
 
       <SectionTitle>Accesso ai dati privati</SectionTitle>

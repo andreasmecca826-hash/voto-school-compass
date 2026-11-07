@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@supabase/supabase-js";
 import { SchoolDataAuthGate } from "@/components/voto/SchoolDataAuthGate";
@@ -39,8 +39,16 @@ const remoteData = {
 };
 
 function StateProbe() {
-  const { ready, source, data } = useVoto();
-  return <p>{`${ready}:${source}:${data.notifications[0]?.title ?? "nessuna circolare"}`}</p>;
+  const { ready, source, data, performanceMode, setPerformanceMode } = useVoto();
+  return (
+    <>
+      <p>{`${ready}:${source}:${data.notifications[0]?.title ?? "nessuna circolare"}`}</p>
+      <output data-testid="performance-mode">{String(performanceMode)}</output>
+      <button type="button" onClick={() => setPerformanceMode(!performanceMode)}>
+        Toggle performance mode
+      </button>
+    </>
+  );
 }
 
 function renderProtectedApp() {
@@ -77,6 +85,32 @@ describe("bootstrap dati scolastici", () => {
     renderProtectedApp();
 
     expect(await screen.findByText(/^true:demo:/)).toBeInTheDocument();
+  });
+
+  it("ripristina la modalità prestazioni salvata e la applica alla root", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as never);
+    localStorage.setItem(KEYS.demoMode, "true");
+    localStorage.setItem(KEYS.performanceMode, "true");
+
+    renderProtectedApp();
+
+    expect(await screen.findByTestId("performance-mode")).toHaveTextContent("true");
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-performance", "on");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle performance mode" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("performance-mode")).toHaveTextContent("false");
+      expect(document.documentElement).toHaveAttribute("data-performance", "off");
+      expect(localStorage.getItem(KEYS.performanceMode)).toBe("false");
+    });
   });
 
   it("riusa il fetch del gate se la cache è di un altro account", async () => {
