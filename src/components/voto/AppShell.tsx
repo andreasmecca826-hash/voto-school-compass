@@ -7,6 +7,7 @@ import {
   CheckSquare,
   ClipboardList,
   Clock3,
+  CalendarX2,
   GraduationCap,
   LayoutGrid,
   Menu,
@@ -95,6 +96,13 @@ const MORE_NAV = [
     description: "Date e preparazione",
     icon: CalendarDays,
     color: "#a66be1",
+  },
+  {
+    to: "/assenze",
+    label: "Assenze",
+    description: "Giorni di assenza registrati",
+    icon: CalendarX2,
+    color: "#e56b6f",
   },
   {
     to: "/diario",
