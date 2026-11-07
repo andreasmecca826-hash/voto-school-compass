@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { GraduationCap, Plus, Trash2, X } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, GraduationCap, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Empty, SectionTitle } from "@/components/voto/ui";
 import { fmt } from "@/lib/voto/calc";
@@ -120,14 +120,31 @@ function ScrutiniInfraperiodali() {
   }
 
   if (!loaded) {
-    return <div className="pt-3 text-sm text-muted-foreground">Caricamento delle pagelle…</div>;
+    return v.registryStyle === "didup" ? (
+      <div className="didup-page min-h-dvh bg-black px-2 pb-[100px] text-white">
+        <DidupScrutiniHeader studentName={v.data.student.name} />
+        <div className="px-2 pt-16 text-sm text-white/65">Caricamento delle pagelle…</div>
+      </div>
+    ) : (
+      <div className="pt-3 text-sm text-muted-foreground">Caricamento delle pagelle…</div>
+    );
   }
 
   const average = activeReport ? averageRoundedReport(activeReport.entries) : null;
 
+  const isDidup = v.registryStyle === "didup";
+
   return (
-    <div className="pt-3 pb-6">
-      <div className="flex items-center gap-3">
+    <div
+      className={cn(
+        "pb-6",
+        isDidup ? "didup-page min-h-dvh bg-black px-2 pb-[100px] text-white" : "pt-3",
+      )}
+    >
+      {isDidup ? (
+        <DidupScrutiniHeader studentName={v.data.student.name} />
+      ) : (
+        <div className="flex items-center gap-3">
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-soft text-primary">
           <GraduationCap className="h-5 w-5" />
         </span>
@@ -135,7 +152,8 @@ function ScrutiniInfraperiodali() {
           <h1 className="font-display text-2xl font-semibold">Scrutini infraperiodali</h1>
           <p className="text-xs text-muted-foreground">Crea e compila le tue pagelle</p>
         </div>
-      </div>
+        </div>
+      )}
 
       <div className="mt-4 rounded-xl border border-primary/20 bg-primary-soft/50 p-3 text-xs leading-relaxed text-muted-foreground">
         Inserisci per ogni materia il voto medio, anche decimale: VOTO propone il voto intero più
@@ -369,5 +387,26 @@ function ScrutiniInfraperiodali() {
         </section>
       )}
     </div>
+  );
+}
+
+function DidupScrutiniHeader({ studentName }: { studentName?: string }) {
+  return (
+    <header className="flex items-start justify-between px-2 pt-5">
+      <div className="flex min-w-0 items-start">
+        <Link
+          to="/"
+          aria-label="Torna alla Home"
+          className="press flex h-10 w-10 shrink-0 items-center justify-start text-white"
+        >
+          <ArrowLeft className="h-8 w-8" strokeWidth={1.7} />
+        </Link>
+        <div className="ml-4 pt-0.5">
+          <h1 className="text-[17px] font-normal leading-5">VOTI SCRUTINI</h1>
+          <p className="mt-1 text-[12px] leading-4">{(studentName || "ANDREA MARIA").toUpperCase()}</p>
+        </div>
+      </div>
+      <img src="/didup-profile.jpg" alt="" className="h-[50px] w-[50px] shrink-0 object-cover" />
+    </header>
   );
 }
