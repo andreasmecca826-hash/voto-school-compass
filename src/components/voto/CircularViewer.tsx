@@ -604,14 +604,14 @@ export function CircularViewer({
           </div>
         )}
         {downloadUrl && (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className={`mt-2 grid shrink-0 gap-2 ${previewUrl ? "grid-cols-2" : "grid-cols-1"}`}>
             {isPdf && previewUrl && (
               <button
                 type="button"
                 onClick={openAttachment}
-                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+                className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 Apri PDF
               </button>
             )}
@@ -619,9 +619,9 @@ export function CircularViewer({
               <button
                 type="button"
                 onClick={openAttachment}
-                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+                className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 Apri DOCX
               </button>
             )}
@@ -629,20 +629,15 @@ export function CircularViewer({
               type="button"
               onClick={downloadAttachment}
               disabled={isDownloading}
-              className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
+              className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-2 text-[10px] font-semibold text-primary-foreground"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3.5 w-3.5 shrink-0" />
               {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
             </button>
           </div>
         )}
         {downloadError && (
           <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>
-        )}
-        {previewUrl && isPdf && (
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            Se l’anteprima non si carica, puoi scaricare il PDF.
-          </p>
         )}
         <button
           type="button"

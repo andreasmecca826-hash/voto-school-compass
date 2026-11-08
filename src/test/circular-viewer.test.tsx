@@ -20,7 +20,14 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
 
     expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
+    const openPdfButton = screen.getByRole("button", { name: "Apri PDF" });
+    const downloadPdfButton = screen.getByRole("button", { name: "Scarica PDF" });
+    expect(openPdfButton.parentElement).toHaveClass("grid-cols-2");
+    expect(openPdfButton).toHaveClass("h-8");
+    expect(downloadPdfButton).toHaveClass("h-8");
+    expect(
+      screen.queryByText("Se l’anteprima non si carica, puoi scaricare il PDF."),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Analisi locale della circolare" })).toBeNull();
     expect(
