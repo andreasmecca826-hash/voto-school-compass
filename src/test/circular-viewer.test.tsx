@@ -22,6 +22,13 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Analisi locale della circolare" })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Fai una domanda alla circolare" }),
+    ).not.toBeInTheDocument();
+    const showChatButton = screen.getByRole("button", { name: "Fai una domanda" });
+    expect(showChatButton).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(showChatButton);
     expect(
       screen.getByRole("heading", { name: "Fai una domanda alla circolare" }),
     ).toBeInTheDocument();
@@ -45,6 +52,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
     fireEvent.click(screen.getByRole("button", { name: "API Groq (Qwen)" }));
 
     expect(screen.getByRole("button", { name: "API Groq (Qwen)" })).toHaveAttribute(

@@ -105,8 +105,10 @@ export function CircularViewer({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<CircularAnalysis | null>(null);
   const [analysisError, setAnalysisError] = useState<string | undefined>();
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
   const [isAskingAi, setIsAskingAi] = useState(false);
@@ -127,6 +129,8 @@ export function CircularViewer({
       setSelectedIndex(0);
       setAnalysis(null);
       setAnalysisError(undefined);
+      setIsAnalysisOpen(false);
+      setIsAiChatOpen(false);
       setAiQuestion("");
       setAiMessages([]);
       setAiError(undefined);
@@ -142,6 +146,8 @@ export function CircularViewer({
   useEffect(() => {
     setAnalysis(null);
     setAnalysisError(undefined);
+    setIsAnalysisOpen(false);
+    setIsAiChatOpen(false);
     setAiQuestion("");
     setAiMessages([]);
     setAiError(undefined);
@@ -184,10 +190,12 @@ export function CircularViewer({
         ? await analyzeCircularPdf(previewUrl, linkedAttachments)
         : await analyzeCircularDocx(previewUrl, linkedAttachments);
       setAnalysis(result);
+      setIsAnalysisOpen(true);
     } catch {
       setAnalysisError(
         "Non sono riuscito a leggere questo PDF. Verifica la connessione o scarica il documento e riprova.",
       );
+      setIsAnalysisOpen(true);
     } finally {
       setIsAnalyzing(false);
     }
@@ -288,20 +296,40 @@ export function CircularViewer({
         </SheetHeader>
         {canAnalyze && (
           <div className="mb-3 shrink-0 space-y-2">
-            <button
-              type="button"
-              onClick={() => void analyzeDocument()}
-              disabled={isAnalyzing}
-              className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-4 text-xs font-semibold text-primary disabled:opacity-60"
-            >
-              {isAnalyzing ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {isAnalyzing ? "Lettura locale in corso…" : "Riassumi sul dispositivo"}
-            </button>
-            {(analysis || analysisError) && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (analysis || analysisError) setIsAnalysisOpen((openNow) => !openNow);
+                  else void analyzeDocument();
+                }}
+                disabled={isAnalyzing}
+                className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-[11px] font-semibold text-primary disabled:opacity-60"
+              >
+                {isAnalyzing ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {isAnalyzing
+                  ? "Lettura in corso…"
+                  : analysis || analysisError
+                    ? isAnalysisOpen
+                      ? "Nascondi analisi"
+                      : "Mostra analisi"
+                    : "Riassumi sul dispositivo"}
+              </button>
+              <button
+                type="button"
+                aria-expanded={isAiChatOpen}
+                aria-controls="circular-ai-chat"
+                onClick={() => setIsAiChatOpen((openNow) => !openNow)}
+                className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-[11px] font-semibold text-foreground"
+              >
+                {isAiChatOpen ? "Nascondi chat" : "Fai una domanda"}
+              </button>
+            </div>
+            {isAnalysisOpen && (analysis || analysisError) && (
               <section
                 aria-label="Analisi locale della circolare"
                 className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-border bg-card p-3 text-xs"
@@ -420,8 +448,11 @@ export function CircularViewer({
             )}
           </div>
         )}
-        {canAnalyze && (
-          <section className="mb-3 shrink-0 space-y-2 rounded-xl border border-primary/25 bg-primary-soft/40 p-3">
+        {canAnalyze && isAiChatOpen && (
+          <section
+            id="circular-ai-chat"
+            className="mb-3 shrink-0 space-y-2 rounded-xl border border-primary/25 bg-primary-soft/40 p-3"
+          >
             <div>
               <h3 className="text-xs font-semibold text-foreground">
                 Fai una domanda alla circolare
