@@ -28,6 +28,7 @@ import {
   type CircularAnalysis,
 } from "@/lib/voto/circular-reader";
 import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circular-assistant";
+import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
@@ -509,19 +510,26 @@ export function CircularViewer({
                 className="max-h-36 space-y-2 overflow-y-auto rounded-lg bg-card/80 p-2"
               >
                 {aiMessages.map((message, index) => (
-                  <p
+                  <div
                     key={`${message.role}-${index}`}
-                    className={`whitespace-pre-wrap text-[11px] leading-relaxed ${
+                    className={`text-[11px] leading-relaxed ${
                       message.role === "user"
                         ? "text-right text-muted-foreground"
                         : "text-foreground"
                     }`}
                   >
-                    <span className="font-semibold">
-                      {message.role === "user" ? "Tu: " : "AI: "}
-                    </span>
-                    {message.text}
-                  </p>
+                    {message.role === "assistant" ? (
+                      <>
+                        <p className="font-semibold">AI:</p>
+                        <AssistantMarkdown text={message.text} />
+                      </>
+                    ) : (
+                      <p className="whitespace-pre-wrap">
+                        <span className="font-semibold">Tu: </span>
+                        {message.text}
+                      </p>
+                    )}
+                  </div>
                 ))}
                 {isAskingAi && (
                   <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">

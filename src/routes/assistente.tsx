@@ -13,6 +13,7 @@ import {
 } from "@/lib/voto/circular-assistant-chat";
 import { askGeneralQuestion } from "@/lib/voto/circular-assistant";
 import { isAssistantSearchQuery } from "@/lib/voto/assistant-search";
+import { AssistantMarkdown } from "@/components/voto/AssistantMarkdown";
 import {
   answerSchoolPolicyQuestion,
   isSchoolPolicyQuestion,
@@ -338,7 +339,11 @@ function Assistant() {
             <div
               className={`max-w-[86%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${message.role === "user" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card text-foreground"}`}
             >
-              {message.text}
+              {message.role === "assistant" ? (
+                <AssistantMarkdown text={message.text} />
+              ) : (
+                message.text
+              )}
               {message.sources?.map((source) => (
                 <a
                   key={`${source.url}-${source.page ?? "document"}`}
