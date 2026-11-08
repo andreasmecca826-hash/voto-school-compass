@@ -90,10 +90,10 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
   },
   {
-    id: "emoji",
-    label: "Emoji",
-    description: "Palette pastello e sfondo con le emoji che scegli",
-    sw: "linear-gradient(135deg,#29223a 0%,#8d557b 52%,#f2a35e 100%)",
+    id: "diamante",
+    label: "Diamante",
+    description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
+    sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "oro",
@@ -102,10 +102,10 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "radial-gradient(ellipse at 16% 14%,#fff8d8 0 1.5%,#f2d16f 2.3%,transparent 19%),repeating-linear-gradient(0deg,#fff3c21a 0 1px,transparent 1px 3px),linear-gradient(102deg,#33220a 0%,#8b6420 13%,#eed06a 17%,#694710 25%,#d6ad4a 38%,#fff1b0 43%,#8b6320 51%,#d3ae54 67%,#6a4914 80%,#e7c762 91%,#221708 100%)",
   },
   {
-    id: "diamante",
-    label: "Diamante",
-    description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
-    sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
+    id: "emoji",
+    label: "Emoji",
+    description: "Palette pastello e sfondo con le emoji che scegli",
+    sw: "linear-gradient(135deg,#29223a 0%,#8d557b 52%,#f2a35e 100%)",
   },
   {
     id: "tramonto",
