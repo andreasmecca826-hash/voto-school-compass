@@ -80,6 +80,15 @@ describe("Assistente locale", () => {
     expect(answer).toContain("p.");
   });
 
+  it("interpreta sinonimi colloquiali nelle domande sul regolamento", () => {
+    expect(answerQuestion("Dove lavora il bidello secondo il regolamento?", data)).toContain(
+      "testo completo del regolamento",
+    );
+    expect(answerQuestion("Quali regole valgono per una gita scolastica?", data)).toContain(
+      "due terzi",
+    );
+  });
+
   it("risponde sugli articoli pratici non ancora coperti della vita scolastica", () => {
     expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("7:30");
     expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("art. 18.1–18.2");

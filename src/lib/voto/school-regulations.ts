@@ -21,7 +21,6 @@ const CORPUS_STOP_WORDS = new Set([
   "posso",
   "puo",
   "sono",
-  "sono",
   "devo",
   "deve",
   "della",
@@ -29,7 +28,6 @@ const CORPUS_STOP_WORDS = new Set([
   "degli",
   "dello",
   "nella",
-  "nelle",
   "nelle",
   "sulla",
   "sulle",
@@ -41,17 +39,64 @@ const CORPUS_STOP_WORDS = new Set([
   "istituto",
 ]);
 
-function regulationCorpusAnswer(query: string): string | null {
-  const terms = [...new Set(normalize(query).match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
+const CORPUS_ALIASES: Record<string, string[]> = {
+  bidello: ["collaboratore scolastico"],
+  bidelli: ["collaboratori scolastici"],
+  preside: ["dirigente scolastico"],
+  dirigente: ["dirigente scolastico"],
+  gita: ["viaggio istruzione"],
+  gite: ["viaggi istruzione"],
+  rappresentanti: ["rappresentanti studenti"],
+  rappresentante: ["rappresentante studenti"],
+  castigo: ["sanzione disciplinare"],
+  punizione: ["sanzione disciplinare"],
+  punizioni: ["sanzioni disciplinari"],
+  cellulare: ["telefono dispositivo elettronico"],
+  smartphone: ["telefono dispositivo elettronico"],
+  prof: ["docente"],
+  professore: ["docente"],
+  professoressa: ["docente"],
+};
+
+function regulationQueryTerms(query: string): string[] {
+  const normalized = normalize(query);
+  const rawTerms = normalized.match(/[\p{L}\p{N}]+/gu) ?? [];
+  const expanded = rawTerms.flatMap((term) => [term, ...(CORPUS_ALIASES[term] ?? [])]);
+  return [...new Set(expanded.flatMap((term) => term.split(/\s+/)))].filter(
     (term) => term.length >= 4 && !CORPUS_STOP_WORDS.has(term),
   );
+}
+
+function corpusTermMatches(term: string, token: string): boolean {
+  if (token.includes(term) || term.includes(token)) return true;
+  const prefixLength = Math.min(6, term.length, token.length);
+  return prefixLength >= 5 && term.slice(0, prefixLength) === token.slice(0, prefixLength);
+}
+
+function regulationExcerpt(text: string, terms: string[]): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= 460) return clean;
+  const words = clean.split(" ");
+  const matchIndex = words.findIndex((word) =>
+    terms.some((term) => corpusTermMatches(term, normalize(word).replace(/[^\p{L}\p{N}]/gu, ""))),
+  );
+  const start = Math.max(0, (matchIndex < 0 ? 0 : matchIndex) - 24);
+  const excerpt = words.slice(start, start + 68).join(" ");
+  return `${start > 0 ? "…" : ""}${excerpt}${start + 68 < words.length ? "…" : ""}`;
+}
+
+function regulationCorpusAnswer(query: string): string | null {
+  const terms = regulationQueryTerms(query);
   if (terms.length === 0) return null;
 
   const ranked = REGULATION_CORPUS.map((chunk) => {
     const text = normalize(chunk.text);
     const compactText = text.replace(/\s+/g, "");
+    const tokens = text.match(/[\p{L}\p{N}]+/gu) ?? [];
     const matched = terms.filter(
-      (term) => text.includes(term) || compactText.includes(term.replace(/\s+/g, "")),
+      (term) =>
+        tokens.some((token) => corpusTermMatches(term, token)) ||
+        compactText.includes(term.replace(/\s+/g, "")),
     );
     const score = matched.length * 3 + (matched.length === terms.length ? 4 : 0);
     return { chunk, score, matched };
@@ -62,8 +107,7 @@ function regulationCorpusAnswer(query: string): string | null {
 
   if (ranked.length === 0) return null;
   const excerpts = ranked.map(({ chunk }) => {
-    const clean = chunk.text.replace(/\s+/g, " ").trim();
-    const excerpt = clean.length > 460 ? `${clean.slice(0, 457).trimEnd()}…` : clean;
+    const excerpt = regulationExcerpt(chunk.text, terms);
     return `• p. ${chunk.page}: ${excerpt}`;
   });
   return withSource(
@@ -643,6 +687,14 @@ export function answerSchoolRegulation(query: string): string | null {
       "esperto esterno",
       "contratto",
       "scambio culturale",
+      "bidello",
+      "bidelli",
+      "preside",
+      "gita",
+      "gite",
+      "gita scolastica",
+      "castigo",
+      "punizione",
     ])
   ) {
     const corpusAnswer = regulationCorpusAnswer(normalized);
