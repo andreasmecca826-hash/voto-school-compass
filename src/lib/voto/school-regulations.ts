@@ -58,6 +58,23 @@ const CORPUS_ALIASES: Record<string, string[]> = {
   professoressa: ["docente"],
 };
 
+const REGULATION_TOPICS = [
+  "docenti, studenti, famiglie e personale ATA",
+  "diritti, doveri, partecipazione e libertà di espressione",
+  "cellulari, smartphone e dispositivi elettronici",
+  "verifiche, valutazione e comunicazione degli esiti",
+  "assenze, giustificazioni, ritardi, ingressi e uscite",
+  "bagni, intervallo, distributori e spazi scolastici",
+  "assemblee, associazioni e organi collegiali",
+  "bullismo, discriminazioni, privacy e riprese video",
+  "sanzioni disciplinari, ricorsi e Organo di Garanzia",
+  "sicurezza, porte antincendio, farmaci, malori e infortuni",
+  "viaggi d’istruzione, visite guidate e uscite didattiche",
+  "visitatori, esperti esterni e figure specialistiche",
+  "contratti, sponsorizzazioni, beni e inventario",
+  "disposizioni finali e regolamenti allegati",
+];
+
 function regulationQueryTerms(query: string): string[] {
   const normalized = normalize(query);
   const rawTerms = normalized.match(/[\p{L}\p{N}]+/gu) ?? [];
@@ -85,22 +102,41 @@ function regulationExcerpt(text: string, terms: string[]): string {
   return `${start > 0 ? "…" : ""}${excerpt}${start + 68 < words.length ? "…" : ""}`;
 }
 
+function requestedDocumentLocation(query: string): { page: number | null; article: string | null } {
+  const pageMatch = query.match(/\b(?:pagina|pag|p)\.?\s*(\d{1,2})\b/);
+  const articleMatch = query.match(/\b(?:articolo|art)\.?\s*(\d{1,2})\b/);
+  const page = pageMatch?.[1] ? Number(pageMatch[1]) : null;
+  const article = articleMatch?.[1] ? `art. ${articleMatch[1]}` : null;
+  return {
+    page: page && page >= 1 && page <= 68 ? page : null,
+    article,
+  };
+}
+
 function regulationCorpusAnswer(query: string): string | null {
   const terms = regulationQueryTerms(query);
   if (terms.length === 0) return null;
+  const location = requestedDocumentLocation(query);
+  const scopedCorpus = location.page
+    ? REGULATION_CORPUS.filter((chunk) => chunk.page === location.page)
+    : location.article
+      ? REGULATION_CORPUS.filter((chunk) => normalize(chunk.text).includes(location.article!))
+      : REGULATION_CORPUS;
+  const corpus = scopedCorpus.length > 0 ? scopedCorpus : REGULATION_CORPUS;
 
-  const ranked = REGULATION_CORPUS.map((chunk) => {
-    const text = normalize(chunk.text);
-    const compactText = text.replace(/\s+/g, "");
-    const tokens = text.match(/[\p{L}\p{N}]+/gu) ?? [];
-    const matched = terms.filter(
-      (term) =>
-        tokens.some((token) => corpusTermMatches(term, token)) ||
-        compactText.includes(term.replace(/\s+/g, "")),
-    );
-    const score = matched.length * 3 + (matched.length === terms.length ? 4 : 0);
-    return { chunk, score, matched };
-  })
+  const ranked = corpus
+    .map((chunk) => {
+      const text = normalize(chunk.text);
+      const compactText = text.replace(/\s+/g, "");
+      const tokens = text.match(/[\p{L}\p{N}]+/gu) ?? [];
+      const matched = terms.filter(
+        (term) =>
+          tokens.some((token) => corpusTermMatches(term, token)) ||
+          compactText.includes(term.replace(/\s+/g, "")),
+      );
+      const score = matched.length * 3 + (matched.length === terms.length ? 4 : 0);
+      return { chunk, score, matched };
+    })
     .filter((item) => item.score > 0 && item.matched.length >= Math.min(2, terms.length))
     .sort((left, right) => right.score - left.score || left.chunk.page - right.chunk.page)
     .slice(0, 3);
@@ -388,6 +424,22 @@ export function answerSchoolRegulation(query: string): string | null {
       asksAboutRegulation);
 
   if (!asksAboutRegulation && !asksAboutSchoolRule && !asksAboutStudentRightsDuties) return null;
+
+  if (
+    asksAboutRegulation &&
+    hasAny(normalized, [
+      "quali argomenti",
+      "quali temi",
+      "cosa contiene",
+      "su cosa posso chiedere",
+      "cosa posso chiedere",
+      "cosa tratta",
+    ])
+  ) {
+    return withSource(
+      `Posso cercare nel testo completo del regolamento questi argomenti:\n${REGULATION_TOPICS.map((topic) => `• ${topic}`).join("\n")}`,
+    );
+  }
 
   if (
     hasAny(normalized, ["fonte", "documento", "pdf", "anno scolastico"]) &&

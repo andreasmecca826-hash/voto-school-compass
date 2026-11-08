@@ -89,6 +89,13 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("mostra gli argomenti disponibili e accetta un riferimento a una pagina", () => {
+    expect(answerQuestion("Quali argomenti contiene il regolamento?", data)).toContain(
+      "cellulari, smartphone e dispositivi elettronici",
+    );
+    expect(answerQuestion("Cosa dice il regolamento a pagina 25?", data)).toContain("p. 25");
+  });
+
   it("risponde sugli articoli pratici non ancora coperti della vita scolastica", () => {
     expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("7:30");
     expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("art. 18.1–18.2");
