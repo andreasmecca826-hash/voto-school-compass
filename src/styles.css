@@ -835,6 +835,26 @@
   overflow: hidden;
   pointer-events: none;
 }
+.blood-slides-atmosphere {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.blood-slides-atmosphere img {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(100vw, 480px);
+  height: 100dvh;
+  transform: translateX(-50%);
+  object-fit: cover;
+  opacity: 0.72;
+}
+:root[data-performance-wallpapers="on"][data-theme="sangue"] .blood-slides-atmosphere {
+  display: none;
+}
 .voto-shell > main {
   z-index: 1;
 }

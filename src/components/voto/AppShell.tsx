@@ -324,6 +324,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         {seasonalTheme && <SeasonalAtmosphere theme={seasonalTheme} />}
+        {v.theme === "sangue" && v.registryStyle !== "didup" && <BloodSlidesAtmosphere />}
         {v.registryStyle === "didup" ? (
           <div className="hidden" aria-hidden="true" />
         ) : (
@@ -574,6 +575,14 @@ function SeasonalAtmosphere({ theme }: { theme: "primavera" | "estate" | "autunn
       ))}
       {theme === "estate" && <span className="seasonal-wave seasonal-wave-one" />}
       {theme === "estate" && <span className="seasonal-wave seasonal-wave-two" />}
+    </div>
+  );
+}
+
+function BloodSlidesAtmosphere() {
+  return (
+    <div className="blood-slides-atmosphere" aria-hidden="true">
+      <img src="/sangue-forense.svg" alt="" draggable={false} />
     </div>
   );
 }
