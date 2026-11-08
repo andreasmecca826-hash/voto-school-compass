@@ -1,10 +1,26 @@
 import type { ReactNode } from "react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { fmt, gradeTone } from "@/lib/voto/calc";
 
-export function BottomSheet({ open, onOpenChange, title, description, children }: {
-  open: boolean; onOpenChange: (o: boolean) => void; title: string; description?: string | undefined; children: ReactNode;
+export function BottomSheet({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  title: string;
+  description?: string | undefined;
+  children: ReactNode;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -23,8 +39,21 @@ export function BottomSheet({ open, onOpenChange, title, description, children }
   );
 }
 
-export function SubjectMark({ name, color, size = 40 }: { name: string; color?: string | undefined; size?: number }) {
-  const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+export function SubjectMark({
+  name,
+  color,
+  size = 40,
+}: {
+  name: string;
+  color?: string | undefined;
+  size?: number;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   return (
     <span
       className="relative inline-flex shrink-0 items-center justify-center rounded-xl bg-surface font-display text-xs font-semibold text-foreground"
@@ -32,12 +61,23 @@ export function SubjectMark({ name, color, size = 40 }: { name: string; color?: 
       aria-hidden
     >
       {initials}
-      <span className="absolute bottom-1.5 h-0.5 w-3 rounded-full" style={{ background: color ?? "currentColor" }} />
+      <span
+        className="absolute bottom-1.5 h-0.5 w-3 rounded-full"
+        style={{ background: color ?? "currentColor" }}
+      />
     </span>
   );
 }
 
-export function GradePill({ value, label, className }: { value: number | null; label?: string; className?: string }) {
+export function GradePill({
+  value,
+  label,
+  className,
+}: {
+  value: number | null;
+  label?: string;
+  className?: string;
+}) {
   const tone = gradeTone(value);
   return (
     <span
@@ -55,7 +95,17 @@ export function GradePill({ value, label, className }: { value: number | null; l
   );
 }
 
-export function Chip({ children, active, onClick, className }: { children: ReactNode; active?: boolean; onClick?: () => void; className?: string }) {
+export function Chip({
+  children,
+  active,
+  onClick,
+  className,
+}: {
+  children: ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+  className?: string;
+}) {
   const Cmp = onClick ? "button" : "span";
   return (
     <Cmp
@@ -64,7 +114,9 @@ export function Chip({ children, active, onClick, className }: { children: React
       aria-pressed={onClick ? !!active : undefined}
       className={cn(
         "press inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium",
-        active ? "border-primary/40 bg-primary-soft text-primary" : "border-border bg-card text-muted-foreground",
+        active
+          ? "border-primary/40 bg-primary-soft text-primary"
+          : "border-border bg-card text-muted-foreground",
         onClick && !active && "hover:text-foreground",
         className,
       )}
@@ -95,8 +147,11 @@ export function Empty({ icon, title, text }: { icon: ReactNode; title: string; t
 
 export function Sparkline({ values, className }: { values: number[]; className?: string }) {
   if (values.length < 2) return <div className={cn("h-12", className)} />;
-  const w = 140, h = 48, p = 4;
-  const min = Math.min(...values) - 0.2, max = Math.max(...values) + 0.2;
+  const w = 140,
+    h = 48,
+    p = 4;
+  const min = Math.min(...values) - 0.2,
+    max = Math.max(...values) + 0.2;
   const pts = values.map((v, i): [number, number] => {
     const x = p + (i * (w - 2 * p)) / (values.length - 1);
     const y = h - p - ((v - min) / (max - min)) * (h - 2 * p);
@@ -106,9 +161,20 @@ export function Sparkline({ values, className }: { values: number[]; className?:
   const last = pts[pts.length - 1]!;
   const first = pts[0]!;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className={cn("h-12 w-[140px] text-primary", className)} aria-hidden>
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className={cn("h-12 w-[140px] text-primary", className)}
+      aria-hidden
+    >
       <path d={`${d} L${last[0]},${h} L${first[0]},${h} Z`} fill="currentColor" opacity="0.08" />
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={d}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <circle cx={last[0]} cy={last[1]} r="3" fill="currentColor" />
     </svg>
   );
@@ -117,7 +183,10 @@ export function Sparkline({ values, className }: { values: number[]; className?:
 export function ProgressBar({ value, color }: { value: number; color?: string | undefined }) {
   return (
     <div className="h-1 w-full overflow-hidden rounded-full bg-surface">
-      <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: color }} />
+      <div
+        className="h-full rounded-full bg-primary transition-all duration-500"
+        style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: color }}
+      />
     </div>
   );
 }

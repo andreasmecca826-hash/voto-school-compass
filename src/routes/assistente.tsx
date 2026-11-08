@@ -90,6 +90,9 @@ function Assistant() {
     const lessonsToClear = expectedLessons
       .map((lesson, index) => (lesson.trim() ? `${index + 1}ª ora: ${lesson.trim()}` : null))
       .filter((lesson): lesson is string => lesson !== null);
+    const previousQuestion = [...messages]
+      .reverse()
+      .find((message) => message.role === "user")?.text;
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : randomThemeIntent?.kind === "confirm"
@@ -99,6 +102,7 @@ function Assistant() {
           : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
             ? assignmentIntent.message
             : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+                previousQuestion,
                 source: v.source,
                 lastSync: v.lastSync,
                 syncError: v.error,
@@ -183,7 +187,7 @@ function Assistant() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Assistente</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Risposte locali sui tuoi dati scolastici.
+            Risposte locali sui tuoi dati scolastici e sul regolamento d’Istituto.
           </p>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -196,8 +200,9 @@ function Assistant() {
           <Sparkles className="h-4 w-4 text-primary" /> Nessun dato inviato online
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          L’assistente usa solo i dati già caricati nell’app e fa i calcoli direttamente sul
-          dispositivo.
+          Usa i dati già caricati e una sintesi locale del Regolamento d’Istituto Morselli-Sturzo
+          (A.S. 2025/2026). Le risposte restano sul dispositivo: verifica sempre eventuali
+          aggiornamenti ufficiali della scuola.
         </p>
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
           <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />

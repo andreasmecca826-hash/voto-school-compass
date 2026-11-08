@@ -1,7 +1,4 @@
-import {
-  CalendarX2,
-  FileText,
-} from "lucide-react";
+import { CalendarX2, FileText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
@@ -17,7 +14,11 @@ function updatedLabel(value: string | null | undefined, now: Date) {
   const parsed = value ? new Date(value) : now;
   const date = Number.isNaN(parsed.getTime()) ? now : parsed;
   const time = date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-  const day = date.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  const day = date.toLocaleDateString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
   return `Dati aggiornati alle ${time} del ${day}`;
 }
 
@@ -46,12 +47,14 @@ function dueDateLabel(iso?: string) {
 function tomorrowLabel(now: Date) {
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toLocaleDateString("it-IT", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "2-digit",
-  }).toUpperCase();
+  return tomorrow
+    .toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "2-digit",
+    })
+    .toUpperCase();
 }
 
 export function DidupDashboard() {
@@ -68,29 +71,45 @@ export function DidupDashboard() {
   const isDone = v.isDone;
   const avg = useMemo(() => overallAverage(periodSubjects), [periodSubjects]);
   const periodDateRange = useMemo(() => {
-    const dates = periodSubjects.flatMap((subject) => subject.grades.map((grade) => grade.date)).sort();
+    const dates = periodSubjects
+      .flatMap((subject) => subject.grades.map((grade) => grade.date))
+      .sort();
     if (!dates.length) return periodLabel.toUpperCase();
-    const format = (date: string) => fmtDate(date, {
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit",
-    });
+    const format = (date: string) =>
+      fmtDate(date, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      });
     return `${format(dates[0] ?? "")} – ${format(dates[dates.length - 1] ?? "")}`;
   }, [periodSubjects, periodLabel]);
   const openAssignments = useMemo(
-    () => assignments
-      .filter((item) => !isDone(item.id, item.completed) && (!item.dueDate || item.dueDate.slice(0, 10) >= today))
-      .sort((a, b) => `${a.dueDate ?? "9999"}${a.dueTime ?? ""}`.localeCompare(`${b.dueDate ?? "9999"}${b.dueTime ?? ""}`)),
+    () =>
+      assignments
+        .filter(
+          (item) =>
+            !isDone(item.id, item.completed) &&
+            (!item.dueDate || item.dueDate.slice(0, 10) >= today),
+        )
+        .sort((a, b) =>
+          `${a.dueDate ?? "9999"}${a.dueTime ?? ""}`.localeCompare(
+            `${b.dueDate ?? "9999"}${b.dueTime ?? ""}`,
+          ),
+        ),
     [assignments, today, isDone],
   );
   const latestGrades = useMemo(
-    () => subjects
-      .flatMap((subject) => subject.grades.map((grade) => ({ subject, grade })))
-      .sort((a, b) => b.grade.date.localeCompare(a.grade.date)),
+    () =>
+      subjects
+        .flatMap((subject) => subject.grades.map((grade) => ({ subject, grade })))
+        .sort((a, b) => b.grade.date.localeCompare(a.grade.date)),
     [subjects],
   );
   const notices = useMemo(
-    () => notifications.filter((item) => item.type === "notice").sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
+    () =>
+      notifications
+        .filter((item) => item.type === "notice")
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
     [notifications],
   );
   const reminders = useMemo(
@@ -99,24 +118,27 @@ export function DidupDashboard() {
   );
   const reminderCards: AppNotification[] = reminders.length
     ? reminders
-    : [{
-        id: "empty-reminder",
-        type: "reminder",
-        title: "Nessun promemoria",
-        message: "I prossimi promemoria appariranno qui.",
-        read: true,
-      }];
+    : [
+        {
+          id: "empty-reminder",
+          type: "reminder",
+          title: "Nessun promemoria",
+          message: "I prossimi promemoria appariranno qui.",
+          read: true,
+        },
+      ];
   const studentName = (v.data.student.name || "ANDREA MARIA").toUpperCase();
   const progress = avg === null ? 0 : Math.max(0, Math.min(100, avg * 10));
   const teacherForSubject = (subjectName?: string) => {
     const normalizedName = subjectName?.trim().toLocaleLowerCase("it-IT");
     if (!normalizedName) return undefined;
-    return subjects.find((subject) => subject.name.trim().toLocaleLowerCase("it-IT") === normalizedName)?.teacher;
+    return subjects.find(
+      (subject) => subject.name.trim().toLocaleLowerCase("it-IT") === normalizedName,
+    )?.teacher;
   };
   const attendanceEvents = useMemo(
-    () => [...(v.data.attendanceEvents ?? [])]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 3),
+    () =>
+      [...(v.data.attendanceEvents ?? [])].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3),
     [v.data.attendanceEvents],
   );
 
@@ -125,7 +147,9 @@ export function DidupDashboard() {
       <header className="flex items-center justify-between px-2.5 pb-[32px] pt-5">
         <div>
           <h1 className="text-[20px] font-normal leading-none tracking-tight">{studentName}</h1>
-          <p className="mt-2 text-[11px] leading-none text-white/80">{updatedLabel(v.data.updatedAt || v.lastSync, now)}</p>
+          <p className="mt-2 text-[11px] leading-none text-white/80">
+            {updatedLabel(v.data.updatedAt || v.lastSync, now)}
+          </p>
         </div>
         <img src="/didup-profile.jpg" alt="" className="h-[50px] w-[50px] object-cover" />
       </header>
@@ -168,7 +192,9 @@ export function DidupDashboard() {
               >
                 <span>{avg === null ? "—" : fmt(avg)}</span>
               </div>
-              <p className="mt-[22px] text-[12px] italic leading-5 text-white/90">Calcolata nel periodo</p>
+              <p className="mt-[22px] text-[12px] italic leading-5 text-white/90">
+                Calcolata nel periodo
+              </p>
               <p className="text-[12px] italic leading-5 text-white/90">{periodDateRange}</p>
             </div>
           )}
@@ -194,25 +220,48 @@ export function DidupDashboard() {
         </div>
         <div className={`${averageHidden ? "mt-2" : "mt-3"} border-t-2 border-[#0aa0b1] pt-2`}>
           <div className="grid grid-cols-3 text-center text-[10px] font-extrabold uppercase">
-            <span>Assenze<strong className="mt-1 block text-[15px]">{Math.round(attendance.absenceDays)}</strong></span>
-            <span>Ritardi<strong className="mt-1 block text-[15px]">{attendance.delays}</strong></span>
-            <span>Uscite<strong className="mt-1 block text-[15px]">{attendance.earlyExits}</strong></span>
+            <span>
+              Assenze
+              <strong className="mt-1 block text-[15px]">
+                {Math.round(attendance.absenceDays)}
+              </strong>
+            </span>
+            <span>
+              Ritardi<strong className="mt-1 block text-[15px]">{attendance.delays}</strong>
+            </span>
+            <span>
+              Uscite<strong className="mt-1 block text-[15px]">{attendance.earlyExits}</strong>
+            </span>
           </div>
         </div>
       </section>
 
       <DidupSectionTitle title="Prossimi compiti" href="/compiti" />
       <DidupScroller>
-        {openAssignments.length > 0 ? openAssignments.slice(0, 5).map((item) => (
-          <article key={item.id} className="didup-tile didup-task-tile flex min-h-[172px] w-[84%] shrink-0 flex-col overflow-hidden px-5 pb-5 pt-[18px]">
-            <div className="flex items-start justify-between gap-2">
-              <p className="truncate text-[16px] font-medium uppercase text-white/90">{item.subject ?? "COMPITO"}</p>
-              <DidupPinIcon />
-            </div>
-            <p className="mt-[9px] line-clamp-3 text-[14px] leading-5 text-white/90">{item.title}{item.details ? `: ${item.details}` : ""}</p>
-            <p className="mt-auto border-t border-white/30 pt-3 text-right text-[10px] uppercase text-black/80">Consegna {dueDateLabel(item.dueDate)}</p>
-          </article>
-        )) : <EmptyTile text="Nessun compito in scadenza" variant="task" />}
+        {openAssignments.length > 0 ? (
+          openAssignments.slice(0, 5).map((item) => (
+            <article
+              key={item.id}
+              className="didup-tile didup-task-tile flex min-h-[172px] w-[84%] shrink-0 flex-col overflow-hidden px-5 pb-5 pt-[18px]"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="truncate text-[16px] font-medium uppercase text-white/90">
+                  {item.subject ?? "COMPITO"}
+                </p>
+                <DidupPinIcon />
+              </div>
+              <p className="mt-[9px] line-clamp-3 text-[14px] leading-5 text-white/90">
+                {item.title}
+                {item.details ? `: ${item.details}` : ""}
+              </p>
+              <p className="mt-auto border-t border-white/30 pt-3 text-right text-[10px] uppercase text-black/80">
+                Consegna {dueDateLabel(item.dueDate)}
+              </p>
+            </article>
+          ))
+        ) : (
+          <EmptyTile text="Nessun compito in scadenza" variant="task" />
+        )}
       </DidupScroller>
 
       <section className="didup-card relative mt-9 overflow-hidden px-5 pb-2 pt-4">
@@ -291,16 +340,22 @@ export function DidupDashboard() {
           const teacher = grade.teacher || subject.teacher;
 
           return (
-            <article key={grade.id} className="didup-tile relative min-h-[154px] w-[84%] shrink-0 overflow-hidden p-4">
+            <article
+              key={grade.id}
+              className="didup-tile relative min-h-[154px] w-[84%] shrink-0 overflow-hidden p-4"
+            >
               <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center text-[20px] font-extrabold text-white">
-                <img src={badgeImage} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full select-none" />
+                <img
+                  src={badgeImage}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full select-none"
+                />
                 <span className="relative z-10">{grade.label}</span>
               </span>
               <p className="text-[12px] text-[#0aa0b1]">{shortDate(grade.date)}</p>
               <p className="mt-5 text-[16px] uppercase">{subject.name}</p>
-              {grade.comment && (
-                <p className="mt-1 text-[13px] text-white/90">{grade.comment}</p>
-              )}
+              {grade.comment && <p className="mt-1 text-[13px] text-white/90">{grade.comment}</p>}
               {teacher && <p className="mt-1 text-[11px] text-white/65">{teacher}</p>}
             </article>
           );
@@ -327,7 +382,8 @@ export function DidupDashboard() {
                 />
                 <p className="mt-2 text-[18px] uppercase">Circolari</p>
                 <p className="text-[13px]">
-                  {item.subject || "Circolare"}{teacher ? ` · ${teacher}` : ""}
+                  {item.subject || "Circolare"}
+                  {teacher ? ` · ${teacher}` : ""}
                 </p>
                 <p className="mt-7 line-clamp-1 text-[14px] leading-6">
                   {item.message || item.title}
@@ -359,11 +415,22 @@ export function DidupDashboard() {
         {reminderCards.slice(0, 5).map((item) => {
           const teacher = item.teacher || teacherForSubject(item.subject);
           return (
-            <article key={item.id} className="didup-tile relative min-h-[155px] w-[84%] shrink-0 overflow-hidden p-4">
-              <p className="pr-12 text-[12px] text-[#0aa0b1]">{shortDate(item.date) || "DATA DA DEFINIRE"}</p>
-              <img src="/didup-reminder-badge-transparent.png" alt="" aria-hidden="true" className="absolute right-0 top-0 h-[40px] w-[40px] select-none" />
+            <article
+              key={item.id}
+              className="didup-tile relative min-h-[155px] w-[84%] shrink-0 overflow-hidden p-4"
+            >
+              <p className="pr-12 text-[12px] text-[#0aa0b1]">
+                {shortDate(item.date) || "DATA DA DEFINIRE"}
+              </p>
+              <img
+                src="/didup-reminder-badge-transparent.png"
+                alt=""
+                aria-hidden="true"
+                className="absolute right-0 top-0 h-[40px] w-[40px] select-none"
+              />
               <p className="mt-2 text-[13px]">
-                {item.subject || "Promemoria"}{teacher ? ` · ${teacher}` : ""}
+                {item.subject || "Promemoria"}
+                {teacher ? ` · ${teacher}` : ""}
               </p>
               <p className="mt-8 text-[15px] leading-6">{item.message || item.title}</p>
             </article>
@@ -397,15 +464,8 @@ function BackpackIllustration({ className }: { className?: string }) {
 
 function DidupEyeIcon({ hidden }: { hidden: boolean }) {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-[15px] w-[15px]"
-    >
-      <path
-        d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12Z"
-        fill="#0aa0b1"
-      />
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[15px] w-[15px]">
+      <path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12Z" fill="#0aa0b1" />
       <circle cx="12" cy="12" r="3.2" fill="#292929" />
       <circle cx="12" cy="12" r="1.3" fill="#0aa0b1" />
       {hidden && (
@@ -417,11 +477,7 @@ function DidupEyeIcon({ hidden }: { hidden: boolean }) {
 
 function DidupPinIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-[17px] w-[17px] shrink-0 rotate-45"
-    >
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[17px] w-[17px] shrink-0 rotate-45">
       <path d="M8 3.5h8l-1.1 5.7 3.1 2.9v1.8H6v-1.8l3.1-2.9L8 3.5Z" fill="#e84834" />
       <path d="M12 14v8" fill="none" stroke="#d7d7d7" strokeLinecap="round" strokeWidth="1.5" />
     </svg>
@@ -429,14 +485,25 @@ function DidupPinIcon() {
 }
 
 function AbsenceIcon() {
-  return <img src="/didup-absence-icon.png" alt="" aria-hidden="true" className="h-[23px] w-[18px] shrink-0 object-contain" />;
+  return (
+    <img
+      src="/didup-absence-icon.png"
+      alt=""
+      aria-hidden="true"
+      className="h-[23px] w-[18px] shrink-0 object-contain"
+    />
+  );
 }
 
 function EmptyTile({ text, variant }: { text: string; variant: "task" | "notice" }) {
-  const size = variant === "task"
-    ? "didup-task-tile min-h-[172px] p-5"
-    : "min-h-[206px] p-4";
-  return <article className={`didup-tile ${size} flex w-[84%] shrink-0 items-center justify-center text-center text-sm text-white/70`}>{text}</article>;
+  const size = variant === "task" ? "didup-task-tile min-h-[172px] p-5" : "min-h-[206px] p-4";
+  return (
+    <article
+      className={`didup-tile ${size} flex w-[84%] shrink-0 items-center justify-center text-center text-sm text-white/70`}
+    >
+      {text}
+    </article>
+  );
 }
 
 function DidupSectionTitle({

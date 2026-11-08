@@ -18,19 +18,13 @@ La chiave `SUPABASE_SERVICE_ROLE_KEY` resta solo nei secret GitHub Actions e nel
 
 Il workflow non deve più committare i file scolastici su GitHub. La rimozione di un file dal branch non cancella però le copie già presenti nella cronologia Git: per eliminarle anche dalla storia serve una riscrittura della cronologia e il force-push coordinato.
 
-## Monitoraggio errori (Sentry)
-
-VOTO invia a Sentry gli errori gestiti dal confine globale dell'interfaccia, solo nelle build di produzione. La configurazione invia tipo d'errore e stack trace, ma rimuove messaggi, richieste, breadcrumb, utente e contesto; replay e tracing sono disattivati. Il DSN client è una chiave pubblica di ingestione e può essere sostituito con `VITE_SENTRY_DSN` durante la build. Non configurare mai qui token Sentry o credenziali private.
-
 ## PDF delle circolari
 
 Il monitor DidUP acquisisce i PDF tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. Quando l'app apre una circolare con path interno, la Edge Function `mirror-circular` crea un URL firmato valido un'ora; la funzione accetta solo path PDF già presenti nel bucket e non scarica link esterni. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.
 
 ## Controllo manuale delle circolari
 
-Il pulsante **Controlla nuove circolari** avvia il workflow `check.yml`; viene bloccato se è già in corso un run o se il registro è stato controllato negli ultimi 15 minuti. Per abilitarlo, configura nel repository `voto-school-compass` il secret Actions `VOTO_CIRCULAR_TRIGGER_TOKEN`, usando un fine-grained token limitato al repository `didup-monitor` con permesso `Actions: Read and write`. Il workflow trasferisce il valore al secret runtime della Edge Function Supabase. Non inserirlo mai nel codice o in variabili `VITE_` e non inviarlo in chat.
-
-L'app non richiede login: chiunque conosca il suo indirizzo può usare il pulsante, ma non può leggere il token GitHub e i run manuali sono limitati e deduplicati lato server/workflow. Per consentire l'avvio solo a te servirebbe aggiungere un'autenticazione all'app.
+L’accesso ai voti e agli altri dati scolastici privati richiede il login descritto sopra; la modalità demo è separata e non concede accesso a quei dati. Il pulsante **Controlla nuove circolari** avvia invece il workflow GitHub `check.yml`: è un’azione distinta dall’autorizzazione a leggere il registro e viene limitata se esiste già un controllo in corso o se il workflow è stato avviato negli ultimi 3 minuti. Per abilitarlo, configura nel repository `voto-school-compass` il secret Actions `VOTO_CIRCULAR_TRIGGER_TOKEN`, usando un fine-grained token limitato al repository `didup-monitor` con permesso `Actions: Read and write`. Il token GitHub resta nel secret runtime della Edge Function Supabase: non inserirlo nel codice o in variabili `VITE_` e non condividerlo. L’esecuzione è ulteriormente controllata dal workflow e dal cooldown lato server.
 
 ## APK Android (Capacitor)
 

@@ -7,6 +7,7 @@ import {
   CheckSquare,
   ClipboardList,
   Clock3,
+  CalendarX2,
   GraduationCap,
   LayoutGrid,
   Menu,
@@ -34,8 +35,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
-import { DidupDashboard } from "./DidupDashboard";
-import { DidupMenu } from "./DidupMenu";
 import { Windows7Orb, Windows7Taskbar } from "./Windows7Chrome";
 
 const NotificationsSheet = lazy(() =>
@@ -49,6 +48,12 @@ const SubjectSheet = lazy(() =>
 );
 const MusicPanel = lazy(() =>
   import("./MusicPanel").then((module) => ({ default: module.MusicPanel })),
+);
+const DidupDashboard = lazy(() =>
+  import("./DidupDashboard").then((module) => ({ default: module.DidupDashboard })),
+);
+const DidupMenu = lazy(() =>
+  import("./DidupMenu").then((module) => ({ default: module.DidupMenu })),
 );
 
 interface UiCtx {
@@ -91,6 +96,13 @@ const MORE_NAV = [
     description: "Date e preparazione",
     icon: CalendarDays,
     color: "#a66be1",
+  },
+  {
+    to: "/assenze",
+    label: "Assenze",
+    description: "Giorni di assenza registrati",
+    icon: CalendarX2,
+    color: "#e56b6f",
   },
   {
     to: "/diario",
@@ -419,12 +431,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               <NavigationLoading didup={v.registryStyle === "didup"} />
             ) : moreOpen && !isWindows7 ? (
               v.registryStyle === "didup" ? (
-                <DidupMenu />
+                <Suspense fallback={<NavigationLoading didup />}>
+                  <DidupMenu />
+                </Suspense>
               ) : (
                 <MoreMenu v={v} currentPath={path} onClose={() => setMoreOpen(false)} />
               )
             ) : v.registryStyle === "didup" && path === "/" ? (
-              <DidupDashboard />
+              <Suspense fallback={<NavigationLoading didup />}>
+                <DidupDashboard />
+              </Suspense>
             ) : (
               children
             )
@@ -549,7 +565,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function SeasonalAtmosphere({ theme }: { theme: "primavera" | "estate" | "autunno" | "inverno" }) {
-  const count = theme === "inverno" ? 14 : 8;
+  const count = theme === "inverno" ? 28 : theme === "estate" ? 12 : 18;
   return (
     <div className={cn("seasonal-atmosphere", `seasonal-atmosphere-${theme}`)} aria-hidden="true">
       {theme === "estate" && <span className="seasonal-sun" />}

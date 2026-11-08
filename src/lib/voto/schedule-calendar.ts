@@ -185,7 +185,7 @@ export function createScheduleCalendarIcs(
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//VOTO//Orario scolastico 2.6.0//IT",
+    "PRODID:-//VOTO//Orario scolastico 3.0.0//IT",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:VOTO - Orario scolastico",

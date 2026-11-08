@@ -27,7 +27,7 @@ const session = {
 } as Session;
 
 const remoteData = {
-  subjects: [],
+  subjects: [{ id: "subject-current", name: "Matematica", grades: [] }],
   notifications: [
     {
       id: "notice-current",
@@ -43,6 +43,7 @@ function StateProbe() {
     ready,
     source,
     data,
+    error,
     performanceMode,
     performanceOptions,
     setPerformanceMode,
@@ -51,6 +52,7 @@ function StateProbe() {
   return (
     <>
       <p>{`${ready}:${source}:${data.notifications[0]?.title ?? "nessuna circolare"}`}</p>
+      <output data-testid="data-error">{error ?? ""}</output>
       <output data-testid="performance-mode">{String(performanceMode)}</output>
       <output data-testid="performance-options">{JSON.stringify(performanceOptions)}</output>
       <button type="button" onClick={() => setPerformanceMode(!performanceMode)}>
@@ -162,8 +164,10 @@ describe("bootstrap dati scolastici", () => {
     fireEvent.click(screen.getByRole("button", { name: "Toggle wallpaper optimization" }));
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute("data-performance-wallpapers", "on");
-      expect(JSON.parse(localStorage.getItem(KEYS.performanceOptions) ?? "{}"))
-        .toHaveProperty("wallpapers", true);
+      expect(JSON.parse(localStorage.getItem(KEYS.performanceOptions) ?? "{}")).toHaveProperty(
+        "wallpapers",
+        true,
+      );
     });
   });
 
@@ -176,7 +180,7 @@ describe("bootstrap dati scolastici", () => {
         notifications: [{ id: "old", type: "notice", title: "Dati di un altro account" }],
       }),
     );
-    localStorage.setItem("voto.privateOwnerId", "owner-precedente");
+    localStorage.setItem("voto.privateOwnerId", JSON.stringify("owner-precedente"));
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(remoteData), {
         status: 200,
@@ -194,7 +198,7 @@ describe("bootstrap dati scolastici", () => {
 
   it("mantiene un refresh singolo quando la cache è già dello stesso account", async () => {
     mockAuthSession();
-    localStorage.setItem("voto.privateOwnerId", session.user.id);
+    localStorage.setItem("voto.privateOwnerId", JSON.stringify(session.user.id));
     localStorage.setItem(
       KEYS.cache,
       JSON.stringify({
@@ -214,5 +218,46 @@ describe("bootstrap dati scolastici", () => {
 
     expect(await screen.findByText("true:remote:Circolare aggiornata")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("mantiene la cache valida se DidUP restituisce una risposta senza materie", async () => {
+    mockAuthSession();
+    localStorage.setItem("voto.privateOwnerId", JSON.stringify(session.user.id));
+    localStorage.setItem(
+      KEYS.cache,
+      JSON.stringify({
+        student: { name: "Studente", schoolYear: "2026/2027" },
+        subjects: [
+          {
+            id: "matematica",
+            name: "Matematica",
+            grades: [
+              { id: "g1", value: 7, label: "7", date: "2026-10-01", type: "orale", weight: 1 },
+              { id: "g2", value: 8, label: "8", date: "2026-10-05", type: "scritto", weight: 1 },
+              { id: "g3", value: 6, label: "6", date: "2026-10-08", type: "orale", weight: 1 },
+            ],
+          },
+        ],
+        notifications: [{ id: "cached", type: "notice", title: "Ultimo dato valido" }],
+      }),
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ subjects: [], notifications: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderProtectedApp();
+
+    expect(await screen.findByText("true:cache:Ultimo dato valido")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("data-error")).toHaveTextContent(/non contiene materie/);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+    expect(JSON.parse(localStorage.getItem(KEYS.cache) ?? "{}").notifications[0].title).toBe(
+      "Ultimo dato valido",
+    );
   });
 });

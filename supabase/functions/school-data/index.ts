@@ -59,7 +59,8 @@ async function isOwner(url: string, key: string, userId: string) {
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: corsHeaders });
   if (request.method !== "GET") return jsonResponse({ error: "Metodo non consentito." }, 405);
 
   const url = projectUrl();

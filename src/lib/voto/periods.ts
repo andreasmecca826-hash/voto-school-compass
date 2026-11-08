@@ -21,8 +21,12 @@ export function defaultBoundary(year: number, system: PeriodSystem): string {
 export function validBoundary(date: string, year: number): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
   const parsed = new Date(`${date}T00:00:00Z`);
-  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date &&
-    date >= `${year}-09-01` && date < `${year + 1}-08-31`;
+  return (
+    Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === date &&
+    date >= `${year}-09-01` &&
+    date < `${year + 1}-08-31`
+  );
 }
 
 export function filterSubjectsByPeriod(subjects: Subject[], config: PeriodConfig): Subject[] {
@@ -33,8 +37,10 @@ export function filterSubjectsByPeriod(subjects: Subject[], config: PeriodConfig
     grades: subject.grades.filter(({ date }) => {
       const day = date.slice(0, 10);
       if (day < start || day > end) return false;
-      return config.selection === "all" ||
-        (config.selection === "first" ? day <= config.boundary : day > config.boundary);
+      return (
+        config.selection === "all" ||
+        (config.selection === "first" ? day <= config.boundary : day > config.boundary)
+      );
     }),
   }));
 }

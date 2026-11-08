@@ -279,7 +279,10 @@ function Settings() {
   useEffect(() => {
     let mounted = true;
     void supabase.auth.getUser().then(({ data }) => {
-      if (mounted) setGithubLinked(data.user?.identities?.some((identity) => identity.provider === "github") ?? false);
+      if (mounted)
+        setGithubLinked(
+          data.user?.identities?.some((identity) => identity.provider === "github") ?? false,
+        );
     });
     return () => {
       mounted = false;
@@ -441,7 +444,8 @@ function Settings() {
             <span className="block text-sm font-semibold">Modalità prestazioni</span>
             <span className="mt-1 block text-xs text-muted-foreground">
               Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
-              per rendere l’app più fluida sui telefoni meno recenti.
+              per rendere l’app più fluida sui telefoni meno recenti. Sui telefoni riduce inoltre
+              leggermente la definizione delle anteprime PDF.
             </span>
           </span>
           <span
@@ -488,9 +492,7 @@ function Settings() {
                 type="button"
                 role="switch"
                 aria-checked={v.performanceOptions[option.id]}
-                onClick={() =>
-                  v.setPerformanceOption(option.id, !v.performanceOptions[option.id])
-                }
+                onClick={() => v.setPerformanceOption(option.id, !v.performanceOptions[option.id])}
                 className="flex min-h-[68px] w-full items-center gap-3 py-2 text-left"
               >
                 <span className="min-w-0 flex-1">
@@ -759,7 +761,7 @@ function Settings() {
         className="card-surface cursor-pointer p-4 text-xs text-muted-foreground"
       >
         <p>
-          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 2.6.0 ·
+          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 3.0.0 ·
           made by Andrew Smecca
         </p>
       </section>
@@ -804,7 +806,6 @@ function Settings() {
           </div>
         </section>
       )}
-
     </div>
   );
 }

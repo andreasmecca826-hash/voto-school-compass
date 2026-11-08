@@ -10,7 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
-import { fetchVotoData, normalizeCachedGradeValues } from "./parse";
+import { fetchVotoData, normalizeCachedGradeValues, parseVotoData, SchemaError } from "./parse";
 import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
 import { SchoolAuthContext, type PrefetchedSchoolData } from "../school-auth-context";
 import { KEYS, load, save } from "./storage";
@@ -204,7 +204,7 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
 
 function normalizeInterfaceScale(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 100;
-  return Math.round(Math.min(120, Math.max(80, value)) / 5) * 5;
+  return Math.round(Math.min(140, Math.max(80, value)) / 5) * 5;
 }
 
 function normalizeInterrogazioni(value: unknown): Interrogazione[] {
@@ -292,7 +292,13 @@ interface Ctx {
   removeInterrogazione: (id: string) => void;
 }
 
+type VotoDataContext = Pick<
+  Ctx,
+  "ready" | "data" | "displayName" | "source" | "url" | "lastSync" | "loading" | "error"
+>;
+
 const VotoCtx = createContext<Ctx | null>(null);
+const VotoDataCtx = createContext<VotoDataContext | null>(null);
 const ClockCtx = createContext<Date | null>(null);
 
 const EMPTY: VotoData = {
@@ -310,6 +316,15 @@ const EMPTY: VotoData = {
     absenceLimitHours: 264,
   },
 };
+
+function parseStoredData(raw: unknown): VotoData | null {
+  if (raw == null) return null;
+  try {
+    return normalizeCachedGradeValues(parseVotoData(raw));
+  } catch {
+    return null;
+  }
+}
 
 export function VotoProvider({ children }: { children: ReactNode }) {
   const consumePrefetchedData = useContext(SchoolAuthContext)?.consumePrefetchedData;
@@ -349,6 +364,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   const [interrogazioni, setInterrogazioni] = useState<Interrogazione[]>([]);
   const [now, setNow] = useState(() => new Date(0));
   const urlRef = useRef("");
+  const lastValidSnapshotRef = useRef<{ url: string; data: VotoData } | null>(null);
 
   const refreshImpl = useCallback(async (u: string, silent = false) => {
     if (!u) {
@@ -360,8 +376,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      const d = await fetchVotoData(u);
+      const previousSnapshot = lastValidSnapshotRef.current;
+      const previousData = previousSnapshot?.url === u ? previousSnapshot.data : undefined;
+      const d = await fetchVotoData(u, 10_000, previousData);
       const ts = new Date().toISOString();
+      lastValidSnapshotRef.current = { url: u, data: d };
       setData(d);
       setSource("remote");
       setLastSync(ts);
@@ -371,9 +390,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       if (!silent) toast.success("Dati aggiornati");
       return true;
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = e instanceof Error ? e.message : "Aggiornamento non riuscito.";
       setError(msg);
-      if (!silent) toast.error("Aggiornamento non riuscito", { description: msg });
+      if (!silent || e instanceof SchemaError) {
+        toast.error("Aggiornamento non riuscito", { description: msg });
+      }
       return false;
     } finally {
       setLoading(false);
@@ -390,12 +411,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const prefetchedData =
       candidate && (!storedUrl || candidate.url === storedUrl) ? candidate : null;
     const u = storedUrl || prefetchedData?.url || "";
-    const rawCache = load<VotoData | null>(KEYS.cache, null);
-    const cache =
-      rawCache && Array.isArray(rawCache.subjects)
-        ? normalizeCachedGradeValues(rawCache)
-        : rawCache;
+    const rawCache = load<unknown>(KEYS.cache, null);
+    const cache = parseStoredData(rawCache);
     urlRef.current = u;
+    lastValidSnapshotRef.current = null;
     setUrl(u);
     setCompletions(load(KEYS.completions, {}));
     setReadIds(load(KEYS.read, {}));
@@ -407,7 +426,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setReduceMotionS(load(KEYS.reduceMotion, false));
     setPerformanceModeS(load<unknown>(KEYS.performanceMode, false) === true);
     setPerformanceOptionsS(
-      normalizePerformanceOptions(load<unknown>(KEYS.performanceOptions, DEFAULT_PERFORMANCE_OPTIONS)),
+      normalizePerformanceOptions(
+        load<unknown>(KEYS.performanceOptions, DEFAULT_PERFORMANCE_OPTIONS),
+      ),
     );
     const savedTheme = oneOf(load<unknown>(KEYS.theme, "original"), THEME_VALUES, "original");
     setThemeS(savedTheme);
@@ -436,23 +457,22 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     setHomeScaleS(normalizeHomeScale(load(KEYS.homeScale, 100)));
     setInterrogazioni(normalizeInterrogazioni(load(KEYS.interrogazioni, [])));
     setLastSync(load(KEYS.lastSync, null));
-    const demoData = load<VotoData | null>(KEYS.demoData, null);
+    const demoData = parseStoredData(load<unknown>(KEYS.demoData, null));
     if (u && prefetchedData) {
       const normalizedData = normalizeCachedGradeValues(prefetchedData.data);
+      lastValidSnapshotRef.current = { url: u, data: normalizedData };
       setData(normalizedData);
       setSource("remote");
       setLastSync(prefetchedData.lastSync);
       setError(null);
       if (normalizedData !== prefetchedData.data) save(KEYS.cache, normalizedData);
-    } else if (u && cache && Array.isArray(cache.subjects)) {
+    } else if (u && cache) {
+      lastValidSnapshotRef.current = { url: u, data: cache };
       setData(cache);
       setSource("cache");
-      if (cache !== rawCache) save(KEYS.cache, cache);
-    } else if (!u && demoData && Array.isArray(demoData.subjects)) {
-      const normalizedDemoData = normalizeCachedGradeValues(demoData);
-      setData(normalizedDemoData);
+    } else if (!u && demoData) {
+      setData(demoData);
       setSource("demo");
-      if (normalizedDemoData !== demoData) save(KEYS.demoData, normalizedDemoData);
     } else {
       setData(makeDemoData());
       setSource("demo");
@@ -483,8 +503,10 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       }
 
       const deadline = Date.now() + 10 * 60 * 1000;
+      let pollInterval = 5_000;
       while (!cancelled && Date.now() < deadline) {
-        await wait(5_000);
+        await wait(pollInterval);
+        pollInterval = Math.min(pollInterval * 2, 30_000);
         if (cancelled) return;
         try {
           const status = await getCircularCheckStatus(requestedAt);
@@ -580,6 +602,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     ready,
   ]);
 
+  const dataValue: VotoDataContext = useMemo(
+    () => ({ ready, data, displayName, source, url, lastSync, loading, error }),
+    [ready, data, displayName, source, url, lastSync, loading, error],
+  );
+
   const value: Ctx = useMemo(
     () => ({
       ready,
@@ -639,6 +666,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       },
       disconnect: () => {
         urlRef.current = "";
+        lastValidSnapshotRef.current = null;
         setUrl("");
         save(KEYS.url, null);
         save(KEYS.cache, null);
@@ -655,6 +683,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
           return;
         }
         urlRef.current = "";
+        lastValidSnapshotRef.current = null;
         setUrl("");
         [KEYS.url, KEYS.cache, KEYS.demoData, KEYS.lastSync, KEYS.completions, KEYS.read].forEach(
           (k) => save(k, null),
@@ -669,6 +698,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       },
       setDemoData: (next) => {
         if (urlRef.current) return;
+        lastValidSnapshotRef.current = null;
         setData(next);
         setSource("demo");
         setError(null);
@@ -883,7 +913,9 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 
   return (
     <ClockCtx.Provider value={now}>
-      <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>
+      <VotoDataCtx.Provider value={dataValue}>
+        <VotoCtx.Provider value={value}>{children}</VotoCtx.Provider>
+      </VotoDataCtx.Provider>
     </ClockCtx.Provider>
   );
 }
@@ -891,6 +923,12 @@ export function VotoProvider({ children }: { children: ReactNode }) {
 export function useVoto() {
   const c = useContext(VotoCtx);
   if (!c) throw new Error("useVoto fuori dal provider");
+  return c;
+}
+
+export function useVotoData() {
+  const c = useContext(VotoDataCtx);
+  if (!c) throw new Error("useVotoData fuori dal provider");
   return c;
 }
 

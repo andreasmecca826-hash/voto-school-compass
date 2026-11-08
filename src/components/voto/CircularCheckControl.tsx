@@ -60,7 +60,10 @@ export function CircularCheckControl() {
       return;
     }
     await v.refresh({ silent: true });
-    setCheckNotice({ kind: "success", text: "Aggiornamento DidUP terminato: dati Supabase aggiornati." });
+    setCheckNotice({
+      kind: "success",
+      text: "Aggiornamento DidUP terminato: dati Supabase aggiornati.",
+    });
   };
 
   const checkCirculars = async () => {
@@ -75,7 +78,10 @@ export function CircularCheckControl() {
       } catch {
         // Il polling resta attivo per questa sessione anche senza storage locale.
       }
-      setCheckNotice({ kind: "info", text: "Aggiornamento avviato. Attendo i nuovi dati Supabase…" });
+      setCheckNotice({
+        kind: "info",
+        text: "Aggiornamento avviato. Attendo i nuovi dati Supabase…",
+      });
       await applyCheckResult(await watchCheck(requestedAt));
     } catch (error) {
       setCheckNotice({

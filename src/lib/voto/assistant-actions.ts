@@ -22,6 +22,40 @@ const normalize = (value: string) =>
 
 const includesAny = (text: string, terms: string[]) => terms.some((term) => text.includes(term));
 
+function editDistance(left: string, right: string): number {
+  const row = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= left.length; i += 1) {
+    let diagonal = row[0]!;
+    row[0] = i;
+    for (let j = 1; j <= right.length; j += 1) {
+      const above = row[j]!;
+      row[j] =
+        left[i - 1] === right[j - 1]
+          ? diagonal
+          : Math.min(diagonal + 1, above + 1, row[j - 1]! + 1);
+      diagonal = above;
+    }
+  }
+  return row[right.length]!;
+}
+
+function titleMatchesQuery(query: string, title: string): boolean {
+  if (query.includes(title)) return true;
+  const titleTokens = title.split(/\s+/).filter((token) => token.length >= 4);
+  if (titleTokens.length === 0) return false;
+  const queryTokens = query.split(/\s+/);
+  const matches = titleTokens.filter((titleToken) =>
+    queryTokens.some(
+      (queryToken) =>
+        queryToken.includes(titleToken) ||
+        (queryToken.length >= 5 &&
+          titleToken.length >= 5 &&
+          editDistance(queryToken, titleToken) <= (titleToken.length >= 6 ? 2 : 1)),
+    ),
+  );
+  return matches.length >= Math.ceil(titleTokens.length * 0.6);
+}
+
 function isExplicitlyNegatedTaskAction(query: string): boolean {
   return /\bnon\s+(?:(?:voglio|devo|posso)\s+)?(?:segnare|segna|marcare|marca|mettere|metti|completare|completa|riaprire|riapri)\b/.test(
     query,
@@ -81,7 +115,7 @@ export function getAssignmentActionIntent(
   const reportsCompletion = /\bho\s+(fatto|finito|complet\w*|svolt\w*)/.test(normalized);
   const matchedCandidates = assignments.filter((assignment) => {
     const title = normalize(assignment.title.trim());
-    return title.length >= 3 && normalized.includes(title);
+    return title.length >= 3 && titleMatchesQuery(normalized, title);
   });
   const candidates = matchedCandidates.filter((candidate) => {
     const title = normalize(candidate.title.trim());

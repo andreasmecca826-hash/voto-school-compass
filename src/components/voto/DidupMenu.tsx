@@ -14,7 +14,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useVoto } from "@/lib/voto/store";
+import { useVotoData } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
 
 type MenuItem = {
@@ -114,7 +114,7 @@ const ITEMS: MenuItem[] = [
 ];
 
 export function DidupMenu() {
-  const v = useVoto();
+  const v = useVotoData();
   const studentName = (v.data.student.name || "ANDREA MARIA").toUpperCase();
 
   return (
@@ -140,10 +140,7 @@ export function DidupMenu() {
                 <img
                   src={
                     item.iconImage.endsWith(".png")
-                      ? item.iconImage.replace(
-                          "/didup-menu-icons/",
-                          "/didup-menu-icons-no-gray/",
-                        )
+                      ? item.iconImage.replace("/didup-menu-icons/", "/didup-menu-icons-no-gray/")
                       : item.iconImage
                   }
                   alt=""

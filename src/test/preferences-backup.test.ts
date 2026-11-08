@@ -95,11 +95,13 @@ describe("preferences backup", () => {
 
   it("normalizes out-of-range scales and media targets", () => {
     const file = JSON.parse(
-      createPreferencesBackup({ ...preferences, target: 12, homeScale: 200 }),
+      createPreferencesBackup({ ...preferences, target: 12, homeScale: 200, interfaceScale: 200 }),
     ) as {
-      settings: { target: number; homeScale: number };
+      settings: { target: number; homeScale: number; interfaceScale: number };
     };
     expect(file.settings.target).toBe(10);
     expect(file.settings.homeScale).toBe(120);
+    expect(file.settings.interfaceScale).toBe(140);
+    expect(parsePreferencesBackup(JSON.stringify(file)).interfaceScale).toBe(140);
   });
 });

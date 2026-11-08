@@ -15,9 +15,7 @@ export function AbsenceCalculator() {
   const { attendance } = useVoto().data;
   const [currentDaysInput, setCurrentDaysInput] = useState(String(attendance.absenceDays));
   const [currentHoursInput, setCurrentHoursInput] = useState(String(attendance.absenceHours));
-  const [absenceLimitInput, setAbsenceLimitInput] = useState(
-    String(attendance.absenceLimitHours),
-  );
+  const [absenceLimitInput, setAbsenceLimitInput] = useState(String(attendance.absenceLimitHours));
   const [annualHoursInput, setAnnualHoursInput] = useState(String(attendance.annualHours));
   const [simulatedDaysInput, setSimulatedDaysInput] = useState("0");
   const [simulatedHoursInput, setSimulatedHoursInput] = useState("0");
@@ -73,8 +71,8 @@ export function AbsenceCalculator() {
       >
         <p className="font-semibold">Come leggere il risultato</p>
         <p className="mt-1 text-muted-foreground">
-          <strong>Ore ancora disponibili</strong> = limite massimo − ore già conteggiate.
-          Le giornate intere sono una stima: ore disponibili ÷ ore di lezione per giornata.
+          <strong>Ore ancora disponibili</strong> = limite massimo − ore già conteggiate. Le
+          giornate intere sono una stima: ore disponibili ÷ ore di lezione per giornata.
         </p>
       </section>
 

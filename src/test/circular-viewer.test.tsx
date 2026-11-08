@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 
@@ -20,6 +20,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
     expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
   });
 
   it("offre apertura e download separati per un DOCX", () => {
@@ -37,6 +38,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
   });
 
   it("preferisce il path PDF interno al duplicato esterno", () => {
@@ -54,5 +56,28 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
 
     expect(screen.getByRole("document", { name: "circolare.pdf" })).toBeInTheDocument();
+  });
+
+  it("permette di passare da un allegato all’altro nella stessa circolare", () => {
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare con due allegati"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        attachments={[
+          { name: "primo.pdf", path: `circulars/${"d".repeat(64)}.pdf` },
+          { name: "secondo.pdf", path: `circulars/${"e".repeat(64)}.pdf` },
+        ]}
+      />,
+    );
+
+    const secondAttachmentTab = screen.getByRole("tab", { name: "secondo.pdf" });
+    fireEvent.click(secondAttachmentTab);
+
+    expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("document", { name: "secondo.pdf" })).toBeInTheDocument();
   });
 });

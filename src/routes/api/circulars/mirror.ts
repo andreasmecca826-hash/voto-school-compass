@@ -4,6 +4,7 @@ import { normalizeSupabaseUrl } from "@/lib/server/supabaseStorageAuth";
 const DEFAULT_SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+const MAX_RANGE_HEADER_LENGTH = 128;
 const ATTACHMENT_REQUEST_TIMEOUT_MS = 45_000;
 const validPath = (value: unknown): value is string =>
   typeof value === "string" && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
@@ -11,6 +12,14 @@ const validPath = (value: unknown): value is string =>
 type SignedPdfResponse = {
   path?: unknown;
   signedUrl?: unknown;
+};
+
+type ParsedByteRange = { kind: "none" } | { kind: "valid"; value: string } | { kind: "invalid" };
+
+type ParsedContentRange = {
+  start: number;
+  end: number;
+  total: number;
 };
 
 function config() {
@@ -34,6 +43,55 @@ function json(body: unknown, status = 200) {
 }
 
 class AttachmentTooLargeError extends Error {}
+
+export function parseSingleByteRange(value: string | null): ParsedByteRange {
+  if (value === null) return { kind: "none" };
+  const normalized = value.trim();
+  const match =
+    normalized.length <= MAX_RANGE_HEADER_LENGTH && /^bytes=(\d*)-(\d*)$/i.exec(normalized);
+  if (!match) return { kind: "invalid" };
+
+  const start = match[1] ?? "";
+  const end = match[2] ?? "";
+  if (!start && !end) return { kind: "invalid" };
+
+  const startNumber = start ? Number(start) : undefined;
+  const endNumber = end ? Number(end) : undefined;
+  if (
+    (startNumber !== undefined && !Number.isSafeInteger(startNumber)) ||
+    (endNumber !== undefined && !Number.isSafeInteger(endNumber)) ||
+    (startNumber !== undefined && endNumber !== undefined && startNumber > endNumber)
+  ) {
+    return { kind: "invalid" };
+  }
+
+  return { kind: "valid", value: `bytes=${start}-${end}` };
+}
+
+function parseContentRange(value: string | null): ParsedContentRange | null {
+  const match = value?.trim().match(/^bytes (\d+)-(\d+)\/(\d+)$/i);
+  if (!match) return null;
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  const total = Number(match[3]);
+  if (
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(end) ||
+    !Number.isSafeInteger(total) ||
+    start > end ||
+    end >= total
+  ) {
+    return null;
+  }
+  return { start, end, total };
+}
+
+function rangeNotSatisfiable(contentRange = "bytes */*") {
+  return new Response(null, {
+    status: 416,
+    headers: { "accept-ranges": "bytes", "content-range": contentRange },
+  });
+}
 
 async function cancelBody(body: ReadableStream<Uint8Array> | null) {
   try {
@@ -83,6 +141,62 @@ async function readLimitedAttachment(response: Response) {
   return bytes;
 }
 
+function limitedStream(
+  body: ReadableStream<Uint8Array>,
+  maxBytes: number,
+  controller: AbortController,
+  onFinish: () => void,
+) {
+  const reader = body.getReader();
+  let totalBytes = 0;
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    onFinish();
+  };
+
+  return new ReadableStream<Uint8Array>({
+    async pull(streamController) {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          finish();
+          streamController.close();
+          return;
+        }
+        if (totalBytes + value.byteLength > maxBytes) {
+          try {
+            await reader.cancel();
+          } catch {
+            // Anche se la sorgente non si annulla, interrompi la richiesta sottostante.
+          }
+          controller.abort();
+          finish();
+          streamController.error(
+            new AttachmentTooLargeError("L'allegato supera il limite di 25 MB."),
+          );
+          return;
+        }
+        totalBytes += value.byteLength;
+        streamController.enqueue(value);
+      } catch (error) {
+        controller.abort();
+        finish();
+        streamController.error(error);
+      }
+    },
+    async cancel(reason) {
+      try {
+        await reader.cancel(reason);
+      } finally {
+        controller.abort();
+        finish();
+      }
+    },
+  });
+}
+
 function attachmentDisposition(value: string | null, path: string) {
   const fallback = path.split("/").at(-1) ?? "allegato";
   const filename = Array.from(value?.trim() || fallback, (char) => {
@@ -92,9 +206,8 @@ function attachmentDisposition(value: string | null, path: string) {
     .join("")
     .replace(/\s+/g, " ")
     .slice(0, 120);
-  const withExtension = filename;
-  const ascii = withExtension.normalize("NFKD").replace(/[^\x20-\x7e]/g, "_");
-  const encoded = encodeURIComponent(withExtension).replace(
+  const ascii = filename.normalize("NFKD").replace(/[^\x20-\x7e]/g, "_");
+  const encoded = encodeURIComponent(filename).replace(
     /[!'()*]/g,
     (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
   );
@@ -129,60 +242,157 @@ async function signedAttachmentUrl(
   return url;
 }
 
+function responseHeaders(
+  response: Response,
+  path: string,
+  downloadName: string | null,
+  contentLength?: number,
+  contentRange?: string,
+) {
+  const contentType = path.endsWith(".docx")
+    ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    : "application/pdf";
+  const headers = new Headers({
+    "content-type": contentType,
+    "content-disposition": downloadName ? attachmentDisposition(downloadName, path) : "inline",
+    "cache-control": "private, max-age=300",
+    "accept-ranges": "bytes",
+  });
+  if (contentLength !== undefined) headers.set("content-length", String(contentLength));
+  const range = contentRange ?? response.headers.get("content-range");
+  if (range) headers.set("content-range", range);
+  for (const name of ["etag", "last-modified"]) {
+    const value = response.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+}
+
 async function readPrivateAttachment(
   project: { url: string; key: string },
   path: string,
   downloadName?: string | null,
+  rangeHeader?: string,
 ) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ATTACHMENT_REQUEST_TIMEOUT_MS);
+  let streamOwnsTimeout = false;
+  const clearTimeoutIfDone = () => clearTimeout(timeout);
   try {
     const signedUrl = await signedAttachmentUrl(project, path, controller.signal);
-    const response = await fetch(signedUrl, { signal: controller.signal });
-    if (!response.ok) {
+    const response = await fetch(signedUrl, {
+      signal: controller.signal,
+      ...(rangeHeader ? { headers: { Range: rangeHeader } } : {}),
+    });
+    if (response.status === 416) {
+      const upstreamRange = response.headers.get("content-range");
+      const unsatisfiedMatch = upstreamRange?.match(/^bytes \*\/(\d+)$/i);
+      if (unsatisfiedMatch && Number(unsatisfiedMatch[1]) > MAX_ATTACHMENT_BYTES) {
+        await cancelBody(response.body);
+        throw new AttachmentTooLargeError("L'allegato supera il limite di 25 MB.");
+      }
+      await cancelBody(response.body);
+      const headers = new Headers({ "accept-ranges": "bytes" });
+      if (unsatisfiedMatch) headers.set("content-range", `bytes */${unsatisfiedMatch[1]}`);
+      return new Response(null, { status: 416, headers });
+    }
+    if (response.status !== 200 && response.status !== 206) {
       await cancelBody(response.body);
       throw new Error(`storage_http_${response.status}`);
     }
-    const bytes = await readLimitedAttachment(response);
-    const contentType = path.endsWith(".docx")
-      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      : "application/pdf";
-    return new Response(bytes, {
-      status: 200,
-      headers: {
-        "content-type": contentType,
-        "content-disposition": downloadName ? attachmentDisposition(downloadName, path) : "inline",
-        "content-length": String(bytes.byteLength),
-        "cache-control": "private, max-age=300",
-      },
-    });
+
+    const parsedRange =
+      response.status === 206 ? parseContentRange(response.headers.get("content-range")) : null;
+    if (response.status === 206 && !parsedRange) {
+      await cancelBody(response.body);
+      throw new Error("storage_content_range_invalid");
+    }
+    if (parsedRange && parsedRange.total > MAX_ATTACHMENT_BYTES) {
+      await cancelBody(response.body);
+      throw new AttachmentTooLargeError("L'allegato supera il limite di 25 MB.");
+    }
+
+    const rawContentLength = response.headers.get("content-length");
+    let contentLength: number | undefined;
+    if (rawContentLength !== null) {
+      const parsedLength = Number(rawContentLength);
+      if (!/^\d+$/.test(rawContentLength) || !Number.isSafeInteger(parsedLength)) {
+        await cancelBody(response.body);
+        throw new Error("storage_content_length_invalid");
+      }
+      contentLength = parsedLength;
+    }
+
+    const rangeLength = parsedRange ? parsedRange.end - parsedRange.start + 1 : undefined;
+    const byteLimit = rangeLength ?? MAX_ATTACHMENT_BYTES;
+    if (contentLength !== undefined && contentLength > byteLimit) {
+      await cancelBody(response.body);
+      throw new AttachmentTooLargeError("L'allegato supera il limite di 25 MB.");
+    }
+    if (rangeLength !== undefined && contentLength !== undefined && contentLength !== rangeLength) {
+      await cancelBody(response.body);
+      throw new Error("storage_range_length_invalid");
+    }
+
+    if (!response.body) throw new Error("Il PDF non ha un contenuto leggibile.");
+
+    if (response.status === 200 && contentLength === undefined) {
+      const bytes = await readLimitedAttachment(response);
+      return new Response(bytes, {
+        status: 200,
+        headers: responseHeaders(response, path, downloadName ?? null, bytes.byteLength),
+      });
+    }
+
+    const headers = responseHeaders(
+      response,
+      path,
+      downloadName ?? null,
+      contentLength ?? rangeLength,
+      parsedRange ? (response.headers.get("content-range") ?? undefined) : undefined,
+    );
+    const body = limitedStream(response.body, byteLimit, controller, clearTimeoutIfDone);
+    const streamedResponse = new Response(body, { status: response.status, headers });
+    streamOwnsTimeout = true;
+    return streamedResponse;
   } finally {
-    clearTimeout(timeout);
+    if (!streamOwnsTimeout) clearTimeoutIfDone();
+  }
+}
+
+export async function handleCircularMirrorGet(request: Request) {
+  try {
+    const params = new URL(request.url).searchParams;
+    const rawPath = params.get("path");
+    const path = rawPath?.replace(/^\/+/, "") ?? null;
+    if (!validPath(path)) return json({ error: "Path allegato non valido" }, 400);
+
+    const range = parseSingleByteRange(request.headers.get("range"));
+    if (range.kind === "invalid") return rangeNotSatisfiable();
+
+    const downloadName =
+      params.get("download") === "1" ? (params.get("filename") ?? "circolare.pdf") : null;
+    return await readPrivateAttachment(
+      config(),
+      path,
+      downloadName,
+      range.kind === "valid" ? range.value : undefined,
+    );
+  } catch (error) {
+    if (error instanceof AttachmentTooLargeError) {
+      return json({ error: error.message }, 413);
+    }
+    console.error("circular download failed", {
+      errorType: error instanceof Error ? error.message : "UnknownError",
+    });
+    return json({ error: "Allegato non disponibile nello storage interno" }, 502);
   }
 }
 
 export const Route = createFileRoute("/api/circulars/mirror")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const params = new URL(request.url).searchParams;
-          const rawPath = params.get("path");
-          const path = rawPath?.replace(/^\/+/, "") ?? null;
-          if (!validPath(path)) return json({ error: "Path allegato non valido" }, 400);
-          const downloadName =
-            params.get("download") === "1" ? (params.get("filename") ?? "circolare.pdf") : null;
-          return await readPrivateAttachment(config(), path, downloadName);
-        } catch (error) {
-          if (error instanceof AttachmentTooLargeError) {
-            return json({ error: error.message }, 413);
-          }
-          console.error("circular download failed", {
-            errorType: error instanceof Error ? error.message : "UnknownError",
-          });
-          return json({ error: "Allegato non disponibile nello storage interno" }, 502);
-        }
-      },
+      GET: async ({ request }) => handleCircularMirrorGet(request),
       POST: async () => json({ error: "Il download da link esterni è disabilitato." }, 410),
     },
   },
