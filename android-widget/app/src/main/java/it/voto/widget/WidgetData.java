@@ -252,7 +252,7 @@ final class WidgetData {
     int layout = compact ? R.layout.widget_compact : (large ? R.layout.widget_large : R.layout.widget_small);
     RemoteViews views = new RemoteViews(context.getPackageName(), layout);
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, compact ? 7 : prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
+    int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, compact ? prefs.getInt(WidgetConfigureActivity.COMPACT_MODE_KEY, 7) : prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
     int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
     int interfaceTheme = prefs.getInt(WidgetConfigureActivity.INTERFACE_THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     int textSize = prefs.getInt(WidgetConfigureActivity.TEXT_SIZE_KEY + id, 1);

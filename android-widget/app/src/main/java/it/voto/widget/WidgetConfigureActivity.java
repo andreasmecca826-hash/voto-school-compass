@@ -16,6 +16,7 @@ public class WidgetConfigureActivity extends Activity {
   public static final String INTERFACE_THEME_KEY = "interface_theme_";
   public static final String SMALL_MODE_KEY = "small_mode";
   public static final String LARGE_MODE_KEY = "large_mode";
+  public static final String COMPACT_MODE_KEY = "compact_mode";
   public static final String SMALL_THEME_KEY = "small_theme";
   public static final String LARGE_THEME_KEY = "large_theme";
   public static final String DEFAULT_THEME_KEY = "default_theme";

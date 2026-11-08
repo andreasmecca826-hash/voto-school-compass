@@ -16,6 +16,7 @@ public class MainActivity extends Activity {
   private TextView status;
   private Spinner small;
   private Spinner large;
+  private Spinner compact;
   private Spinner defaultTheme;
   private Spinner defaultInterfaceTheme;
   private CheckBox defaultGlassBackground;
@@ -33,6 +34,7 @@ public class MainActivity extends Activity {
     status = (TextView) findViewById(R.id.status);
     small = (Spinner) findViewById(R.id.small_mode);
     large = (Spinner) findViewById(R.id.large_mode);
+    compact = (Spinner) findViewById(R.id.compact_mode);
     defaultTheme = (Spinner) findViewById(R.id.default_theme);
     defaultInterfaceTheme = (Spinner) findViewById(R.id.default_interface_theme);
     defaultGlassBackground = (CheckBox) findViewById(R.id.default_glass_background);
@@ -44,6 +46,7 @@ public class MainActivity extends Activity {
     android.content.SharedPreferences prefs = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE);
     small.setSelection(prefs.getInt(WidgetConfigureActivity.SMALL_MODE_KEY, 0));
     large.setSelection(prefs.getInt(WidgetConfigureActivity.LARGE_MODE_KEY, 5));
+    compact.setSelection(prefs.getInt(WidgetConfigureActivity.COMPACT_MODE_KEY, 7));
     defaultTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
     defaultInterfaceTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     defaultGlassBackground.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, false));
@@ -74,6 +77,7 @@ public class MainActivity extends Activity {
     getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
         .putInt(WidgetConfigureActivity.SMALL_MODE_KEY, small.getSelectedItemPosition())
         .putInt(WidgetConfigureActivity.LARGE_MODE_KEY, large.getSelectedItemPosition())
+        .putInt(WidgetConfigureActivity.COMPACT_MODE_KEY, compact.getSelectedItemPosition())
         .putInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, defaultTheme.getSelectedItemPosition())
         .putInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, defaultInterfaceTheme.getSelectedItemPosition())
         .putBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, defaultGlassBackground.isChecked())
