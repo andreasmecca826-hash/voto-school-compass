@@ -19,7 +19,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
-import { analyzeCircularPdf, type CircularAnalysis } from "@/lib/voto/circular-reader";
+import {
+  analyzeCircularDocx,
+  analyzeCircularPdf,
+  type CircularAnalysis,
+} from "@/lib/voto/circular-reader";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 function safeAttachmentFilename(value?: string) {
@@ -100,7 +104,7 @@ export function CircularViewer({
       setAnalysis(null);
       setAnalysisError(undefined);
     }
-  }, [open, title]);
+  }, [open, title, selectedIndex]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
@@ -111,6 +115,8 @@ export function CircularViewer({
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
+  const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
+  const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
 
   async function analyzeDocument() {
     if (!previewUrl || isAnalyzing) return;
@@ -118,10 +124,10 @@ export function CircularViewer({
     setAnalysisError(undefined);
     setAnalysis(null);
     try {
-      const result = await analyzeCircularPdf(
-        previewUrl,
-        files.map((file) => file.name ?? "").filter(Boolean),
-      );
+      const linkedAttachments = files.map((file) => file.name ?? "").filter(Boolean);
+      const result = isPdf
+        ? await analyzeCircularPdf(previewUrl, linkedAttachments)
+        : await analyzeCircularDocx(previewUrl, linkedAttachments);
       setAnalysis(result);
     } catch {
       setAnalysisError(
@@ -181,7 +187,7 @@ export function CircularViewer({
             {activeFile?.name ?? "Circolare"}
           </SheetDescription>
         </SheetHeader>
-        {previewUrl && isPdf && (
+        {canAnalyze && (
           <div className="mb-3 shrink-0 space-y-2">
             <button
               type="button"
@@ -194,7 +200,7 @@ export function CircularViewer({
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              {isAnalyzing ? "Analisi locale in corso…" : "Leggi con AI locale"}
+              {isAnalyzing ? "Lettura locale in corso…" : "Riassumi sul dispositivo"}
             </button>
             {(analysis || analysisError) && (
               <section
@@ -216,12 +222,19 @@ export function CircularViewer({
                 {analysis && (
                   <>
                     {analysis.summary ? (
-                      <p className="leading-relaxed text-muted-foreground">{analysis.summary}</p>
+                      <div className="space-y-1">
+                        <p className="font-medium text-foreground">In breve</p>
+                        <p className="leading-relaxed text-muted-foreground">{analysis.summary}</p>
+                      </div>
                     ) : analysis.layout !== "text" ? (
                       <p className="text-muted-foreground">
                         Riepilogo automatico omesso per non confondere le celle. Date e destinatari
                         riconoscibili sono riportati separatamente; verifica le associazioni nella
                         tabella originale.
+                      </p>
+                    ) : isDocx ? (
+                      <p className="text-muted-foreground">
+                        Non è stato possibile estrarre testo leggibile dal DOCX.
                       </p>
                     ) : (
                       <p className="text-muted-foreground">
@@ -229,6 +242,32 @@ export function CircularViewer({
                         scansione: il riconoscimento OCR non è disponibile.
                       </p>
                     )}
+                    {analysis.actions.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="font-medium text-foreground">Cosa fare</p>
+                        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                          {analysis.actions.map((action, index) => (
+                            <li key={`${action}-${index}`}>{action}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <p className="flex items-center gap-1.5 font-medium text-foreground">
+                        <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                        Scadenze rilevate
+                      </p>
+                      {analysis.deadlines.length ? (
+                        analysis.deadlines.map((date, index) => (
+                          <p key={`deadline-${index}`} className="pl-5 text-muted-foreground">
+                            <span className="font-medium text-foreground">{date.value}</span> —{" "}
+                            {date.context}
+                          </p>
+                        ))
+                      ) : (
+                        <p className="pl-5 text-muted-foreground">Nessuna scadenza riconosciuta.</p>
+                      )}
+                    </div>
                     <div className="space-y-1.5">
                       <p className="flex items-center gap-1.5 font-medium text-foreground">
                         <CalendarDays className="h-3.5 w-3.5 text-primary" />
@@ -268,8 +307,10 @@ export function CircularViewer({
                       </p>
                     </div>
                     <p className="text-[10px] text-muted-foreground">
-                      {analysis.pagesAnalyzed} pagine lette
-                      {analysis.truncated
+                      {isPdf
+                        ? `${analysis.pagesAnalyzed} pagine lette`
+                        : "Testo DOCX letto localmente"}
+                      {analysis.truncated && isPdf
                         ? " (analisi limitata alle prime 80 pagine o 300.000 caratteri)"
                         : ""}
                       . Verifica sempre le informazioni sul documento originale.

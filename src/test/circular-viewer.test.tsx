@@ -20,7 +20,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
     expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Leggi con AI locale" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
   });
 
   it("offre apertura e download separati per un DOCX", () => {
@@ -38,6 +38,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
   });
 
   it("preferisce il path PDF interno al duplicato esterno", () => {

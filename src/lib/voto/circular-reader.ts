@@ -5,6 +5,8 @@ export interface CircularDateMention {
 
 export interface CircularAnalysis {
   summary: string | null;
+  actions: string[];
+  deadlines: CircularDateMention[];
   dates: CircularDateMention[];
   recipients: string[];
   attachments: string[];
@@ -61,22 +63,33 @@ function extractSummary(text: string): string | null {
     );
   if (timetableTitle) return timetableTitle.slice(0, 420);
 
-  const paragraphs = text
-    .split(/\n{2,}/)
-    .map(clean)
-    .filter((paragraph) => paragraph.length >= 55)
-    .filter((paragraph) => !/^https?:\/\//i.test(paragraph));
-  const candidate = paragraphs[0];
-  if (!candidate) return null;
-  const sentences = candidate.match(/[^.!?]+(?:[.!?]+|$)/g) ?? [candidate];
-  let summary = "";
-  for (const sentence of sentences) {
-    const next = clean(`${summary} ${sentence}`);
-    if (next.length > 420 && summary.length > 0) break;
-    summary = next;
-    if (summary.length >= 260) break;
+  const sentences = text
+    .replace(/\n+/g, " ")
+    .match(/[^.!?]+(?:[.!?]+|$)/g)
+    ?.map(clean)
+    .filter((sentence) => sentence.length >= 45 && sentence.length <= 360)
+    .filter((sentence) => !/^(?:https?:\/\/|www\.)/i.test(sentence))
+    .filter(
+      (sentence) =>
+        !/^(?:plesso|via\s|istituto|cod\.\s*fis|e-mail|il dirigente|prof\.|firma)/i.test(sentence),
+    );
+  if (!sentences?.length) return null;
+  const selected = sentences.slice(0, 3);
+  return selected.join(" ").slice(0, 650).trim() || null;
+}
+
+function extractActions(text: string): string[] {
+  const actionPattern =
+    /\b(?:deve|devono|dovr\w*|è necessario|si chiede|si invit\w*|invitiamo|consegn\w*|present\w*|invi\w*|compil\w*|partecip\w*|portare|recarsi|restitu\w*|firmare|contatt\w*|effettu\w*)\b/i;
+  const sentences = text.replace(/\n+/g, " ").match(/[^.!?]+(?:[.!?]+|$)/g) ?? [];
+  const result = new Set<string>();
+  for (const raw of sentences) {
+    const sentence = clean(raw);
+    if (sentence.length < 20 || sentence.length > 280 || !actionPattern.test(sentence)) continue;
+    result.add(sentence);
+    if (result.size >= 5) break;
   }
-  return summary.slice(0, 420).trim() || null;
+  return [...result];
 }
 
 function extractRecipients(text: string): string[] {
@@ -150,6 +163,12 @@ export function analyzeCircularText(
       : hasTableRows
         ? null
         : extractSummary(normalized),
+    actions: isTimetable || hasTableRows ? [] : extractActions(normalized),
+    deadlines: extractDates(normalized).filter(({ context }) =>
+      /\b(?:entro|non oltre|scadenza|termine|consegna|restitu\w*|present\w* entro|entro e non oltre)\b/i.test(
+        context,
+      ),
+    ),
     dates: extractDates(normalized),
     recipients: extractRecipients(normalized),
     attachments: [
@@ -239,4 +258,17 @@ export async function analyzeCircularPdf(
   } finally {
     await loadingTask.destroy().catch(() => {});
   }
+}
+
+export async function analyzeCircularDocx(
+  src: string,
+  attachments: string[] = [],
+): Promise<CircularAnalysis> {
+  const response = await fetch(src, { credentials: "same-origin" });
+  if (!response.ok) throw new Error(`docx_download_${response.status}`);
+  const arrayBuffer = await response.arrayBuffer();
+  const mammothModule = await import("mammoth");
+  const mammoth = mammothModule.default;
+  const extracted = await mammoth.extractRawText({ arrayBuffer });
+  return analyzeCircularText(extracted.value, attachments, 0, false);
 }

@@ -16,6 +16,8 @@ describe("lettore locale delle circolari", () => {
     expect(result.recipients).toContain("Ai genitori delle classi terze");
     expect(result.dates.map(({ value }) => value)).toEqual(["12 novembre 2026", "05/11/2026"]);
     expect(result.summary).toContain("visita didattica al museo");
+    expect(result.actions.some((action) => action.includes("consegnate"))).toBe(true);
+    expect(result.deadlines.map(({ value }) => value)).toContain("05/11/2026");
     expect(result.attachments).toEqual([
       "autorizzazione.pdf",
       "programma.pdf",
