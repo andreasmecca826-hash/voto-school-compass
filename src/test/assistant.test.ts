@@ -53,16 +53,18 @@ describe("Assistente locale", () => {
   });
 
   it("consulta la sintesi locale del regolamento scolastico con l’avvertenza sull’anno", () => {
-    expect(answerQuestion("Posso usare il cellulare in classe?", data)).toContain(
-      "è vietato agli studenti portare il cellulare",
-    );
+    const phoneRule = answerQuestion("Posso usare il cellulare in classe?", data);
+    expect(phoneRule).toContain("è vietato agli studenti portare il cellulare");
+    expect(phoneRule).toContain("A.S. 2025/26");
+    expect(phoneRule).toContain("Verifica eventuali aggiornamenti.");
+    expect(phoneRule).not.toContain("Il documento è dell’anno scolastico precedente");
     expect(answerQuestion("Come giustifico un'assenza?", data)).toContain(
       "giustificata tempestivamente",
     );
     expect(answerQuestion("Qual è la regola sulla frequenza?", data)).toContain(
       "almeno tre quarti",
     );
-    expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain("A.S. 2025/2026");
+    expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain("A.S. 2025/26");
     expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
       "formazione qualificata",
     );

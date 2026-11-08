@@ -1,8 +1,7 @@
 import { REGULATION_CORPUS } from "./regulation-corpus";
 
-const SOURCE = "Regolamento d’Istituto Morselli-Sturzo, A.S. 2025/2026";
-const YEAR_NOTICE =
-  "Il documento è dell’anno scolastico precedente: verifica eventuali aggiornamenti e disposizioni più recenti della scuola per il 2026/2027.";
+const SOURCE = "Regolamento d’Istituto Morselli-Sturzo, A.S. 2025/26";
+const YEAR_NOTICE = "Verifica eventuali aggiornamenti.";
 
 const normalize = (value: string) =>
   value
