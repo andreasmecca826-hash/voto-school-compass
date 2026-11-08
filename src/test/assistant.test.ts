@@ -71,6 +71,15 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("cerca nel testo completo quando la domanda riguarda una sezione meno comune", () => {
+    const answer = answerQuestion(
+      "Come funziona il Consiglio d’Istituto secondo il regolamento?",
+      data,
+    );
+    expect(answer).toContain("testo completo del regolamento");
+    expect(answer).toContain("p.");
+  });
+
   it("risponde sugli articoli pratici non ancora coperti della vita scolastica", () => {
     expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("7:30");
     expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("art. 18.1–18.2");

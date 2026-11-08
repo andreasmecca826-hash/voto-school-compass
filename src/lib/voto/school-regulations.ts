@@ -1,3 +1,5 @@
+import { REGULATION_CORPUS } from "./regulation-corpus";
+
 const SOURCE = "Regolamento d’Istituto Morselli-Sturzo, A.S. 2025/2026";
 const YEAR_NOTICE =
   "Il documento è dell’anno scolastico precedente: verifica eventuali aggiornamenti e disposizioni più recenti della scuola per il 2026/2027.";
@@ -10,6 +12,65 @@ const normalize = (value: string) =>
     .replace(/[’‘]/g, "'");
 
 const hasAny = (query: string, terms: string[]) => terms.some((term) => query.includes(term));
+
+const CORPUS_STOP_WORDS = new Set([
+  "cosa",
+  "come",
+  "quale",
+  "quali",
+  "posso",
+  "puo",
+  "sono",
+  "sono",
+  "devo",
+  "deve",
+  "della",
+  "delle",
+  "degli",
+  "dello",
+  "nella",
+  "nelle",
+  "nelle",
+  "sulla",
+  "sulle",
+  "regola",
+  "regolamento",
+  "norma",
+  "norme",
+  "scuola",
+  "istituto",
+]);
+
+function regulationCorpusAnswer(query: string): string | null {
+  const terms = [...new Set(normalize(query).match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
+    (term) => term.length >= 4 && !CORPUS_STOP_WORDS.has(term),
+  );
+  if (terms.length === 0) return null;
+
+  const ranked = REGULATION_CORPUS.map((chunk) => {
+    const text = normalize(chunk.text);
+    const compactText = text.replace(/\s+/g, "");
+    const matched = terms.filter(
+      (term) => text.includes(term) || compactText.includes(term.replace(/\s+/g, "")),
+    );
+    const score = matched.length * 3 + (matched.length === terms.length ? 4 : 0);
+    return { chunk, score, matched };
+  })
+    .filter((item) => item.score > 0 && item.matched.length >= Math.min(2, terms.length))
+    .sort((left, right) => right.score - left.score || left.chunk.page - right.chunk.page)
+    .slice(0, 3);
+
+  if (ranked.length === 0) return null;
+  const excerpts = ranked.map(({ chunk }) => {
+    const clean = chunk.text.replace(/\s+/g, " ").trim();
+    const excerpt = clean.length > 460 ? `${clean.slice(0, 457).trimEnd()}…` : clean;
+    return `• p. ${chunk.page}: ${excerpt}`;
+  });
+  return withSource(
+    `Ho trovato questi passaggi nel testo completo del regolamento:\n${excerpts.join("\n")}`,
+    `p. ${[...new Set(ranked.map(({ chunk }) => chunk.page))].join(", ")}`,
+  );
+}
 
 const INJURY_TERMS = [
   "malore",
@@ -564,9 +625,32 @@ export function answerSchoolRegulation(query: string): string | null {
     );
   }
 
+  if (
+    asksAboutRegulation ||
+    hasAny(normalized, [
+      "consiglio d'istituto",
+      "consiglio di istituto",
+      "organi collegiali",
+      "patto educativo",
+      "personale ata",
+      "assistente amministrativo",
+      "assistente tecnico",
+      "collaboratore scolastico",
+      "consegnatario",
+      "inventario",
+      "beni dell'istituto",
+      "sponsorizzazione",
+      "esperto esterno",
+      "contratto",
+      "scambio culturale",
+    ])
+  ) {
+    const corpusAnswer = regulationCorpusAnswer(normalized);
+    if (corpusAnswer) return corpusAnswer;
+  }
   if (asksAboutRegulation) {
     return withSource(
-      "Ho una sintesi locale del Regolamento d’Istituto Morselli-Sturzo. Posso rispondere su diritti e doveri, cellulare, assenze e giustificazioni, ritardi e uscite, frequenza, orari e intervalli, bagni, distributori, assemblee, viaggi, ascensore, associazioni e libertà di espressione, sicurezza, tutela dei beni, farmaci e disciplina. Per argomenti non inclusi nella sintesi, consulta il PDF completo o la scuola.",
+      "Ho il testo completo del Regolamento d’Istituto in una base locale ricercabile, oltre alle risposte sintetiche per i casi più comuni. Posso riportare passaggi e pagine, ma per interpretazioni ufficiali, aggiornamenti o casi disciplinari concreti prevalgono la scuola e l’ultima versione pubblicata.",
     );
   }
 
