@@ -21,6 +21,12 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica PDF" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Fai una domanda alla circolare" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Solo quando premi Chiedi/i)).toBeInTheDocument();
+    expect(screen.getByText(/domanda corrente/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Chiedi" })).toBeDisabled();
   });
 
   it("offre apertura e download separati per un DOCX", () => {

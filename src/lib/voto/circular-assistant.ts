@@ -1,0 +1,38 @@
+import { supabase } from "../supabase-auth";
+
+export type CircularAssistantMessage = {
+  role: "user" | "assistant";
+  text: string;
+};
+
+export async function askAboutCircular(input: {
+  question: string;
+  documentText: string;
+  documentTruncated: boolean;
+}): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("circular-assistant", {
+    body: input,
+  });
+
+  if (error) {
+    if (error.name === "FunctionsFetchError") {
+      throw new Error("Non riesco a raggiungere il servizio AI. Riprova più tardi.");
+    }
+    let message =
+      typeof data?.error === "string" ? data.error : "La risposta AI non è disponibile.";
+    if (error.context instanceof Response) {
+      try {
+        const body = (await error.context.clone().json()) as { error?: unknown };
+        if (typeof body.error === "string") message = body.error;
+      } catch {
+        // La risposta HTTP potrebbe non contenere JSON.
+      }
+    }
+    throw new Error(message);
+  }
+
+  if (!data || typeof data.answer !== "string" || !data.answer.trim()) {
+    throw new Error("Il servizio AI ha restituito una risposta vuota.");
+  }
+  return data.answer.trim();
+}

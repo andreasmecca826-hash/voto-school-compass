@@ -18,6 +18,14 @@ La chiave `SUPABASE_SERVICE_ROLE_KEY` resta solo nei secret GitHub Actions e nel
 
 Il workflow non deve più committare i file scolastici su GitHub. La rimozione di un file dal branch non cancella però le copie già presenti nella cronologia Git: per eliminarle anche dalla storia serve una riscrittura della cronologia e il force-push coordinato.
 
+## Domande AI sulle circolari (Groq API)
+
+La chat nella scheda della circolare estrae il testo PDF/DOCX sul dispositivo e lo invia alla Edge Function `circular-assistant` solo quando l'utente preme **Chiedi**. La funzione richiede la sessione Supabase e verifica il proprietario autorizzato del registro; la modalità demo non è autorizzata. Il modello non può modificare dati o compiere azioni nell'app. Le conversazioni non sono salvate dall'app e i messaggi precedenti non sono inoltrati al provider.
+
+La funzione chiama l'API HTTPS di Groq usando il modello Qwen `qwen/qwen3-32b` come predefinito; il modello si può cambiare con il secret `GROQ_MODEL`. La chiave `GROQ_API_KEY` deve essere configurata nei secret Supabase, mai nell'app o in variabili `VITE_`; non è previsto alcun fallback verso un piano a pagamento. La chiave di servizio `SUPABASE_SERVICE_ROLE_KEY` resta solo nell'ambiente server Supabase.
+
+Il testo della sola circolare aperta e la domanda vengono inviati a Groq solo dopo un'azione esplicita dell'utente; voti e presenze non sono inclusi. L'invio può includere al massimo 60.000 caratteri. Groq dichiara che le richieste di inferenza non sono conservate per impostazione predefinita, ma può registrare temporaneamente input e output fino a 30 giorni per affidabilità o indagini su abusi; i dati sono conservati negli Stati Uniti. Le richieste possono essere rifiutate se si raggiunge una quota o un limite del piano gratuito. I PDF senza testo selezionabile (per esempio scansioni) richiedono OCR, non incluso. Le risposte sono automatiche: controlla date e obblighi sul documento originale.
+
 ## PDF delle circolari
 
 Il monitor DidUP acquisisce i PDF tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. Quando l'app apre una circolare con path interno, la Edge Function `mirror-circular` crea un URL firmato valido un'ora; la funzione accetta solo path PDF già presenti nel bucket e non scarica link esterni. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.

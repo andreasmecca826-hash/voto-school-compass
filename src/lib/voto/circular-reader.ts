@@ -23,6 +23,12 @@ interface PositionedTextItem {
   fontSize: number;
 }
 
+export interface CircularDocumentText {
+  text: string;
+  pagesAnalyzed: number;
+  truncated: boolean;
+}
+
 const MONTHS = [
   "gennaio",
   "febbraio",
@@ -214,10 +220,7 @@ export function reconstructPositionedText(items: PositionedTextItem[]): string {
     .join("\n");
 }
 
-export async function analyzeCircularPdf(
-  src: string,
-  attachments: string[] = [],
-): Promise<CircularAnalysis> {
+async function readCircularPdfPages(src: string) {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
@@ -248,27 +251,54 @@ export async function analyzeCircularPdf(
           ];
         }),
       );
-      textParts.push(pageText);
+      textParts.push(`[Pagina ${pageNumber}]\n${pageText}`);
       textLength += pageText.length;
       pagesAnalyzed += 1;
       if (textLength >= MAX_TEXT_LENGTH) break;
     }
     const truncated = pdf.numPages > pagesToRead || textLength >= MAX_TEXT_LENGTH;
-    return analyzeCircularText(textParts.join("\n\n"), attachments, pagesAnalyzed, truncated);
+    return {
+      text: textParts.join("\n\n"),
+      pagesAnalyzed,
+      truncated,
+    } satisfies CircularDocumentText;
   } finally {
     await loadingTask.destroy().catch(() => {});
   }
 }
 
-export async function analyzeCircularDocx(
+export async function extractCircularPdfText(src: string): Promise<CircularDocumentText> {
+  return readCircularPdfPages(src);
+}
+
+export async function analyzeCircularPdf(
   src: string,
   attachments: string[] = [],
 ): Promise<CircularAnalysis> {
+  const document = await readCircularPdfPages(src);
+  const text = document.text.replace(/^\[Pagina \d+\]\n/gm, "");
+  return analyzeCircularText(text, attachments, document.pagesAnalyzed, document.truncated);
+}
+
+export async function extractCircularDocxText(src: string): Promise<CircularDocumentText> {
   const response = await fetch(src, { credentials: "same-origin" });
   if (!response.ok) throw new Error(`docx_download_${response.status}`);
   const arrayBuffer = await response.arrayBuffer();
   const mammothModule = await import("mammoth");
   const mammoth = mammothModule.default;
   const extracted = await mammoth.extractRawText({ arrayBuffer });
-  return analyzeCircularText(extracted.value, attachments, 0, false);
+  const text = extracted.value.slice(0, MAX_TEXT_LENGTH);
+  return {
+    text,
+    pagesAnalyzed: 0,
+    truncated: extracted.value.length > MAX_TEXT_LENGTH,
+  };
+}
+
+export async function analyzeCircularDocx(
+  src: string,
+  attachments: string[] = [],
+): Promise<CircularAnalysis> {
+  const document = await extractCircularDocxText(src);
+  return analyzeCircularText(document.text, attachments, 0, document.truncated);
 }
