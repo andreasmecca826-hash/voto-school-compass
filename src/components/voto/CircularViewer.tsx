@@ -205,11 +205,24 @@ export function CircularViewer({
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                   Analisi eseguita sul dispositivo
                 </p>
+                {analysis && analysis.layout !== "text" && (
+                  <p className="rounded-lg bg-primary-soft px-2.5 py-2 leading-relaxed text-primary">
+                    {analysis.layout === "timetable"
+                      ? "Rilevato un orario settimanale: testo ricostruito rispettando le righe e le distanze tra le celle. Per associare con certezza ogni classe a giorno e ora, controlla la tabella originale."
+                      : "Rilevato un layout tabellare: le posizioni delle celle sono state mantenute. Controlla i dati nella tabella originale prima di usarli."}
+                  </p>
+                )}
                 {analysisError && <p className="text-destructive">{analysisError}</p>}
                 {analysis && (
                   <>
                     {analysis.summary ? (
                       <p className="leading-relaxed text-muted-foreground">{analysis.summary}</p>
+                    ) : analysis.layout !== "text" ? (
+                      <p className="text-muted-foreground">
+                        Riepilogo automatico omesso per non confondere le celle. Date e destinatari
+                        riconoscibili sono riportati separatamente; verifica le associazioni nella
+                        tabella originale.
+                      </p>
                     ) : (
                       <p className="text-muted-foreground">
                         Non è stato rilevato testo selezionabile. Il PDF potrebbe essere una

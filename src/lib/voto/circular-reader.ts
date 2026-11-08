@@ -8,8 +8,17 @@ export interface CircularAnalysis {
   dates: CircularDateMention[];
   recipients: string[];
   attachments: string[];
+  layout: "text" | "table" | "timetable";
   pagesAnalyzed: number;
   truncated: boolean;
+}
+
+interface PositionedTextItem {
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  fontSize: number;
 }
 
 const MONTHS = [
@@ -44,6 +53,14 @@ function clean(value: string): string {
 }
 
 function extractSummary(text: string): string | null {
+  const timetableTitle = text
+    .split("\n")
+    .map(clean)
+    .find(
+      (line) => /\borario\b/i.test(line) && /\b(?:provvisorio|definitivo|scolastico)\b/i.test(line),
+    );
+  if (timetableTitle) return timetableTitle.slice(0, 420);
+
   const paragraphs = text
     .split(/\n{2,}/)
     .map(clean)
@@ -119,8 +136,20 @@ export function analyzeCircularText(
   truncated = false,
 ): CircularAnalysis {
   const normalized = text.replace(/\r\n?/g, "\n");
+  const dayNames = normalized.toLocaleLowerCase("it-IT");
+  const isTimetable =
+    (dayNames.includes("lunedì") || dayNames.includes("lunedi")) &&
+    (dayNames.includes("martedì") || dayNames.includes("martedi")) &&
+    (dayNames.includes("mercoledì") || dayNames.includes("mercoledi"));
+  const hasTableRows =
+    normalized.split("\n").filter((line) => line.trim().length > 0 && /\S\s{3,}\S/.test(line))
+      .length >= 3;
   return {
-    summary: extractSummary(normalized),
+    summary: isTimetable
+      ? extractSummary(normalized)
+      : hasTableRows
+        ? null
+        : extractSummary(normalized),
     dates: extractDates(normalized),
     recipients: extractRecipients(normalized),
     attachments: [
@@ -128,9 +157,42 @@ export function analyzeCircularText(
         [...attachments, ...extractAttachmentMentions(normalized)].map(clean).filter(Boolean),
       ),
     ],
+    layout: isTimetable ? "timetable" : hasTableRows ? "table" : "text",
     pagesAnalyzed,
     truncated,
   };
+}
+
+export function reconstructPositionedText(items: PositionedTextItem[]): string {
+  const rows: Array<{ y: number; items: PositionedTextItem[] }> = [];
+  for (const item of items) {
+    const row = rows.find((candidate) => Math.abs(candidate.y - item.y) <= 2.5);
+    if (row) row.items.push(item);
+    else rows.push({ y: item.y, items: [item] });
+  }
+
+  return rows
+    .sort((left, right) => right.y - left.y)
+    .map(({ items: rowItems }) => {
+      const sorted = rowItems.sort((left, right) => left.x - right.x);
+      let line = "";
+      let endX: number | undefined;
+      for (const item of sorted) {
+        const fontSize = Math.max(item.fontSize, 1);
+        const spaceWidth = Math.max(fontSize * 0.34, 2.2);
+        const gapSpaces =
+          endX === undefined
+            ? 0
+            : Math.min(100, Math.max(1, Math.round((item.x - endX) / spaceWidth)));
+        const content = item.str.trim();
+        if (!content) continue;
+        line += `${" ".repeat(gapSpaces)}${content}`;
+        endX = item.x + item.width;
+      }
+      return line.trimEnd();
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function analyzeCircularPdf(
@@ -152,12 +214,21 @@ export async function analyzeCircularPdf(
     for (let pageNumber = 1; pageNumber <= pagesToRead; pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
-      const pageText = content.items
-        .map((item) => {
-          if (!("str" in item) || !item.str) return "";
-          return `${item.str}${item.hasEOL ? "\n" : " "}`;
-        })
-        .join("");
+      const pageText = reconstructPositionedText(
+        content.items.flatMap((item) => {
+          if (!("str" in item) || !item.str.trim()) return [];
+          const [scaleX, , , scaleY, x, y] = item.transform;
+          return [
+            {
+              str: item.str,
+              x,
+              y,
+              width: item.width,
+              fontSize: Math.max(Math.abs(scaleX), Math.abs(scaleY)),
+            },
+          ];
+        }),
+      );
       textParts.push(pageText);
       textLength += pageText.length;
       pagesAnalyzed += 1;
