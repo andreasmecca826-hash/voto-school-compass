@@ -194,26 +194,26 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "primavera",
     label: "Primavera",
-    description: "Verde e colori freschi",
-    sw: "linear-gradient(135deg,#214b3b,#f7a8c4)",
+    description: "Salvia, fiori di ciliegio e luce morbida",
+    sw: "radial-gradient(ellipse at 18% 82%,#f5b7cd 0 13%,transparent 14%),radial-gradient(circle at 80% 18%,#ffe3a0 0 8%,transparent 9%),linear-gradient(145deg,#143e30 0%,#3e815c 54%,#f0bfd0 100%)",
   },
   {
     id: "estate",
     label: "Estate",
-    description: "Sole e mare",
-    sw: "linear-gradient(135deg,#075985,#ffb84d)",
+    description: "Mare turchese, riflessi d’onda e sole dorato",
+    sw: "radial-gradient(circle at 81% 21%,#ffe99d 0 10%,transparent 11%),repeating-linear-gradient(170deg,transparent 0 18px,#d2fbef26 18px 20px),linear-gradient(150deg,#102c52 0%,#0b7189 54%,#48c8c3 100%)",
   },
   {
     id: "autunno",
     label: "Autunno",
-    description: "Foglie e rame",
-    sw: "linear-gradient(135deg,#49251c,#d97932)",
+    description: "Ambra, rame e foglie color ruggine",
+    sw: "radial-gradient(circle at 78% 22%,#f3c879 0 10%,transparent 11%),linear-gradient(145deg,#271613 0%,#6b3024 43%,#b65d32 74%,#e0a04e 100%)",
   },
   {
     id: "inverno",
     label: "Inverno",
-    description: "Ghiaccio e blu profondi",
-    sw: "linear-gradient(135deg,#102a43,#bde7ff)",
+    description: "Blu notte, brina e bagliori di ghiaccio",
+    sw: "radial-gradient(ellipse at 82% 16%,#d8f7ff 0 8%,transparent 9%),radial-gradient(ellipse at 14% 86%,#8bcbe6 0 10%,transparent 11%),linear-gradient(145deg,#0a1832 0%,#23496f 56%,#b6dce9 100%)",
   },
 ];
 const CUSTOM_COLORS: {
