@@ -26,6 +26,7 @@ import { loadSchoolClosures } from "@/lib/voto/school-holidays";
 import { loadSchoolEndDate } from "@/lib/voto/school-end-date";
 import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
+import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import {
   getRandomCompleteThemeIntent,
   type RandomThemeConfirmation,
@@ -66,8 +67,10 @@ function Assistant() {
   const v = useVoto();
   const study = useStudy();
   const now = useClock();
+  const isOnline = useOnlineStatus();
   const [question, setQuestion] = useState("");
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
+  const activeAssistantMode = isOnline ? assistantMode : "local";
   const [isReplying, setIsReplying] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<AssistantChatMessage[]>([
@@ -81,13 +84,26 @@ function Assistant() {
   useEffect(() => {
     setSuggestions(pickAssistantSuggestions());
     try {
-      if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "api") setAssistantMode("api");
+      if (navigator.onLine && window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "api") {
+        setAssistantMode("api");
+      }
     } catch {
       // Se lo storage non è disponibile, resta attiva la modalità locale.
     }
   }, []);
 
+  useEffect(() => {
+    if (isOnline && (typeof navigator === "undefined" || navigator.onLine)) return;
+    setAssistantMode("local");
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+    } catch {
+      // La modalità resta locale per la sessione corrente.
+    }
+  }, [isOnline]);
+
   const changeAssistantMode = (mode: CircularAssistantMode) => {
+    if (mode === "api" && (!isOnline || !navigator.onLine)) return;
     setAssistantMode(mode);
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
@@ -99,6 +115,8 @@ function Assistant() {
   const ask = async (text = question) => {
     const clean = text.trim();
     if (!clean || isReplying) return;
+    const requestMode =
+      isOnline && (typeof navigator === "undefined" || navigator.onLine) ? assistantMode : "local";
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
@@ -142,7 +160,7 @@ function Assistant() {
       !hasImmediateActionResponse &&
       !useCircularAssistant &&
       !useSchoolPolicyAssistant &&
-      assistantMode === "api" &&
+      requestMode === "api" &&
       !isAssistantSearchQuery(clean);
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
@@ -188,14 +206,14 @@ function Assistant() {
           const assistantResponse = await answerCircularChatQuestion(
             clean,
             assistantData.notifications,
-            assistantMode,
+            requestMode,
           );
           assistantMessage = {
             role: "assistant",
             text: assistantResponse ?? "Non ho trovato una circolare pertinente.",
           };
         } else if (useSchoolPolicyAssistant) {
-          const schoolAnswer = await answerSchoolPolicyQuestion(clean, assistantMode);
+          const schoolAnswer = await answerSchoolPolicyQuestion(clean, requestMode);
           assistantMessage = {
             role: "assistant",
             text: schoolAnswer.text,
@@ -285,7 +303,7 @@ function Assistant() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold">
             <Sparkles className="h-4 w-4 text-primary" />
-            {assistantMode === "local" ? "Modalità Locale" : "Modalità API Groq (Qwen)"}
+            {activeAssistantMode === "local" ? "Modalità Locale" : "Modalità API Groq (Qwen)"}
           </div>
           <div
             className="flex rounded-xl border border-border p-1"
@@ -294,28 +312,33 @@ function Assistant() {
           >
             <button
               type="button"
-              aria-pressed={assistantMode === "local"}
+              aria-pressed={activeAssistantMode === "local"}
               disabled={isReplying}
               onClick={() => changeAssistantMode("local")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${assistantMode === "local" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${activeAssistantMode === "local" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
             >
               Locale
             </button>
-            <button
-              type="button"
-              aria-pressed={assistantMode === "api"}
-              disabled={isReplying}
-              onClick={() => changeAssistantMode("api")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${assistantMode === "api" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-            >
-              API
-            </button>
+            {isOnline && (
+              <button
+                type="button"
+                aria-pressed={activeAssistantMode === "api"}
+                disabled={isReplying}
+                onClick={() => changeAssistantMode("api")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${activeAssistantMode === "api" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                API
+              </button>
+            )}
           </div>
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          {assistantMode === "local"
+          {activeAssistantMode === "local"
             ? "Le risposte locali usano i dati caricati nell’app e cercano nel regolamento pubblico Morselli A.S. 2025–2026 sul dispositivo. Circolari e regolamento non vengono inviati a Groq."
             : "API invia a Groq la domanda e, se pertinente, il testo della circolare o gli estratti del regolamento. Non invia automaticamente voti, assenze o cronologia, ma trasmette eventuali dati personali scritti nella domanda. Non legge pagine con login. I costi dipendono dal tuo piano Groq e l’app non lo cambia: per zero spese e massima privacy, scegli Locale."}{" "}
+          {!isOnline && (
+            <span className="font-medium text-primary">Offline: disponibile solo Locale. </span>
+          )}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
@@ -369,7 +392,7 @@ function Assistant() {
       {isReplying && (
         <p role="status" className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
           <LoaderCircle className="h-4 w-4 animate-spin" />
-          {assistantMode === "api"
+          {activeAssistantMode === "api"
             ? "Preparo la risposta API con la domanda e le fonti pertinenti…"
             : "Cerco nei documenti sul dispositivo…"}
         </p>

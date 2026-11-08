@@ -1,9 +1,12 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 
 afterEach(cleanup);
-beforeEach(() => window.localStorage.removeItem("voto.circular-assistant-mode.v1"));
+beforeEach(() => {
+  window.localStorage.removeItem("voto.circular-assistant-mode.v1");
+  Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
+});
 
 describe("visualizzatore PDF delle circolari interne", () => {
   it("mantiene anteprima locale e download anche senza URL firmata anticipata", () => {
@@ -68,6 +71,58 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     expect(screen.getByText(/vengono inviati a Groq il testo selezionabile/i)).toBeInTheDocument();
     expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("api");
+  });
+
+  it("nasconde l’API e ripristina Locale quando il browser va offline", () => {
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare interna"
+        fileName="allegato.pdf"
+        path={`circulars/${"f".repeat(64)}.pdf`}
+        url={undefined}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(screen.getByRole("button", { name: "API Groq (Qwen)" }));
+    act(() => {
+      Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
+      window.dispatchEvent(new Event("offline"));
+    });
+
+    expect(screen.queryByRole("button", { name: "API Groq (Qwen)" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Locale (sul dispositivo)" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
+    expect(screen.getByText(/Offline: disponibile solo Locale/i)).toBeInTheDocument();
+  });
+
+  it("parte in Locale se si apre offline anche con API salvata", () => {
+    window.localStorage.setItem("voto.circular-assistant-mode.v1", "api");
+    Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
+
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare interna"
+        fileName="allegato.pdf"
+        path={`circulars/${"f".repeat(64)}.pdf`}
+        url={undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+
+    expect(screen.queryByRole("button", { name: "API Groq (Qwen)" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Locale (sul dispositivo)" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
   });
 
   it("offre apertura e download separati per un DOCX", () => {
