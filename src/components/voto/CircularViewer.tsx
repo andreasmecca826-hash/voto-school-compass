@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
+import { answerCircularQuestionLocally } from "@/lib/voto/circular-local-answer";
 import {
   analyzeCircularDocx,
   analyzeCircularPdf,
@@ -30,6 +31,8 @@ import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circ
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
+const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
+type CircularAssistantMode = "local" | "api";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -103,11 +106,21 @@ export function CircularViewer({
   const [analysis, setAnalysis] = useState<CircularAnalysis | null>(null);
   const [analysisError, setAnalysisError] = useState<string | undefined>();
   const [aiQuestion, setAiQuestion] = useState("");
+  const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
   const [isAskingAi, setIsAskingAi] = useState(false);
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
   const aiRequestId = useRef(0);
+
+  useEffect(() => {
+    try {
+      const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
+      if (savedMode === "local" || savedMode === "api") setAiMode(savedMode);
+    } catch {
+      // Se lo storage non è disponibile, resta attiva la modalità locale predefinita.
+    }
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -146,6 +159,19 @@ export function CircularViewer({
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
+
+  function chooseAiMode(mode: CircularAssistantMode) {
+    if (mode === aiMode) return;
+    setAiMode(mode);
+    setAiQuestion("");
+    setAiMessages([]);
+    setAiError(undefined);
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
+    } catch {
+      // La scelta resta valida per la sessione corrente anche se non si può salvare.
+    }
+  }
 
   async function analyzeDocument() {
     if (!previewUrl || isAnalyzing) return;
@@ -191,11 +217,14 @@ export function CircularViewer({
       }
       const documentTruncated = document.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
       setAiDocumentTruncated(documentTruncated);
-      const answer = await askAboutCircular({
-        question,
-        documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
-        documentTruncated,
-      });
+      const answer =
+        aiMode === "api"
+          ? await askAboutCircular({
+              question,
+              documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
+              documentTruncated,
+            })
+          : answerCircularQuestionLocally(question, documentText.slice(0, MAX_AI_DOCUMENT_LENGTH));
       if (aiRequestId.current === requestId) {
         setAiMessages((current) => [...current, { role: "assistant", text: answer }]);
       }
@@ -397,10 +426,43 @@ export function CircularViewer({
               <h3 className="text-xs font-semibold text-foreground">
                 Fai una domanda alla circolare
               </h3>
+              <div
+                role="group"
+                aria-label="Modalità di risposta"
+                className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-background/70 p-1"
+              >
+                <button
+                  type="button"
+                  aria-pressed={aiMode === "local"}
+                  disabled={isAskingAi}
+                  onClick={() => chooseAiMode("local")}
+                  className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                    aiMode === "local"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Locale (sul dispositivo)
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={aiMode === "api"}
+                  disabled={isAskingAi}
+                  onClick={() => chooseAiMode("api")}
+                  className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                    aiMode === "api"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  API Groq (Qwen)
+                </button>
+              </div>
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
-                Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda
-                corrente. Le domande precedenti, i voti e le presenze non vengono inviati. Verifica
-                sempre la risposta sul documento originale.
+                {aiMode === "local"
+                  ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
+                  : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                Verifica sempre la risposta sul documento originale.
               </p>
             </div>
             {aiDocumentTruncated && (
