@@ -42,7 +42,17 @@ export function answerSchoolRegulation(query: string): string | null {
     normalized.includes("copiare") ||
     normalized.includes("fumare");
 
-  if (!asksAboutRegulation && !asksAboutSchoolRule) return null;
+  const asksAboutStudentRightsDuties =
+    (normalized.includes("diritt") || normalized.includes("dover")) &&
+    (normalized.includes("student") || normalized.includes("alunn") || normalized.includes("alliev"));
+
+  if (!asksAboutRegulation && !asksAboutSchoolRule && !asksAboutStudentRightsDuties) return null;
+
+  if (asksAboutStudentRightsDuties) {
+    return withSource(
+      "Secondo il regolamento, gli studenti hanno diritto a una formazione qualificata che valorizzi la loro identità, alla riservatezza, a essere informati sulle norme scolastiche, alla partecipazione attiva e responsabile, alla libertà di apprendimento, al rispetto della propria cultura e religione e a una valutazione trasparente e tempestiva. I loro doveri sono frequentare regolarmente e studiare, rispettare le regole organizzative e di sicurezza, mantenere un comportamento corretto, non copiare né usare strumenti non autorizzati durante le verifiche, rispettare persone e personale, usare correttamente strutture e materiali e contribuire a mantenere accogliente l’ambiente scolastico.",
+    );
+  }
 
   if (normalized.includes("cellular") || normalized.includes("telefon")) {
     return withSource(

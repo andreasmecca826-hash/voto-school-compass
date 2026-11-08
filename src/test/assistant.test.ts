@@ -65,6 +65,12 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain(
       "A.S. 2025/2026",
     );
+    expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
+      "formazione qualificata",
+    );
+    expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
+      "frequentare regolarmente",
+    );
   });
 
   it("calcola il voto necessario per una materia e un obiettivo", () => {
