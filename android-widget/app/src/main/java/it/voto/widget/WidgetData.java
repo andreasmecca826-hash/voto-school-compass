@@ -37,6 +37,7 @@ final class WidgetData {
   static final String SUPABASE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
   static final String SCHOOL_DATA_URL = SUPABASE_URL + "/functions/v1/school-data";
   static final String AUTH_TOKEN_URL = SUPABASE_URL + "/auth/v1/token";
+  private static final Object SESSION_LOCK = new Object();
 
   interface LoginCallback { void done(String error); }
 
@@ -117,13 +118,19 @@ final class WidgetData {
   }
 
   private static String refreshAccessToken(Context context) throws Exception {
-    String refresh = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(REFRESH_TOKEN_KEY, "");
-    if (refresh.length() == 0) throw new Exception("Sessione scaduta: accedi di nuovo");
-    JSONObject body = new JSONObject();
-    body.put("refresh_token", refresh);
-    JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
-    saveSession(context, result);
-    return result.optString("access_token", "");
+    synchronized (SESSION_LOCK) {
+      android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+      String current = prefs.getString(ACCESS_TOKEN_KEY, "");
+      long expiresAt = prefs.getLong(EXPIRES_AT_KEY, 0L);
+      if (current.length() > 0 && expiresAt > System.currentTimeMillis() + 60_000L) return current;
+      String refresh = prefs.getString(REFRESH_TOKEN_KEY, "");
+      if (refresh.length() == 0) throw new Exception("Sessione scaduta: accedi di nuovo");
+      JSONObject body = new JSONObject();
+      body.put("refresh_token", refresh);
+      JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
+      saveSession(context, result);
+      return result.optString("access_token", "");
+    }
   }
 
   private static void saveSession(Context context, JSONObject result) throws Exception {
@@ -135,7 +142,7 @@ final class WidgetData {
         .putString(ACCESS_TOKEN_KEY, access)
         .putString(REFRESH_TOKEN_KEY, refresh)
         .putLong(EXPIRES_AT_KEY, System.currentTimeMillis() + expiresIn * 1000L)
-        .apply();
+        .commit();
   }
 
   private static JSONObject requestJson(String endpoint, String method, String body, String accessToken) throws Exception {
