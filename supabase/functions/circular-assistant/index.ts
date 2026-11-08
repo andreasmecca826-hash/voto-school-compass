@@ -127,7 +127,7 @@ Deno.serve(async (request: Request) => {
       );
     }
 
-    const model = Deno.env.get("GROQ_MODEL")?.trim() || "qwen/qwen3-32b";
+    const model = Deno.env.get("GROQ_MODEL")?.trim() || "qwen/qwen3.8-27b";
     const apiKey = Deno.env.get("GROQ_API_KEY")?.trim();
     if (!apiKey) {
       return jsonResponse(
@@ -210,6 +210,19 @@ Deno.serve(async (request: Request) => {
         status: response.status,
       });
       return jsonResponse({ error: "La configurazione dell’account AI non è valida." }, 503);
+    }
+    if (response.status === 404) {
+      console.error("circular assistant model was not found", {
+        status: response.status,
+        model,
+      });
+      return jsonResponse(
+        {
+          error:
+            "Il modello Groq selezionato non è disponibile. Se hai impostato il secret GROQ_MODEL in Supabase, aggiornalo a qwen/qwen3.8-27b oppure rimuovilo.",
+        },
+        502,
+      );
     }
     if (!response.ok) {
       console.error("circular assistant model returned an error", { status: response.status });
