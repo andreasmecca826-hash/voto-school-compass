@@ -123,8 +123,14 @@ Deno.serve(async (request: Request) => {
 
     const model = Deno.env.get("GROQ_MODEL")?.trim() || "qwen/qwen3-32b";
     const apiKey = Deno.env.get("GROQ_API_KEY")?.trim();
-    if (!apiKey || !/^[a-zA-Z0-9._:-]{1,100}$/.test(model)) {
-      return jsonResponse({ error: "Il servizio AI non è configurato." }, 503);
+    if (!apiKey) {
+      return jsonResponse(
+        { error: "Manca il secret GROQ_API_KEY nella configurazione Supabase." },
+        503,
+      );
+    }
+    if (!/^[a-zA-Z0-9._-]+(?:\/[a-zA-Z0-9._-]+)?$/.test(model) || model.length > 100) {
+      return jsonResponse({ error: "Il modello Groq configurato non è valido." }, 503);
     }
 
     const messages: Message[] = [
