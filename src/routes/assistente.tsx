@@ -90,6 +90,9 @@ function Assistant() {
     const lessonsToClear = expectedLessons
       .map((lesson, index) => (lesson.trim() ? `${index + 1}ª ora: ${lesson.trim()}` : null))
       .filter((lesson): lesson is string => lesson !== null);
+    const previousQuestion = [...messages]
+      .reverse()
+      .find((message) => message.role === "user")?.text;
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : randomThemeIntent?.kind === "confirm"
@@ -99,6 +102,7 @@ function Assistant() {
           : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
             ? assignmentIntent.message
             : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+                previousQuestion,
                 source: v.source,
                 lastSync: v.lastSync,
                 syncError: v.error,

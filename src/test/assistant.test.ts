@@ -71,6 +71,18 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("collega un follow-up temporale alla domanda precedente", () => {
+    const followUpData: VotoData = {
+      ...data,
+      assignments: [{ id: "tomorrow", title: "Ripasso", dueDate: "2026-10-27", completed: false }],
+    };
+    expect(
+      answerQuestion("e domani?", followUpData, emptySchedule(), new Date(2026, 9, 26, 12), [], {
+        previousQuestion: "Quali compiti ho?",
+      }),
+    ).toContain("Ripasso");
+  });
+
   it("cerca nel testo completo quando la domanda riguarda una sezione meno comune", () => {
     const answer = answerQuestion(
       "Come funziona il Consiglio d’Istituto secondo il regolamento?",

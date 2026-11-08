@@ -20,6 +20,7 @@ import {
 import { answerSchoolRegulation } from "./school-regulations";
 
 export interface AssistantContext {
+  previousQuestion?: string;
   source?: "demo" | "remote" | "cache";
   lastSync?: string | null;
   syncError?: string | null;
@@ -186,6 +187,20 @@ function relativeDayLabel(offset: number): string {
   return "nel giorno richiesto";
 }
 
+function expandFollowUpQuestion(query: string, previousQuestion?: string): string {
+  const previous = previousQuestion?.trim();
+  const followUp = query.trim();
+  if (!previous || !/^(?:e\s+)?(?:oggi|domani|dopodomani|ieri|l'altro ieri)\??$/i.test(followUp)) {
+    return query;
+  }
+  const day = normalize(followUp).replace(/^e\s+/, "").replace(/\?+$/, "").trim();
+  const previousWithoutDay = previous.replace(
+    /\b(?:oggi|domani|dopodomani|ieri|l'altro ieri)\b/gi,
+    "",
+  );
+  return `${previousWithoutDay.replace(/\?+$/, "").trim()} ${day}?`;
+}
+
 function localDateKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -258,6 +273,7 @@ export function answerQuestion(
   interrogazioni: Interrogazione[] = [],
   context: AssistantContext = {},
 ): string {
+  query = expandFollowUpQuestion(query, context.previousQuestion);
   const normalized = normalize(query.trim());
   if (!normalized)
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
