@@ -51,15 +51,13 @@ public class MainActivity extends Activity {
     defaultHideTitle.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_HIDE_TITLE_KEY, true));
     defaultGlassBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) defaultTransparentBackground.setChecked(false); });
     defaultTransparentBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) defaultGlassBackground.setChecked(false); });
+    status.setText(WidgetData.hasSession(this) ? "Sessione GitHub attiva. I dati restano privati." : "Nessuna sessione. Accedi con GitHub per caricare i dati.");
     refresh.setOnClickListener(v -> {
       refresh.setEnabled(false);
       status.setText("Aggiornamento dei widget in corso…");
       savePreferences();
       WidgetData.refresh(this);
-      refresh.postDelayed(() -> {
-        refresh.setEnabled(true);
-        status.setText("Widget aggiornati. Se non cambia subito, attendi qualche secondo.");
-      }, 1200);
+      refresh.postDelayed(() -> { refresh.setEnabled(true); status.setText("Richiesta inviata. I widget si aggiorneranno appena ricevuti i dati."); }, 700);
     });
     github.setOnClickListener(v -> {
       String redirect = Uri.encode("it.voto.widget://auth-callback");
@@ -82,7 +80,6 @@ public class MainActivity extends Activity {
         .putBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, defaultTransparentBackground.isChecked())
         .putBoolean(WidgetConfigureActivity.DEFAULT_HIDE_TITLE_KEY, defaultHideTitle.isChecked())
         .apply();
-    WidgetData.refresh(this);
   }
 
   @Override protected void onNewIntent(Intent intent) {
@@ -105,6 +102,7 @@ public class MainActivity extends Activity {
       long expires = parseLong(values.get("expires_in"), 3600L);
       WidgetData.saveOAuthSession(this, access, refresh, expires);
       savePreferences();
+      WidgetData.refresh(this);
       status.setText("Accesso GitHub riuscito. Widget aggiornati.");
     } catch (Exception e) {
       status.setText("Login GitHub non riuscito: " + e.getMessage());

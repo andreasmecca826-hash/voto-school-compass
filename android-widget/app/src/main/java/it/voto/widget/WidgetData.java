@@ -74,10 +74,13 @@ final class WidgetData {
   }
 
   static void refresh(Context context) {
-    update(context, new ComponentName(context, SmallWidgetProvider.class), false);
-    update(context, new ComponentName(context, LargeWidgetProvider.class), true);
-    update(context, new ComponentName(context, MediumWidgetProvider.class), false);
-    update(context, new ComponentName(context, WideWidgetProvider.class), true);
+    new Thread(() -> {
+      String[] values = fetch(context);
+      renderProvider(context, new ComponentName(context, SmallWidgetProvider.class), false, values);
+      renderProvider(context, new ComponentName(context, LargeWidgetProvider.class), true, values);
+      renderProvider(context, new ComponentName(context, MediumWidgetProvider.class), false, values);
+      renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
+    }).start();
   }
 
   static void update(Context context, ComponentName provider, boolean large) {
@@ -86,8 +89,18 @@ final class WidgetData {
     if (ids.length == 0) return;
     new Thread(() -> {
       String[] values = fetch(context);
-      for (int id : ids) manager.updateAppWidget(id, views(context, values, large, id));
+      renderProvider(context, provider, large, values);
     }).start();
+  }
+
+  private static void renderProvider(Context context, ComponentName provider, boolean large, String[] values) {
+    AppWidgetManager manager = AppWidgetManager.getInstance(context);
+    for (int id : manager.getAppWidgetIds(provider)) manager.updateAppWidget(id, views(context, values, large, id));
+  }
+
+  static boolean hasSession(Context context) {
+    android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    return prefs.getString(REFRESH_TOKEN_KEY, "").length() > 0 && prefs.getString(ACCESS_TOKEN_KEY, "").length() > 0;
   }
 
   private static String[] fetch(Context context) {
