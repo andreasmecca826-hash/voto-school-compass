@@ -104,10 +104,16 @@ export function CircularViewer({
       setAnalysis(null);
       setAnalysisError(undefined);
     }
-  }, [open, title, selectedIndex]);
+  }, [open, title]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
+
+  useEffect(() => {
+    setAnalysis(null);
+    setAnalysisError(undefined);
+  }, [activeFile?.path, activeFile?.url, activeFile?.name]);
+
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
   const internalPreviewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : undefined;
   const previewUrl = internalPreviewUrl ?? activeFile?.url;

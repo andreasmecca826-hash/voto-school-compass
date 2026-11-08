@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 
@@ -56,5 +56,28 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
 
     expect(screen.getByRole("document", { name: "circolare.pdf" })).toBeInTheDocument();
+  });
+
+  it("permette di passare da un allegato all’altro nella stessa circolare", () => {
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare con due allegati"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        attachments={[
+          { name: "primo.pdf", path: `circulars/${"d".repeat(64)}.pdf` },
+          { name: "secondo.pdf", path: `circulars/${"e".repeat(64)}.pdf` },
+        ]}
+      />,
+    );
+
+    const secondAttachmentTab = screen.getByRole("tab", { name: "secondo.pdf" });
+    fireEvent.click(secondAttachmentTab);
+
+    expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("document", { name: "secondo.pdf" })).toBeInTheDocument();
   });
 });
