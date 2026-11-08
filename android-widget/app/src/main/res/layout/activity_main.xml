@@ -22,7 +22,9 @@
         <CheckBox android:id="@+id/default_transparent_background" android:text="Sfondo trasparente" android:textColor="#D8E2F2" android:layout_marginTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <CheckBox android:id="@+id/default_hide_title" android:text="Nascondi titolo VOTO nei widget" android:textColor="#D8E2F2" android:checked="true" android:layout_marginTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
 
-        <Button android:id="@+id/github_button" android:text="Accedi con GitHub" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <Button android:id="@+id/apply_all_button" android:text="Applica impostazioni a tutti i widget" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <Button android:id="@+id/open_voto_button" android:text="Apri VOTO" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <Button android:id="@+id/github_button" android:text="Accedi con GitHub" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/refresh_button" android:text="Aggiorna widget adesso" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <Button android:id="@+id/logout_button" android:text="Disconnetti questo dispositivo" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <TextView android:id="@+id/status" android:textColor="#D8E2F2" android:layout_marginTop="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" />

@@ -112,6 +112,29 @@ final class WidgetData {
     return prefs.getString(REFRESH_TOKEN_KEY, "").length() > 0 && prefs.getString(ACCESS_TOKEN_KEY, "").length() > 0;
   }
 
+  static void applyDefaultsToAllWidgets(Context context) {
+    AppWidgetManager manager = AppWidgetManager.getInstance(context);
+    ComponentName[] providers = {
+        new ComponentName(context, SmallWidgetProvider.class),
+        new ComponentName(context, MediumWidgetProvider.class),
+        new ComponentName(context, LargeWidgetProvider.class),
+        new ComponentName(context, WideWidgetProvider.class),
+        new ComponentName(context, CompactWidgetProvider.class)
+    };
+    android.content.SharedPreferences.Editor editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
+    for (ComponentName provider : providers) for (int id : manager.getAppWidgetIds(provider)) {
+      editor.remove(WidgetConfigureActivity.MODE_KEY + id)
+          .remove(WidgetConfigureActivity.THEME_KEY + id)
+          .remove(WidgetConfigureActivity.INTERFACE_THEME_KEY + id)
+          .remove(WidgetConfigureActivity.TEXT_SIZE_KEY + id)
+          .remove(WidgetConfigureActivity.SHOW_UPDATED_KEY + id)
+          .remove(WidgetConfigureActivity.GLASS_BACKGROUND_KEY + id)
+          .remove(WidgetConfigureActivity.TRANSPARENT_BACKGROUND_KEY + id)
+          .remove(WidgetConfigureActivity.HIDE_TITLE_KEY + id);
+    }
+    editor.apply();
+  }
+
   private static String[] fetch(Context context) {
     try {
       String accessToken = validAccessToken(context);

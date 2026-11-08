@@ -41,6 +41,8 @@ public class MainActivity extends Activity {
     defaultTransparentBackground = (CheckBox) findViewById(R.id.default_transparent_background);
     defaultHideTitle = (CheckBox) findViewById(R.id.default_hide_title);
     final Button refresh = (Button) findViewById(R.id.refresh_button);
+    final Button applyAll = (Button) findViewById(R.id.apply_all_button);
+    final Button openVoto = (Button) findViewById(R.id.open_voto_button);
     final Button github = (Button) findViewById(R.id.github_button);
     final Button logout = (Button) findViewById(R.id.logout_button);
     android.content.SharedPreferences prefs = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE);
@@ -62,6 +64,13 @@ public class MainActivity extends Activity {
       WidgetData.refresh(this);
       refresh.postDelayed(() -> { refresh.setEnabled(true); status.setText("Richiesta inviata. I widget si aggiorneranno appena ricevuti i dati."); }, 700);
     });
+    applyAll.setOnClickListener(v -> {
+      savePreferences();
+      WidgetData.applyDefaultsToAllWidgets(this);
+      WidgetData.refresh(this);
+      status.setText("Impostazioni applicate a tutti i widget.");
+    });
+    openVoto.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"))));
     github.setOnClickListener(v -> {
       String redirect = Uri.encode("it.voto.widget://auth-callback");
       Uri auth = Uri.parse(WidgetData.SUPABASE_URL + "/auth/v1/authorize?provider=github&redirect_to=" + redirect);
