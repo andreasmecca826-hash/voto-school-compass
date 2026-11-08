@@ -12,6 +12,7 @@
 <CheckBox android:id="@+id/show_updated_check" android:text="Mostra ultimo aggiornamento" android:textColor="#D8E2F2" android:checked="true" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <CheckBox android:id="@+id/glass_background_check" android:text="Sfondo iOS Glass" android:textColor="#D8E2F2" android:layout_marginTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <CheckBox android:id="@+id/transparent_background_check" android:text="Sfondo trasparente" android:textColor="#D8E2F2" android:layout_marginTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<CheckBox android:id="@+id/hide_grades_check" android:text="Non mostrare i voti" android:textColor="#D8E2F2" android:checked="true" android:layout_marginTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <Button android:id="@+id/config_save" android:text="Salva" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 </LinearLayout>
 </ScrollView>

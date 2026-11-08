@@ -20,6 +20,7 @@ public class MainActivity extends Activity {
   private Spinner defaultInterfaceTheme;
   private CheckBox defaultGlassBackground;
   private CheckBox defaultTransparentBackground;
+  private CheckBox defaultHideGrades;
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
@@ -36,6 +37,7 @@ public class MainActivity extends Activity {
     defaultInterfaceTheme = (Spinner) findViewById(R.id.default_interface_theme);
     defaultGlassBackground = (CheckBox) findViewById(R.id.default_glass_background);
     defaultTransparentBackground = (CheckBox) findViewById(R.id.default_transparent_background);
+    defaultHideGrades = (CheckBox) findViewById(R.id.default_hide_grades);
     final Button refresh = (Button) findViewById(R.id.refresh_button);
     final Button github = (Button) findViewById(R.id.github_button);
     final Button logout = (Button) findViewById(R.id.logout_button);
@@ -46,6 +48,7 @@ public class MainActivity extends Activity {
     defaultInterfaceTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     defaultGlassBackground.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, false));
     defaultTransparentBackground.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, false));
+    defaultHideGrades.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_HIDE_GRADES_KEY, true));
     defaultGlassBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) defaultTransparentBackground.setChecked(false); });
     defaultTransparentBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) defaultGlassBackground.setChecked(false); });
     refresh.setOnClickListener(v -> {
@@ -77,6 +80,7 @@ public class MainActivity extends Activity {
         .putInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, defaultInterfaceTheme.getSelectedItemPosition())
         .putBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, defaultGlassBackground.isChecked())
         .putBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, defaultTransparentBackground.isChecked())
+        .putBoolean(WidgetConfigureActivity.DEFAULT_HIDE_GRADES_KEY, defaultHideGrades.isChecked())
         .apply();
     WidgetData.refresh(this);
   }
