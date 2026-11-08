@@ -4,4 +4,5 @@
     <string name="widget_large_name">VOTO Dashboard</string>
     <string name="widget_medium_name">VOTO Medio</string>
     <string name="widget_wide_name">VOTO Largo</string>
+    <string name="widget_compact_name">VOTO 2×2</string>
 </resources>

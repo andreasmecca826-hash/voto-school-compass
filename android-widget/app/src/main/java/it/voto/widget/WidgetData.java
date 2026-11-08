@@ -80,22 +80,31 @@ final class WidgetData {
       renderProvider(context, new ComponentName(context, LargeWidgetProvider.class), true, values);
       renderProvider(context, new ComponentName(context, MediumWidgetProvider.class), false, values);
       renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
+      renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
     }).start();
   }
 
   static void update(Context context, ComponentName provider, boolean large) {
+    update(context, provider, large, false);
+  }
+
+  static void update(Context context, ComponentName provider, boolean large, boolean compact) {
     AppWidgetManager manager = AppWidgetManager.getInstance(context);
     int[] ids = manager.getAppWidgetIds(provider);
     if (ids.length == 0) return;
     new Thread(() -> {
       String[] values = fetch(context);
-      renderProvider(context, provider, large, values);
+      renderProvider(context, provider, large, compact, values);
     }).start();
   }
 
   private static void renderProvider(Context context, ComponentName provider, boolean large, String[] values) {
+    renderProvider(context, provider, large, false, values);
+  }
+
+  private static void renderProvider(Context context, ComponentName provider, boolean large, boolean compact, String[] values) {
     AppWidgetManager manager = AppWidgetManager.getInstance(context);
-    for (int id : manager.getAppWidgetIds(provider)) manager.updateAppWidget(id, views(context, values, large, id));
+    for (int id : manager.getAppWidgetIds(provider)) manager.updateAppWidget(id, views(context, values, large, compact, id));
   }
 
   static boolean hasSession(Context context) {
@@ -239,11 +248,11 @@ final class WidgetData {
 
   private static double grade(String value) { try { String s = value.trim().replace(',', '.').replace("½", ".5"); double delta = 0; if (s.endsWith("+")) { delta = .15; s = s.substring(0, s.length() - 1).trim(); } else if (s.endsWith("-")) { delta = -.15; s = s.substring(0, s.length() - 1).trim(); } if (s.contains("/")) { String[] parts = s.split("/"); return (Double.parseDouble(parts[0].trim()) + Double.parseDouble(parts[1].trim())) / 2 + delta; } return Double.parseDouble(s) + delta; } catch (Exception e) { return -1; } }
 
-  private static RemoteViews views(Context context, String[] values, boolean large, int id) {
-    int layout = large ? R.layout.widget_large : R.layout.widget_small;
+  private static RemoteViews views(Context context, String[] values, boolean large, boolean compact, int id) {
+    int layout = compact ? R.layout.widget_compact : (large ? R.layout.widget_large : R.layout.widget_small);
     RemoteViews views = new RemoteViews(context.getPackageName(), layout);
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
+    int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, compact ? 7 : prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
     int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
     int interfaceTheme = prefs.getInt(WidgetConfigureActivity.INTERFACE_THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     int textSize = prefs.getInt(WidgetConfigureActivity.TEXT_SIZE_KEY + id, 1);
