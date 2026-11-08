@@ -52,6 +52,21 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Cosa sai fare?", data)).toContain("riepiloghi indicativi delle pagelle");
   });
 
+  it("consulta la sintesi locale del regolamento scolastico con l’avvertenza sull’anno", () => {
+    expect(answerQuestion("Posso usare il cellulare in classe?", data)).toContain(
+      "è vietato agli studenti portare il cellulare",
+    );
+    expect(answerQuestion("Come giustifico un'assenza?", data)).toContain(
+      "giustificata tempestivamente",
+    );
+    expect(answerQuestion("Qual è la regola sulla frequenza?", data)).toContain(
+      "almeno tre quarti",
+    );
+    expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain(
+      "A.S. 2025/2026",
+    );
+  });
+
   it("calcola il voto necessario per una materia e un obiettivo", () => {
     expect(answerQuestion("Quanto devo prendere in Inglese per arrivare a 8?", data)).toContain(
       "almeno 10",
