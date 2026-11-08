@@ -312,7 +312,7 @@ export function answerQuestion(
   if (asksWhereToFind) {
     const destinations: [string[], string][] = [
       [["compit", "scadenz"], "Compiti"],
-      [["assenza", "presenz", "ritardo"], "Dashboard, modulo Presenze"],
+      [["assenza", "presenz", "ritardo"], "Altro > Assenze"],
       [["orario", "lezion"], "Orario"],
       [["interrogaz"], "Interrogazioni"],
       [["scrutin", "pagell"], "Menu > Scrutini infraperiodali"],
@@ -1259,6 +1259,45 @@ export function answerQuestion(
         ? ""
         : ` Sono circa ${plan.fullDaysAfterSimulation} giornate intere residue, calcolate usando ${number(plan.hoursPerDay)} ore per giornata.`;
     return `Con altre ${number(additionalAbsenceHours)} ore arriveresti a ${number(plan.simulatedTotalHours)} ore: resterebbero ${number(plan.simulatedRemainingHours)} ore prima del limite.${dayEstimate}`;
+  }
+
+  const asksForEventDates =
+    normalized.includes("quali") ||
+    normalized.includes("quando") ||
+    normalized.includes("giorni") ||
+    normalized.includes("date");
+  const asksForAllEvents =
+    normalized.includes("tutti gli eventi") ||
+    normalized.includes("eventi appello") ||
+    normalized.includes("eventi di appello");
+  if (asksForAllEvents) {
+    return "Puoi vedere assenze, ritardi e uscite nella schermata personalizzata Altro > Assenze > Tutti gli eventi, con filtri separati e gli stati di giustificazione.";
+  }
+  if (mentionsAbsence && asksForEventDates) {
+    const absenceEvents = (data.attendanceEvents ?? [])
+      .filter((event) => event.type === "absence")
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (absenceEvents.length === 0) {
+      return "Nei dati sincronizzati non sono presenti le date dettagliate delle assenze. Puoi comunque vedere il totale nella sezione Altro > Assenze.";
+    }
+    const dates = absenceEvents
+      .map((event) => displayDate(event.date))
+      .filter((date): date is string => date !== null);
+    return `Le tue assenze registrate sono: ${dates.join(", ")}. Per vedere anche ritardi, uscite e giustificazioni apri Altro > Assenze > Tutti gli eventi.`;
+  }
+  const asksForDelayDates =
+    (normalized.includes("ritardo") || normalized.includes("ritardi")) && asksForEventDates;
+  if (asksForDelayDates) {
+    const delayEvents = (data.attendanceEvents ?? [])
+      .filter((event) => event.type === "delay")
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (delayEvents.length === 0) {
+      return "Nei dati sincronizzati non sono presenti le date dettagliate dei ritardi. Il conteggio disponibile è quello riportato nella sezione Presenze.";
+    }
+    const dates = delayEvents
+      .map((event) => displayDate(event.date))
+      .filter((date): date is string => date !== null);
+    return `I ritardi registrati risultano nelle date: ${dates.join(", ")}. Puoi controllare tutti gli eventi da Altro > Assenze > Tutti gli eventi.`;
   }
 
   const asksForRemainingAbsence = [

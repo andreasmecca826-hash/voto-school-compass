@@ -71,6 +71,23 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Quante assenze ho?", data)).toContain("2 giorni");
   });
 
+  it("legge le date degli eventi e indica la nuova schermata personalizzata", () => {
+    const eventsData: VotoData = {
+      ...data,
+      attendanceEvents: [
+        { id: "a-1", type: "absence", date: "2026-10-26" },
+        { id: "a-2", type: "absence", date: "2026-10-18", justificationStatus: "Giustificata" },
+        { id: "r-1", type: "delay", date: "2026-10-12" },
+      ],
+    };
+    expect(answerQuestion("In quali giorni sono stato assente?", eventsData)).toContain(
+      "26/10/2026, 18/10/2026",
+    );
+    expect(answerQuestion("Mostrami tutti gli eventi", eventsData)).toContain(
+      "Altro > Assenze > Tutti gli eventi",
+    );
+  });
+
   it("calcola la previsione dopo un voto ipotetico e riconosce un'azione", () => {
     expect(answerQuestion("Che previsione media avrò se prendo 8 in Inglese?", data)).toContain(
       "passerebbe",
