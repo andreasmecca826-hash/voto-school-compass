@@ -113,6 +113,24 @@ describe("ricerca rapida locale dell’assistente", () => {
     ).toBe(true);
   });
 
+  it("filtra per tipo di contenuto e stato richiesto", () => {
+    const dataWithCompletedTask: VotoData = {
+      ...data,
+      assignments: [
+        ...data.assignments,
+        { id: "done", title: "Ripasso svolto", subject: "Storia", completed: true },
+      ],
+    };
+    const completed = searchAssistantData("cerca compiti completati", dataWithCompletedTask);
+    expect(completed.length).toBeGreaterThan(0);
+    expect(completed.every((item) => item.category === "Compito completato")).toBe(true);
+    expect(
+      searchAssistantData("cerca circolare uscita", data).every(
+        (item) => item.category === "Circolare",
+      ),
+    ).toBe(true);
+  });
+
   it("trova i voti a una cifra senza trattare le date come voti", () => {
     const seven = searchAssistantData("cerca 7", data);
     expect(seven.some((item) => item.category === "Voto" && item.title.includes("7"))).toBe(true);

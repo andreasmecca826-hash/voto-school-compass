@@ -147,6 +147,37 @@ function rankResult(result: AssistantSearchResult, terms: string[], phrase: stri
   return matched.length * 2 + titleMatches * 2 + phraseBoost;
 }
 
+function searchCategoryMatches(query: string, category: string): boolean {
+  const normalized = normalize(query);
+  const categoryFilters: Array<[string[], (value: string) => boolean]> = [
+    [["voto", "voti"], (value) => value === "Voto" || value === "Materia"],
+    [["compito", "compiti", "esercizio", "esercizi"], (value) => value.startsWith("Compito")],
+    [["circolare", "circolari", "avviso", "avvisi"], (value) => value === "Circolare"],
+    [["promemoria", "promemoria"], (value) => value === "Promemoria"],
+    [["diario", "attivita"], (value) => value === "Diario"],
+    [["nota", "note"], (value) => value === "Nota"],
+    [
+      ["interrogazione", "interrogazioni", "orale", "orali"],
+      (value) => value.startsWith("Interrogazione"),
+    ],
+  ];
+  const active = categoryFilters.find(([terms]) => terms.some((term) => normalized.includes(term)));
+  return active ? active[1](category) : true;
+}
+
+function searchStatusMatches(query: string, category: string): boolean {
+  const normalized = normalize(query);
+  if (!category.startsWith("Compito") && !category.startsWith("Interrogazione")) return true;
+  const asksCompleted = /\b(?:completat|svolt|finit|fatt)\w*/.test(normalized);
+  const asksOpen =
+    normalized.includes("da fare") ||
+    normalized.includes("non complet") ||
+    normalized.includes("apert");
+  if (asksCompleted && !asksOpen) return category.includes("completat");
+  if (asksOpen && !asksCompleted) return !category.includes("completat");
+  return true;
+}
+
 export function searchAssistantData(
   query: string,
   data: VotoData,
@@ -255,6 +286,8 @@ export function searchAssistantData(
   }
 
   return records
+    .filter((result) => searchCategoryMatches(query, result.category))
+    .filter((result) => searchStatusMatches(query, result.category))
     .map((result) => ({ result, score: rankResult(result, terms, phrase) }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score || a.result.title.localeCompare(b.result.title, "it"))
@@ -266,7 +299,9 @@ export function formatAssistantSearchResults(results: AssistantSearchResult[]): 
   if (results.length === 0) {
     return "Non ho trovato corrispondenze nei dati caricati. Prova con una parola più breve o controlla che i dati siano stati sincronizzati.";
   }
-  return `Ho trovato ${results.length} ${results.length === 1 ? "risultato" : "risultati"} nei dati dell’app:\n${results
+  const categories = [...new Set(results.map((result) => result.category))];
+  const scope = categories.length === 1 ? ` di ${categories[0]!.toLocaleLowerCase("it-IT")}` : "";
+  return `Ho trovato ${results.length} ${results.length === 1 ? "risultato" : "risultati"}${scope} nei dati locali dell’app:\n${results
     .map(
       (result) =>
         `• ${result.category}: ${result.title}${result.detail ? ` — ${result.detail}` : ""}`,
