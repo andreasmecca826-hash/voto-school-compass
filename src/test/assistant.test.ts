@@ -62,14 +62,53 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è la regola sulla frequenza?", data)).toContain(
       "almeno tre quarti",
     );
-    expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain(
-      "A.S. 2025/2026",
-    );
+    expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain("A.S. 2025/2026");
     expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
       "formazione qualificata",
     );
     expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
       "frequentare regolarmente",
+    );
+  });
+
+  it("risponde sugli articoli pratici non ancora coperti della vita scolastica", () => {
+    expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("7:30");
+    expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("art. 18.1–18.2");
+    expect(answerQuestion("Posso andare in bagno durante la ricreazione?", data)).toContain(
+      "Non è consentito andarci durante gli intervalli",
+    );
+    expect(answerQuestion("Dove posso comprare merenda?", data)).toContain("7:45–8:00");
+    expect(answerQuestion("Come si richiede un’assemblea di classe?", data)).toContain(
+      "almeno 5 giorni prima",
+    );
+    expect(answerQuestion("Quali regole valgono per le gite scolastiche?", data)).toContain(
+      "due terzi della classe",
+    );
+    expect(answerQuestion("L’uscita didattica di un giorno è obbligatoria?", data)).toContain(
+      "partecipazione dell’intera classe",
+    );
+    expect(answerQuestion("Chi può usare l’ascensore?", data)).toContain(
+      "accompagnati da un collaboratore scolastico",
+    );
+    expect(
+      answerQuestion("Come si possono usare gli spazi della scuola fuori orario?", data),
+    ).toContain("autorizzazione del Dirigente");
+    expect(answerQuestion("Posso svapare a scuola?", data)).toContain("art. 33");
+    expect(answerQuestion("Cosa succede se danneggio un banco?", data)).toContain(
+      "art. 29 e art. 30",
+    );
+    expect(answerQuestion("Quali regole ci sono per i farmaci a scuola?", data)).toContain(
+      "autorizzazione scritta",
+    );
+    expect(answerQuestion("Come faccio ricorso contro una sospensione?", data)).toContain(
+      "entro 15 giorni",
+    );
+  });
+
+  it("non confonde domande sui voti o sulle note personali con il regolamento", () => {
+    expect(answerQuestion("Cosa succede se prendo 8 in Inglese?", data)).toContain("passerebbe");
+    expect(answerQuestion("Quali note disciplinari ho?", data)).toContain(
+      "Non risultano note disciplinari nei dati caricati",
     );
   });
 

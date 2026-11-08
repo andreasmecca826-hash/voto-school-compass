@@ -24,6 +24,9 @@ const SUGGESTIONS = [
   "Dove trovo il simulatore dei voti?",
   "Come scelgo il tema Oro?",
   "Dove trovo il tema Diamante?",
+  "Quanti minuti di ritardo sono ammessi?",
+  "Quando si può andare in bagno?",
+  "Come si richiede un’assemblea di classe?",
 ];
 
 export function pickAssistantSuggestions(random: () => number = Math.random): string[] {
