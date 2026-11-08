@@ -47,6 +47,14 @@ export function askAboutCircular(input: {
   return askAssistantApi(input);
 }
 
+export function askWithDocument(input: {
+  question: string;
+  documentText: string;
+  documentTruncated: boolean;
+}): Promise<string> {
+  return askAssistantApi(input);
+}
+
 export function askGeneralQuestion(question: string): Promise<string> {
   return askAssistantApi({ question });
 }

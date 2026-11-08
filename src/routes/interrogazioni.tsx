@@ -122,78 +122,105 @@ function Interrogazioni() {
         />
       ) : (
         <ul className="space-y-2">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className={cn(
-                "card-surface flex items-start gap-3 p-3.5",
-                item.completed && "opacity-55",
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => v.toggleInterrogazione(item.id)}
-                aria-label={item.completed ? "Segna come da fare" : "Segna come fatta"}
+          {items.map((item) => {
+            const reminderDescription = item.reminderId ? item.notes?.trim() : undefined;
+            const subjectLabel = item.subject.trim();
+            const showSubjectLabel =
+              reminderDescription &&
+              subjectLabel &&
+              subjectLabel.toLocaleLowerCase("it-IT") !== "promemoria" &&
+              subjectLabel !== reminderDescription;
+
+            return (
+              <li
+                key={item.id}
                 className={cn(
-                  "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
-                  item.completed
-                    ? "border-success bg-success-soft text-success"
-                    : "border-border text-muted-foreground",
+                  "card-surface flex items-start gap-3 p-3.5",
+                  item.completed && "opacity-55",
                 )}
               >
-                <Check className="h-4 w-4" />
-              </button>
-              <div className="min-w-0 flex-1">
-                <p className={cn("font-semibold", item.completed && "line-through")}>
-                  {item.subject}
-                </p>
-                <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {item.date ? fmtDate(item.date) : "Data da definire"}
-                  </span>
-                  {(item.hour || item.time) && (
-                    <span className="inline-flex items-center gap-1">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      {item.hour ? `${item.hour}ª ora` : item.time}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() => v.toggleInterrogazione(item.id)}
+                  aria-label={item.completed ? "Segna come da fare" : "Segna come fatta"}
+                  className={cn(
+                    "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+                    item.completed
+                      ? "border-success bg-success-soft text-success"
+                      : "border-border text-muted-foreground",
                   )}
-                </div>
-                {item.notes && <p className="mt-2 text-xs text-muted-foreground">{item.notes}</p>}
-                <div className="mt-3 border-t border-border pt-2">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Preparazione
-                  </p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {item.checklist.map((prep) => (
-                      <button
-                        key={prep.id}
-                        type="button"
-                        onClick={() => v.toggleInterrogazionePrep(item.id, prep.id)}
-                        className={cn(
-                          "rounded-lg px-2 py-1.5 text-left text-[10px]",
-                          prep.done
-                            ? "bg-success-soft text-success line-through"
-                            : "bg-surface text-muted-foreground",
-                        )}
-                      >
-                        {prep.done ? "✓ " : "○ "}
-                        {prep.label}
-                      </button>
-                    ))}
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      className={cn(
+                        "min-w-0 flex-1 whitespace-pre-wrap font-semibold leading-relaxed",
+                        item.completed && "line-through",
+                      )}
+                    >
+                      {reminderDescription || item.subject}
+                    </p>
+                    {item.reminderId && (
+                      <span className="shrink-0 rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
+                        Promemoria
+                      </span>
+                    )}
+                  </div>
+                  {showSubjectLabel && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">{subjectLabel}</p>
+                  )}
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {item.date ? fmtDate(item.date) : "Data da definire"}
+                    </span>
+                    {(item.hour || item.time) && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock3 className="h-3.5 w-3.5" />
+                        {item.hour ? `${item.hour}ª ora` : item.time}
+                      </span>
+                    )}
+                  </div>
+                  {item.notes && !item.reminderId && (
+                    <p className="mt-2 text-xs text-muted-foreground">{item.notes}</p>
+                  )}
+                  <div className="mt-3 border-t border-border pt-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Preparazione
+                    </p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {item.checklist.map((prep) => (
+                        <button
+                          key={prep.id}
+                          type="button"
+                          onClick={() => v.toggleInterrogazionePrep(item.id, prep.id)}
+                          className={cn(
+                            "rounded-lg px-2 py-1.5 text-left text-[10px]",
+                            prep.done
+                              ? "bg-success-soft text-success line-through"
+                              : "bg-surface text-muted-foreground",
+                          )}
+                        >
+                          {prep.done ? "✓ " : "○ "}
+                          {prep.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => v.removeInterrogazione(item.id)}
-                aria-label={`Elimina interrogazione di ${item.subject}`}
-                className="press rounded-lg p-2 text-muted-foreground hover:text-danger"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => v.removeInterrogazione(item.id)}
+                  aria-label={`Elimina interrogazione di ${item.subject}`}
+                  className="press rounded-lg p-2 text-muted-foreground hover:text-danger"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

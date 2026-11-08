@@ -28,6 +28,8 @@ import {
   type CircularAnalysis,
 } from "@/lib/voto/circular-reader";
 import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circular-assistant";
+import { useOnlineStatus } from "@/lib/voto/use-online-status";
+import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
@@ -99,6 +101,7 @@ export function CircularViewer({
   attachments?: CircularAttachment[] | undefined;
 }) {
   const files = mergeAttachments(attachments, { name: fileName, path, url });
+  const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
@@ -108,6 +111,7 @@ export function CircularViewer({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
+  const activeAiMode = isOnline ? aiMode : "local";
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
@@ -118,11 +122,27 @@ export function CircularViewer({
   useEffect(() => {
     try {
       const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
-      if (savedMode === "local" || savedMode === "api") setAiMode(savedMode);
+      if (!navigator.onLine) {
+        setAiMode("local");
+        window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+      } else if (savedMode === "local" || savedMode === "api") {
+        setAiMode(savedMode);
+      }
     } catch {
       // Se lo storage non è disponibile, resta attiva la modalità locale predefinita.
     }
   }, []);
+
+  useEffect(() => {
+    if ((isOnline && (typeof navigator === "undefined" || navigator.onLine)) || aiMode === "local")
+      return;
+    setAiMode("local");
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+    } catch {
+      // La modalità resta locale per la sessione corrente.
+    }
+  }, [aiMode, isOnline]);
 
   useEffect(() => {
     if (open) {
@@ -167,6 +187,7 @@ export function CircularViewer({
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
 
   function chooseAiMode(mode: CircularAssistantMode) {
+    if (mode === "api" && (!isOnline || !navigator.onLine)) return;
     if (mode === aiMode) return;
     setAiMode(mode);
     setAiQuestion("");
@@ -205,6 +226,8 @@ export function CircularViewer({
     event.preventDefault();
     const question = aiQuestion.trim();
     if (!previewUrl || !question || isAskingAi) return;
+    const responseMode =
+      isOnline && (typeof navigator === "undefined" || navigator.onLine) ? aiMode : "local";
 
     const requestId = aiRequestId.current + 1;
     aiRequestId.current = requestId;
@@ -225,14 +248,15 @@ export function CircularViewer({
       }
       const documentTruncated = document.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
       setAiDocumentTruncated(documentTruncated);
-      const answer =
-        aiMode === "api"
-          ? await askAboutCircular({
-              question,
-              documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
-              documentTruncated,
-            })
-          : answerCircularQuestionLocally(question, documentText.slice(0, MAX_AI_DOCUMENT_LENGTH));
+      const canUseApi =
+        responseMode === "api" && typeof navigator !== "undefined" && navigator.onLine;
+      const answer = canUseApi
+        ? await askAboutCircular({
+            question,
+            documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
+            documentTruncated,
+          })
+        : answerCircularQuestionLocally(question, documentText.slice(0, MAX_AI_DOCUMENT_LENGTH));
       if (aiRequestId.current === requestId) {
         setAiMessages((current) => [...current, { role: "assistant", text: answer }]);
       }
@@ -460,39 +484,46 @@ export function CircularViewer({
               <div
                 role="group"
                 aria-label="Modalità di risposta"
-                className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-background/70 p-1"
+                className={`mt-2 grid ${isOnline ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
               >
                 <button
                   type="button"
-                  aria-pressed={aiMode === "local"}
+                  aria-pressed={activeAiMode === "local"}
                   disabled={isAskingAi}
                   onClick={() => chooseAiMode("local")}
                   className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                    aiMode === "local"
+                    activeAiMode === "local"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground"
                   }`}
                 >
                   Locale (sul dispositivo)
                 </button>
-                <button
-                  type="button"
-                  aria-pressed={aiMode === "api"}
-                  disabled={isAskingAi}
-                  onClick={() => chooseAiMode("api")}
-                  className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                    aiMode === "api"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  API Groq (Qwen)
-                </button>
+                {isOnline && (
+                  <button
+                    type="button"
+                    aria-pressed={activeAiMode === "api"}
+                    disabled={isAskingAi}
+                    onClick={() => chooseAiMode("api")}
+                    className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                      activeAiMode === "api"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    API Groq (Qwen)
+                  </button>
+                )}
               </div>
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
-                {aiMode === "local"
+                {activeAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
                   : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                {!isOnline && (
+                  <span className="font-medium text-primary">
+                    Offline: disponibile solo Locale.{" "}
+                  </span>
+                )}
                 Verifica sempre la risposta sul documento originale.
               </p>
             </div>
@@ -509,19 +540,26 @@ export function CircularViewer({
                 className="max-h-36 space-y-2 overflow-y-auto rounded-lg bg-card/80 p-2"
               >
                 {aiMessages.map((message, index) => (
-                  <p
+                  <div
                     key={`${message.role}-${index}`}
-                    className={`whitespace-pre-wrap text-[11px] leading-relaxed ${
+                    className={`text-[11px] leading-relaxed ${
                       message.role === "user"
                         ? "text-right text-muted-foreground"
                         : "text-foreground"
                     }`}
                   >
-                    <span className="font-semibold">
-                      {message.role === "user" ? "Tu: " : "AI: "}
-                    </span>
-                    {message.text}
-                  </p>
+                    {message.role === "assistant" ? (
+                      <>
+                        <p className="font-semibold">AI:</p>
+                        <AssistantMarkdown text={message.text} />
+                      </>
+                    ) : (
+                      <p className="whitespace-pre-wrap">
+                        <span className="font-semibold">Tu: </span>
+                        {message.text}
+                      </p>
+                    )}
+                  </div>
                 ))}
                 {isAskingAi && (
                   <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -596,14 +634,14 @@ export function CircularViewer({
           </div>
         )}
         {downloadUrl && (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className={`mt-2 grid shrink-0 gap-2 ${previewUrl ? "grid-cols-2" : "grid-cols-1"}`}>
             {isPdf && previewUrl && (
               <button
                 type="button"
                 onClick={openAttachment}
-                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+                className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 Apri PDF
               </button>
             )}
@@ -611,9 +649,9 @@ export function CircularViewer({
               <button
                 type="button"
                 onClick={openAttachment}
-                className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-semibold text-foreground"
+                className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 Apri DOCX
               </button>
             )}
@@ -621,20 +659,15 @@ export function CircularViewer({
               type="button"
               onClick={downloadAttachment}
               disabled={isDownloading}
-              className="press inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground"
+              className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-2 text-[10px] font-semibold text-primary-foreground"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3.5 w-3.5 shrink-0" />
               {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
             </button>
           </div>
         )}
         {downloadError && (
           <p className="mt-2 text-center text-[11px] text-destructive">{downloadError}</p>
-        )}
-        {previewUrl && isPdf && (
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            Se l’anteprima non si carica, puoi scaricare il PDF.
-          </p>
         )}
         <button
           type="button"
