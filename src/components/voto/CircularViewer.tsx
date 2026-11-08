@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   Download,
@@ -19,12 +19,20 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
+import { answerCircularQuestionLocally } from "@/lib/voto/circular-local-answer";
 import {
   analyzeCircularDocx,
   analyzeCircularPdf,
+  extractCircularDocxText,
+  extractCircularPdfText,
   type CircularAnalysis,
 } from "@/lib/voto/circular-reader";
+import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circular-assistant";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
+
+const MAX_AI_DOCUMENT_LENGTH = 60_000;
+const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
+type CircularAssistantMode = "local" | "api";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -97,12 +105,38 @@ export function CircularViewer({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<CircularAnalysis | null>(null);
   const [analysisError, setAnalysisError] = useState<string | undefined>();
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
+  const [aiError, setAiError] = useState<string | undefined>();
+  const [isAskingAi, setIsAskingAi] = useState(false);
+  const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
+  const aiRequestId = useRef(0);
+
+  useEffect(() => {
+    try {
+      const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
+      if (savedMode === "local" || savedMode === "api") setAiMode(savedMode);
+    } catch {
+      // Se lo storage non è disponibile, resta attiva la modalità locale predefinita.
+    }
+  }, []);
 
   useEffect(() => {
     if (open) {
       setSelectedIndex(0);
       setAnalysis(null);
       setAnalysisError(undefined);
+      setIsAnalysisOpen(false);
+      setIsAiChatOpen(false);
+      setAiQuestion("");
+      setAiMessages([]);
+      setAiError(undefined);
+      setAiDocumentTruncated(false);
+      setIsAskingAi(false);
+      aiRequestId.current += 1;
     }
   }, [open, title]);
 
@@ -112,6 +146,14 @@ export function CircularViewer({
   useEffect(() => {
     setAnalysis(null);
     setAnalysisError(undefined);
+    setIsAnalysisOpen(false);
+    setIsAiChatOpen(false);
+    setAiQuestion("");
+    setAiMessages([]);
+    setAiError(undefined);
+    setIsAskingAi(false);
+    setAiDocumentTruncated(false);
+    aiRequestId.current += 1;
   }, [activeFile?.path, activeFile?.url, activeFile?.name]);
 
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
@@ -124,6 +166,19 @@ export function CircularViewer({
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
 
+  function chooseAiMode(mode: CircularAssistantMode) {
+    if (mode === aiMode) return;
+    setAiMode(mode);
+    setAiQuestion("");
+    setAiMessages([]);
+    setAiError(undefined);
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
+    } catch {
+      // La scelta resta valida per la sessione corrente anche se non si può salvare.
+    }
+  }
+
   async function analyzeDocument() {
     if (!previewUrl || isAnalyzing) return;
     setIsAnalyzing(true);
@@ -135,12 +190,58 @@ export function CircularViewer({
         ? await analyzeCircularPdf(previewUrl, linkedAttachments)
         : await analyzeCircularDocx(previewUrl, linkedAttachments);
       setAnalysis(result);
+      setIsAnalysisOpen(true);
     } catch {
       setAnalysisError(
         "Non sono riuscito a leggere questo PDF. Verifica la connessione o scarica il documento e riprova.",
       );
+      setIsAnalysisOpen(true);
     } finally {
       setIsAnalyzing(false);
+    }
+  }
+
+  async function askAiAboutDocument(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = aiQuestion.trim();
+    if (!previewUrl || !question || isAskingAi) return;
+
+    const requestId = aiRequestId.current + 1;
+    aiRequestId.current = requestId;
+    setAiQuestion("");
+    setAiError(undefined);
+    setAiMessages((current) => [...current, { role: "user", text: question }]);
+    setIsAskingAi(true);
+
+    try {
+      const document = isPdf
+        ? await extractCircularPdfText(previewUrl)
+        : await extractCircularDocxText(previewUrl);
+      const documentText = document.text.trim();
+      if (!documentText) {
+        throw new Error(
+          "Non trovo testo selezionabile nella circolare. Se è una scansione, serve prima un OCR.",
+        );
+      }
+      const documentTruncated = document.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
+      setAiDocumentTruncated(documentTruncated);
+      const answer =
+        aiMode === "api"
+          ? await askAboutCircular({
+              question,
+              documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
+              documentTruncated,
+            })
+          : answerCircularQuestionLocally(question, documentText.slice(0, MAX_AI_DOCUMENT_LENGTH));
+      if (aiRequestId.current === requestId) {
+        setAiMessages((current) => [...current, { role: "assistant", text: answer }]);
+      }
+    } catch (error) {
+      if (aiRequestId.current === requestId) {
+        setAiError(error instanceof Error ? error.message : "Domanda non riuscita. Riprova.");
+      }
+    } finally {
+      if (aiRequestId.current === requestId) setIsAskingAi(false);
     }
   }
 
@@ -195,20 +296,40 @@ export function CircularViewer({
         </SheetHeader>
         {canAnalyze && (
           <div className="mb-3 shrink-0 space-y-2">
-            <button
-              type="button"
-              onClick={() => void analyzeDocument()}
-              disabled={isAnalyzing}
-              className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-4 text-xs font-semibold text-primary disabled:opacity-60"
-            >
-              {isAnalyzing ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {isAnalyzing ? "Lettura locale in corso…" : "Riassumi sul dispositivo"}
-            </button>
-            {(analysis || analysisError) && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (analysis || analysisError) setIsAnalysisOpen((openNow) => !openNow);
+                  else void analyzeDocument();
+                }}
+                disabled={isAnalyzing}
+                className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-[11px] font-semibold text-primary disabled:opacity-60"
+              >
+                {isAnalyzing ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {isAnalyzing
+                  ? "Lettura in corso…"
+                  : analysis || analysisError
+                    ? isAnalysisOpen
+                      ? "Nascondi analisi"
+                      : "Mostra analisi"
+                    : "Riassumi sul dispositivo"}
+              </button>
+              <button
+                type="button"
+                aria-expanded={isAiChatOpen}
+                aria-controls="circular-ai-chat"
+                onClick={() => setIsAiChatOpen((openNow) => !openNow)}
+                className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-[11px] font-semibold text-foreground"
+              >
+                {isAiChatOpen ? "Nascondi chat" : "Fai una domanda"}
+              </button>
+            </div>
+            {isAnalysisOpen && (analysis || analysisError) && (
               <section
                 aria-label="Analisi locale della circolare"
                 className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-border bg-card p-3 text-xs"
@@ -326,6 +447,108 @@ export function CircularViewer({
               </section>
             )}
           </div>
+        )}
+        {canAnalyze && isAiChatOpen && (
+          <section
+            id="circular-ai-chat"
+            className="mb-3 shrink-0 space-y-2 rounded-xl border border-primary/25 bg-primary-soft/40 p-3"
+          >
+            <div>
+              <h3 className="text-xs font-semibold text-foreground">
+                Fai una domanda alla circolare
+              </h3>
+              <div
+                role="group"
+                aria-label="Modalità di risposta"
+                className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-background/70 p-1"
+              >
+                <button
+                  type="button"
+                  aria-pressed={aiMode === "local"}
+                  disabled={isAskingAi}
+                  onClick={() => chooseAiMode("local")}
+                  className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                    aiMode === "local"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Locale (sul dispositivo)
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={aiMode === "api"}
+                  disabled={isAskingAi}
+                  onClick={() => chooseAiMode("api")}
+                  className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                    aiMode === "api"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  API Groq (Qwen)
+                </button>
+              </div>
+              <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                {aiMode === "local"
+                  ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
+                  : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                Verifica sempre la risposta sul documento originale.
+              </p>
+            </div>
+            {aiDocumentTruncated && (
+              <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
+                Circolare lunga: è stato inviato un estratto del testo. La risposta potrebbe non
+                includere informazioni presenti nelle parti omesse.
+              </p>
+            )}
+            {aiMessages.length > 0 && (
+              <div
+                aria-live="polite"
+                aria-label="Conversazione sulla circolare"
+                className="max-h-36 space-y-2 overflow-y-auto rounded-lg bg-card/80 p-2"
+              >
+                {aiMessages.map((message, index) => (
+                  <p
+                    key={`${message.role}-${index}`}
+                    className={`whitespace-pre-wrap text-[11px] leading-relaxed ${
+                      message.role === "user"
+                        ? "text-right text-muted-foreground"
+                        : "text-foreground"
+                    }`}
+                  >
+                    <span className="font-semibold">
+                      {message.role === "user" ? "Tu: " : "AI: "}
+                    </span>
+                    {message.text}
+                  </p>
+                ))}
+                {isAskingAi && (
+                  <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <LoaderCircle className="h-3 w-3 animate-spin" /> Sto leggendo la circolare…
+                  </p>
+                )}
+              </div>
+            )}
+            {aiError && <p className="text-[11px] text-destructive">{aiError}</p>}
+            <form onSubmit={askAiAboutDocument} className="flex gap-2">
+              <input
+                value={aiQuestion}
+                onChange={(event) => setAiQuestion(event.target.value)}
+                placeholder="Es. Entro quando va consegnato?"
+                aria-label="Domanda sulla circolare"
+                maxLength={1_000}
+                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <button
+                type="submit"
+                disabled={!aiQuestion.trim() || isAskingAi}
+                className="press rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+              >
+                {isAskingAi ? "Attendi" : "Chiedi"}
+              </button>
+            </form>
+          </section>
         )}
         {files.length > 1 && (
           <div className="mb-3">
