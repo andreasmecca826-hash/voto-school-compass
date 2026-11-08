@@ -2479,6 +2479,21 @@
       transparent 62%
     ),
     radial-gradient(
+      ellipse 5px 13px at 48% 32%,
+      color-mix(in srgb, var(--sangue-rubino) 27%, transparent) 0 48%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 4px 11px at 52% 36%,
+      color-mix(in srgb, var(--sangue-cremisi) 24%, transparent) 0 48%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 5px 12px at 57% 41%,
+      color-mix(in srgb, var(--sangue-rubino) 22%, transparent) 0 48%,
+      transparent 62%
+    ),
+    radial-gradient(
       ellipse 6px 15px at 88% 13%,
       color-mix(in srgb, var(--sangue-rubino) 20%, transparent) 0 48%,
       transparent 62%
@@ -2526,6 +2541,16 @@
       transparent 66%
     ),
     radial-gradient(
+      ellipse 5px 13px at 49% 0%,
+      color-mix(in srgb, var(--sangue-rubino) 22%, transparent) 0 55%,
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse 4px 10px at 55% 0%,
+      color-mix(in srgb, var(--sangue-cremisi) 20%, transparent) 0 55%,
+      transparent 66%
+    ),
+    radial-gradient(
       ellipse at 100% 0%,
       color-mix(in srgb, var(--sangue-luce) 12%, transparent),
       transparent 36%
@@ -2556,6 +2581,17 @@
       transparent 0 30%,
       color-mix(in srgb, var(--sangue-rubino) 8%, transparent) 30.3% 30.7%,
       transparent 31% 100%
+    ),
+    linear-gradient(
+      118deg,
+      transparent 0 61%,
+      color-mix(in srgb, var(--sangue-rubino) 11%, transparent) 61.3% 61.7%,
+      transparent 62% 100%
+    ),
+    radial-gradient(
+      ellipse 5px 12px at 52% 8%,
+      color-mix(in srgb, var(--sangue-luce) 24%, transparent) 0 45%,
+      transparent 62%
     ),
     linear-gradient(
       120deg,
