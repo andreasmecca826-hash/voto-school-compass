@@ -133,7 +133,7 @@ export function createPreferencesBackup(settings: PreferencesBackupSettings): st
     settings: {
       ...settings,
       target: Math.min(10, Math.max(6, settings.target)),
-      interfaceScale: Math.min(120, Math.max(80, settings.interfaceScale)),
+      interfaceScale: Math.min(140, Math.max(80, settings.interfaceScale)),
       homeScale: normalizeHomeScale(settings.homeScale),
       homeModules: normalizeHomeModules(settings.homeModules),
       customTheme: { ...settings.customTheme },
@@ -241,7 +241,7 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
       emojiThemeBackgroundColors: normalizeEmojiThemeBackgroundColors(
         settings["emojiThemeBackgroundColors"] ?? DEFAULT_EMOJI_THEME_BACKGROUND_COLORS,
       ),
-      interfaceScale: Math.round(Math.min(120, Math.max(80, settings["interfaceScale"])) / 5) * 5,
+      interfaceScale: Math.round(Math.min(140, Math.max(80, settings["interfaceScale"])) / 5) * 5,
       homeScale: normalizeHomeScale(settings["homeScale"]),
       homeModules,
       customTheme: {

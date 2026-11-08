@@ -427,11 +427,11 @@ export function PersonalizationPanel() {
           ))}
         </div>
 
-        <SectionTitle>Dimensione interfaccia</SectionTitle>
+        <SectionTitle>Dimensione del testo</SectionTitle>
         <section className="card-surface p-3">
           <div className="flex items-center justify-between gap-3">
             <label htmlFor="interface-scale" className="text-xs font-semibold">
-              Scala generale
+              Scala testo e interfaccia
             </label>
             <output
               className="tabular text-xs font-semibold text-primary"
@@ -444,16 +444,16 @@ export function PersonalizationPanel() {
             id="interface-scale"
             type="range"
             min={80}
-            max={120}
+            max={140}
             step={5}
             value={v.interfaceScale}
             onChange={(event) => v.setInterfaceScale(Number(event.target.value))}
-            aria-label="Dimensione generale dell’interfaccia"
+            aria-label="Dimensione del testo"
             className="mt-3 w-full accent-primary"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>80%</span>
-            <span>120%</span>
+            <span>140%</span>
           </div>
           <button
             type="button"
@@ -859,10 +859,12 @@ export function PersonalizationPanel() {
               chiara e quella scura.
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              {([
-                { mode: "scuro", label: "Sfondo scuro" },
-                { mode: "chiaro", label: "Sfondo chiaro" },
-              ] as const).map(({ mode, label }) => (
+              {(
+                [
+                  { mode: "scuro", label: "Sfondo scuro" },
+                  { mode: "chiaro", label: "Sfondo chiaro" },
+                ] as const
+              ).map(({ mode, label }) => (
                 <label
                   key={mode}
                   className="flex min-w-0 items-center gap-2 rounded-xl border border-border p-2"

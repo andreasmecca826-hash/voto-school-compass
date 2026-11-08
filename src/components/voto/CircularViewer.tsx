@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-import { Download, ExternalLink, FileText, X } from "lucide-react";
+import {
+  CalendarDays,
+  Download,
+  ExternalLink,
+  FileText,
+  LoaderCircle,
+  Paperclip,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -8,6 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CircularAttachment } from "@/lib/voto/types";
+import { analyzeCircularPdf, type CircularAnalysis } from "@/lib/voto/circular-reader";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 function safeAttachmentFilename(value?: string) {
@@ -43,6 +55,7 @@ function mergeAttachments(
       : -1;
     if (existingIndex >= 0) {
       const existing = merged[existingIndex];
+      if (!existing) continue;
       merged[existingIndex] = {
         ...file,
         ...existing,
@@ -77,9 +90,16 @@ export function CircularViewer({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<CircularAnalysis | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (open) setSelectedIndex(0);
+    if (open) {
+      setSelectedIndex(0);
+      setAnalysis(null);
+      setAnalysisError(undefined);
+    }
   }, [open, title]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
@@ -91,6 +111,26 @@ export function CircularViewer({
     ? internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
+
+  async function analyzeDocument() {
+    if (!previewUrl || isAnalyzing) return;
+    setIsAnalyzing(true);
+    setAnalysisError(undefined);
+    setAnalysis(null);
+    try {
+      const result = await analyzeCircularPdf(
+        previewUrl,
+        files.map((file) => file.name ?? "").filter(Boolean),
+      );
+      setAnalysis(result);
+    } catch {
+      setAnalysisError(
+        "Non sono riuscito a leggere questo PDF. Verifica la connessione o scarica il documento e riprova.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
 
   async function downloadAttachment() {
     if (!downloadUrl || isDownloading) return;
@@ -141,6 +181,92 @@ export function CircularViewer({
             {activeFile?.name ?? "Circolare"}
           </SheetDescription>
         </SheetHeader>
+        {previewUrl && isPdf && (
+          <div className="mb-3 shrink-0 space-y-2">
+            <button
+              type="button"
+              onClick={() => void analyzeDocument()}
+              disabled={isAnalyzing}
+              className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-4 text-xs font-semibold text-primary disabled:opacity-60"
+            >
+              {isAnalyzing ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {isAnalyzing ? "Analisi locale in corso…" : "Leggi con AI locale"}
+            </button>
+            {(analysis || analysisError) && (
+              <section
+                aria-label="Analisi locale della circolare"
+                className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-border bg-card p-3 text-xs"
+              >
+                <p className="flex items-center gap-1.5 font-semibold text-foreground">
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  Analisi eseguita sul dispositivo
+                </p>
+                {analysisError && <p className="text-destructive">{analysisError}</p>}
+                {analysis && (
+                  <>
+                    {analysis.summary ? (
+                      <p className="leading-relaxed text-muted-foreground">{analysis.summary}</p>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Non è stato rilevato testo selezionabile. Il PDF potrebbe essere una
+                        scansione: il riconoscimento OCR non è disponibile.
+                      </p>
+                    )}
+                    <div className="space-y-1.5">
+                      <p className="flex items-center gap-1.5 font-medium text-foreground">
+                        <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                        Date rilevate
+                      </p>
+                      {analysis.dates.length ? (
+                        analysis.dates.map((date, index) => (
+                          <p key={`${date.value}-${index}`} className="pl-5 text-muted-foreground">
+                            <span className="font-medium text-foreground">{date.value}</span> —{" "}
+                            {date.context}
+                          </p>
+                        ))
+                      ) : (
+                        <p className="pl-5 text-muted-foreground">Nessuna data riconosciuta.</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="flex items-center gap-1.5 font-medium text-foreground">
+                        <Users className="h-3.5 w-3.5 text-primary" />
+                        Destinatari
+                      </p>
+                      <p className="pl-5 text-muted-foreground">
+                        {analysis.recipients.length
+                          ? analysis.recipients.join(" · ")
+                          : "Non indicati in modo riconoscibile."}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="flex items-center gap-1.5 font-medium text-foreground">
+                        <Paperclip className="h-3.5 w-3.5 text-primary" />
+                        Allegati collegati
+                      </p>
+                      <p className="pl-5 text-muted-foreground">
+                        {analysis.attachments.length
+                          ? analysis.attachments.join(" · ")
+                          : "Nessun allegato registrato."}
+                      </p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {analysis.pagesAnalyzed} pagine lette
+                      {analysis.truncated
+                        ? " (analisi limitata alle prime 80 pagine o 300.000 caratteri)"
+                        : ""}
+                      . Verifica sempre le informazioni sul documento originale.
+                    </p>
+                  </>
+                )}
+              </section>
+            )}
+          </div>
+        )}
         {files.length > 1 && (
           <div className="mb-3">
             <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">

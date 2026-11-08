@@ -204,7 +204,7 @@ export const DEFAULT_CUSTOM_THEME: CustomTheme = {
 
 function normalizeInterfaceScale(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 100;
-  return Math.round(Math.min(120, Math.max(80, value)) / 5) * 5;
+  return Math.round(Math.min(140, Math.max(80, value)) / 5) * 5;
 }
 
 function normalizeInterrogazioni(value: unknown): Interrogazione[] {
