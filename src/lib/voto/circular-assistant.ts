@@ -5,11 +5,13 @@ export type CircularAssistantMessage = {
   text: string;
 };
 
-export async function askAboutCircular(input: {
+type AssistantApiRequest = {
   question: string;
-  documentText: string;
-  documentTruncated: boolean;
-}): Promise<string> {
+  documentText?: string;
+  documentTruncated?: boolean;
+};
+
+async function askAssistantApi(input: AssistantApiRequest): Promise<string> {
   const { data, error } = await supabase.functions.invoke("circular-assistant", {
     body: input,
   });
@@ -35,4 +37,16 @@ export async function askAboutCircular(input: {
     throw new Error("Il servizio AI ha restituito una risposta vuota.");
   }
   return data.answer.trim();
+}
+
+export function askAboutCircular(input: {
+  question: string;
+  documentText: string;
+  documentTruncated: boolean;
+}): Promise<string> {
+  return askAssistantApi(input);
+}
+
+export function askGeneralQuestion(question: string): Promise<string> {
+  return askAssistantApi({ question });
 }

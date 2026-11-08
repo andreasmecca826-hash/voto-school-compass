@@ -11,6 +11,8 @@ import {
   isCircularChatQuestion,
   type CircularAssistantMode,
 } from "@/lib/voto/circular-assistant-chat";
+import { askGeneralQuestion } from "@/lib/voto/circular-assistant";
+import { isAssistantSearchQuery } from "@/lib/voto/assistant-search";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { loadAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
 import { clearScheduleDayIfUnchanged, DAYS, loadSchedule } from "@/lib/voto/orario";
@@ -40,7 +42,7 @@ export const Route = createFileRoute("/assistente")({
       { title: "Assistente — VOTO." },
       {
         name: "description",
-        content: "Assistente locale e API opzionale per consultare le circolari scolastiche.",
+        content: "Assistente locale e API opzionale per domande generali e circolari scolastiche.",
       },
     ],
   }),
@@ -58,7 +60,7 @@ function Assistant() {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
     {
       role: "assistant",
-      text: "Ciao! Sono l’assistente di VOTO. Puoi scegliere la modalità locale oppure API per fare domande sul testo delle circolari.",
+      text: "Ciao! Sono l’assistente di VOTO. In Locale posso consultare i dati scolastici sul dispositivo; con API puoi chiedere anche argomenti generali e domande sulle circolari.",
     },
   ]);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
@@ -121,6 +123,11 @@ function Assistant() {
       assignmentIntent?.kind === "clarify" ||
       assignmentIntent?.kind === "already";
     const useCircularAssistant = !hasImmediateActionResponse && isCircularChatQuestion(clean);
+    const useGeneralApi =
+      !hasImmediateActionResponse &&
+      !useCircularAssistant &&
+      assistantMode === "api" &&
+      !isAssistantSearchQuery(clean);
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : randomThemeIntent?.kind === "confirm"
@@ -129,7 +136,7 @@ function Assistant() {
           ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
           : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
             ? assignmentIntent.message
-            : useCircularAssistant
+            : useCircularAssistant || useGeneralApi
               ? ""
               : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
                   previousQuestion,
@@ -157,19 +164,17 @@ function Assistant() {
     setQuestion("");
     setMessages((current) => [...current, { role: "user", text: clean }]);
 
-    if (useCircularAssistant) {
+    if (useCircularAssistant || useGeneralApi) {
       setIsReplying(true);
       try {
-        const circularResponse = await answerCircularChatQuestion(
-          clean,
-          assistantData.notifications,
-          assistantMode,
-        );
+        const assistantResponse = useCircularAssistant
+          ? await answerCircularChatQuestion(clean, assistantData.notifications, assistantMode)
+          : await askGeneralQuestion(clean);
         setMessages((current) => [
           ...current,
           {
             role: "assistant",
-            text: circularResponse ?? "Non ho trovato una circolare pertinente.",
+            text: assistantResponse ?? "Non ho trovato una circolare pertinente.",
           },
         ]);
       } catch (error) {
@@ -239,7 +244,8 @@ function Assistant() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Assistente</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Scegli Locale o API; le domande su voti e dati personali restano sempre locali.
+            Locale consulta i dati dell’app; API risponde a domande generali senza ricevere quei
+            dati.
           </p>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -281,7 +287,7 @@ function Assistant() {
         <p className="mt-1 text-[11px] text-muted-foreground">
           {assistantMode === "local"
             ? "Le risposte locali usano i dati caricati nell’app. Il testo della circolare viene estratto sul dispositivo e non inviato a Groq."
-            : "Groq viene contattato solo quando invii una domanda sul contenuto di una circolare. Vengono inviati solo il testo e la domanda; voti, assenze e cronologia restano locali. Eventuali costi dipendono dalla fatturazione della chiave Groq: per evitare qualsiasi rischio, lascia Locale. Nessun fallback automatico."}{" "}
+            : "Groq viene contattato quando invii una domanda generale o sulla circolare: invia solo la domanda corrente e, per le circolari, anche il testo del documento. Non allega automaticamente dati dell’app o cronologia; se scrivi tu dati personali nella domanda, vengono inviati. Eventuali costi dipendono dalla fatturazione della chiave Groq: per evitare qualsiasi rischio, lascia Locale. Nessun fallback automatico."}{" "}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">

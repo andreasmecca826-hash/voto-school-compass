@@ -6,10 +6,25 @@ vi.mock("@/lib/supabase-auth", () => ({
   supabase: { functions: { invoke } },
 }));
 
-import { askAboutCircular } from "@/lib/voto/circular-assistant";
+import { askAboutCircular, askGeneralQuestion } from "@/lib/voto/circular-assistant";
 
 describe("assistente AI delle circolari", () => {
   beforeEach(() => invoke.mockReset());
+
+  it("manda una domanda generale senza allegare dati scolastici o cronologia", async () => {
+    invoke.mockResolvedValue({
+      data: { answer: "La fotosintesi trasforma la luce in energia chimica." },
+      error: null,
+    });
+
+    await expect(askGeneralQuestion("Spiegami la fotosintesi.")).resolves.toBe(
+      "La fotosintesi trasforma la luce in energia chimica.",
+    );
+
+    expect(invoke).toHaveBeenCalledWith("circular-assistant", {
+      body: { question: "Spiegami la fotosintesi." },
+    });
+  });
 
   it("invoca la funzione protetta con domanda e testo, senza titolo o cronologia", async () => {
     invoke.mockResolvedValue({
