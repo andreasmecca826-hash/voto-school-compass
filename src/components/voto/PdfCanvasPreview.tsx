@@ -51,7 +51,12 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
           import.meta.url,
         ).toString();
-        const loadingTask = pdfjs.getDocument({ url: src, withCredentials: true });
+        const loadingTask = pdfjs.getDocument({
+          url: src,
+          withCredentials: true,
+          disableStream: true,
+          disableAutoFetch: true,
+        });
         disposeLoadingTask = () => loadingTask.destroy();
         const pdf = await loadingTask.promise;
         if (cancelled) {

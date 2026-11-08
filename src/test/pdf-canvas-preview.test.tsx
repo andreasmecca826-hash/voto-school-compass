@@ -79,6 +79,15 @@ describe("anteprima PDF progressiva", () => {
     vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
     const { container } = render(<PdfCanvasPreview src="/example.pdf" title="Circolare" />);
 
+    await waitFor(() =>
+      expect(getDocumentMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "/example.pdf",
+          disableStream: true,
+          disableAutoFetch: true,
+        }),
+      ),
+    );
     await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
     const document = screen.getByRole("document", { name: "Circolare" });
     await waitFor(() => expect(document).toHaveAttribute("aria-busy", "false"));
