@@ -246,6 +246,41 @@ final class WidgetData {
     } catch (Exception ignored) { return "Aggiornato ora"; }
   }
 
+  private static int themeBackground(int theme) {
+    switch (theme) {
+      case 1: return Color.rgb(18, 53, 43);
+      case 2: return Color.rgb(42, 28, 63);
+      case 3: return Color.rgb(18, 18, 18);
+      case 4: return Color.rgb(247, 244, 237);
+      case 5: return Color.rgb(92, 45, 24);
+      case 6: return Color.rgb(24, 61, 82);
+      case 7: return Color.rgb(86, 24, 37);
+      case 8: return Color.rgb(55, 59, 66);
+      case 9: return Color.rgb(30, 34, 42);
+      case 10: return Color.rgb(78, 53, 18);
+      case 11: return Color.rgb(31, 70, 104);
+      case 12: return Color.rgb(103, 43, 35);
+      case 13: return Color.rgb(55, 42, 83);
+      case 14: return Color.rgb(4, 31, 38);
+      case 15: return Color.rgb(25, 25, 18);
+      case 16: return Color.rgb(45, 45, 48);
+      case 17: return Color.rgb(8, 35, 93);
+      case 18: return Color.rgb(8, 73, 119);
+      case 19: return Color.rgb(58, 37, 23);
+      case 20: return Color.rgb(28, 39, 77);
+      case 21: return Color.rgb(16, 67, 48);
+      case 22: return Color.rgb(18, 76, 48);
+      case 23: return Color.rgb(6, 24, 13);
+      case 24: return Color.rgb(39, 19, 77);
+      case 25: return Color.rgb(35, 32, 78);
+      case 26: return Color.rgb(31, 83, 55);
+      case 27: return Color.rgb(8, 77, 114);
+      case 28: return Color.rgb(103, 48, 24);
+      case 29: return Color.rgb(24, 55, 91);
+      default: return Color.rgb(23, 32, 51);
+    }
+  }
+
   private static double grade(String value) { try { String s = value.trim().replace(',', '.').replace("½", ".5"); double delta = 0; if (s.endsWith("+")) { delta = .15; s = s.substring(0, s.length() - 1).trim(); } else if (s.endsWith("-")) { delta = -.15; s = s.substring(0, s.length() - 1).trim(); } if (s.contains("/")) { String[] parts = s.split("/"); return (Double.parseDouble(parts[0].trim()) + Double.parseDouble(parts[1].trim())) / 2 + delta; } return Double.parseDouble(s) + delta; } catch (Exception e) { return -1; } }
 
   private static RemoteViews views(Context context, String[] values, boolean large, boolean compact, int id) {
@@ -261,7 +296,7 @@ final class WidgetData {
     boolean transparentBackground = prefs.getBoolean(WidgetConfigureActivity.TRANSPARENT_BACKGROUND_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, false));
     boolean hideTitle = prefs.getBoolean(WidgetConfigureActivity.HIDE_TITLE_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_HIDE_TITLE_KEY, true));
     String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : mode == 6 ? values[6] : mode == 7 ? values[7] : mode == 8 ? values[8] : mode == 9 ? values[9] : mode == 10 ? values[10] : values[0] + "\n" + values[6] + "\n" + values[7] + "\n" + values[3] + " · " + values[4] + " · " + values[5];
-    int background = theme == 1 ? Color.rgb(18, 53, 43) : theme == 2 ? Color.rgb(42, 28, 63) : theme == 3 ? Color.rgb(18, 18, 18) : theme == 4 ? Color.rgb(247, 244, 237) : theme == 5 ? Color.rgb(92, 45, 24) : theme == 6 ? Color.rgb(24, 61, 82) : theme == 7 ? Color.rgb(86, 24, 37) : theme == 8 ? Color.rgb(55, 59, 66) : Color.rgb(23, 32, 51);
+    int background = themeBackground(theme);
     boolean systemDark = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     boolean lightInterface = interfaceTheme == 1 || (interfaceTheme == 0 && !systemDark);
     if (interfaceTheme == 1) background = Color.rgb(247, 247, 249);
