@@ -163,18 +163,32 @@ final class WidgetData {
 
   private static String refreshAccessToken(Context context) throws Exception {
     synchronized (SESSION_LOCK) {
-      android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-      String current = prefs.getString(ACCESS_TOKEN_KEY, "");
-      long expiresAt = prefs.getLong(EXPIRES_AT_KEY, 0L);
-      if (current.length() > 0 && expiresAt > System.currentTimeMillis() + 60_000L) return current;
-      String refresh = prefs.getString(REFRESH_TOKEN_KEY, "");
-      if (refresh.length() == 0) throw new Exception("Sessione scaduta: accedi di nuovo");
-      JSONObject body = new JSONObject();
-      body.put("refresh_token", refresh);
-      JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
-      saveSession(context, result);
-      return result.optString("access_token", "");
+      HttpError lastRotationError = null;
+      for (int attempt = 0; attempt < 3; attempt++) {
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String current = prefs.getString(ACCESS_TOKEN_KEY, "");
+        long expiresAt = prefs.getLong(EXPIRES_AT_KEY, 0L);
+        if (current.length() > 0 && expiresAt > System.currentTimeMillis() + 60_000L) return current;
+        String refresh = prefs.getString(REFRESH_TOKEN_KEY, "");
+        if (refresh.length() == 0) throw new Exception("Sessione scaduta: accedi di nuovo");
+        try {
+          JSONObject body = new JSONObject();
+          body.put("refresh_token", refresh);
+          JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
+          saveSession(context, result);
+          return result.optString("access_token", "");
+        } catch (HttpError error) {
+          if (!isRefreshRotationError(error)) throw error;
+          lastRotationError = error;
+          try { Thread.sleep(350L); } catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw interrupted; }
+        }
+      }
+      throw lastRotationError == null ? new Exception("Sessione scaduta: accedi di nuovo") : lastRotationError;
     }
+  }
+
+  private static boolean isRefreshRotationError(HttpError error) {
+    return error.status == 400 && error.getMessage() != null && error.getMessage().contains("refresh_token_already_used");
   }
 
   private static void saveSession(Context context, JSONObject result) throws Exception {
@@ -224,6 +238,7 @@ final class WidgetData {
   private static String messageFor(Exception error) {
     if (error instanceof HttpError) {
       HttpError http = (HttpError) error;
+      if (http.status == 400 && http.getMessage() != null && http.getMessage().contains("refresh_token_already_used")) return "Sessione in aggiornamento, riprova tra poco";
       if (http.status == 400) return "Email o password non validi";
       if (http.status == 401) return "Sessione scaduta: accedi di nuovo";
       if (http.status == 403) return "Account non autorizzato al registro";
