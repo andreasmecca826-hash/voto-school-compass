@@ -315,7 +315,7 @@ function Assistant() {
         <p className="mt-1 text-[11px] text-muted-foreground">
           {assistantMode === "local"
             ? "Le risposte locali usano i dati caricati nell’app e cercano nel regolamento pubblico Morselli A.S. 2025–2026 sul dispositivo. Circolari e regolamento non vengono inviati a Groq."
-            : "Groq riceve la domanda corrente e, solo se pertinente, gli estratti del regolamento pubblico Morselli A.S. 2025–2026 o il testo della circolare caricata nella Bacheca. Non allega automaticamente dati dell’app o cronologia; se scrivi tu dati personali nella domanda, vengono inviati. Le pagine del sito che richiedono login non vengono lette. Eventuali costi dipendono dalla fatturazione della chiave Groq: per evitare qualsiasi rischio, lascia Locale. Nessun fallback automatico."}{" "}
+            : "API invia a Groq la domanda e, se pertinente, il testo della circolare o gli estratti del regolamento. Non invia automaticamente voti, assenze o cronologia, ma trasmette eventuali dati personali scritti nella domanda. Non legge pagine con login. I costi dipendono dal tuo piano Groq e l’app non lo cambia: per zero spese e massima privacy, scegli Locale."}{" "}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
