@@ -46,6 +46,18 @@ describe("assistant task actions", () => {
     expect(assignments[0]?.completed).toBe(false);
   });
 
+  it("riconosce un piccolo refuso nel titolo ma mantiene la conferma", () => {
+    const result = getAssignmentActionIntent(
+      "Segna Esercizi pagnia 24 come completato",
+      assignments,
+    );
+    expect(result).toMatchObject({
+      kind: "confirm",
+      action: { id: "homework-1", completed: true },
+    });
+    expect(assignments[0]?.completed).toBe(false);
+  });
+
   it("prepares reopening a task when selected by subject and asks if the subject is ambiguous", () => {
     expect(getAssignmentActionIntent("Riapri il compito di Storia", assignments)).toMatchObject({
       kind: "clarify",

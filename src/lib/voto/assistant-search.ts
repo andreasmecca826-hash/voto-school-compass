@@ -51,7 +51,30 @@ const STOP_WORDS = new Set([
   "app",
   "voto",
   "scolastici",
+  "mostra",
+  "mostrami",
+  "fammi",
+  "dimmi",
+  "informazioni",
+  "informazione",
+  "su",
 ]);
+
+const SEARCH_ALIASES: Record<string, string[]> = {
+  avviso: ["circolare", "comunicazione"],
+  avvisi: ["circolari", "comunicazioni"],
+  comunicazione: ["circolare", "avviso"],
+  comunicazioni: ["circolari", "avvisi"],
+  prof: ["docente", "professore"],
+  professore: ["docente", "prof"],
+  professoressa: ["docente", "prof"],
+  gita: ["uscita", "viaggio"],
+  gite: ["uscite", "viaggi"],
+  interrogazione: ["interrogazioni", "orale"],
+  interrogazioni: ["interrogazione", "orali"],
+  compito: ["compiti", "esercizio"],
+  compiti: ["compito", "esercizi"],
+};
 
 function dateLabel(value?: string): string {
   const match = value?.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -59,9 +82,10 @@ function dateLabel(value?: string): string {
 }
 
 export function assistantSearchTerms(query: string): string[] {
-  return [...new Set(normalize(query).match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
+  const rawTerms = [...new Set(normalize(query).match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
     (term) => (term.length > 1 || /^\d$/.test(term)) && !STOP_WORDS.has(term),
   );
+  return [...new Set(rawTerms.flatMap((term) => [term, ...(SEARCH_ALIASES[term] ?? [])]))];
 }
 
 export function isAssistantSearchQuery(query: string): boolean {
@@ -82,14 +106,43 @@ function rankResult(result: AssistantSearchResult, terms: string[], phrase: stri
     const tokens: string[] = value.match(/[\p{L}\p{N}]+/gu) ?? [];
     return tokens.includes(term);
   };
-  const matched = terms.filter((term) =>
-    /^\d+$/.test(term) ? containsNumericToken(numericSearchText, term) : text.includes(term),
-  );
+  const editDistance = (left: string, right: string): number => {
+    const row = Array.from({ length: right.length + 1 }, (_, index) => index);
+    for (let i = 1; i <= left.length; i += 1) {
+      let diagonal = row[0]!;
+      row[0] = i;
+      for (let j = 1; j <= right.length; j += 1) {
+        const above = row[j]!;
+        row[j] =
+          left[i - 1] === right[j - 1]
+            ? diagonal
+            : Math.min(diagonal + 1, above + 1, row[j - 1]! + 1);
+        diagonal = above;
+      }
+    }
+    return row[right.length]!;
+  };
+  const textTokens = text.match(/[\p{L}\p{N}]+/gu) ?? [];
+  const matchesTerm = (term: string) => {
+    if (/^\d+$/.test(term)) return containsNumericToken(numericSearchText, term);
+    if (text.includes(term)) return true;
+    return textTokens.some(
+      (token) =>
+        (token.length >= 5 && term.length >= 5 && token.slice(0, 5) === term.slice(0, 5)) ||
+        (term.length >= 5 && token.length >= 5 && editDistance(token, term) <= 1),
+    );
+  };
+  const matched = terms.filter(matchesTerm);
   if (terms.some((term) => /^\d+$/.test(term)) && matched.length !== terms.length) return 0;
   if (matched.length === 0) return 0;
-  const titleMatches = terms.filter((term) =>
-    /^\d+$/.test(term) ? containsNumericToken(title, term) : title.includes(term),
-  ).length;
+  const titleMatches = terms.filter((term) => {
+    if (/^\d+$/.test(term)) return containsNumericToken(title, term);
+    return (
+      title.includes(term) ||
+      (term.length >= 5 &&
+        (title.match(/[\p{L}\p{N}]+/gu) ?? []).some((token) => editDistance(token, term) <= 1))
+    );
+  }).length;
   const phraseBoost = phrase.length > 2 && text.includes(phrase) ? 3 : 0;
   return matched.length * 2 + titleMatches * 2 + phraseBoost;
 }
