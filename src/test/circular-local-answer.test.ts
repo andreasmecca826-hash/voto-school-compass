@@ -24,4 +24,15 @@ describe("risposte locali sulle circolari", () => {
 
     expect(answer).toContain("Non trovo un passaggio chiaramente collegato");
   });
+
+  it("estrae una sintesi locale se l’utente chiede genericamente cosa dice la circolare", () => {
+    const answer = answerCircularQuestionLocally(
+      "Cosa dice l’ultima circolare?",
+      "La consegna del modulo autorizzato deve avvenire entro il 12 novembre 2026.",
+    );
+
+    expect(answer).toContain("Sintesi estratta");
+    expect(answer).toContain("12 novembre 2026");
+    expect(answer).toContain("non una risposta generata");
+  });
 });

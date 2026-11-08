@@ -1,11 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, Search, Send, Sparkles, UserRound } from "lucide-react";
+import { Bot, LoaderCircle, Search, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getAssignmentActionIntent,
   type AssignmentConfirmation,
 } from "@/lib/voto/assistant-actions";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import {
+  answerCircularChatQuestion,
+  isCircularChatQuestion,
+  type CircularAssistantMode,
+} from "@/lib/voto/circular-assistant-chat";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { loadAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
 import { clearScheduleDayIfUnchanged, DAYS, loadSchedule } from "@/lib/voto/orario";
@@ -27,13 +32,15 @@ type PendingAction =
   | { type: "assignment"; action: AssignmentConfirmation }
   | { type: "theme"; action: RandomThemeConfirmation };
 
+const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
+
 export const Route = createFileRoute("/assistente")({
   head: () => ({
     meta: [
       { title: "Assistente — VOTO." },
       {
         name: "description",
-        content: "Assistente locale per dati scolastici, riepiloghi giornalieri e Studio Lab.",
+        content: "Assistente locale e API opzionale per consultare le circolari scolastiche.",
       },
     ],
   }),
@@ -45,22 +52,38 @@ function Assistant() {
   const study = useStudy();
   const now = useClock();
   const [question, setQuestion] = useState("");
+  const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
+  const [isReplying, setIsReplying] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([
     {
       role: "assistant",
-      text: "Ciao! Sono l’assistente locale di VOTO. Chiedimi informazioni sui tuoi dati scolastici: tutto resta su questo dispositivo.",
+      text: "Ciao! Sono l’assistente di VOTO. Puoi scegliere la modalità locale oppure API per fare domande sul testo delle circolari.",
     },
   ]);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   useEffect(() => {
     setSuggestions(pickAssistantSuggestions());
+    try {
+      if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "api") setAssistantMode("api");
+    } catch {
+      // Se lo storage non è disponibile, resta attiva la modalità locale.
+    }
   }, []);
 
-  const ask = (text = question) => {
+  const changeAssistantMode = (mode: CircularAssistantMode) => {
+    setAssistantMode(mode);
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
+    } catch {
+      // La scelta vale comunque per la schermata corrente.
+    }
+  };
+
+  const ask = async (text = question) => {
     const clean = text.trim();
-    if (!clean) return;
+    if (!clean || isReplying) return;
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
@@ -93,6 +116,11 @@ function Assistant() {
     const previousQuestion = [...messages]
       .reverse()
       .find((message) => message.role === "user")?.text;
+    const hasImmediateActionResponse =
+      Boolean(nextPendingAction) ||
+      assignmentIntent?.kind === "clarify" ||
+      assignmentIntent?.kind === "already";
+    const useCircularAssistant = !hasImmediateActionResponse && isCircularChatQuestion(clean);
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : randomThemeIntent?.kind === "confirm"
@@ -101,35 +129,59 @@ function Assistant() {
           ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
           : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
             ? assignmentIntent.message
-            : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
-                previousQuestion,
-                source: v.source,
-                lastSync: v.lastSync,
-                syncError: v.error,
-                hasRemoteUrl: Boolean(v.url),
-                target: v.target,
-                theme: v.theme,
-                mode: v.mode,
-                accent: v.accent,
-                background: v.bg,
-                density: v.density,
-                reduceMotion: v.reduceMotion,
-                customFont: v.customTheme.font,
-                interfaceScale: v.interfaceScale,
-                homeScale: v.homeScale,
-                homeModules: v.homeModules,
-                flashcards: study.cards,
-                schoolEndDate: loadSchoolEndDate(),
-                schoolClosures: loadSchoolClosures(),
-                absenceHoursPerDay: loadAbsenceHoursPerDay(),
-              });
-    setMessages((current) => [
-      ...current,
-      { role: "user", text: clean },
-      { role: "assistant", text: response },
-    ]);
+            : useCircularAssistant
+              ? ""
+              : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+                  previousQuestion,
+                  source: v.source,
+                  lastSync: v.lastSync,
+                  syncError: v.error,
+                  hasRemoteUrl: Boolean(v.url),
+                  target: v.target,
+                  theme: v.theme,
+                  mode: v.mode,
+                  accent: v.accent,
+                  background: v.bg,
+                  density: v.density,
+                  reduceMotion: v.reduceMotion,
+                  customFont: v.customTheme.font,
+                  interfaceScale: v.interfaceScale,
+                  homeScale: v.homeScale,
+                  homeModules: v.homeModules,
+                  flashcards: study.cards,
+                  schoolEndDate: loadSchoolEndDate(),
+                  schoolClosures: loadSchoolClosures(),
+                  absenceHoursPerDay: loadAbsenceHoursPerDay(),
+                });
     setPendingAction(nextPendingAction);
     setQuestion("");
+    setMessages((current) => [...current, { role: "user", text: clean }]);
+
+    if (useCircularAssistant) {
+      setIsReplying(true);
+      try {
+        const circularResponse = await answerCircularChatQuestion(
+          clean,
+          assistantData.notifications,
+          assistantMode,
+        );
+        setMessages((current) => [
+          ...current,
+          {
+            role: "assistant",
+            text: circularResponse ?? "Non ho trovato una circolare pertinente.",
+          },
+        ]);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "La risposta non è disponibile.";
+        setMessages((current) => [...current, { role: "assistant", text: message }]);
+      } finally {
+        setIsReplying(false);
+      }
+      return;
+    }
+
+    setMessages((current) => [...current, { role: "assistant", text: response }]);
   };
 
   const confirmPendingAction = () => {
@@ -187,7 +239,7 @@ function Assistant() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Assistente</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Risposte locali sui tuoi dati scolastici e sul regolamento d’Istituto.
+            Scegli Locale o API; le domande su voti e dati personali restano sempre locali.
           </p>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -196,13 +248,41 @@ function Assistant() {
       </div>
 
       <section className="card-surface mt-5 p-4">
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <Sparkles className="h-4 w-4 text-primary" /> Nessun dato inviato online
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <Sparkles className="h-4 w-4 text-primary" />
+            {assistantMode === "local" ? "Modalità Locale" : "Modalità API Groq (Qwen)"}
+          </div>
+          <div
+            className="flex rounded-xl border border-border p-1"
+            role="group"
+            aria-label="Modalità assistente"
+          >
+            <button
+              type="button"
+              aria-pressed={assistantMode === "local"}
+              disabled={isReplying}
+              onClick={() => changeAssistantMode("local")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${assistantMode === "local" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              Locale
+            </button>
+            <button
+              type="button"
+              aria-pressed={assistantMode === "api"}
+              disabled={isReplying}
+              onClick={() => changeAssistantMode("api")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${assistantMode === "api" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              API
+            </button>
+          </div>
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Usa i dati già caricati e una sintesi locale del Regolamento d’Istituto Morselli-Sturzo
-          (A.S. 2025/2026). Le risposte restano sul dispositivo: verifica sempre eventuali
-          aggiornamenti ufficiali della scuola.
+          {assistantMode === "local"
+            ? "Le risposte locali usano i dati caricati nell’app. Il testo della circolare viene estratto sul dispositivo e non inviato a Groq."
+            : "Groq viene contattato solo quando invii una domanda sul contenuto di una circolare. Vengono inviati solo il testo e la domanda; voti, assenze e cronologia restano locali. Eventuali costi dipendono dalla fatturazione della chiave Groq: per evitare qualsiasi rischio, lascia Locale. Nessun fallback automatico."}{" "}
+          Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
           <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
@@ -235,6 +315,15 @@ function Assistant() {
           </div>
         ))}
       </div>
+
+      {isReplying && (
+        <p role="status" className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <LoaderCircle className="h-4 w-4 animate-spin" />
+          {assistantMode === "api"
+            ? "Leggo la circolare e preparo la richiesta…"
+            : "Leggo la circolare sul dispositivo…"}
+        </p>
+      )}
 
       {pendingAction && (
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-warning/40 bg-warning/10 p-3 text-xs">
@@ -303,7 +392,8 @@ function Assistant() {
             key={suggestion}
             type="button"
             onClick={() => ask(suggestion)}
-            className="press rounded-full border border-border px-3 py-2 text-left text-[11px] text-muted-foreground"
+            disabled={isReplying}
+            className="press rounded-full border border-border px-3 py-2 text-left text-[11px] text-muted-foreground disabled:opacity-50"
           >
             {suggestion}
           </button>
@@ -320,13 +410,13 @@ function Assistant() {
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Fai una domanda o cerca nei tuoi dati..."
+          placeholder="Chiedi sui tuoi dati o sulle circolari…"
           aria-label="Domanda all'assistente"
           className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
         />
         <button
           type="submit"
-          disabled={!question.trim()}
+          disabled={!question.trim() || isReplying}
           className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
           aria-label="Invia domanda"
         >

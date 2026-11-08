@@ -1,3 +1,5 @@
+import { analyzeCircularText } from "./circular-reader";
+
 const STOP_WORDS = new Set([
   "a",
   "ad",
@@ -10,6 +12,9 @@ const STOP_WORDS = new Set([
   "che",
   "chi",
   "cosa",
+  "dice",
+  "dici",
+  "devo",
   "come",
   "con",
   "da",
@@ -50,6 +55,35 @@ const STOP_WORDS = new Set([
   "uno",
   "va",
   "quando",
+  "fare",
+  "circolare",
+  "circolari",
+  "avviso",
+  "avvisi",
+  "ultima",
+  "ultime",
+  "ultimo",
+  "ultimi",
+  "recente",
+  "recenti",
+  "parla",
+  "parlami",
+  "fammi",
+  "riassumi",
+  "riassumere",
+  "riassunto",
+  "dimmi",
+  "spiega",
+  "spiegami",
+  "spiegare",
+  "destinatari",
+  "destinatario",
+  "destinataria",
+  "destinatarie",
+  "rivolta",
+  "rivolto",
+  "quale",
+  "quali",
 ]);
 
 function normalize(value: string): string {
@@ -77,7 +111,7 @@ function relatedTerm(left: string, right: string): boolean {
 }
 
 function isDateQuestion(question: string): boolean {
-  return /\b(quando|data|scadenza|termine|entro|giorno|orario|ora)\b/i.test(normalize(question));
+  return /\b(quando|data|scad\w*|termine|entro|giorno|orario|ora)\b/i.test(normalize(question));
 }
 
 function containsDate(value: string): boolean {
@@ -95,7 +129,28 @@ interface Passage {
 export function answerCircularQuestionLocally(question: string, documentText: string): string {
   const questionTerms = terms(question);
   if (questionTerms.length === 0) {
-    return "Scrivi una domanda con parole chiave presenti nella circolare: la modalità locale cerca passaggi simili, senza generare testo con un modello.";
+    const analysis = analyzeCircularText(documentText);
+    const details = [
+      analysis.summary ? `Sintesi estratta: ${analysis.summary}` : "",
+      analysis.deadlines.length
+        ? `Scadenze individuate: ${analysis.deadlines.map(({ value }) => value).join(", ")}.`
+        : "",
+      analysis.recipients.length
+        ? `Destinatari individuati: ${analysis.recipients.join(", ")}.`
+        : "",
+      analysis.actions.length ? `Indicazioni: ${analysis.actions.join(" ")}` : "",
+    ].filter(Boolean);
+    if (details.length === 0) {
+      const excerpt = documentText
+        .replace(/^\[Pagina\s+\d+\]\s*$/gim, "")
+        .split(/(?<=[.!?])\s+|\n+/)
+        .map((sentence) => sentence.trim())
+        .find((sentence) => sentence.length >= 24);
+      if (excerpt) details.push(`Estratto del documento: ${excerpt.slice(0, 560)}`);
+    }
+    return details.length
+      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}`
+      : "Non riesco a ricavare una sintesi locale da questa circolare. Prova con una parola chiave presente nel documento.";
   }
 
   const wantsDate = isDateQuestion(question);
