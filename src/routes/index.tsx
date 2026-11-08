@@ -19,7 +19,6 @@ import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { Slider } from "@/components/ui/slider";
 import { AssignmentRow } from "@/components/voto/AssignmentRow";
-import { CircularViewer } from "@/components/voto/CircularViewer";
 import { CircularCheckControl } from "@/components/voto/CircularCheckControl";
 import { NOTIF_META } from "@/lib/voto/notification-meta";
 import { Empty, ProgressBar, SectionTitle, Sparkline } from "@/components/voto/ui";
@@ -45,7 +44,13 @@ import {
   selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+
+const CircularViewer = lazy(() =>
+  import("@/components/voto/CircularViewer").then(({ CircularViewer: Viewer }) => ({
+    default: Viewer,
+  })),
+);
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -727,16 +732,18 @@ function NotifItem({ id }: { id: string }) {
           Letto
         </button>
       )}
-      {n.type === "notice" && (
-        <CircularViewer
-          open={circularOpen}
-          onOpenChange={setCircularOpen}
-          title={n.message ?? n.title}
-          fileName={n.attachmentName}
-          path={n.attachmentPath}
-          attachments={n.attachments}
-          url={n.attachmentPath ? n.attachmentUrl : undefined}
-        />
+      {n.type === "notice" && circularOpen && (
+        <Suspense fallback={null}>
+          <CircularViewer
+            open={circularOpen}
+            onOpenChange={setCircularOpen}
+            title={n.message ?? n.title}
+            fileName={n.attachmentName}
+            path={n.attachmentPath}
+            attachments={n.attachments}
+            url={n.attachmentPath ? n.attachmentUrl : undefined}
+          />
+        </Suspense>
       )}
     </li>
   );
