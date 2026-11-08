@@ -17,7 +17,7 @@ import { AssistantMarkdown } from "@/components/voto/AssistantMarkdown";
 import {
   answerSchoolPolicyQuestion,
   isSchoolPolicyQuestion,
-  type OfficialSchoolSource,
+  type SchoolDocumentSource,
 } from "@/lib/voto/school-documents";
 import { pickAssistantSuggestions } from "@/lib/voto/assistant-suggestions";
 import { loadAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
@@ -44,7 +44,7 @@ type PendingAction =
 type AssistantChatMessage = {
   role: "user" | "assistant";
   text: string;
-  sources?: OfficialSchoolSource[];
+  sources?: SchoolDocumentSource[];
 };
 
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
@@ -334,8 +334,8 @@ function Assistant() {
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
           {activeAssistantMode === "local"
-            ? "Le risposte locali usano i dati caricati nell’app e cercano nel regolamento pubblico Morselli A.S. 2025–2026 sul dispositivo. Circolari e regolamento non vengono inviati a Groq."
-            : "API invia a Groq la domanda e, se pertinente, il testo della circolare o gli estratti del regolamento. Non invia automaticamente voti, assenze o cronologia, ma trasmette eventuali dati personali scritti nella domanda. Non legge pagine con login. I costi dipendono dal tuo piano Groq e l’app non lo cambia: per zero spese e massima privacy, scegli Locale."}{" "}
+            ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
+            : "API invia a Groq la domanda e solo gli estratti pertinenti del regolamento, della ricerca PDF utente (non verificata) o della circolare. Non allega automaticamente voti, assenze o cronologia; se scrivi dati personali nella domanda, li invia. Non legge pagine con login e non fa fallback automatico. I costi dipendono dal piano Groq: per zero spese, scegli Locale."}{" "}
           {!isOnline && (
             <span className="font-medium text-primary">Offline: disponibile solo Locale. </span>
           )}
@@ -367,18 +367,31 @@ function Assistant() {
               ) : (
                 message.text
               )}
-              {message.sources?.map((source) => (
-                <a
-                  key={`${source.url}-${source.page ?? "document"}`}
-                  href={`${source.url}${source.page ? `#page=${source.page}` : ""}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 block border-t border-border pt-2 text-xs text-primary underline underline-offset-2"
-                >
-                  Fonte ufficiale: {source.title}
-                  {source.page ? ` · pagina ${source.page}` : ""}
-                </a>
-              ))}
+              {message.sources?.map((source) => {
+                const key = `${source.sourceKind}-${source.title}-${source.page ?? "document"}`;
+                const attribution =
+                  source.sourceKind === "user-provided"
+                    ? "Ricerca fornita dall’utente, non verificata"
+                    : "Fonte ufficiale";
+                const sourceText = `${attribution}: ${source.title}${source.page ? ` · pagina ${source.page}` : ""}`;
+                const className =
+                  "mt-2 block border-t border-border pt-2 text-xs text-primary underline underline-offset-2";
+                return source.url ? (
+                  <a
+                    key={key}
+                    href={`${source.url}${source.page ? `#page=${source.page}` : ""}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={className}
+                  >
+                    {sourceText}
+                  </a>
+                ) : (
+                  <p key={key} className={`${className} no-underline`}>
+                    {sourceText}
+                  </p>
+                );
+              })}
             </div>
             {message.role === "user" && (
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-muted-foreground">

@@ -1,15 +1,16 @@
 import type { CircularAssistantMode } from "./circular-assistant-chat";
 import { askWithDocument } from "./circular-assistant";
 
-export interface OfficialSchoolSource {
+export interface SchoolDocumentSource {
   title: string;
-  url: string;
+  url?: string;
   page: number | null;
+  sourceKind: "official" | "user-provided";
 }
 
-export interface OfficialSchoolAnswer {
+export interface SchoolPolicyAnswer {
   text: string;
-  sources: OfficialSchoolSource[];
+  sources: SchoolDocumentSource[];
 }
 
 interface RegulationPage {
@@ -24,13 +25,17 @@ interface RegulationExcerpt {
 
 interface RegulationData {
   title: string;
-  academicYear: string;
-  sourceUrl: string;
+  academicYear?: string;
+  sourceUrl?: string;
+  sourceKind?: "official" | "user-provided";
+  sourceNote?: string;
   pages: RegulationPage[];
 }
 
 const SCHOOL_POLICY_TERMS =
   /\b(?:fum\w*|sigarett\w*|svap\w*|vape\w*|smok\w*|regol\w*|regole|sanzion\w*|disciplin\w*|diviet\w*|infrazion\w*|sospension\w*|cellular\w*|telefon\w*|ritard\w*|assenze?|giustific\w*|uscit\w*|entrate?|permess\w*|comportament\w*|condotta|intervall\w*|ricreazion\w*|espulsion\w*)\b/i;
+const SCHOOL_PROFILE_TERMS =
+  /\b(?:morsell\w*|sturzo|gela|clis022009|clrh02202e|cltd02201g|cltf02201t|itt|ite|ipseoa|ptof|pago.?pa|offerta formativa|indirizz\w*|percors\w*|pless\w*|sed(?:e|i)|via pitagora|via liszt|romagnoli|contatt\w*|telefon\w*|email|posta elettronica|codice meccanografico|storia dell.?istituto|storia della scuola|dirigen\w*|enogastronom\w*|alberghier\w*|turismo)\b/i;
 
 const STOP_WORDS = new Set([
   "accade",
@@ -130,10 +135,17 @@ const HIGH_SIGNAL_TERMS = new Set([
   "sospension",
   "cellular",
   "telefon",
+  "morsell",
+  "sturz",
+  "indirizz",
+  "percors",
+  "pless",
+  "meccanografic",
+  "pagopa",
 ]);
 
 export function isSchoolPolicyQuestion(question: string): boolean {
-  return SCHOOL_POLICY_TERMS.test(question);
+  return SCHOOL_POLICY_TERMS.test(question) || SCHOOL_PROFILE_TERMS.test(question);
 }
 
 function normalize(value: string): string {
@@ -159,16 +171,22 @@ function keywords(value: string): string[] {
     .filter((word) => word.length >= 3);
 }
 
-let regulationPromise: Promise<RegulationData> | undefined;
+let schoolDocumentsPromise: Promise<RegulationData[]> | undefined;
 
-function loadRegulation(): Promise<RegulationData> {
-  regulationPromise ??= import("./morselli-regulation-data.json?raw")
-    .then(({ default: rawJson }) => JSON.parse(rawJson) as RegulationData)
+function loadSchoolDocuments(): Promise<RegulationData[]> {
+  schoolDocumentsPromise ??= Promise.all([
+    import("./morselli-regulation-data.json?raw"),
+    import("./morselli-sturzo-research-data.json?raw"),
+  ])
+    .then(([officialDocument, userResearch]) => [
+      JSON.parse(officialDocument.default) as RegulationData,
+      JSON.parse(userResearch.default) as RegulationData,
+    ])
     .catch((error: unknown) => {
-      regulationPromise = undefined;
+      schoolDocumentsPromise = undefined;
       throw error;
     });
-  return regulationPromise;
+  return schoolDocumentsPromise;
 }
 
 function extractExcerpts(page: RegulationPage): RegulationExcerpt[] {
@@ -200,17 +218,25 @@ function extractExcerpts(page: RegulationPage): RegulationExcerpt[] {
 
 function retrieveRelevantExcerpts(
   question: string,
-  regulation: RegulationData,
+  documents: RegulationData[],
 ): {
-  regulation: RegulationData;
-  excerpts: RegulationExcerpt[];
+  excerpts: Array<RegulationExcerpt & { document: RegulationData }>;
 } | null {
   const queryTerms = [...new Set(keywords(question))];
   if (queryTerms.length === 0) return null;
+  const isProfileQuestion =
+    SCHOOL_PROFILE_TERMS.test(question) && !SCHOOL_POLICY_TERMS.test(question);
+  const relevantDocuments = isProfileQuestion
+    ? documents.filter((document) => document.sourceKind === "user-provided")
+    : documents;
 
-  const ranked = regulation.pages
-    .flatMap(extractExcerpts)
-    .map((excerpt) => {
+  const ranked = relevantDocuments
+    .flatMap((document) =>
+      document.pages.flatMap((page) =>
+        extractExcerpts(page).map((excerpt) => ({ document, excerpt })),
+      ),
+    )
+    .map(({ document, excerpt }) => {
       const termCounts = new Map<string, number>();
       for (const term of keywords(excerpt.text)) {
         termCounts.set(term, (termCounts.get(term) ?? 0) + 1);
@@ -220,52 +246,89 @@ function retrieveRelevantExcerpts(
         const weight = HIGH_SIGNAL_TERMS.has(term) ? 4 : 1;
         return total + weight * Math.min(count, 3);
       }, 0);
-      return { excerpt, score };
+      return { document, excerpt, score };
     })
     .filter(({ score }) => score > 0)
-    .sort((left, right) => right.score - left.score || left.excerpt.page - right.excerpt.page)
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        Number(left.document.sourceKind === "user-provided") -
+          Number(right.document.sourceKind === "user-provided") ||
+        left.excerpt.page - right.excerpt.page,
+    )
     .slice(0, 3);
 
   if (ranked.length === 0) return null;
   const minimumScore = Math.max(1, Math.ceil(ranked[0]!.score * 0.5));
   const selectedExcerpts = ranked
     .filter(({ score }) => score >= minimumScore)
-    .map(({ excerpt }) => excerpt);
-  return { regulation, excerpts: selectedExcerpts };
+    .map(({ document, excerpt }) => ({ ...excerpt, document }));
+  return { excerpts: selectedExcerpts };
 }
 
-function fallbackAnswer(regulation: RegulationData): OfficialSchoolAnswer {
+function fallbackAnswer(regulation: RegulationData): SchoolPolicyAnswer {
   return {
-    text: `Non trovo un passaggio pertinente nel regolamento pubblico dell’Istituto per questa domanda. Non voglio inventare una regola o una sanzione: verifica il documento ufficiale o una circolare aggiornata.`,
-    sources: [{ title: regulation.title, url: regulation.sourceUrl, page: null }],
+    text: "Non trovo un estratto pertinente nelle fonti scolastiche disponibili. Non voglio inventare dati o regole: verifica il sito ufficiale o un documento più recente.",
+    sources: [
+      {
+        title: regulation.title,
+        ...(regulation.sourceUrl ? { url: regulation.sourceUrl } : {}),
+        page: null,
+        sourceKind: "official",
+      },
+    ],
   };
 }
 
 export async function answerSchoolPolicyQuestion(
   question: string,
   mode: CircularAssistantMode,
-): Promise<OfficialSchoolAnswer> {
-  const regulation = await loadRegulation();
-  const relevant = retrieveRelevantExcerpts(question, regulation);
-  if (!relevant) return fallbackAnswer(regulation);
+): Promise<SchoolPolicyAnswer> {
+  const documents = await loadSchoolDocuments();
+  const regulation = documents.find((document) => document.sourceKind !== "user-provided");
+  const relevant = retrieveRelevantExcerpts(question, documents);
+  if (!relevant) return fallbackAnswer(regulation ?? documents[0]!);
 
-  const sourcePages = [...new Set(relevant.excerpts.map((excerpt) => excerpt.page))];
-  const sources = sourcePages.map((page) => ({
-    title: relevant.regulation.title,
-    url: relevant.regulation.sourceUrl,
-    page,
-  }));
+  const sourcesByKey = new Map<string, SchoolDocumentSource>();
+  for (const { document, page } of relevant.excerpts) {
+    const sourceKind = document.sourceKind ?? "official";
+    const key = `${document.title}:${page}`;
+    if (!sourcesByKey.has(key)) {
+      sourcesByKey.set(key, {
+        title: document.title,
+        ...(document.sourceUrl ? { url: document.sourceUrl } : {}),
+        page,
+        sourceKind,
+      });
+    }
+  }
+  const sources = [...sourcesByKey.values()];
   const documentText = relevant.excerpts
-    .map(
-      (excerpt) =>
-        `[Fonte ufficiale: ${relevant.regulation.title}; pagina ${excerpt.page}]\n${excerpt.text}`,
-    )
+    .map(({ document, page, text }) => {
+      const sourceLabel =
+        document.sourceKind === "user-provided"
+          ? "Ricerca fornita dall’utente; non verificata"
+          : "Fonte ufficiale";
+      return `[${sourceLabel}: ${document.title}; pagina ${page}]\n${text}`;
+    })
     .join("\n\n---\n\n");
 
   if (mode === "local") {
+    const includesUserResearch = relevant.excerpts.some(
+      ({ document }) => document.sourceKind === "user-provided",
+    );
+    const intro = includesUserResearch
+      ? "Ho trovato questi passaggi. La ricerca PDF fornita dall’utente non è un documento ufficiale verificato: controlla le informazioni sul sito della scuola o con la segreteria."
+      : `Ho trovato questi passaggi nel regolamento ufficiale (A.S. ${regulation?.academicYear ?? "2025-2026"}):`;
     return {
-      text: `Ho trovato questi passaggi nel regolamento ufficiale (A.S. ${relevant.regulation.academicYear}):\n\n${relevant.excerpts
-        .map((excerpt) => `Pagina ${excerpt.page}:\n${excerpt.text}`)
+      text: `${intro}\n\n${relevant.excerpts
+        .map(({ document, page, text }) => {
+          const sourceLabel =
+            document.sourceKind === "user-provided"
+              ? `Ricerca utente non verificata — ${document.title}`
+              : `Regolamento ufficiale — ${document.title}`;
+          return `${sourceLabel}, pagina ${page}:\n${text}`;
+        })
         .join("\n\n")}`,
       sources,
     };
