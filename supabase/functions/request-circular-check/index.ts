@@ -144,7 +144,11 @@ Deno.serve(async (request: Request) => {
   }
 
   if (dispatchInProgress) {
-    return jsonResponse({ ok: false, error: "È già in corso un controllo.", retryAfterSeconds: 60 });
+    return jsonResponse({
+      ok: false,
+      error: "È già in corso un controllo.",
+      retryAfterSeconds: 60,
+    });
   }
   if (localCooldownUntil > Date.now()) {
     return jsonResponse({

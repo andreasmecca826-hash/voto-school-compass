@@ -140,10 +140,7 @@ export function DidupMenu() {
                 <img
                   src={
                     item.iconImage.endsWith(".png")
-                      ? item.iconImage.replace(
-                          "/didup-menu-icons/",
-                          "/didup-menu-icons-no-gray/",
-                        )
+                      ? item.iconImage.replace("/didup-menu-icons/", "/didup-menu-icons-no-gray/")
                       : item.iconImage
                   }
                   alt=""

@@ -11,6 +11,10 @@ export interface ManualInfraperiodReport {
   entries: ManualReportEntry[];
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 /** Interpreta voti inseriti con la virgola o il punto, limitandoli all’intervallo 1–10. */
 export function parseReportGrade(input: string): number | null {
   const normalized = input.trim().replace(",", ".");
@@ -36,20 +40,19 @@ export function averageRoundedReport(entries: ManualReportEntry[]): number | nul
 export function normalizeManualReports(value: unknown): ManualInfraperiodReport[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item): ManualInfraperiodReport[] => {
+    if (!isRecord(item)) return [];
+    const { id, title, createdAt, entries: rawEntries } = item;
     if (
-      !item ||
-      typeof item !== "object" ||
-      typeof item.id !== "string" ||
-      typeof item.title !== "string" ||
-      typeof item.createdAt !== "string" ||
-      !Array.isArray(item.entries)
+      typeof id !== "string" ||
+      typeof title !== "string" ||
+      typeof createdAt !== "string" ||
+      !Array.isArray(rawEntries)
     ) {
       return [];
     }
-    const entries = item.entries.flatMap((entry: any): ManualReportEntry[] => {
+    const entries = rawEntries.flatMap((entry: unknown): ManualReportEntry[] => {
       if (
-        !entry ||
-        typeof entry !== "object" ||
+        !isRecord(entry) ||
         typeof entry.id !== "string" ||
         typeof entry.subject !== "string" ||
         typeof entry.rawGrade !== "string"
@@ -58,6 +61,6 @@ export function normalizeManualReports(value: unknown): ManualInfraperiodReport[
       }
       return [{ id: entry.id, subject: entry.subject, rawGrade: entry.rawGrade }];
     });
-    return [{ id: item.id, title: item.title, createdAt: item.createdAt, entries }];
+    return [{ id, title, createdAt, entries }];
   });
 }

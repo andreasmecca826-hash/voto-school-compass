@@ -54,7 +54,8 @@ async function sha256(value: string) {
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: corsHeaders });
   if (request.method !== "POST") return jsonResponse({ error: "Metodo non consentito." }, 405);
 
   const url = projectUrl();
@@ -66,7 +67,8 @@ Deno.serve(async (request: Request) => {
     if (!userId) return jsonResponse({ error: "Sessione non valida." }, 401);
 
     const body = await request.json();
-    const code = typeof body?.code === "string" ? body.code.replace(/[^a-f0-9]/gi, "").toUpperCase() : "";
+    const code =
+      typeof body?.code === "string" ? body.code.replace(/[^a-f0-9]/gi, "").toUpperCase() : "";
     if (!/^[A-F0-9]{32}$/.test(code)) {
       return jsonResponse({ error: "Codice di attivazione non valido." }, 400);
     }

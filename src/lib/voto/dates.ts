@@ -11,8 +11,10 @@ export const parseIso = (s: string) => {
 export const daysBetween = (from: Date, iso: string) =>
   Math.round((parseIso(iso).getTime() - parseIso(toIso(from)).getTime()) / 86400000);
 
-export const fmtDate = (iso?: string, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }) =>
-  iso ? parseIso(iso).toLocaleDateString("it-IT", opts) : "";
+export const fmtDate = (
+  iso?: string,
+  opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" },
+) => (iso ? parseIso(iso).toLocaleDateString("it-IT", opts) : "");
 
 export function relDay(now: Date, iso?: string) {
   if (!iso) return "Senza scadenza";
@@ -26,4 +28,11 @@ export function relDay(now: Date, iso?: string) {
 }
 
 export const fmtTime = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "mai";
+  iso
+    ? new Date(iso).toLocaleString("it-IT", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "mai";

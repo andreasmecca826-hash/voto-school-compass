@@ -68,7 +68,11 @@ function Orario() {
               <p className="mt-1 text-[12px] leading-4">{studentName}</p>
             </div>
           </div>
-          <img src="/didup-profile.jpg" alt="" className="h-[50px] w-[50px] shrink-0 object-cover" />
+          <img
+            src="/didup-profile.jpg"
+            alt=""
+            className="h-[50px] w-[50px] shrink-0 object-cover"
+          />
         </header>
 
         <section
@@ -137,7 +141,10 @@ function Orario() {
         </section>
 
         {selectedDayId ? (
-          <section className="-mx-2 mt-6 overflow-hidden rounded-t-[12px] bg-[#292929]" aria-label="Lezioni del giorno">
+          <section
+            className="-mx-2 mt-6 overflow-hidden rounded-t-[12px] bg-[#292929]"
+            aria-label="Lezioni del giorno"
+          >
             {selectedLessons.map((subject, index) => (
               <label
                 key={`${selectedDayId}-${index}`}
@@ -146,7 +153,12 @@ function Orario() {
                 }`}
               >
                 <span className="relative flex h-9 w-8 shrink-0 items-start justify-center text-[#4169a8]">
-                  <img src="/didup-clock-icon.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
+                  <img
+                    src="/didup-clock-icon.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-7 w-7 object-contain"
+                  />
                   <span className="absolute bottom-0 left-0 text-[11px] font-bold leading-none text-white">
                     {index + 1}
                   </span>
@@ -182,7 +194,11 @@ function Orario() {
         </div>
       </div>
 
-      <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto" role="tablist" aria-label="Giorni della settimana">
+      <div
+        className="no-scrollbar mt-5 flex gap-2 overflow-x-auto"
+        role="tablist"
+        aria-label="Giorni della settimana"
+      >
         {DAYS.map((item) => (
           <button
             key={item.id}
@@ -218,7 +234,9 @@ function Orario() {
           </label>
         ))}
       </div>
-      <p className="mt-4 text-center text-[11px] text-muted-foreground">Le modifiche vengono salvate automaticamente sul dispositivo.</p>
+      <p className="mt-4 text-center text-[11px] text-muted-foreground">
+        Le modifiche vengono salvate automaticamente sul dispositivo.
+      </p>
     </div>
   );
 }

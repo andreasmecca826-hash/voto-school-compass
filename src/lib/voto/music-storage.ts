@@ -9,7 +9,8 @@ function openDatabase(): Promise<IDBDatabase> {
       request.result.createObjectStore(STORE_NAME);
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Impossibile aprire lo storage musicale."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("Impossibile aprire lo storage musicale."));
   });
 }
 
@@ -19,7 +20,8 @@ export async function saveLocalTrack(file: File): Promise<void> {
     const transaction = db.transaction(STORE_NAME, "readwrite");
     transaction.objectStore(STORE_NAME).put(file, TRACK_KEY);
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Impossibile salvare il brano."));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("Impossibile salvare il brano."));
   });
   db.close();
 }
@@ -41,7 +43,8 @@ export async function removeLocalTrack(): Promise<void> {
     const transaction = db.transaction(STORE_NAME, "readwrite");
     transaction.objectStore(STORE_NAME).delete(TRACK_KEY);
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Impossibile rimuovere il brano."));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("Impossibile rimuovere il brano."));
   });
   db.close();
 }
