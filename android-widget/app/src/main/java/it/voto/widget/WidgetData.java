@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -342,7 +341,7 @@ final class WidgetData {
     views.setViewVisibility(R.id.updated, showUpdated ? View.VISIBLE : View.GONE);
     views.setTextViewText(R.id.summary, text); views.setTextViewText(R.id.updated, values[2]); if (large) views.setTextViewText(R.id.details, mode == 5 ? values[1] : "");
     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"));
-    int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);
+    int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
     views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(context, id, intent, flags));
     return views;
   }
