@@ -425,39 +425,50 @@ export async function fetchVotoData(
   const privateSource = url === PRIVATE_SCHOOL_DATA_URL;
   const err = privateSource ? null : validateUrl(url);
   if (err) throw new SchemaError(err);
-  let headers: Record<string, string> | undefined;
+  let accessToken: string | undefined;
   if (privateSource) {
     const { data } = await supabase.auth.getSession();
     if (!data.session)
       throw new Error("PRIVATE_DATA_UNAUTHENTICATED: Accedi per aggiornare i dati.");
-    headers = {
-      apikey: supabasePublishableKey(),
-      Authorization: `Bearer ${data.session.access_token}`,
-    };
+    accessToken = data.session.access_token;
   }
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  const sep = url.includes("?") ? "&" : "?";
-  let res: Response;
-  try {
-    res = await fetch(`${url}${sep}_t=${Date.now()}`, {
-      cache: "no-store",
-      signal: ctrl.signal,
-      ...(headers ? { headers } : {}),
-    });
-  } catch (e) {
-    if ((e as Error).name === "AbortError")
-      throw new Error("Tempo scaduto: il server non risponde.");
-    throw new Error(
-      typeof navigator !== "undefined" && !navigator.onLine
-        ? "Sei offline. Mostro gli ultimi dati salvati."
-        : "Impossibile raggiungere l'URL (rete o CORS).",
-    );
-  } finally {
-    clearTimeout(t);
-  }
+  const request = async (token?: string) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    const sep = url.includes("?") ? "&" : "?";
+    try {
+      return await fetch(`${url}${sep}_t=${Date.now()}`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+        ...(token
+          ? { headers: { apikey: supabasePublishableKey(), Authorization: `Bearer ${token}` } }
+          : {}),
+      });
+    } catch (e) {
+      if ((e as Error).name === "AbortError")
+        throw new Error("Tempo scaduto: il server non risponde.");
+      throw new Error(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "Sei offline. Mostro gli ultimi dati salvati."
+          : "Impossibile raggiungere l'URL (rete o CORS).",
+      );
+    } finally {
+      clearTimeout(t);
+    }
+  };
+
+  let res = await request(accessToken);
   if (privateSource && res.status === 401) {
-    throw new Error("PRIVATE_DATA_UNAUTHENTICATED: La sessione è scaduta; accedi di nuovo.");
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (!refreshError && refreshed.session) {
+      res = await request(refreshed.session.access_token);
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const { data: latest } = await supabase.auth.getSession();
+      if (latest.session) res = await request(latest.session.access_token);
+    }
+    if (res.status === 401)
+      throw new Error("PRIVATE_DATA_UNAUTHENTICATED: La sessione è scaduta; accedi di nuovo.");
   }
   if (privateSource && res.status === 403) {
     throw new Error("PRIVATE_DATA_FORBIDDEN: Questo account non è autorizzato al registro.");
