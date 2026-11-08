@@ -207,13 +207,21 @@ final class WidgetData {
     }
     String average = subjectCount == 0 ? "—" : String.format(Locale.ITALIAN, "%.2f", subjectSum / subjectCount);
     JSONObject attendance = root.optJSONObject("attendance");
-    String attendanceText = attendance == null ? "Assenze non disponibili" : "Assenze: " + attendance.optInt("absenceDays", 0) + " giorni · " + attendance.optInt("absenceHours", 0) + " ore · Ritardi: " + attendance.optInt("delays", 0);
-    JSONArray notifications = root.optJSONArray("notifications"); int notes = 0, circulars = 0, unread = 0;
-    if (notifications != null) for (int i = 0; i < notifications.length(); i++) { JSONObject n = notifications.optJSONObject(i); if (n == null) continue; if ("note".equals(n.optString("type"))) notes++; if ("notice".equals(n.optString("type"))) circulars++; if (!n.optBoolean("read", false)) unread++; }
+    String attendanceText = attendance == null ? "Assenze non disponibili" : "Assenze: " + attendance.optInt("absenceDays", 0) + " giorni · " + attendance.optInt("absenceHours", 0) + " ore";
+    JSONArray notifications = root.optJSONArray("notifications"); int notes = 0, unread = 0; String latestCircular = "Nessuna circolare"; String latestCircularDate = "";
+    if (notifications != null) for (int i = 0; i < notifications.length(); i++) { JSONObject n = notifications.optJSONObject(i); if (n == null) continue; if ("note".equals(n.optString("type"))) notes++; if ("notice".equals(n.optString("type"))) { String date = n.optString("date"); if (date.compareTo(latestCircularDate) > 0) { latestCircularDate = date; latestCircular = n.optString("title", ""); if (latestCircular.length() == 0) latestCircular = n.optString("attachmentName", "Circolare"); } } if (!n.optBoolean("read", false)) unread++; }
     JSONArray assignments = root.optJSONArray("assignments"); int openAssignments = 0; String nextAssignment = "Nessun compito in sospeso"; String nextDate = "9999-99-99"; String today = new SimpleDateFormat("yyyy-MM-dd", Locale.ITALIAN).format(new Date());
     if (assignments != null) for (int i = 0; i < assignments.length(); i++) { JSONObject a = assignments.optJSONObject(i); if (a == null || a.optBoolean("completed", false)) continue; openAssignments++; String due = a.optString("dueDate", ""); if (due.length() > 0 && due.compareTo(today) >= 0 && due.compareTo(nextDate) < 0) { nextDate = due; nextAssignment = a.optString("title", "Compito") + (a.optString("subject", "").length() > 0 ? " · " + a.optString("subject") : "") + " · " + due; } }
     JSONObject student = root.optJSONObject("student"); String studentText = student == null ? "Studente" : student.optString("name", "Studente") + (student.optString("className", "").length() > 0 ? " · " + student.optString("className") : "");
-    return new String[]{"Media " + average, latest.length() == 0 ? "Nessun voto" : "Ultimo: " + latest + " — " + latestSubject, "Aggiornato " + root.optString("updatedAt", "ora"), attendanceText, "Note: " + notes, "Circolari: " + circulars, "Compiti aperti: " + openAssignments, nextAssignment, "Non lette: " + unread, studentText, "Materie valutate: " + subjectCount};
+    return new String[]{"Media " + average, latest.length() == 0 ? "Nessun voto" : latest + " — " + latestSubject, formatUpdated(root.optString("updatedAt", "")), attendanceText, "Note: " + notes, "Circolare: " + latestCircular, "Compiti aperti: " + openAssignments, nextAssignment, "Non lette: " + unread, studentText, "Materie valutate: " + subjectCount};
+  }
+
+  private static String formatUpdated(String raw) {
+    if (raw == null || raw.length() < 19) return "Aggiornato ora";
+    try {
+      Date parsed = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ITALIAN).parse(raw.substring(0, 19));
+      return "Aggiornato " + new SimpleDateFormat("dd/MM HH:mm", Locale.ITALIAN).format(parsed);
+    } catch (Exception ignored) { return "Aggiornato ora"; }
   }
 
   private static double grade(String value) { try { String s = value.trim().replace(',', '.').replace("½", ".5"); double delta = 0; if (s.endsWith("+")) { delta = .15; s = s.substring(0, s.length() - 1).trim(); } else if (s.endsWith("-")) { delta = -.15; s = s.substring(0, s.length() - 1).trim(); } if (s.contains("/")) { String[] parts = s.split("/"); return (Double.parseDouble(parts[0].trim()) + Double.parseDouble(parts[1].trim())) / 2 + delta; } return Double.parseDouble(s) + delta; } catch (Exception e) { return -1; } }
