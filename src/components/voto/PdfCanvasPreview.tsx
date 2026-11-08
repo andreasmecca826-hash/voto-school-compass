@@ -46,6 +46,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
     void (async () => {
       try {
         const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        if (cancelled) return;
         pdfjs.GlobalWorkerOptions.workerSrc = new URL(
           "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
           import.meta.url,
@@ -94,7 +95,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           if (!context) throw new Error("canvas_context_unavailable");
           context.setTransform(renderRatio, 0, 0, renderRatio, 0, 0);
 
-          const task = page.render({ canvasContext: context, viewport });
+          const task = page.render({ canvas: null, canvasContext: context, viewport });
           const cancelTask = () => task.cancel();
           cancelCurrentRender = cancelTask;
           try {
