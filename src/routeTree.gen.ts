@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AssenzeRouteImport } from './routes/assenze'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as BachecaRouteImport } from './routes/bacheca'
 import { Route as CompitiRouteImport } from './routes/compiti'
@@ -30,6 +31,11 @@ import { Route as ApiCircularsMirrorRouteImport } from './routes/api/circulars/m
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssenzeRoute = AssenzeRouteImport.update({
+  id: '/assenze',
+  path: '/assenze',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssistenteRoute = AssistenteRouteImport.update({
@@ -115,6 +121,7 @@ const ApiCircularsMirrorRoute = ApiCircularsMirrorRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assenze': typeof AssenzeRoute
   '/assistente': typeof AssistenteRoute
   '/bacheca': typeof BachecaRoute
   '/compiti': typeof CompitiRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assenze': typeof AssenzeRoute
   '/assistente': typeof AssistenteRoute
   '/bacheca': typeof BachecaRoute
   '/compiti': typeof CompitiRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/assenze': typeof AssenzeRoute
   '/assistente': typeof AssistenteRoute
   '/bacheca': typeof BachecaRoute
   '/compiti': typeof CompitiRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/assenze'
     | '/assistente'
     | '/bacheca'
     | '/compiti'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assenze'
     | '/assistente'
     | '/bacheca'
     | '/compiti'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/assenze'
     | '/assistente'
     | '/bacheca'
     | '/compiti'
@@ -233,6 +245,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AssenzeRoute: typeof AssenzeRoute
   AssistenteRoute: typeof AssistenteRoute
   BachecaRoute: typeof BachecaRoute
   CompitiRoute: typeof CompitiRoute
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assenze': {
+      id: '/assenze'
+      path: '/assenze'
+      fullPath: '/assenze'
+      preLoaderRoute: typeof AssenzeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/assistente': {
@@ -377,6 +397,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AssenzeRoute: AssenzeRoute,
   AssistenteRoute: AssistenteRoute,
   BachecaRoute: BachecaRoute,
   CompitiRoute: CompitiRoute,

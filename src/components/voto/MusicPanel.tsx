@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { SectionTitle } from "@/components/voto/ui";
 import { load, save } from "@/lib/voto/storage";
 import { loadLocalTrack, removeLocalTrack, saveLocalTrack } from "@/lib/voto/music-storage";
+import { parseSpotifyLink, spotifyEmbedUrl } from "@/lib/voto/music-links";
 
 const MUSIC_URL_KEY = "voto.music.url";
 const MUSIC_AUTOPLAY_KEY = "voto.music.autoplay";
@@ -62,9 +63,11 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
   const [autoplay, setAutoplay] = useState(() => load<boolean>(MUSIC_AUTOPLAY_KEY, false));
   const [loading, setLoading] = useState(true);
   const youtubeId = source ? youtubeVideoId(source) : null;
+  const spotifyResource = source ? parseSpotifyLink(source) : null;
   const youtubeEmbedUrl = youtubeId
     ? `https://www.youtube.com/embed/${encodeURIComponent(youtubeId)}?controls=1&rel=0${autoplay ? "&autoplay=1" : ""}${loop ? `&loop=1&playlist=${encodeURIComponent(youtubeId)}` : ""}`
     : null;
+  const spotifyUrl = spotifyResource ? spotifyEmbedUrl(spotifyResource) : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -171,6 +174,10 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
       toast("Usa i controlli del player YouTube per avviare o mettere in pausa.");
       return;
     }
+    if (spotifyResource) {
+      toast("Usa i controlli del player Spotify per avviare o mettere in pausa.");
+      return;
+    }
     const audio = audioRef.current;
     if (!audio || !source) {
       toast("Scegli prima un file o un URL audio.");
@@ -218,7 +225,7 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
           </button>
           <h1 className="font-display text-2xl font-semibold">Musica</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Scegli un brano dal dispositivo oppure usa un URL audio diretto.
+            Scegli un file dal dispositivo, incolla un URL audio diretto o un link Spotify/YouTube.
           </p>
 
           <SectionTitle>Brano dal dispositivo</SectionTitle>
@@ -246,7 +253,7 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
               <input
                 value={urlInput}
                 onChange={(event) => setUrlInput(event.target.value)}
-                placeholder="https://esempio.it/brano.mp3"
+                placeholder="Link Spotify/YouTube o URL audio .mp3"
                 type="url"
                 className="h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 text-xs"
                 aria-label="URL del brano audio"
@@ -266,6 +273,23 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
 
           <SectionTitle>Lettore</SectionTitle>
           <section className="card-surface p-4">
+            {spotifyUrl && spotifyResource && (
+              <div className="overflow-hidden rounded-xl bg-black">
+                <iframe
+                  src={spotifyUrl}
+                  title="Player Spotify"
+                  className="w-full border-0"
+                  style={{
+                    height:
+                      spotifyResource.type === "track" || spotifyResource.type === "episode"
+                        ? 152
+                        : 352,
+                  }}
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                />
+              </div>
+            )}
             {youtubeEmbedUrl && (
               <div className="overflow-hidden rounded-xl bg-black">
                 <iframe
@@ -279,7 +303,7 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
             )}
             <audio
               ref={audioRef}
-              src={youtubeId ? undefined : (source ?? undefined)}
+              src={youtubeId || spotifyResource ? undefined : (source ?? undefined)}
               preload="metadata"
               onLoadedMetadata={(event) => {
                 setDuration(event.currentTarget.duration || 0);
@@ -293,7 +317,7 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
               onEnded={() => setIsPlaying(false)}
               className="hidden"
             />
-            {!youtubeId && (
+            {!youtubeId && !spotifyResource && (
               <>
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -356,25 +380,27 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
                 </div>
               </>
             )}
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={toggleLoop}
-                aria-pressed={loop}
-                className={`press flex h-10 items-center justify-center gap-2 rounded-xl border text-xs font-semibold ${loop ? "border-primary bg-primary-soft text-primary" : "border-border"}`}
-              >
-                <Repeat className="h-3.5 w-3.5" /> Ripeti
-              </button>
-              <button
-                type="button"
-                onClick={toggleAutoplay}
-                aria-pressed={autoplay}
-                className={`press flex h-10 items-center justify-center gap-2 rounded-xl border text-xs font-semibold ${autoplay ? "border-primary bg-primary-soft text-primary" : "border-border"}`}
-              >
-                {autoplay ? <Check className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{" "}
-                Avvio automatico
-              </button>
-            </div>
+            {!spotifyResource && (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={toggleLoop}
+                  aria-pressed={loop}
+                  className={`press flex h-10 items-center justify-center gap-2 rounded-xl border text-xs font-semibold ${loop ? "border-primary bg-primary-soft text-primary" : "border-border"}`}
+                >
+                  <Repeat className="h-3.5 w-3.5" /> Ripeti
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleAutoplay}
+                  aria-pressed={autoplay}
+                  className={`press flex h-10 items-center justify-center gap-2 rounded-xl border text-xs font-semibold ${autoplay ? "border-primary bg-primary-soft text-primary" : "border-border"}`}
+                >
+                  {autoplay ? <Check className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{" "}
+                  Avvio automatico
+                </button>
+              </div>
+            )}
             {localTrack && source !== null && !source.startsWith("blob:") && (
               <button
                 type="button"
@@ -393,9 +419,11 @@ export function MusicPanel({ open, onClose }: { open: boolean; onClose: () => vo
             </button>
           </section>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            {youtubeId
-              ? "Link YouTube Music riconosciuto: usa i controlli del player incorporato."
-              : "L’avvio automatico può essere bloccato dal browser finché non premi Play almeno una volta."}
+            {spotifyResource
+              ? "Link Spotify riconosciuto: usa i controlli del player incorporato."
+              : youtubeId
+                ? "Link YouTube Music riconosciuto: usa i controlli del player incorporato."
+                : "L’avvio automatico può essere bloccato dal browser finché non premi Play almeno una volta."}
           </p>
         </div>
       </div>

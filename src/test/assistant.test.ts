@@ -33,6 +33,156 @@ const data: VotoData = {
 };
 
 describe("Assistente locale", () => {
+  it("spiega i messaggi generici delle notifiche ntfy", () => {
+    const answer = answerQuestion("Perché ntfy mostra un testo diverso?", data);
+
+    expect(answer).toContain("Ci sono novità in bacheca");
+    expect(answer).toContain("Ci sono novità nei voti");
+    expect(answer).toContain("Ci sono novità nei compiti");
+    expect(answer).toContain("apri la sezione corrispondente in VOTO");
+  });
+
+  it("indirizza alle pagelle e chiarisce che i riepiloghi non sono ufficiali", () => {
+    expect(answerQuestion("Dove trovo la pagella finale?", data)).toContain(
+      "Menu > Scrutini infraperiodali",
+    );
+    expect(answerQuestion("La pagella finale è ufficiale?", data)).toContain(
+      "non sono valutazioni ufficiali",
+    );
+    expect(answerQuestion("Cosa sai fare?", data)).toContain("riepiloghi indicativi delle pagelle");
+  });
+
+  it("consulta la sintesi locale del regolamento scolastico con l’avvertenza sull’anno", () => {
+    const phoneRule = answerQuestion("Posso usare il cellulare in classe?", data);
+    expect(phoneRule).toContain("è vietato agli studenti portare il cellulare");
+    expect(phoneRule).toContain("A.S. 2025/26");
+    expect(phoneRule).toContain("Verifica eventuali aggiornamenti.");
+    expect(phoneRule).not.toContain("Il documento è dell’anno scolastico precedente");
+    expect(answerQuestion("Come giustifico un'assenza?", data)).toContain(
+      "giustificata tempestivamente",
+    );
+    expect(answerQuestion("Qual è la regola sulla frequenza?", data)).toContain(
+      "almeno tre quarti",
+    );
+    expect(answerQuestion("Qual è la fonte del regolamento?", data)).toContain("A.S. 2025/26");
+    expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
+      "formazione qualificata",
+    );
+    expect(answerQuestion("Quali sono i diritti e i doveri degli alunni?", data)).toContain(
+      "frequentare regolarmente",
+    );
+  });
+
+  it("collega un follow-up temporale alla domanda precedente", () => {
+    const followUpData: VotoData = {
+      ...data,
+      assignments: [{ id: "tomorrow", title: "Ripasso", dueDate: "2026-10-27", completed: false }],
+    };
+    expect(
+      answerQuestion("e domani?", followUpData, emptySchedule(), new Date(2026, 9, 26, 12), [], {
+        previousQuestion: "Quali compiti ho?",
+      }),
+    ).toContain("Ripasso");
+  });
+
+  it("cerca nel testo completo quando la domanda riguarda una sezione meno comune", () => {
+    const answer = answerQuestion(
+      "Come funziona il Consiglio d’Istituto secondo il regolamento?",
+      data,
+    );
+    expect(answer).toContain("testo completo del regolamento");
+    expect(answer).toContain("p.");
+  });
+
+  it("interpreta sinonimi colloquiali nelle domande sul regolamento", () => {
+    expect(answerQuestion("Dove lavora il bidello secondo il regolamento?", data)).toContain(
+      "testo completo del regolamento",
+    );
+    expect(answerQuestion("Quali regole valgono per una gita scolastica?", data)).toContain(
+      "due terzi",
+    );
+  });
+
+  it("mostra gli argomenti disponibili e accetta un riferimento a una pagina", () => {
+    expect(answerQuestion("Quali argomenti contiene il regolamento?", data)).toContain(
+      "cellulari, smartphone e dispositivi elettronici",
+    );
+    expect(answerQuestion("Cosa dice il regolamento a pagina 25?", data)).toContain("p. 25");
+  });
+
+  it("risponde sugli articoli pratici non ancora coperti della vita scolastica", () => {
+    expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("7:30");
+    expect(answerQuestion("A che ora posso entrare a scuola?", data)).toContain("art. 18.1–18.2");
+    expect(answerQuestion("Posso andare in bagno durante la ricreazione?", data)).toContain(
+      "Non è consentito andarci durante gli intervalli",
+    );
+    expect(answerQuestion("Dove posso comprare merenda?", data)).toContain("7:45–8:00");
+    expect(answerQuestion("Come si richiede un’assemblea di classe?", data)).toContain(
+      "almeno 5 giorni prima",
+    );
+    expect(answerQuestion("Quali regole valgono per le gite scolastiche?", data)).toContain(
+      "due terzi della classe",
+    );
+    expect(answerQuestion("L’uscita didattica di un giorno è obbligatoria?", data)).toContain(
+      "partecipazione dell’intera classe",
+    );
+    expect(answerQuestion("Chi può usare l’ascensore?", data)).toContain(
+      "accompagnati da un collaboratore scolastico",
+    );
+    expect(
+      answerQuestion("Come si possono usare gli spazi della scuola fuori orario?", data),
+    ).toContain("autorizzazione del Dirigente");
+    expect(answerQuestion("Posso svapare a scuola?", data)).toContain("art. 33");
+    expect(answerQuestion("Cosa succede se danneggio un banco?", data)).toContain(
+      "art. 29 e art. 30",
+    );
+    expect(answerQuestion("Quali regole ci sono per i farmaci a scuola?", data)).toContain(
+      "autorizzazione scritta",
+    );
+    expect(answerQuestion("Come faccio ricorso contro una sospensione?", data)).toContain(
+      "entro 15 giorni",
+    );
+  });
+
+  it("capisce domande colloquiali su un infortunio e sull’uso dell’ascensore", () => {
+    const injury = answerQuestion("Cosa accade se mi faccio male?", data);
+    expect(injury).toContain("primo soccorso");
+    expect(injury).toContain("118");
+    expect(injury).toContain("art. 35");
+    expect(answerQuestion("Cosa acacde se mi faccio male?", data)).toContain("primo soccorso");
+
+    const hurtAtSchool = answerQuestion("A chi mi rivolgo se mi faccio male a scuola?", data);
+    expect(hurtAtSchool).toContain("avvisa subito un docente");
+
+    const elevator = answerQuestion("Posso usare l’ascensore?", data);
+    expect(elevator).toContain("difficoltà di deambulazione");
+    expect(elevator).toContain("accompagnati da un collaboratore scolastico");
+    expect(answerQuestion("Posso usare ascensore?", data)).toContain(
+      "accompagnati da un collaboratore scolastico",
+    );
+  });
+
+  it("capisce domande colloquiali su assenze, ritardi, uscite e danni", () => {
+    const attendance = answerQuestion("Quante assenze posso fare prima di perdere l’anno?", data);
+    expect(attendance).toContain("Non c’è un numero fisso di giorni di assenza uguale per tutti");
+    expect(attendance).toContain("tre quarti");
+
+    expect(answerQuestion("Quanti ritardi posso fare?", data)).toContain("dopo tre ritardi brevi");
+    expect(answerQuestion("Posso andare via prima da scuola?", data)).toContain(
+      "preannunciata dal genitore",
+    );
+    expect(answerQuestion("Se rompo qualcosa a scuola cosa rischio?", data)).toContain(
+      "danni alle strutture o alle dotazioni",
+    );
+  });
+
+  it("non confonde domande sui voti o sulle note personali con il regolamento", () => {
+    expect(answerQuestion("Cosa succede se prendo 8 in Inglese?", data)).toContain("passerebbe");
+    expect(answerQuestion("Quali note disciplinari ho?", data)).toContain(
+      "Non risultano note disciplinari nei dati caricati",
+    );
+  });
+
   it("calcola il voto necessario per una materia e un obiettivo", () => {
     expect(answerQuestion("Quanto devo prendere in Inglese per arrivare a 8?", data)).toContain(
       "almeno 10",
@@ -50,6 +200,23 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è la mia media generale?", data)).toContain("7,00");
     expect(answerQuestion("Quanti compiti devo fare?", data)).toContain("1 compito");
     expect(answerQuestion("Quante assenze ho?", data)).toContain("2 giorni");
+  });
+
+  it("legge le date degli eventi e indica la nuova schermata personalizzata", () => {
+    const eventsData: VotoData = {
+      ...data,
+      attendanceEvents: [
+        { id: "a-1", type: "absence", date: "2026-10-26" },
+        { id: "a-2", type: "absence", date: "2026-10-18", justificationStatus: "Giustificata" },
+        { id: "r-1", type: "delay", date: "2026-10-12" },
+      ],
+    };
+    expect(answerQuestion("In quali giorni sono stato assente?", eventsData)).toContain(
+      "26/10/2026, 18/10/2026",
+    );
+    expect(answerQuestion("Mostrami tutti gli eventi", eventsData)).toContain(
+      "Altro > Assenze > Tutti gli eventi",
+    );
   });
 
   it("calcola la previsione dopo un voto ipotetico e riconosce un'azione", () => {
@@ -145,6 +312,53 @@ describe("Assistente locale", () => {
     const summary = answerQuestion("Quali sono le novità?", updateData, emptySchedule(), now);
     expect(summary).toContain("Ultimo voto");
     expect(summary).toContain("Assemblea di classe");
+  });
+
+  it("separa le novità di bacheca, voti e compiti dal riepilogo generale", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const updatesData: VotoData = {
+      ...data,
+      assignments: [
+        { id: "new-task", title: "Relazione di storia", dueDate: "2026-10-30", completed: false },
+      ],
+      notifications: [
+        {
+          id: "new-notice",
+          type: "notice",
+          title: "Comunicazione di bacheca",
+          date: "2026-10-27",
+          read: false,
+        },
+      ],
+    };
+
+    const bulletin = answerQuestion(
+      "Ci sono novità in bacheca?",
+      updatesData,
+      emptySchedule(),
+      now,
+    );
+    expect(bulletin).toContain("Comunicazione di bacheca");
+    expect(bulletin).not.toContain("Ultimo voto");
+
+    const grades = answerQuestion("Ci sono novità nei voti?", updatesData, emptySchedule(), now);
+    expect(grades).toContain("Voti registrati");
+    expect(grades).toContain("Inglese");
+    expect(grades).not.toContain("Comunicazione di bacheca");
+
+    const assignments = answerQuestion(
+      "Ci sono novità nei compiti?",
+      updatesData,
+      emptySchedule(),
+      now,
+    );
+    expect(assignments).toContain("Relazione di storia");
+    expect(assignments).not.toContain("Ultimo voto");
+    expect(assignments).not.toContain("Comunicazione di bacheca");
+
+    const overview = answerQuestion("Quali sono le novità?", updatesData, emptySchedule(), now);
+    expect(overview).toContain("Ultimo voto");
+    expect(overview).toContain("Comunicazione di bacheca");
   });
 
   it("non presenta un promemoria senza data come prossimo", () => {

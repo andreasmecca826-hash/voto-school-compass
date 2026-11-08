@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">VOTO Widget</string>
+    <string name="widget_small_name">VOTO Riepilogo</string>
+    <string name="widget_large_name">VOTO Dashboard</string>
+    <string name="widget_medium_name">VOTO Medio</string>
+    <string name="widget_wide_name">VOTO Largo</string>
+</resources>

@@ -28,6 +28,12 @@ import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
 import { createHomeSettingsFile, parseHomeSettingsFile } from "@/lib/voto/home-settings-file";
+import { processCustomThemeBackground } from "@/lib/voto/custom-theme-background";
+import {
+  DEFAULT_EMOJI_THEME_EMOJIS,
+  MAX_EMOJI_THEME_EMOJIS,
+  parseEmojiThemeInput,
+} from "@/lib/voto/emoji-theme";
 import {
   useVoto,
   type Accent,
@@ -84,6 +90,12 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
   },
   {
+    id: "emoji",
+    label: "Emoji",
+    description: "Palette pastello e sfondo con le emoji che scegli",
+    sw: "linear-gradient(135deg,#29223a 0%,#8d557b 52%,#f2a35e 100%)",
+  },
+  {
     id: "oro",
     label: "Oro",
     description: "Ossidiana, oro satinato e riflessi champagne",
@@ -104,8 +116,8 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "lavender",
     label: "Lavender",
-    description: "Morbido e rilassato",
-    sw: "linear-gradient(135deg,#211832,#c4a7ff)",
+    description: "Aurora lilla, vetro satinato e bagliori viola",
+    sw: "radial-gradient(circle at 78% 22%,#f6c8ff 0 4%,transparent 5%),radial-gradient(circle at 24% 28%,#a995ff 0 3%,transparent 4%),linear-gradient(135deg,#17102d 0%,#4e2d73 42%,#b987e8 68%,#261540 100%)",
   },
   {
     id: "cybercore",
@@ -267,56 +279,66 @@ export function PersonalizationPanel() {
   const { openMusic } = useUi();
   const [view, setView] = useState<View>("menu");
   const [moreBackgrounds, setMoreBackgrounds] = useState(false);
+  const [backgroundProcessing, setBackgroundProcessing] = useState(false);
   const homeSettingsInput = useRef<HTMLInputElement>(null);
+  const customBackgroundInput = useRef<HTMLInputElement>(null);
   const availableThemes = THEMES;
   const hiddenThemeName = availableThemes.slice(4).find((theme) => theme.id === v.theme)?.label;
   const hiddenAccentName = ACCENTS.slice(6).find((accent) => accent.id === v.accent)?.label;
+  const pageClassName =
+    v.registryStyle === "didup"
+      ? "didup-page min-h-dvh bg-black px-2 pb-[100px] text-white"
+      : "pt-3";
 
   if (view === "menu")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <h1 className="font-display text-2xl font-semibold">Personalizza</h1>
         <p className="mt-1 text-xs text-muted-foreground">Scegli cosa vuoi modificare.</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setView("themes")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Palette className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Temi</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Colori, sfondi e aspetto
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("home")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Home className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Home</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Moduli e ordine della Home
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("experience")}
-            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <SlidersHorizontal className="h-7 w-7" />
-            </span>
-            <span className="font-semibold">Esperienza</span>
-            <span className="text-center text-[11px] text-muted-foreground">
-              Formato e animazioni
-            </span>
-          </button>
+          {v.registryStyle === "voto" && (
+            <>
+              <button
+                type="button"
+                onClick={() => setView("themes")}
+                className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <Palette className="h-7 w-7" />
+                </span>
+                <span className="font-semibold">Temi</span>
+                <span className="text-center text-[11px] text-muted-foreground">
+                  Colori, sfondi e aspetto
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("home")}
+                className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <Home className="h-7 w-7" />
+                </span>
+                <span className="font-semibold">Home</span>
+                <span className="text-center text-[11px] text-muted-foreground">
+                  Moduli e ordine della Home
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("experience")}
+                className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <SlidersHorizontal className="h-7 w-7" />
+                </span>
+                <span className="font-semibold">Esperienza</span>
+                <span className="text-center text-[11px] text-muted-foreground">
+                  Formato e animazioni
+                </span>
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setView("registry")}
@@ -364,7 +386,7 @@ export function PersonalizationPanel() {
 
   if (view === "typography")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Tipografia" />
         <SectionTitle>Font dell’app</SectionTitle>
         <p className="mb-3 text-[11px] text-muted-foreground">
@@ -405,11 +427,11 @@ export function PersonalizationPanel() {
           ))}
         </div>
 
-        <SectionTitle>Dimensione interfaccia</SectionTitle>
+        <SectionTitle>Dimensione del testo</SectionTitle>
         <section className="card-surface p-3">
           <div className="flex items-center justify-between gap-3">
             <label htmlFor="interface-scale" className="text-xs font-semibold">
-              Scala generale
+              Scala testo e interfaccia
             </label>
             <output
               className="tabular text-xs font-semibold text-primary"
@@ -422,16 +444,16 @@ export function PersonalizationPanel() {
             id="interface-scale"
             type="range"
             min={80}
-            max={120}
+            max={140}
             step={5}
             value={v.interfaceScale}
             onChange={(event) => v.setInterfaceScale(Number(event.target.value))}
-            aria-label="Dimensione generale dell’interfaccia"
+            aria-label="Dimensione del testo"
             className="mt-3 w-full accent-primary"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>80%</span>
-            <span>120%</span>
+            <span>140%</span>
           </div>
           <button
             type="button"
@@ -453,7 +475,7 @@ export function PersonalizationPanel() {
 
   if (view === "experience")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Esperienza" />
         <SectionTitle>Formato delle schede</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
@@ -503,7 +525,7 @@ export function PersonalizationPanel() {
 
   if (view === "registry")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Stile del registro" />
         <SectionTitle>Identità visiva</SectionTitle>
         <p className="mb-3 text-[11px] text-muted-foreground">
@@ -556,7 +578,7 @@ export function PersonalizationPanel() {
 
   if (view === "home")
     return (
-      <div className="pt-3">
+      <div className={pageClassName}>
         <BackButton onClick={() => setView("menu")} title="Home" />
         <SectionTitle>Moduli Home</SectionTitle>
         <section className="card-surface overflow-hidden p-2">
@@ -740,7 +762,7 @@ export function PersonalizationPanel() {
     );
 
   return (
-    <div className="pt-3">
+    <div className={pageClassName}>
       <BackButton onClick={() => setView("menu")} title="Temi" />
       <SectionTitle>Tema completo</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
@@ -782,6 +804,92 @@ export function PersonalizationPanel() {
           {v.registryStyle === "didup" && " Per visualizzarlo, scegli lo stile del registro VOTO."}
         </p>
       )}
+      {v.theme === "emoji" && (
+        <section className="card-surface mt-3 p-4">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold">Le tue emoji</h2>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Scegli fino a {MAX_EMOJI_THEME_EMOJIS} emoji: decoreranno lo sfondo a motivo
+                ripetuto.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => v.setEmojiThemeEmojis([...DEFAULT_EMOJI_THEME_EMOJIS])}
+              className="press shrink-0 rounded-lg border border-border px-2.5 py-2 text-[11px] font-semibold text-muted-foreground"
+            >
+              Ripristina
+            </button>
+          </div>
+          <label htmlFor="emoji-theme-selection" className="text-xs font-semibold">
+            Emoji del tema
+          </label>
+          <input
+            id="emoji-theme-selection"
+            type="text"
+            value={v.emojiThemeEmojis.join(" ")}
+            onChange={(event) => v.setEmojiThemeEmojis(parseEmojiThemeInput(event.target.value))}
+            placeholder="📚 ✏️ 🎒 ✨"
+            aria-describedby="emoji-theme-help"
+            className="mt-2 h-12 w-full rounded-xl border border-input bg-background px-3 text-xl tracking-wider outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <p id="emoji-theme-help" className="mt-2 text-[11px] text-muted-foreground">
+            Apri la tastiera emoji e separa le scelte con uno spazio. Lascia vuoto per togliere il
+            motivo. Le scelte restano salvate su questo dispositivo.
+          </p>
+          <div
+            aria-label="Anteprima delle emoji scelte"
+            className="mt-3 flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-border bg-surface/30 p-2"
+          >
+            {v.emojiThemeEmojis.length ? (
+              v.emojiThemeEmojis.map((emoji, index) => (
+                <span key={`${emoji}-${index}`} className="text-2xl" aria-hidden="true">
+                  {emoji}
+                </span>
+              ))
+            ) : (
+              <span className="text-[11px] text-muted-foreground">Nessuna emoji selezionata</span>
+            )}
+          </div>
+          <div className="mt-4">
+            <h3 className="text-xs font-semibold">Colore dello sfondo</h3>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Cambia il colore dietro al motivo. Puoi scegliere un colore diverso per la modalità
+              chiara e quella scura.
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {(
+                [
+                  { mode: "scuro", label: "Sfondo scuro" },
+                  { mode: "chiaro", label: "Sfondo chiaro" },
+                ] as const
+              ).map(({ mode, label }) => (
+                <label
+                  key={mode}
+                  className="flex min-w-0 items-center gap-2 rounded-xl border border-border p-2"
+                >
+                  <input
+                    type="color"
+                    value={v.emojiThemeBackgroundColors[mode]}
+                    onChange={(event) =>
+                      v.setEmojiThemeBackgroundColor(mode, event.currentTarget.value)
+                    }
+                    aria-label={`Colore ${label.toLocaleLowerCase("it-IT")} del tema Emoji`}
+                    className="h-9 w-10 shrink-0 cursor-pointer rounded-md border-0 bg-transparent p-0"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[10px] font-medium">{label}</span>
+                    <code className="block text-[10px] text-muted-foreground">
+                      {v.emojiThemeBackgroundColors[mode]}
+                    </code>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       {v.theme !== "original" && (
         <p className="mt-3 rounded-md border border-border bg-card p-3 text-[11px] text-muted-foreground">
           Questo è un tema completo: colori, superfici, caratteri e arrotondamenti sono gestiti dal
@@ -804,6 +912,89 @@ export function PersonalizationPanel() {
             >
               Ripristina
             </button>
+          </div>
+          <div className="mb-4 rounded-xl border border-border bg-surface/30 p-3">
+            <h3 className="text-xs font-semibold">Immagine di sfondo</h3>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Scegli una foto dal dispositivo per personalizzare lo sfondo dell’app.
+            </p>
+            {v.customTheme.backgroundImage ? (
+              <div
+                role="img"
+                aria-label="Anteprima dello sfondo scelto"
+                className="mt-3 h-24 rounded-lg border border-border bg-cover bg-center"
+                style={{ backgroundImage: `url("${v.customTheme.backgroundImage}")` }}
+              />
+            ) : (
+              <div
+                className="mt-3 flex h-16 items-center justify-center rounded-lg border border-dashed border-border text-[11px] text-muted-foreground"
+                style={{
+                  backgroundColor:
+                    v.mode === "chiaro" ? v.customTheme.bgLight : v.customTheme.bgDark,
+                }}
+              >
+                Nessuna immagine selezionata
+              </div>
+            )}
+            <input
+              ref={customBackgroundInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              aria-label="Scegli un’immagine di sfondo"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (!file) return;
+                setBackgroundProcessing(true);
+                const fallbackColor =
+                  v.mode === "chiaro" ? v.customTheme.bgLight : v.customTheme.bgDark;
+                void processCustomThemeBackground(file, fallbackColor)
+                  .then((backgroundImage) => {
+                    v.setCustomTheme({ backgroundImage });
+                    toast.success("Sfondo aggiornato");
+                  })
+                  .catch((error: unknown) => {
+                    toast.error("Immagine non caricata", {
+                      description:
+                        error instanceof Error ? error.message : "Controlla il file e riprova.",
+                    });
+                  })
+                  .finally(() => setBackgroundProcessing(false));
+              }}
+            />
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                disabled={backgroundProcessing}
+                onClick={() => customBackgroundInput.current?.click()}
+                className="press flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                <Upload className="h-4 w-4" />
+                {backgroundProcessing
+                  ? "Ottimizzo…"
+                  : v.customTheme.backgroundImage
+                    ? "Cambia immagine"
+                    : "Scegli immagine"}
+              </button>
+              {v.customTheme.backgroundImage && (
+                <button
+                  type="button"
+                  disabled={backgroundProcessing}
+                  onClick={() => {
+                    v.setCustomTheme({ backgroundImage: "" });
+                    toast.success("Immagine rimossa");
+                  }}
+                  className="press min-h-10 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-60"
+                >
+                  Rimuovi
+                </button>
+              )}
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+              JPG, PNG o WebP. L’immagine viene compressa e salvata su questo dispositivo; è inclusa
+              nel backup delle preferenze e non viene caricata su Supabase.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {CUSTOM_COLORS.map((field) => (
@@ -996,7 +1187,16 @@ function ThemeOption({
         selected && "border-primary",
       )}
     >
-      <span className="block h-16" style={{ background: theme.sw }} />
+      <span className="relative block h-16" style={{ background: theme.sw }}>
+        {theme.id === "emoji" && (
+          <span
+            className="absolute inset-0 flex items-center justify-center gap-3 text-3xl drop-shadow"
+            aria-hidden="true"
+          >
+            📚 ✏️ 🎒 ✨
+          </span>
+        )}
+      </span>
       <span className="block p-3">
         <span className="block text-xs font-semibold">{theme.label}</span>
         <span className="mt-1 block text-[10px] text-muted-foreground">{theme.description}</span>

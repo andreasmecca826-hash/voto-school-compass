@@ -5,6 +5,17 @@ import {
   type HomeModuleConfig,
 } from "./home-customization";
 import type { Accent, Bg, CustomTheme, Density, Mode, Theme } from "./store";
+import {
+  isValidCustomThemeBackground,
+  sanitizeCustomThemeBackground,
+} from "./custom-theme-background";
+import {
+  DEFAULT_EMOJI_THEME_BACKGROUND_COLORS,
+  DEFAULT_EMOJI_THEME_EMOJIS,
+  normalizeEmojiThemeBackgroundColors,
+  normalizeEmojiThemeEmojis,
+  type EmojiThemeBackgroundColors,
+} from "./emoji-theme";
 
 export const PREFERENCES_BACKUP_TYPE = "voto-preferences";
 export const PREFERENCES_BACKUP_VERSION = 1;
@@ -19,6 +30,8 @@ export type PreferencesBackupSettings = {
   reduceMotion: boolean;
   theme: Theme;
   customTheme: CustomTheme;
+  emojiThemeEmojis: string[];
+  emojiThemeBackgroundColors: EmojiThemeBackgroundColors;
   interfaceScale: number;
   homeModules: HomeModuleConfig[];
   homeScale: number;
@@ -63,6 +76,7 @@ const BACKGROUNDS: Bg[] = [
 ];
 const THEMES: Theme[] = [
   "original",
+  "emoji",
   "lavender",
   "cybercore",
   "brutalist",
@@ -119,10 +133,14 @@ export function createPreferencesBackup(settings: PreferencesBackupSettings): st
     settings: {
       ...settings,
       target: Math.min(10, Math.max(6, settings.target)),
-      interfaceScale: Math.min(120, Math.max(80, settings.interfaceScale)),
+      interfaceScale: Math.min(140, Math.max(80, settings.interfaceScale)),
       homeScale: normalizeHomeScale(settings.homeScale),
       homeModules: normalizeHomeModules(settings.homeModules),
       customTheme: { ...settings.customTheme },
+      emojiThemeEmojis: normalizeEmojiThemeEmojis(settings.emojiThemeEmojis),
+      emojiThemeBackgroundColors: normalizeEmojiThemeBackgroundColors(
+        settings.emojiThemeBackgroundColors,
+      ),
     },
   };
   return `${JSON.stringify(file, null, 2)}\n`;
@@ -145,6 +163,20 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
   }
   const settings = objectValue(file["settings"]);
   if (!settings) throw new Error("Nel file manca la sezione delle preferenze.");
+  if (settings["emojiThemeEmojis"] !== undefined && !Array.isArray(settings["emojiThemeEmojis"])) {
+    throw new Error("L’elenco delle emoji del tema non è valido.");
+  }
+  if (settings["emojiThemeBackgroundColors"] !== undefined) {
+    const colors = objectValue(settings["emojiThemeBackgroundColors"]);
+    if (
+      !colors ||
+      !["scuro", "chiaro"].every(
+        (key) => typeof colors[key] === "string" && /^#[\da-f]{6}$/i.test(colors[key] as string),
+      )
+    ) {
+      throw new Error("I colori di sfondo del tema Emoji non sono validi.");
+    }
+  }
 
   if (
     typeof settings["target"] !== "number" ||
@@ -176,6 +208,12 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
     }
   }
   if (
+    customTheme["backgroundImage"] !== undefined &&
+    !isValidCustomThemeBackground(customTheme["backgroundImage"])
+  ) {
+    throw new Error("L’immagine di sfondo del tema personalizzato non è valida.");
+  }
+  if (
     typeof customTheme["radius"] !== "number" ||
     !Number.isFinite(customTheme["radius"]) ||
     !isOneOf(customTheme["font"], FONTS)
@@ -197,7 +235,13 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
       density: settings["density"],
       reduceMotion: settings["reduceMotion"],
       theme: settings["theme"],
-      interfaceScale: Math.round(Math.min(120, Math.max(80, settings["interfaceScale"])) / 5) * 5,
+      emojiThemeEmojis: normalizeEmojiThemeEmojis(
+        settings["emojiThemeEmojis"] ?? DEFAULT_EMOJI_THEME_EMOJIS,
+      ),
+      emojiThemeBackgroundColors: normalizeEmojiThemeBackgroundColors(
+        settings["emojiThemeBackgroundColors"] ?? DEFAULT_EMOJI_THEME_BACKGROUND_COLORS,
+      ),
+      interfaceScale: Math.round(Math.min(140, Math.max(80, settings["interfaceScale"])) / 5) * 5,
       homeScale: normalizeHomeScale(settings["homeScale"]),
       homeModules,
       customTheme: {
@@ -214,6 +258,7 @@ export function parsePreferencesBackup(text: string): PreferencesBackupSettings 
         primary: customTheme["primary"] as string,
         radius: Math.min(1.5, Math.max(0.5, customTheme["radius"])),
         font: customTheme["font"],
+        backgroundImage: sanitizeCustomThemeBackground(customTheme["backgroundImage"]),
       },
     };
   } catch (error) {

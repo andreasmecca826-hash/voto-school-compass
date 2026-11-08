@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "@/components/voto/AppShell";
@@ -29,6 +29,16 @@ vi.mock("@/lib/voto/store", () => ({
     displayName: "Ada Studente",
     data: { student: { name: "Ada" } },
   }),
+  useVotoData: () => ({
+    displayName: "Ada Studente",
+    source: "demo",
+    url: "",
+    lastSync: null,
+    loading: false,
+    error: null,
+    ready: true,
+    data: { student: { name: "Ada" } },
+  }),
   useClock: () => new Date(2026, 10, 5, 8, 4, 0),
 }));
 vi.mock("@/components/voto/DidupDashboard", () => ({
@@ -51,7 +61,10 @@ beforeEach(() => {
   state.ready = true;
   state.refresh.mockReset();
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("Windows 7 chrome", () => {
   it("adds a route title and separate toolbar while preserving functional commands", () => {
@@ -170,13 +183,78 @@ describe("Windows 7 chrome", () => {
     expect(screen.queryByText("Contenuto scolastico")).not.toBeInTheDocument();
   });
 
-  it("never applies Windows 7 chrome to DidUP", () => {
+  it("never applies Windows 7 chrome to DidUP", async () => {
     state.registryStyle = "didup";
     const { container } = render(page());
     expect(container.querySelector(".windows7-shell")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.getByText("Dashboard DidUP")).toBeVisible();
+    expect(await screen.findByText("Dashboard DidUP")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByText("Menu DidUP")).toBeVisible();
+    expect(await screen.findByText("Menu DidUP")).toBeVisible();
+  });
+
+  it("coalesces pull movement without rerendering page content and refreshes at the threshold", () => {
+    let scheduledFrame: FrameRequestCallback | undefined;
+    const requestFrame = vi.fn((callback: FrameRequestCallback) => {
+      scheduledFrame = callback;
+      return 1;
+    });
+    vi.stubGlobal("requestAnimationFrame", requestFrame);
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+
+    const renderContent = vi.fn();
+    const CountedContent = () => {
+      renderContent();
+      return <p>Contenuto scolastico</p>;
+    };
+    const { container } = render(
+      <AppShell>
+        <CountedContent />
+      </AppShell>,
+    );
+    const main = container.querySelector("main") as HTMLElement;
+    const indicator = main.firstElementChild as HTMLDivElement;
+
+    fireEvent.touchStart(main, { touches: [{ clientY: 0 }] });
+    fireEvent.touchMove(main, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(main, { touches: [{ clientY: 120 }] });
+
+    expect(requestFrame).toHaveBeenCalledOnce();
+    expect(renderContent).toHaveBeenCalledOnce();
+    act(() => scheduledFrame?.(16));
+    expect(indicator.style.height).toBe("66px");
+    expect(indicator.style.opacity).toBe("1");
+    expect(indicator).toHaveAttribute("aria-hidden", "false");
+    expect(indicator).toHaveTextContent("Rilascia per aggiornare");
+    expect(renderContent).toHaveBeenCalledOnce();
+
+    fireEvent.touchEnd(main, { touches: [] });
+    expect(state.refresh).toHaveBeenCalledOnce();
+    expect(indicator.style.height).toBe("0px");
+    expect(renderContent).toHaveBeenCalledOnce();
+  });
+
+  it("resets an interrupted pull without refreshing", () => {
+    let scheduledFrame: FrameRequestCallback | undefined;
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      scheduledFrame = callback;
+      return 1;
+    });
+    const cancelFrame = vi.fn();
+    vi.stubGlobal("cancelAnimationFrame", cancelFrame);
+
+    const { container } = render(page());
+    const main = container.querySelector("main") as HTMLElement;
+    const indicator = main.firstElementChild as HTMLDivElement;
+
+    fireEvent.touchStart(main, { touches: [{ clientY: 0 }] });
+    fireEvent.touchMove(main, { touches: [{ clientY: 120 }] });
+    fireEvent.touchCancel(main, { touches: [] });
+
+    expect(cancelFrame).toHaveBeenCalledOnce();
+    expect(state.refresh).not.toHaveBeenCalled();
+    expect(indicator.style.height).toBe("0px");
+    expect(indicator).toHaveAttribute("aria-hidden", "true");
+    expect(scheduledFrame).toBeDefined();
   });
 });

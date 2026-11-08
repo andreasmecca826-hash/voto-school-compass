@@ -17,8 +17,10 @@ import {
   isAssistantSearchQuery,
   searchAssistantData,
 } from "./assistant-search";
+import { answerSchoolRegulation } from "./school-regulations";
 
 export interface AssistantContext {
+  previousQuestion?: string;
   source?: "demo" | "remote" | "cache";
   lastSync?: string | null;
   syncError?: string | null;
@@ -185,6 +187,20 @@ function relativeDayLabel(offset: number): string {
   return "nel giorno richiesto";
 }
 
+function expandFollowUpQuestion(query: string, previousQuestion?: string): string {
+  const previous = previousQuestion?.trim();
+  const followUp = query.trim();
+  if (!previous || !/^(?:e\s+)?(?:oggi|domani|dopodomani|ieri|l'altro ieri)\??$/i.test(followUp)) {
+    return query;
+  }
+  const day = normalize(followUp).replace(/^e\s+/, "").replace(/\?+$/, "").trim();
+  const previousWithoutDay = previous.replace(
+    /\b(?:oggi|domani|dopodomani|ieri|l'altro ieri)\b/gi,
+    "",
+  );
+  return `${previousWithoutDay.replace(/\?+$/, "").trim()} ${day}?`;
+}
+
 function localDateKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -257,6 +273,7 @@ export function answerQuestion(
   interrogazioni: Interrogazione[] = [],
   context: AssistantContext = {},
 ): string {
+  query = expandFollowUpQuestion(query, context.previousQuestion);
   const normalized = normalize(query.trim());
   if (!normalized)
     return "Scrivimi una domanda, per esempio: “Quanto devo prendere in Inglese per arrivare a 8?”";
@@ -265,11 +282,26 @@ export function answerQuestion(
     return formatAssistantSearchResults(searchAssistantData(query, data, interrogazioni));
   }
 
+  const schoolRegulationAnswer = answerSchoolRegulation(normalized);
+  if (schoolRegulationAnswer) return schoolRegulationAnswer;
+
   if (
     normalized.includes("giustific") &&
     (normalized.includes("assenza") || normalized.includes("assenze"))
   ) {
     return "Posso consultare i conteggi delle assenze presenti nei dati caricati, ma non inviare una giustificazione. Per giustificare un’assenza usa DidUP Famiglia con l’account genitore, se la funzione è abilitata dalla scuola.";
+  }
+
+  const asksNtfyMessage =
+    normalized.includes("ntfy") ||
+    normalized.includes("notifica push") ||
+    normalized.includes("notifiche push") ||
+    (normalized.includes("notific") &&
+      ["messaggio", "testo", "mostra", "dice", "perche", "diverso"].some((term) =>
+        normalized.includes(term),
+      ));
+  if (asksNtfyMessage) {
+    return "Le notifiche ntfy del monitor sono brevi: «Ci sono novità in bacheca», «Ci sono novità nei voti» o «Ci sono novità nei compiti». Per leggere i dettagli apri la sezione corrispondente in VOTO. Da questa chat non posso cambiare il topic o le impostazioni ntfy.";
   }
 
   if (
@@ -280,7 +312,16 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre leggere le flashcard di Studio Lab e alcune preferenze locali. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non leggo il contenuto dei PDF allegati, non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e alcune preferenze locali. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+  }
+
+  if (
+    (normalized.includes("pagell") || normalized.includes("scrutin")) &&
+    ["ufficial", "promosso", "promozione", "ammesso", "ammissione"].some((term) =>
+      normalized.includes(term),
+    )
+  ) {
+    return "No: in Menu > Scrutini infraperiodali, primo trimestre e scrutinio finale mostrano riepiloghi indicativi calcolati dai voti registrati nel periodo; non sono valutazioni ufficiali della scuola. La pagella infraperiodale è invece compilabile manualmente. Per l’esito ufficiale controlla DidUP o le comunicazioni della scuola.";
   }
 
   const asksWhereToFind =
@@ -291,9 +332,10 @@ export function answerQuestion(
   if (asksWhereToFind) {
     const destinations: [string[], string][] = [
       [["compit", "scadenz"], "Compiti"],
-      [["assenza", "presenz", "ritardo"], "Dashboard, modulo Presenze"],
+      [["assenza", "presenz", "ritardo"], "Altro > Assenze"],
       [["orario", "lezion"], "Orario"],
       [["interrogaz"], "Interrogazioni"],
+      [["scrutin", "pagell"], "Menu > Scrutini infraperiodali"],
       [["diario", "attivita"], "Diario"],
       [["nota"], "Note"],
       [["promemoria"], "Promemoria"],
@@ -665,7 +707,20 @@ export function answerQuestion(
     return `Notifiche${requestedType ? " di voto" : ""}${unreadOnly ? " non lette" : ""}:\n${shown.join("\n")}${remainder}\nLa lettura qui non modifica il loro stato.`;
   }
 
-  if (normalized.includes("novit") || normalized.includes("aggiornament")) {
+  const asksCategorySpecificUpdates = [
+    "bacheca",
+    "circolar",
+    "avvis",
+    "voto",
+    "voti",
+    "valutazion",
+    "compit",
+    "scadenz",
+  ].some((term) => normalized.includes(term));
+  if (
+    (normalized.includes("novit") || normalized.includes("aggiornament")) &&
+    !asksCategorySpecificUpdates
+  ) {
     const recentGrade = latestGrade(data);
     const todayNotices = notices.filter(
       (notification) => notification.date?.slice(0, 10) === localDateKey(now),
@@ -786,7 +841,11 @@ export function answerQuestion(
   ) {
     const requestedDay = relativeDayOffset(normalized);
     const asksUnread = normalized.includes("non lett");
-    const asksNew = normalized.includes("nuov") || normalized.includes("recent");
+    const asksNew =
+      normalized.includes("nuov") ||
+      normalized.includes("recent") ||
+      normalized.includes("novit") ||
+      normalized.includes("aggiornament");
     let matches = notices;
     if (requestedDay !== null)
       matches = matches.filter(
@@ -908,10 +967,21 @@ export function answerQuestion(
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
   const asksGradeList =
-    (normalized.includes("voti") || normalized.includes("valutazion")) &&
-    ["quali", "elenc", "lista", "mostra", "tutti", "vedere"].some((term) =>
-      normalized.includes(term),
-    );
+    (normalized.includes("voto") ||
+      normalized.includes("voti") ||
+      normalized.includes("valutazion")) &&
+    [
+      "quali",
+      "elenc",
+      "lista",
+      "mostra",
+      "tutti",
+      "vedere",
+      "novit",
+      "aggiornament",
+      "nuov",
+      "recent",
+    ].some((term) => normalized.includes(term));
   if (asksGradeList) {
     let grades = data.subjects.flatMap((item) =>
       item.grades.map((grade) => ({ subject: item, grade })),
@@ -1239,6 +1309,45 @@ export function answerQuestion(
     return `Con altre ${number(additionalAbsenceHours)} ore arriveresti a ${number(plan.simulatedTotalHours)} ore: resterebbero ${number(plan.simulatedRemainingHours)} ore prima del limite.${dayEstimate}`;
   }
 
+  const asksForEventDates =
+    normalized.includes("quali") ||
+    normalized.includes("quando") ||
+    normalized.includes("giorni") ||
+    normalized.includes("date");
+  const asksForAllEvents =
+    normalized.includes("tutti gli eventi") ||
+    normalized.includes("eventi appello") ||
+    normalized.includes("eventi di appello");
+  if (asksForAllEvents) {
+    return "Puoi vedere assenze, ritardi e uscite nella schermata personalizzata Altro > Assenze > Tutti gli eventi, con filtri separati e gli stati di giustificazione.";
+  }
+  if (mentionsAbsence && asksForEventDates) {
+    const absenceEvents = (data.attendanceEvents ?? [])
+      .filter((event) => event.type === "absence")
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (absenceEvents.length === 0) {
+      return "Nei dati sincronizzati non sono presenti le date dettagliate delle assenze. Puoi comunque vedere il totale nella sezione Altro > Assenze.";
+    }
+    const dates = absenceEvents
+      .map((event) => displayDate(event.date))
+      .filter((date): date is string => date !== null);
+    return `Le tue assenze registrate sono: ${dates.join(", ")}. Per vedere anche ritardi, uscite e giustificazioni apri Altro > Assenze > Tutti gli eventi.`;
+  }
+  const asksForDelayDates =
+    (normalized.includes("ritardo") || normalized.includes("ritardi")) && asksForEventDates;
+  if (asksForDelayDates) {
+    const delayEvents = (data.attendanceEvents ?? [])
+      .filter((event) => event.type === "delay")
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (delayEvents.length === 0) {
+      return "Nei dati sincronizzati non sono presenti le date dettagliate dei ritardi. Il conteggio disponibile è quello riportato nella sezione Presenze.";
+    }
+    const dates = delayEvents
+      .map((event) => displayDate(event.date))
+      .filter((date): date is string => date !== null);
+    return `I ritardi registrati risultano nelle date: ${dates.join(", ")}. Puoi controllare tutti gli eventi da Altro > Assenze > Tutti gli eventi.`;
+  }
+
   const asksForRemainingAbsence = [
     "limite",
     "ancora",
@@ -1394,6 +1503,25 @@ export function answerQuestion(
           .map((entry) => `${entry.date} — ${entry.subject || "Attività"}: ${entry.activity}`)
           .join("\n")
       : "Non ci sono ancora attività nel Diario.";
+  }
+
+  if (
+    [
+      "voto",
+      "voti",
+      "compito",
+      "compiti",
+      "circolare",
+      "circolari",
+      "promemoria",
+      "diario",
+      "interrogazione",
+      "interrogazioni",
+      "materia",
+      "docente",
+    ].some((term) => normalized.includes(term))
+  ) {
+    return "Riconosco l’argomento, ma non la forma della richiesta. Prova per esempio “cerca algebra”, “quali compiti ho?” oppure “qual è l’ultimo voto?”. Non ho modificato nessun dato.";
   }
 
   return "Non ho capito la domanda. Prova a riformularla o scegli uno dei suggerimenti qui sotto.";

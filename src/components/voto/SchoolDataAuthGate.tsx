@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { claimSchoolDataAccess, PRIVATE_SCHOOL_DATA_URL, supabase } from "@/lib/supabase-auth";
-import { SchoolAuthContext } from "@/lib/school-auth-context";
+import { SchoolAuthContext, type PrefetchedSchoolData } from "@/lib/school-auth-context";
 import { fetchVotoData } from "@/lib/voto/parse";
 import { KEYS, load, save } from "@/lib/voto/storage";
+import { isDemoAccessCode } from "@/lib/demo-access";
 
 const OWNER_KEY = "voto.privateOwnerId";
 type Step = "checking" | "email" | "otp" | "claim" | "retry" | "ready";
@@ -14,10 +15,26 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [claimCode, setClaimCode] = useState("");
+  const [demoCode, setDemoCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const sessionRef = useRef<Session | null>(null);
+  const prefetchedDataRef = useRef<(PrefetchedSchoolData & { ownerId: string }) | null>(null);
+
+  const consumePrefetchedData = useCallback((): PrefetchedSchoolData | null => {
+    const pending = prefetchedDataRef.current;
+    if (!pending) return null;
+    if (pending.ownerId !== sessionRef.current?.user.id) {
+      prefetchedDataRef.current = null;
+      return null;
+    }
+    prefetchedDataRef.current = null;
+    return { url: pending.url, data: pending.data, lastSync: pending.lastSync };
+  }, []);
 
   async function activate(userSession: Session) {
+    save(KEYS.demoMode, false);
+    sessionRef.current = userSession;
     setSession(userSession);
     save(KEYS.url, PRIVATE_SCHOOL_DATA_URL);
     const cached = load<unknown>(KEYS.cache, null);
@@ -26,11 +43,19 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       setStep("ready");
       return;
     }
+    prefetchedDataRef.current = null;
     try {
       const data = await fetchVotoData(PRIVATE_SCHOOL_DATA_URL);
+      const lastSync = new Date().toISOString();
       save(KEYS.cache, data);
-      save(KEYS.lastSync, new Date().toISOString());
+      save(KEYS.lastSync, lastSync);
       save(OWNER_KEY, userSession.user.id);
+      prefetchedDataRef.current = {
+        ownerId: userSession.user.id,
+        url: PRIVATE_SCHOOL_DATA_URL,
+        data,
+        lastSync,
+      };
       setError("");
       setStep("ready");
     } catch (caught) {
@@ -39,6 +64,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         setStep("claim");
         setError("");
       } else if (message.startsWith("PRIVATE_DATA_UNAUTHENTICATED:")) {
+        sessionRef.current = null;
         setSession(null);
         setStep("email");
         setError("La sessione è scaduta. Accedi di nuovo.");
@@ -51,8 +77,13 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const savedDemoMode = load(KEYS.demoMode, false) === true;
+    if (savedDemoMode) {
+      setStep("ready");
+    }
     void supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!mounted) return;
+      if (savedDemoMode) return;
       if (sessionError || !data.session) {
         setStep("email");
         return;
@@ -60,7 +91,10 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       void activate(data.session);
     });
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (savedDemoMode) return;
       if (event === "SIGNED_OUT" && mounted) {
+        sessionRef.current = null;
+        prefetchedDataRef.current = null;
         setSession(null);
         setStep("email");
         setError("");
@@ -169,15 +203,41 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     }
   }
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
+    sessionRef.current = null;
+    prefetchedDataRef.current = null;
+    save(KEYS.demoMode, false);
     await supabase.auth.signOut();
     setSession(null);
     setStep("email");
+  }, []);
+
+  async function enterDemo(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    if (!isDemoAccessCode(demoCode)) {
+      setError("Codice demo non valido.");
+      setBusy(false);
+      return;
+    }
+    await supabase.auth.signOut();
+    sessionRef.current = null;
+    prefetchedDataRef.current = null;
+    save(KEYS.demoMode, true);
+    save(KEYS.url, null);
+    save(KEYS.lastSync, null);
+    setSession(null);
+    setDemoCode("");
+    setStep("ready");
+    setBusy(false);
   }
 
   if (step === "ready") {
     return (
-      <SchoolAuthContext.Provider value={{ email: session?.user.email ?? "", signOut }}>
+      <SchoolAuthContext.Provider
+        value={{ email: session?.user.email ?? "", signOut, consumePrefetchedData }}
+      >
         {children}
       </SchoolAuthContext.Provider>
     );
@@ -211,26 +271,53 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         )}
 
         {step === "email" && (
-          <form onSubmit={requestOtp} className="space-y-4">
-            <label className="block text-sm font-medium" htmlFor="school-email">
-              Email
-            </label>
-            <input
-              id="school-email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              disabled={busy}
-              className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
-            >
-              {busy ? "Invio…" : "Invia link di accesso"}
-            </button>
-          </form>
+          <div className="space-y-6">
+            <form onSubmit={requestOtp} className="space-y-4">
+              <label className="block text-sm font-medium" htmlFor="school-email">
+                Email
+              </label>
+              <input
+                id="school-email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                disabled={busy}
+                className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {busy ? "Invio…" : "Invia link di accesso"}
+              </button>
+            </form>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              <span>SVILUPPATORE</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <form onSubmit={enterDemo} className="space-y-3">
+              <label className="block text-sm font-medium" htmlFor="demo-access-code">
+                Codice modalità demo
+              </label>
+              <input
+                id="demo-access-code"
+                type="password"
+                autoComplete="off"
+                value={demoCode}
+                onChange={(event) => setDemoCode(event.target.value)}
+                placeholder="Inserisci il codice sviluppatore"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 font-mono text-base outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                disabled={busy || !demoCode.trim()}
+                className="w-full rounded-xl border border-primary px-4 py-3 font-semibold text-primary disabled:opacity-60"
+              >
+                Entra in modalità demo
+              </button>
+            </form>
+          </div>
         )}
 
         {step === "otp" && (

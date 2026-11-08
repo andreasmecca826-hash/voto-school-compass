@@ -1,40 +1,6 @@
-import type { AppNotification, VotoData } from "./types";
 import { supabase } from "../supabase-auth";
 import { supabaseProjectUrl, supabasePublishableKey } from "../supabase-config";
 export { supabaseProjectUrl, supabasePublishableKey } from "../supabase-config";
-
-const INTERNAL_ATTACHMENT_PATH = /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/;
-
-type SignedUrlResponse = { path?: unknown; signedUrl?: unknown };
-
-async function signedAttachmentUrl(path: string): Promise<string | null> {
-  const projectUrl = supabaseProjectUrl();
-  const key = supabasePublishableKey();
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) return null;
-  try {
-    const response = await fetch(`${projectUrl}/functions/v1/mirror-circular`, {
-      method: "POST",
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${data.session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ path }),
-    });
-    if (!response.ok) return null;
-
-    const result = (await response.json()) as SignedUrlResponse;
-    if (result.path !== path || typeof result.signedUrl !== "string") return null;
-    const signedUrl = new URL(result.signedUrl);
-    if (signedUrl.protocol !== "https:" || signedUrl.origin !== new URL(projectUrl).origin) {
-      return null;
-    }
-    return signedUrl.toString();
-  } catch {
-    return null;
-  }
-}
 
 type CheckPayload = {
   ok?: unknown;
@@ -121,26 +87,4 @@ export async function getCircularCheckStatus(after: string): Promise<CircularChe
     status: body.status as CircularCheckStatus["status"],
     conclusion: typeof body.conclusion === "string" ? body.conclusion : null,
   };
-}
-
-/** Firma solo i path già caricati nello storage privato; non invia mai URL DidUP al server. */
-export async function mirrorCirculars(data: VotoData): Promise<VotoData> {
-  const notifications = await Promise.all(
-    data.notifications.map(async (notification): Promise<AppNotification> => {
-      if (
-        notification.type !== "notice" ||
-        !notification.attachmentPath ||
-        !INTERNAL_ATTACHMENT_PATH.test(notification.attachmentPath)
-      ) {
-        return notification;
-      }
-
-      return {
-        ...notification,
-        attachmentUrl: (await signedAttachmentUrl(notification.attachmentPath)) ?? undefined,
-      };
-    }),
-  );
-
-  return { ...data, notifications };
 }
