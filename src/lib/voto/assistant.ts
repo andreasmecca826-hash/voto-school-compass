@@ -707,7 +707,20 @@ export function answerQuestion(
     return `Notifiche${requestedType ? " di voto" : ""}${unreadOnly ? " non lette" : ""}:\n${shown.join("\n")}${remainder}\nLa lettura qui non modifica il loro stato.`;
   }
 
-  if (normalized.includes("novit") || normalized.includes("aggiornament")) {
+  const asksCategorySpecificUpdates = [
+    "bacheca",
+    "circolar",
+    "avvis",
+    "voto",
+    "voti",
+    "valutazion",
+    "compit",
+    "scadenz",
+  ].some((term) => normalized.includes(term));
+  if (
+    (normalized.includes("novit") || normalized.includes("aggiornament")) &&
+    !asksCategorySpecificUpdates
+  ) {
     const recentGrade = latestGrade(data);
     const todayNotices = notices.filter(
       (notification) => notification.date?.slice(0, 10) === localDateKey(now),
@@ -828,7 +841,11 @@ export function answerQuestion(
   ) {
     const requestedDay = relativeDayOffset(normalized);
     const asksUnread = normalized.includes("non lett");
-    const asksNew = normalized.includes("nuov") || normalized.includes("recent");
+    const asksNew =
+      normalized.includes("nuov") ||
+      normalized.includes("recent") ||
+      normalized.includes("novit") ||
+      normalized.includes("aggiornament");
     let matches = notices;
     if (requestedDay !== null)
       matches = matches.filter(
@@ -950,10 +967,21 @@ export function answerQuestion(
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
   const asksGradeList =
-    (normalized.includes("voti") || normalized.includes("valutazion")) &&
-    ["quali", "elenc", "lista", "mostra", "tutti", "vedere"].some((term) =>
-      normalized.includes(term),
-    );
+    (normalized.includes("voto") ||
+      normalized.includes("voti") ||
+      normalized.includes("valutazion")) &&
+    [
+      "quali",
+      "elenc",
+      "lista",
+      "mostra",
+      "tutti",
+      "vedere",
+      "novit",
+      "aggiornament",
+      "nuov",
+      "recent",
+    ].some((term) => normalized.includes(term));
   if (asksGradeList) {
     let grades = data.subjects.flatMap((item) =>
       item.grades.map((grade) => ({ subject: item, grade })),

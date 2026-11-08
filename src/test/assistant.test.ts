@@ -312,6 +312,53 @@ describe("Assistente locale", () => {
     expect(summary).toContain("Assemblea di classe");
   });
 
+  it("separa le novità di bacheca, voti e compiti dal riepilogo generale", () => {
+    const now = new Date(2026, 9, 27, 12);
+    const updatesData: VotoData = {
+      ...data,
+      assignments: [
+        { id: "new-task", title: "Relazione di storia", dueDate: "2026-10-30", completed: false },
+      ],
+      notifications: [
+        {
+          id: "new-notice",
+          type: "notice",
+          title: "Comunicazione di bacheca",
+          date: "2026-10-27",
+          read: false,
+        },
+      ],
+    };
+
+    const bulletin = answerQuestion(
+      "Ci sono novità in bacheca?",
+      updatesData,
+      emptySchedule(),
+      now,
+    );
+    expect(bulletin).toContain("Comunicazione di bacheca");
+    expect(bulletin).not.toContain("Ultimo voto");
+
+    const grades = answerQuestion("Ci sono novità nei voti?", updatesData, emptySchedule(), now);
+    expect(grades).toContain("Voti registrati");
+    expect(grades).toContain("Inglese");
+    expect(grades).not.toContain("Comunicazione di bacheca");
+
+    const assignments = answerQuestion(
+      "Ci sono novità nei compiti?",
+      updatesData,
+      emptySchedule(),
+      now,
+    );
+    expect(assignments).toContain("Relazione di storia");
+    expect(assignments).not.toContain("Ultimo voto");
+    expect(assignments).not.toContain("Comunicazione di bacheca");
+
+    const overview = answerQuestion("Quali sono le novità?", updatesData, emptySchedule(), now);
+    expect(overview).toContain("Ultimo voto");
+    expect(overview).toContain("Comunicazione di bacheca");
+  });
+
   it("non presenta un promemoria senza data come prossimo", () => {
     const noDateReminderData: VotoData = {
       ...data,
