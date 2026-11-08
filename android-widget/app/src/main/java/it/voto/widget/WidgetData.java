@@ -227,8 +227,8 @@ final class WidgetData {
     int interfaceTheme = prefs.getInt(WidgetConfigureActivity.INTERFACE_THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     int textSize = prefs.getInt(WidgetConfigureActivity.TEXT_SIZE_KEY + id, 1);
     boolean showUpdated = prefs.getBoolean(WidgetConfigureActivity.SHOW_UPDATED_KEY + id, true);
-    boolean glassBackground = prefs.getBoolean(WidgetConfigureActivity.GLASS_BACKGROUND_KEY + id, false);
-    boolean transparentBackground = prefs.getBoolean(WidgetConfigureActivity.TRANSPARENT_BACKGROUND_KEY + id, false);
+    boolean glassBackground = prefs.getBoolean(WidgetConfigureActivity.GLASS_BACKGROUND_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, false));
+    boolean transparentBackground = prefs.getBoolean(WidgetConfigureActivity.TRANSPARENT_BACKGROUND_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, false));
     String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : mode == 6 ? values[6] : mode == 7 ? values[7] : mode == 8 ? values[8] : mode == 9 ? values[9] : mode == 10 ? values[10] : values[0] + "\n" + values[6] + "\n" + values[7] + "\n" + values[3] + " · " + values[4] + " · " + values[5];
     int background = theme == 1 ? Color.rgb(18, 53, 43) : theme == 2 ? Color.rgb(42, 28, 63) : theme == 3 ? Color.rgb(18, 18, 18) : theme == 4 ? Color.rgb(247, 244, 237) : theme == 5 ? Color.rgb(92, 45, 24) : theme == 6 ? Color.rgb(24, 61, 82) : theme == 7 ? Color.rgb(86, 24, 37) : theme == 8 ? Color.rgb(55, 59, 66) : Color.rgb(23, 32, 51);
     boolean systemDark = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;

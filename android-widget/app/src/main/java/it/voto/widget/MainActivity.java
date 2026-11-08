@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -17,6 +18,8 @@ public class MainActivity extends Activity {
   private Spinner large;
   private Spinner defaultTheme;
   private Spinner defaultInterfaceTheme;
+  private CheckBox defaultGlassBackground;
+  private CheckBox defaultTransparentBackground;
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
@@ -31,6 +34,8 @@ public class MainActivity extends Activity {
     large = (Spinner) findViewById(R.id.large_mode);
     defaultTheme = (Spinner) findViewById(R.id.default_theme);
     defaultInterfaceTheme = (Spinner) findViewById(R.id.default_interface_theme);
+    defaultGlassBackground = (CheckBox) findViewById(R.id.default_glass_background);
+    defaultTransparentBackground = (CheckBox) findViewById(R.id.default_transparent_background);
     final Button refresh = (Button) findViewById(R.id.refresh_button);
     final Button github = (Button) findViewById(R.id.github_button);
     final Button logout = (Button) findViewById(R.id.logout_button);
@@ -39,6 +44,10 @@ public class MainActivity extends Activity {
     large.setSelection(prefs.getInt(WidgetConfigureActivity.LARGE_MODE_KEY, 5));
     defaultTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
     defaultInterfaceTheme.setSelection(prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
+    defaultGlassBackground.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, false));
+    defaultTransparentBackground.setChecked(prefs.getBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, false));
+    defaultGlassBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) defaultTransparentBackground.setChecked(false); });
+    defaultTransparentBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) defaultGlassBackground.setChecked(false); });
     refresh.setOnClickListener(v -> {
       refresh.setEnabled(false);
       status.setText("Aggiornamento dei widget in corso…");
@@ -66,6 +75,8 @@ public class MainActivity extends Activity {
         .putInt(WidgetConfigureActivity.LARGE_MODE_KEY, large.getSelectedItemPosition())
         .putInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, defaultTheme.getSelectedItemPosition())
         .putInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, defaultInterfaceTheme.getSelectedItemPosition())
+        .putBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, defaultGlassBackground.isChecked())
+        .putBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, defaultTransparentBackground.isChecked())
         .apply();
     WidgetData.refresh(this);
   }

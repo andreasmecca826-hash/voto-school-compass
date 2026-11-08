@@ -20,6 +20,8 @@ public class WidgetConfigureActivity extends Activity {
   public static final String LARGE_THEME_KEY = "large_theme";
   public static final String DEFAULT_THEME_KEY = "default_theme";
   public static final String DEFAULT_INTERFACE_THEME_KEY = "default_interface_theme";
+  public static final String DEFAULT_GLASS_BACKGROUND_KEY = "default_glass_background";
+  public static final String DEFAULT_TRANSPARENT_BACKGROUND_KEY = "default_transparent_background";
   public static final String GLASS_BACKGROUND_KEY = "glass_background_";
   public static final String TRANSPARENT_BACKGROUND_KEY = "transparent_background_";
 
