@@ -11,6 +11,53 @@ const normalize = (value: string) =>
 
 const hasAny = (query: string, terms: string[]) => terms.some((term) => query.includes(term));
 
+const INJURY_TERMS = [
+  "malore",
+  "malessere",
+  "infortun",
+  "ferit",
+  "mi faccio male",
+  "farmi male",
+  "mi sono fatto male",
+  "mi sono fatta male",
+  "mi sento male a scuola",
+  "sto male a scuola",
+  "mi gira la testa a scuola",
+  "incidente a scuola",
+  "caduto a scuola",
+  "caduta a scuola",
+  "svenuto a scuola",
+  "svenuta a scuola",
+];
+
+const EARLY_EXIT_TERMS = [
+  "uscita anticip",
+  "uscire prima",
+  "esco prima",
+  "vado via prima",
+  "andare via prima",
+  "lasciare la scuola prima",
+];
+
+const DAMAGE_TERMS = [
+  "oggetto smarrito",
+  "furto",
+  "smarrimento",
+  "perquisizione",
+  "perquisire",
+  "danneggiare",
+  "danneggio",
+  "danni agli arredi",
+  "rompere un banco",
+  "rompo un banco",
+  "rompere qualcosa",
+  "rompo qualcosa",
+  "danneggiare qualcosa",
+  "danneggio qualcosa",
+  "rompere un oggetto",
+  "rompo un oggetto",
+];
+
 const withSource = (answer: string, articles = "") =>
   `${answer} Fonte: ${SOURCE}${articles ? `, ${articles}` : ""}. ${YEAR_NOTICE}`;
 
@@ -36,23 +83,60 @@ export function answerSchoolRegulation(query: string): string | null {
   const asksForPersonalNotes =
     hasAny(normalized, ["nota", "note"]) &&
     hasAny(normalized, ["ho", "miei", "mie", "registrat", "visualizza"]);
+  const asksAboutInjuryOrIllness = hasAny(normalized, INJURY_TERMS);
+  const asksAboutPersonalAbsenceMargin = hasAny(normalized, [
+    "mi restano",
+    "mi rimangono",
+    "quanto mi resta",
+    "quanto mi manca",
+    "mi mancano",
+    "quante ore ho fatto",
+    "quante ore di assenza ho",
+    "quanti giorni ho fatto",
+  ]);
+  const asksAboutAttendanceLimit =
+    !asksAboutPersonalAbsenceMargin &&
+    ((normalized.includes("assen") &&
+      hasAny(normalized, [
+        "posso",
+        "limite",
+        "massim",
+        "troppe",
+        "bocciat",
+        "rischio",
+        "rischiare",
+        "perdere l'anno",
+        "perdo l'anno",
+        "passare l'anno",
+        "validita",
+      ])) ||
+      hasAny(normalized, ["tre quarti", "frequenza minima"]));
+  const asksAboutDelayRule =
+    normalized.includes("ritard") &&
+    hasAny(normalized, [
+      "come",
+      "regol",
+      "regola",
+      "entro",
+      "dopo",
+      "minuti",
+      "seconda ora",
+      "succede se",
+      "posso fare",
+      "posso avere",
+      "tollerat",
+      "massim",
+      "limite",
+      "consentit",
+    ]);
+  const asksAboutEarlyDeparture = hasAny(normalized, EARLY_EXIT_TERMS);
 
   const asksAboutSchoolRule =
     hasAny(normalized, ["cellular", "telefon", "smartphone", "iphone", "tablet", "smartwatch"]) ||
     (normalized.includes("giustific") && normalized.includes("assen")) ||
-    (normalized.includes("ritard") &&
-      hasAny(normalized, [
-        "come",
-        "regol",
-        "regola",
-        "entro",
-        "dopo",
-        "minuti",
-        "seconda ora",
-        "succede se",
-      ])) ||
-    (normalized.includes("uscita anticip") &&
-      hasAny(normalized, ["come", "regol", "regola", "permesso", "autorizz", "genitore"])) ||
+    asksAboutDelayRule ||
+    asksAboutEarlyDeparture ||
+    asksAboutAttendanceLimit ||
     (normalized.includes("frequenza") &&
       hasAny(normalized, ["regol", "regola", "validita", "anno scolastico", "tre quarti"])) ||
     (normalized.includes("verifica") &&
@@ -152,28 +236,9 @@ export function answerSchoolRegulation(query: string): string | null {
       "faccio un video",
       "pubblico foto",
     ]) ||
-    hasAny(normalized, [
-      "oggetto smarrito",
-      "furto",
-      "smarrimento",
-      "perquisizione",
-      "perquisire",
-      "danneggiare",
-      "danneggio",
-      "danni agli arredi",
-      "rompere un banco",
-      "rompo un banco",
-    ]) ||
-    hasAny(normalized, [
-      "farmaco",
-      "farmaci",
-      "medicinale",
-      "medicinali",
-      "salvavita",
-      "malore",
-      "infortunio",
-      "infortunata",
-    ]) ||
+    hasAny(normalized, DAMAGE_TERMS) ||
+    hasAny(normalized, ["farmaco", "farmaci", "medicinale", "medicinali", "salvavita"]) ||
+    asksAboutInjuryOrIllness ||
     hasAny(normalized, [
       "orario di ingresso",
       "orario scolastico",
@@ -250,14 +315,14 @@ export function answerSchoolRegulation(query: string): string | null {
     );
   }
 
-  if (normalized.includes("ritard")) {
+  if (asksAboutDelayRule) {
     return withSource(
       "Per un ritardo occasionale non abituale fino a 10 minuti, spiega il motivo al docente della prima ora: se lo ritiene valido può ammetterti segnando una R. Superati i 10 minuti si entra dalla seconda ora; il ritardo deve essere motivato e giustificato. Il regolamento dice che dopo tre ritardi brevi si è riammessi accompagnati dai genitori; per ingressi posticipati oltre tre al mese può servire l’autorizzazione del collaboratore vicario e viene informata la famiglia. Gli ingressi continuativi richiedono una richiesta scritta e autorizzazione preventiva della Dirigenza.",
       "art. 18.2–18.3",
     );
   }
 
-  if (normalized.includes("uscita anticip")) {
+  if (asksAboutEarlyDeparture) {
     return withSource(
       "L’uscita anticipata, salvo un evento accaduto a scuola, va normalmente preannunciata dal genitore, motivata e giustificata. Per un minorenne deve essere autorizzata dal genitore o da una persona delegata, che compila il modulo e attende all’ingresso: lo studente non esce da solo. Le uscite continuative richiedono autorizzazione preventiva della Dirigenza; oltre tre uscite mensili interviene il collaboratore vicario e vengono informate Dirigente e famiglia. Per un maggiorenne la richiesta è autorizzata dal docente e la segreteria informa almeno un genitore.",
       "art. 19.1",
@@ -265,6 +330,7 @@ export function answerSchoolRegulation(query: string): string | null {
   }
 
   if (
+    asksAboutAttendanceLimit ||
     normalized.includes("frequenza") ||
     normalized.includes("ore di scuola") ||
     normalized.includes("validita dell anno") ||
@@ -272,7 +338,7 @@ export function answerSchoolRegulation(query: string): string | null {
     normalized.includes("tre quarti")
   ) {
     return withSource(
-      "Per la validità dell’anno scolastico il regolamento richiede la frequenza di almeno tre quarti dell’orario annuale personalizzato. Alcune assenze possono essere escluse dal conteggio solo se rientrano nelle deroghe approvate dal Collegio dei Docenti e previste nel PTOF. La documentazione delle deroghe va consegnata all’Ufficio protocollo al rientro e comunque entro 15 giorni; per la documentazione medica il regolamento non ammette certificati prodotti a posteriori per malattie pregresse.",
+      "Non c’è un numero fisso di giorni di assenza uguale per tutti: per la validità dell’anno scolastico il regolamento richiede la frequenza di almeno tre quarti dell’orario annuale personalizzato. Alcune assenze possono essere escluse dal conteggio solo se rientrano nelle deroghe approvate dal Collegio dei Docenti e previste nel PTOF. La documentazione delle deroghe va consegnata all’Ufficio protocollo al rientro e comunque entro 15 giorni; per la documentazione medica il regolamento non ammette certificati prodotti a posteriori per malattie pregresse.",
       "art. 21",
     );
   }
@@ -431,20 +497,7 @@ export function answerSchoolRegulation(query: string): string | null {
     );
   }
 
-  if (
-    hasAny(normalized, [
-      "oggetto smarrito",
-      "furto",
-      "smarrimento",
-      "perquisizione",
-      "perquisire",
-      "danneggiare",
-      "danneggio",
-      "danni agli arredi",
-      "rompere un banco",
-      "rompo un banco",
-    ])
-  ) {
+  if (hasAny(normalized, DAMAGE_TERMS)) {
     return withSource(
       "Il regolamento invita a non portare oggetti di valore e precisa che la scuola non risponde di furto, smarrimento o danneggiamento degli oggetti personali. Il personale scolastico non è autorizzato a perquisire studenti o zaini; il regolamento indica che tali operazioni spettano alle Forze dell’Ordine secondo la legge. I danni alle strutture o alle dotazioni imputabili agli studenti possono comportare provvedimenti e risarcimento.",
       "art. 29 e art. 30",
@@ -458,7 +511,7 @@ export function answerSchoolRegulation(query: string): string | null {
     );
   }
 
-  if (hasAny(normalized, ["malore", "infortunio", "infortunata"])) {
+  if (asksAboutInjuryOrIllness) {
     return withSource(
       "In caso di malore o infortunio a scuola, il regolamento prevede di chiamare l’addetto al primo soccorso, avvisare i familiari e, nelle situazioni gravi o anche solo presumibilmente gravi, richiedere l’intervento urgente dei servizi sanitari (118). Se sta succedendo ora, avvisa subito un docente o un collaboratore scolastico.",
       "art. 35",

@@ -105,6 +105,38 @@ describe("Assistente locale", () => {
     );
   });
 
+  it("capisce domande colloquiali su un infortunio e sull’uso dell’ascensore", () => {
+    const injury = answerQuestion("Cosa accade se mi faccio male?", data);
+    expect(injury).toContain("primo soccorso");
+    expect(injury).toContain("118");
+    expect(injury).toContain("art. 35");
+    expect(answerQuestion("Cosa acacde se mi faccio male?", data)).toContain("primo soccorso");
+
+    const hurtAtSchool = answerQuestion("A chi mi rivolgo se mi faccio male a scuola?", data);
+    expect(hurtAtSchool).toContain("avvisa subito un docente");
+
+    const elevator = answerQuestion("Posso usare l’ascensore?", data);
+    expect(elevator).toContain("difficoltà di deambulazione");
+    expect(elevator).toContain("accompagnati da un collaboratore scolastico");
+    expect(answerQuestion("Posso usare ascensore?", data)).toContain(
+      "accompagnati da un collaboratore scolastico",
+    );
+  });
+
+  it("capisce domande colloquiali su assenze, ritardi, uscite e danni", () => {
+    const attendance = answerQuestion("Quante assenze posso fare prima di perdere l’anno?", data);
+    expect(attendance).toContain("Non c’è un numero fisso di giorni di assenza uguale per tutti");
+    expect(attendance).toContain("tre quarti");
+
+    expect(answerQuestion("Quanti ritardi posso fare?", data)).toContain("dopo tre ritardi brevi");
+    expect(answerQuestion("Posso andare via prima da scuola?", data)).toContain(
+      "preannunciata dal genitore",
+    );
+    expect(answerQuestion("Se rompo qualcosa a scuola cosa rischio?", data)).toContain(
+      "danni alle strutture o alle dotazioni",
+    );
+  });
+
   it("non confonde domande sui voti o sulle note personali con il regolamento", () => {
     expect(answerQuestion("Cosa succede se prendo 8 in Inglese?", data)).toContain("passerebbe");
     expect(answerQuestion("Quali note disciplinari ho?", data)).toContain(
