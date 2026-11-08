@@ -2469,6 +2469,21 @@
   background-color: var(--color-background);
   background-image:
     radial-gradient(
+      ellipse 5px 13px at 18% 17%,
+      color-mix(in srgb, var(--sangue-rubino) 28%, transparent) 0 48%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 4px 10px at 21% 20%,
+      color-mix(in srgb, var(--sangue-cremisi) 25%, transparent) 0 48%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 6px 15px at 88% 13%,
+      color-mix(in srgb, var(--sangue-rubino) 20%, transparent) 0 48%,
+      transparent 62%
+    ),
+    radial-gradient(
       ellipse at 12% 0%,
       color-mix(in srgb, var(--sangue-rubino) 24%, transparent),
       transparent 38%
@@ -2501,6 +2516,16 @@
   .card-surface {
   background:
     radial-gradient(
+      ellipse 6px 15px at 14% 0%,
+      color-mix(in srgb, var(--sangue-rubino) 23%, transparent) 0 55%,
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse 4px 11px at 20% 0%,
+      color-mix(in srgb, var(--sangue-cremisi) 18%, transparent) 0 55%,
+      transparent 66%
+    ),
+    radial-gradient(
       ellipse at 100% 0%,
       color-mix(in srgb, var(--sangue-luce) 12%, transparent),
       transparent 36%
@@ -2526,6 +2551,12 @@
   .voto-shell
   .glass-panel {
   background-image:
+    linear-gradient(
+      132deg,
+      transparent 0 30%,
+      color-mix(in srgb, var(--sangue-rubino) 8%, transparent) 30.3% 30.7%,
+      transparent 31% 100%
+    ),
     linear-gradient(
       120deg,
       color-mix(in srgb, var(--sangue-luce) 13%, transparent),

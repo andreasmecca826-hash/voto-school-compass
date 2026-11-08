@@ -96,12 +96,6 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
-    id: "sangue",
-    label: "Sangue",
-    description: "Borgogna profondo, cremisi e riflessi rubino",
-    sw: "radial-gradient(circle at 78% 18%,#ff9ba9 0 2%,#d72d4d 3%,transparent 17%),repeating-linear-gradient(135deg,transparent 0 20px,#ff536a18 20px 22px),linear-gradient(145deg,#090a11 0%,#35101c 32%,#7b1730 62%,#c8324d 84%,#230c16 100%)",
-  },
-  {
     id: "oro",
     label: "Oro",
     description: "Ossidiana, oro satinato e riflessi champagne",
@@ -220,6 +214,12 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     label: "Inverno",
     description: "Blu notte, brina e bagliori di ghiaccio",
     sw: "radial-gradient(ellipse at 82% 16%,#d8f7ff 0 8%,transparent 9%),radial-gradient(ellipse at 14% 86%,#8bcbe6 0 10%,transparent 11%),linear-gradient(145deg,#0a1832 0%,#23496f 56%,#b6dce9 100%)",
+  },
+  {
+    id: "sangue",
+    label: "Sangue",
+    description: "Borgogna, colature cremisi e riflessi rubino",
+    sw: "radial-gradient(ellipse 7px 14px at 22% 0%,#9a2039 0 52%,transparent 62%),radial-gradient(ellipse 5px 11px at 31% 0%,#d73b56 0 52%,transparent 62%),radial-gradient(circle at 78% 18%,#ff9ba9 0 2%,#d72d4d 3%,transparent 17%),repeating-linear-gradient(135deg,transparent 0 20px,#ff536a18 20px 22px),linear-gradient(145deg,#090a11 0%,#35101c 32%,#7b1730 62%,#c8324d 84%,#230c16 100%)",
   },
 ];
 const CUSTOM_COLORS: {
