@@ -1461,5 +1461,24 @@ export function answerQuestion(
       : "Non ci sono ancora attività nel Diario.";
   }
 
+  if (
+    [
+      "voto",
+      "voti",
+      "compito",
+      "compiti",
+      "circolare",
+      "circolari",
+      "promemoria",
+      "diario",
+      "interrogazione",
+      "interrogazioni",
+      "materia",
+      "docente",
+    ].some((term) => normalized.includes(term))
+  ) {
+    return "Riconosco l’argomento, ma non la forma della richiesta. Prova per esempio “cerca algebra”, “quali compiti ho?” oppure “qual è l’ultimo voto?”. Non ho modificato nessun dato.";
+  }
+
   return "Non ho capito la domanda. Prova a riformularla o scegli uno dei suggerimenti qui sotto.";
 }
