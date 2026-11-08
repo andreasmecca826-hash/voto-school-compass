@@ -41,6 +41,7 @@ describe("preferences backup", () => {
 
   it.each([
     "emoji",
+    "sangue",
     "windows-98",
     "windows-7",
     "casino",

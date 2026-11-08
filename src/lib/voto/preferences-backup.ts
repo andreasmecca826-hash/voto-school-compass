@@ -97,6 +97,7 @@ const THEMES: Theme[] = [
   "tramonto",
   "oro",
   "diamante",
+  "sangue",
   "custom",
 ];
 const FONTS: CustomTheme["font"][] = ["theme", "sans", "display", "mono", "serif"];

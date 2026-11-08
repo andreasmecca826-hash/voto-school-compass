@@ -2442,3 +2442,161 @@
   background-image: none !important;
   background-attachment: scroll !important;
 }
+
+/* Tema Sangue: cremisi profondo, riflessi rubino e superfici satinate. */
+:root[data-theme="sangue"]:not([data-registry-style="didup"]) {
+  --theme-bg-dark: oklch(0.105 0.035 15);
+  --theme-card-dark: oklch(0.185 0.045 17);
+  --theme-surface-dark: oklch(0.27 0.065 20);
+  --theme-bg-light: oklch(0.95 0.028 15);
+  --theme-card-light: oklch(0.99 0.012 20);
+  --theme-surface-light: oklch(0.89 0.045 18);
+  --theme-fg-dark: oklch(0.97 0.02 25);
+  --theme-fg-light: oklch(0.21 0.04 17);
+  --theme-muted-dark: oklch(0.72 0.04 20);
+  --theme-muted-light: oklch(0.44 0.035 20);
+  --theme-primary: oklch(0.49 0.17 23);
+  --primary-foreground: oklch(0.99 0 0);
+  --theme-radius: 0.9rem;
+  --theme-font-sans: Manrope, sans-serif;
+  --theme-font-display: Manrope, sans-serif;
+  --sangue-rubino: #d72d4d;
+  --sangue-cremisi: #7e1830;
+  --sangue-luce: #ffbcc5;
+  --sangue-ombra: #260b15;
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"]) body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(
+      ellipse at 12% 0%,
+      color-mix(in srgb, var(--sangue-rubino) 24%, transparent),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 100% 22%,
+      color-mix(in srgb, var(--sangue-cremisi) 26%, transparent),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 48% 100%,
+      color-mix(in srgb, #a51e3c 16%, transparent),
+      transparent 45%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 78px,
+      color-mix(in srgb, var(--sangue-luce) 2.5%, transparent) 78px 79px,
+      transparent 79px 156px
+    ),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--sangue-ombra) 30%, var(--color-background)),
+      var(--color-background) 70%
+    );
+  background-attachment: fixed;
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"])
+  .voto-shell
+  .card-surface {
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      color-mix(in srgb, var(--sangue-luce) 12%, transparent),
+      transparent 36%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sangue-rubino) 14%, transparent),
+      transparent 52%
+    ),
+    linear-gradient(
+      315deg,
+      color-mix(in srgb, var(--sangue-ombra) 10%, transparent),
+      transparent 65%
+    ),
+    color-mix(in srgb, var(--color-card) 80%, transparent);
+  border-color: color-mix(in srgb, var(--sangue-rubino) 56%, var(--color-border));
+  box-shadow:
+    0 16px 34px -23px color-mix(in srgb, var(--sangue-cremisi) 76%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--sangue-luce) 24%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--sangue-ombra) 28%, transparent);
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"])
+  .voto-shell
+  .glass-panel {
+  background-image:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--sangue-luce) 13%, transparent),
+      transparent 38% 66%,
+      color-mix(in srgb, var(--sangue-rubino) 8%, transparent)
+    ),
+    linear-gradient(
+      310deg,
+      color-mix(in srgb, var(--sangue-cremisi) 10%, transparent),
+      transparent 58%
+    );
+  border-color: color-mix(in srgb, var(--sangue-rubino) 50%, var(--color-border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--sangue-luce) 24%, transparent),
+    0 12px 30px -20px color-mix(in srgb, var(--sangue-cremisi) 68%, transparent);
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"])
+  .voto-shell
+  .bg-primary {
+  background-image:
+    linear-gradient(
+      105deg,
+      transparent 0 15%,
+      color-mix(in srgb, var(--sangue-luce) 30%, transparent) 15.5% 16.2%,
+      transparent 16.8% 42%,
+      color-mix(in srgb, white 14%, transparent) 42.5% 43%,
+      transparent 43.5% 100%
+    ),
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, white 18%, transparent),
+      transparent 48%,
+      color-mix(in srgb, var(--sangue-ombra) 22%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--sangue-luce) 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--sangue-ombra) 26%, transparent),
+    0 4px 14px -8px color-mix(in srgb, var(--sangue-rubino) 78%, transparent);
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"])
+  .voto-shell
+  nav:not(.didup-bottom)
+  [aria-current="page"]
+  > span {
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--sangue-luce) 14%, transparent),
+    transparent 58%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--sangue-luce) 30%, transparent),
+    0 2px 10px -5px color-mix(in srgb, var(--sangue-rubino) 70%, transparent);
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"])
+  .voto-shell
+  [data-radix-progress-indicator] {
+  background-image: linear-gradient(
+    120deg,
+    transparent 0 20%,
+    color-mix(in srgb, var(--sangue-luce) 30%, transparent) 20.5% 22%,
+    transparent 22.5% 64%,
+    color-mix(in srgb, var(--sangue-cremisi) 14%, transparent) 64.5% 66%,
+    transparent 66.5% 100%
+  );
+}
+:root[data-theme="sangue"]:not([data-registry-style="didup"])
+  :is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]),
+    select,
+    textarea
+  ) {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+  background-color: color-mix(in srgb, var(--color-card) 94%, transparent);
+}

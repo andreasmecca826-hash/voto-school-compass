@@ -13,6 +13,12 @@ describe("assistant random complete theme action", () => {
     });
   });
 
+  it("includes Sangue among the complete presets", () => {
+    expect(getRandomCompleteThemeIntent("Tema a caso", "oro", () => 0.05)).toMatchObject({
+      action: { theme: "sangue", label: "Sangue" },
+    });
+  });
+
   it("selects from the end of the complete preset list when randomness is near one", () => {
     expect(getRandomCompleteThemeIntent("Tema a caso", "original", () => 0.999999)).toMatchObject({
       kind: "confirm",
