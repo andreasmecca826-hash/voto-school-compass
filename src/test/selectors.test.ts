@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  notificationContentLabel,
   selectDashboardAssignments,
   selectNotificationsByType,
   selectOpenInterrogazioni,
@@ -8,6 +9,20 @@ import {
 } from "@/lib/voto/selectors";
 
 describe("Dashboard selectors", () => {
+  it("classifica avvisi con allegati come Circolari e avvisi solo testuali come Comunicazioni", () => {
+    const base = { type: "notice" as const, title: "Avviso", read: false };
+
+    expect(
+      notificationContentLabel({ ...base, id: "pdf", attachments: [{ name: "circolare.pdf" }] }),
+    ).toBe("Circolari");
+    expect(notificationContentLabel({ ...base, id: "docx", attachmentName: "modulo.docx" })).toBe(
+      "Circolari",
+    );
+    expect(notificationContentLabel({ ...base, id: "text", message: "Solo testo" })).toBe(
+      "Comunicazioni",
+    );
+  });
+
   it("seleziona e ordina i compiti di oggi e domani", () => {
     const now = new Date(2026, 9, 26);
     const assignments = [

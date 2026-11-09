@@ -326,7 +326,12 @@ describe("visualizzatore PDF delle circolari interne", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
-    expect(screen.getByRole("textbox", { name: "Domanda sulla circolare" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Fai una domanda alla comunicazione" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Domanda sulla comunicazione" }),
+    ).toBeInTheDocument();
   });
 
   it("preferisce il path PDF interno al duplicato esterno", () => {

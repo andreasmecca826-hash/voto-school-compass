@@ -33,13 +33,16 @@ const data: VotoData = {
 };
 
 describe("Assistente locale", () => {
-  it("spiega i messaggi generici delle notifiche ntfy", () => {
+  it("spiega i messaggi ntfy e distingue Circolari da Comunicazioni", () => {
     const answer = answerQuestion("Perché ntfy mostra un testo diverso?", data);
 
     expect(answer).toContain("Ci sono novità in bacheca");
     expect(answer).toContain("Ci sono novità nei voti");
     expect(answer).toContain("Ci sono novità nei compiti");
     expect(answer).toContain("apri la sezione corrispondente in VOTO");
+    expect(answer).toContain("avvisi con PDF o DOCX sono Circolari");
+    expect(answer).toContain("composti solo da testo sono Comunicazioni");
+    expect(answer).toContain("monitor ntfy esterno");
   });
 
   it("indirizza alle pagelle e chiarisce che i riepiloghi non sono ufficiali", () => {
@@ -280,7 +283,8 @@ describe("Assistente locale", () => {
           type: "notice",
           title: "Assemblea d’istituto",
           date: "2026-11-05",
-          extractedText: "L’assemblea riguarda la classe 2I. Gli studenti della 2I escono alle ore 12:30.",
+          extractedText:
+            "L’assemblea riguarda la classe 2I. Gli studenti della 2I escono alle ore 12:30.",
           read: false,
         },
       ],

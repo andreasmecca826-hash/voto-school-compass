@@ -42,6 +42,7 @@ import {
   selectNotificationsByType,
   selectOpenInterrogazioni,
   selectUpcomingReminders,
+  notificationContentLabel,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -717,9 +718,7 @@ function NotifItem({ id }: { id: string }) {
             }}
             className="press mt-2 inline-flex max-w-full items-center rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary"
           >
-            {n.attachmentName || n.attachmentPath || n.attachmentUrl || n.attachments?.length
-              ? "Apri circolare"
-              : "Apri comunicazione"}
+            {notificationContentLabel(n) === "Circolari" ? "Apri circolare" : "Apri comunicazione"}
           </button>
         )}
       </div>

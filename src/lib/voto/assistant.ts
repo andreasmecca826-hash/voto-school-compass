@@ -296,7 +296,10 @@ function noticeQueryTerms(query: string): string[] {
     );
 }
 
-function matchesNoticeQuery(query: string, notification: VotoData["notifications"][number]): boolean {
+function matchesNoticeQuery(
+  query: string,
+  notification: VotoData["notifications"][number],
+): boolean {
   const content = noticeSearchText(notification);
   return noticeQueryTerms(query).some((term) => content.includes(term));
 }
@@ -358,7 +361,7 @@ export function answerQuestion(
         normalized.includes(term),
       ));
   if (asksNtfyMessage) {
-    return "Le notifiche ntfy del monitor sono brevi: «Ci sono novità in bacheca», «Ci sono novità nei voti» o «Ci sono novità nei compiti». Per leggere i dettagli apri la sezione corrispondente in VOTO. Da questa chat non posso cambiare il topic o le impostazioni ntfy.";
+    return "Le notifiche ntfy del monitor sono brevi: «Ci sono novità in bacheca», «Ci sono novità nei voti» o «Ci sono novità nei compiti». In VOTO, gli avvisi con PDF o DOCX sono Circolari; quelli composti solo da testo sono Comunicazioni. Per ricevere push distinti («Nuove circolari in bacheca» e «Nuove comunicazioni in bacheca») va aggiornato il monitor ntfy esterno, il cui mittente non è incluso in questa app. Per leggere i dettagli apri la sezione corrispondente in VOTO.";
   }
 
   if (

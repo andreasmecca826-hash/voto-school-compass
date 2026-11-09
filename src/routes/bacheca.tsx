@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, toIso } from "@/lib/voto/dates";
+import { notificationContentLabel } from "@/lib/voto/selectors";
 import { useVoto } from "@/lib/voto/store";
 import type { AppNotification } from "@/lib/voto/types";
 
@@ -268,6 +269,7 @@ function DidupBacheca() {
         {filtered.length ? (
           filtered.map((item) => {
             const count = attachmentCount(item);
+            const contentLabel = notificationContentLabel(item);
             return (
               <article
                 key={item.id}
@@ -298,7 +300,9 @@ function DidupBacheca() {
                     aria-hidden="true"
                     className="h-[29px] w-[32px] shrink-0 object-contain"
                   />
-                  <span className="text-[16px] tracking-[0.08em]">CIRCOLARI</span>
+                  <span className="text-[16px] tracking-[0.08em]">
+                    {contentLabel.toLocaleUpperCase("it-IT")}
+                  </span>
                 </div>
 
                 <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
@@ -328,7 +332,7 @@ function DidupBacheca() {
                     className="press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90"
                   >
                     <FileText className="h-[21px] w-[21px] shrink-0" aria-hidden="true" />
-                    <span>Leggi comunicazione</span>
+                    <span>Apri comunicazione</span>
                   </button>
                 )}
               </article>
@@ -344,8 +348,8 @@ function DidupBacheca() {
             />
             <p className="mt-4 text-sm text-white/90">
               {hasActiveFilters
-                ? "Nessuna circolare corrisponde ai filtri scelti."
-                : "Nessuna circolare in bacheca."}
+                ? "Nessuna circolare o comunicazione corrisponde ai filtri scelti."
+                : "Nessuna circolare o comunicazione in bacheca."}
             </p>
           </div>
         )}
@@ -387,12 +391,14 @@ function StandardBacheca() {
       {notices.length ? (
         notices.map((item) => {
           const count = attachmentCount(item);
+          const contentLabel = notificationContentLabel(item);
           return (
             <article key={item.id} className="card-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium uppercase text-muted-foreground">
-                    {item.subject || "Circolari"}
+                    {contentLabel}
+                    {item.subject ? ` · ${item.subject}` : ""}
                     {item.teacher ? ` · ${item.teacher}` : ""}
                   </p>
                   <h2 className="mt-1 text-sm font-semibold">{item.message || item.title}</h2>
@@ -420,7 +426,7 @@ function StandardBacheca() {
                   className="press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary"
                 >
                   <FileText className="h-4 w-4" />
-                  Leggi comunicazione
+                  Apri comunicazione
                 </button>
               )}
             </article>
@@ -428,7 +434,7 @@ function StandardBacheca() {
         })
       ) : (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          Nessuna circolare in bacheca.
+          Nessuna circolare o comunicazione in bacheca.
         </p>
       )}
       <CircularViewer

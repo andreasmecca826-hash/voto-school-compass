@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
-import { selectUpcomingReminders } from "@/lib/voto/selectors";
+import { notificationContentLabel, selectUpcomingReminders } from "@/lib/voto/selectors";
 import { fmtDate, toIso } from "@/lib/voto/dates";
 import type { AppNotification } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
@@ -366,7 +366,10 @@ export function DidupDashboard() {
       <DidupScroller>
         {notices.length > 0 ? (
           notices.slice(0, 5).map((item) => {
-            const attachmentCount = item.attachments?.length || (item.attachmentPath ? 1 : 0);
+            const attachmentCount =
+              item.attachments?.length || (item.attachmentPath || item.attachmentUrl ? 1 : 0);
+            const contentLabel = notificationContentLabel(item);
+            const hasFiles = contentLabel === "Circolari";
             const teacher = item.teacher || teacherForSubject(item.subject);
             return (
               <article
@@ -380,15 +383,15 @@ export function DidupDashboard() {
                   aria-hidden="true"
                   className="absolute right-0 top-0 h-[40px] w-[40px] select-none"
                 />
-                <p className="mt-2 text-[18px] uppercase">Circolari</p>
+                <p className="mt-2 text-[18px] uppercase">{contentLabel}</p>
                 <p className="text-[13px]">
-                  {item.subject || "Circolare"}
+                  {item.subject || contentLabel}
                   {teacher ? ` · ${teacher}` : ""}
                 </p>
                 <p className="mt-7 line-clamp-1 text-[14px] leading-6">
                   {item.message || item.title}
                 </p>
-                {attachmentCount > 0 && (
+                {hasFiles && (
                   <button
                     type="button"
                     onClick={() => {
@@ -402,11 +405,25 @@ export function DidupDashboard() {
                     {attachmentCount}
                   </button>
                 )}
+                {!hasFiles && (item.message || item.extractedText || item.title) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCircular(item);
+                      v.markRead([item.id]);
+                    }}
+                    aria-label={`Apri comunicazione: ${item.title}`}
+                    className="press mt-auto inline-flex items-center text-left text-[12px] text-white/90"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Leggi comunicazione
+                  </button>
+                )}
               </article>
             );
           })
         ) : (
-          <EmptyTile text="Nessuna circolare" variant="notice" />
+          <EmptyTile text="Nessuna circolare o comunicazione" variant="notice" />
         )}
       </DidupScroller>
 
@@ -447,6 +464,9 @@ export function DidupDashboard() {
         path={selectedCircular?.attachmentPath}
         attachments={selectedCircular?.attachments}
         url={selectedCircular?.attachmentPath ? selectedCircular.attachmentUrl : undefined}
+        extractedText={
+          selectedCircular?.extractedText ?? selectedCircular?.message ?? selectedCircular?.title
+        }
       />
     </div>
   );

@@ -22,6 +22,18 @@ export function selectNotificationsByType(
   return notifications.filter((notification) => notification.type === type).slice(0, limit);
 }
 
+export function notificationContentLabel(
+  notification: AppNotification,
+): "Circolari" | "Comunicazioni" {
+  const hasAttachment = Boolean(
+    notification.attachments?.length ||
+    notification.attachmentPath ||
+    notification.attachmentUrl ||
+    notification.attachmentName,
+  );
+  return hasAttachment ? "Circolari" : "Comunicazioni";
+}
+
 function reminderDaysFromNow(notification: AppNotification, now: Date): number | null {
   const date = notification.date?.slice(0, 10);
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;

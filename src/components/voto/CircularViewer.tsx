@@ -322,6 +322,7 @@ export function CircularViewer({
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
   const hasTextOnlyContent = !previewUrl && Boolean(extractedText?.trim());
+  const documentLabel = hasTextOnlyContent ? "comunicazione" : "circolare";
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
   const canAskAi = canAnalyze || hasTextOnlyContent;
   const effectiveAiMode = !isPdf && activeAiMode === "vision" ? "local" : activeAiMode;
@@ -709,7 +710,7 @@ export function CircularViewer({
           >
             <div>
               <h3 className="text-xs font-semibold text-foreground">
-                Fai una domanda alla circolare
+                Fai una domanda alla {documentLabel}
               </h3>
               <div
                 role="group"
@@ -827,14 +828,14 @@ export function CircularViewer({
             )}
             {aiDocumentTruncated && effectiveAiMode !== "vision" && (
               <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
-                Circolare lunga: per la domanda è stato considerato un estratto del testo. La
-                risposta potrebbe non includere informazioni presenti nelle parti omesse.
+                Testo lungo: per la domanda è stato considerato un estratto. La risposta potrebbe
+                non includere informazioni presenti nelle parti omesse.
               </p>
             )}
             {aiMessages.length > 0 && (
               <div
                 aria-live="polite"
-                aria-label="Conversazione sulla circolare"
+                aria-label={`Conversazione sulla ${documentLabel}`}
                 className="max-h-36 space-y-2 overflow-y-auto rounded-lg bg-card/80 p-2"
               >
                 {aiMessages.map((message, index) => (
@@ -868,7 +869,7 @@ export function CircularViewer({
                     {aiProgressMessage ??
                       (effectiveAiMode === "device"
                         ? "Genero la risposta sul telefono…"
-                        : "Sto leggendo la circolare…")}
+                        : `Sto leggendo la ${documentLabel}…`)}
                   </p>
                 )}
               </div>
@@ -879,7 +880,7 @@ export function CircularViewer({
                 value={aiQuestion}
                 onChange={(event) => setAiQuestion(event.target.value)}
                 placeholder="Es. Entro quando va consegnato?"
-                aria-label="Domanda sulla circolare"
+                aria-label={`Domanda sulla ${documentLabel}`}
                 maxLength={1_000}
                 className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
