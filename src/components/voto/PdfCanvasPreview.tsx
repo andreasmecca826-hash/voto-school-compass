@@ -138,12 +138,26 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           const pageQueue: number[] = [];
           const queuedPages = new Set<number>([1]);
           let processingQueue = false;
+          const distanceFromViewport = (pageNumber: number) => {
+            const slot = slots[pageNumber - 1];
+            const scrollport = container.parentElement;
+            if (!slot || !scrollport) return Number.MAX_SAFE_INTEGER;
+            const pageRect = slot.getBoundingClientRect();
+            const scrollRect = scrollport.getBoundingClientRect();
+            if (pageRect.bottom < scrollRect.top) return scrollRect.top - pageRect.bottom;
+            if (pageRect.top > scrollRect.bottom) return pageRect.top - scrollRect.bottom;
+            return 0;
+          };
 
           const renderQueuedPages = async () => {
             if (processingQueue) return;
             processingQueue = true;
             try {
               while (pageQueue.length > 0 && !cancelled) {
+                pageQueue.sort(
+                  (left, right) =>
+                    distanceFromViewport(left) - distanceFromViewport(right) || left - right,
+                );
                 const pageNumber = pageQueue.shift();
                 if (pageNumber === undefined) continue;
                 try {

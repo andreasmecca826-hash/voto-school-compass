@@ -31,14 +31,19 @@ class TestIntersectionObserver {
   }
 
   trigger(target: Element) {
+    this.triggerMany([target]);
+  }
+
+  triggerMany(targets: Element[]) {
     this.callback(
-      [{ isIntersecting: true, target } as IntersectionObserverEntry],
+      targets.map((target) => ({ isIntersecting: true, target }) as IntersectionObserverEntry),
       this as unknown as IntersectionObserver,
     );
   }
 }
 
 let pages: ReturnType<typeof makePage>[] = [];
+let requestedPages: number[] = [];
 
 function makePage() {
   return {
@@ -49,12 +54,16 @@ function makePage() {
 
 function setupPdf() {
   pages = [makePage(), makePage(), makePage()];
+  requestedPages = [];
   const destroy = vi.fn().mockResolvedValue(undefined);
   getDocumentMock.mockClear();
   getDocumentMock.mockReturnValue({
     promise: Promise.resolve({
       numPages: pages.length,
-      getPage: vi.fn(async (pageNumber: number) => pages[pageNumber - 1]!),
+      getPage: vi.fn(async (pageNumber: number) => {
+        requestedPages.push(pageNumber);
+        return pages[pageNumber - 1]!;
+      }),
     }),
     destroy,
   });
@@ -113,5 +122,37 @@ describe("anteprima PDF progressiva", () => {
       expect(pages[1]!.render).toHaveBeenCalledOnce();
       expect(pages[2]!.render).toHaveBeenCalledOnce();
     });
+  });
+
+  it("dà priorità alla pagina vicina anche se quella lontana entra prima in coda", async () => {
+    vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
+    render(<PdfCanvasPreview src="/priorita.pdf" title="Priorità circolari" />);
+
+    await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
+
+    const scrollport = screen.getByRole("document", { name: "Priorità circolari" });
+    vi.spyOn(scrollport, "getBoundingClientRect").mockReturnValue({
+      top: 0,
+      bottom: 500,
+    } as DOMRect);
+
+    const observer = TestIntersectionObserver.current!;
+    const fartherPage = observer.targets[0]!;
+    const closerPage = observer.targets[1]!;
+    vi.spyOn(fartherPage, "getBoundingClientRect").mockReturnValue({
+      top: 900,
+      bottom: 1000,
+    } as DOMRect);
+    vi.spyOn(closerPage, "getBoundingClientRect").mockReturnValue({
+      top: 550,
+      bottom: 650,
+    } as DOMRect);
+
+    act(() => observer.triggerMany([fartherPage, closerPage]));
+
+    expect(requestedPages).toEqual([1, 3]);
+    await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
+    expect(requestedPages).toEqual([1, 3, 2]);
   });
 });

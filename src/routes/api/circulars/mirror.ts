@@ -6,6 +6,10 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 const MAX_RANGE_HEADER_LENGTH = 128;
 const ATTACHMENT_REQUEST_TIMEOUT_MS = 45_000;
+const SIGNED_URL_CACHE_TTL_MS = 5 * 60_000;
+const MAX_SIGNED_URL_CACHE_ENTRIES = 64;
+type SignedUrlCacheEntry = { url: string; expiresAt: number };
+const signedUrlCache = new Map<string, SignedUrlCacheEntry>();
 const validPath = (value: unknown): value is string =>
   typeof value === "string" && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
 
@@ -219,6 +223,15 @@ async function signedAttachmentUrl(
   path: string,
   signal: AbortSignal,
 ) {
+  const cacheKey = `${project.url}:${path}`;
+  const cached = signedUrlCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    signedUrlCache.delete(cacheKey);
+    signedUrlCache.set(cacheKey, cached);
+    return new URL(cached.url);
+  }
+  if (cached) signedUrlCache.delete(cacheKey);
+
   const response = await fetch(`${project.url}/functions/v1/mirror-circular`, {
     method: "POST",
     headers: {
@@ -238,6 +251,15 @@ async function signedAttachmentUrl(
   const url = new URL(result.signedUrl);
   if (url.protocol !== "https:" || url.origin !== project.url) {
     throw new Error("signed_url_origin_invalid");
+  }
+  signedUrlCache.set(cacheKey, {
+    url: url.toString(),
+    expiresAt: Date.now() + SIGNED_URL_CACHE_TTL_MS,
+  });
+  while (signedUrlCache.size > MAX_SIGNED_URL_CACHE_ENTRIES) {
+    const oldestKey = signedUrlCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    signedUrlCache.delete(oldestKey);
   }
   return url;
 }
