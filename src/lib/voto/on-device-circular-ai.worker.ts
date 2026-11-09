@@ -24,6 +24,11 @@ type WorkerScope = {
 const workerScope = self as unknown as WorkerScope;
 let enginePromise: Promise<Engine> | null = null;
 
+function describeWorkerError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/\s+/g, " ").slice(0, 220) || "dettagli non disponibili";
+}
+
 function loadEngine(requestId: number): Promise<Engine> {
   if (enginePromise) return enginePromise;
 
@@ -74,11 +79,11 @@ async function generateAnswer(command: WorkerCommand) {
       requestId: command.requestId,
       answer: answer.trim(),
     });
-  } catch {
+  } catch (error) {
     workerScope.postMessage({
       type: "error",
       requestId: command.requestId,
-      message: "Il modello AI sul telefono non è riuscito ad avviarsi o a rispondere.",
+      message: `Errore Qwen sul telefono: ${describeWorkerError(error)}`,
     });
   }
 }
@@ -87,11 +92,11 @@ async function prepareModel(command: WorkerCommand) {
   try {
     await loadEngine(command.requestId);
     workerScope.postMessage({ type: "ready", requestId: command.requestId });
-  } catch {
+  } catch (error) {
     workerScope.postMessage({
       type: "error",
       requestId: command.requestId,
-      message: "Il download del modello AI sul telefono non è riuscito.",
+      message: `Preparazione Qwen non riuscita: ${describeWorkerError(error)}`,
     });
   }
 }

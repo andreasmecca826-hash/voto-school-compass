@@ -279,7 +279,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
 
     expect(
-      await screen.findByText(/AI generativa non disponibile.*Ho usato la modalità Locale/i),
+      await screen.findByText(/Qwen non è riuscito ad avviarsi.*WebGPU out of memory/i),
     ).toBeInTheDocument();
     expect(
       await screen.findByText(/La riunione si svolgerà il 10 dicembre 2026/i),

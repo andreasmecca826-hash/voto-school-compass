@@ -453,12 +453,16 @@ export function CircularViewer({
                 const percentage = Math.round(progress.progress * 100);
                 setAiProgressMessage(`Caricamento del modello sul telefono: ${percentage}%`);
               });
-            } catch {
+            } catch (error) {
               answer = localAnswer;
               if (aiRequestId.current === requestId) {
                 setAiMode("local");
+                const detail =
+                  error instanceof Error
+                    ? error.message.replace(/\s+/g, " ").slice(0, 220)
+                    : "errore non specificato";
                 setAiError(
-                  "AI generativa non disponibile su questo telefono (WebGPU o memoria insufficiente). Ho usato la modalità Locale.",
+                  `Qwen non è riuscito ad avviarsi; ho usato Locale. Dettaglio: ${detail}`,
                 );
                 try {
                   window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
