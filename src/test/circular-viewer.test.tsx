@@ -1,9 +1,24 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
+
+const { checkDeviceSupport, answerOnDevice, releaseDevice } = vi.hoisted(() => ({
+  checkDeviceSupport: vi.fn(),
+  answerOnDevice: vi.fn(),
+  releaseDevice: vi.fn(),
+}));
+
+vi.mock("@/lib/voto/on-device-circular-ai", () => ({
+  isOnDeviceCircularAiSupported: checkDeviceSupport,
+  answerCircularQuestionOnDevice: answerOnDevice,
+  releaseOnDeviceCircularAi: releaseDevice,
+}));
 
 afterEach(cleanup);
 beforeEach(() => {
+  checkDeviceSupport.mockReset().mockResolvedValue(false);
+  answerOnDevice.mockReset().mockResolvedValue("Risposta generata sul telefono.");
+  releaseDevice.mockReset().mockResolvedValue(undefined);
   window.localStorage.removeItem("voto.circular-assistant-mode.v1");
   Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
 });
@@ -122,6 +137,75 @@ describe("visualizzatore PDF delle circolari interne", () => {
       "aria-pressed",
       "true",
     );
+    expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
+  });
+
+  it("attiva Qwen solo dopo la scelta e l’invio della domanda", async () => {
+    checkDeviceSupport.mockResolvedValue(true);
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare interna"
+        fileName="allegato.pdf"
+        path={`circulars/${"f".repeat(64)}.pdf`}
+        url={undefined}
+        extractedText="[Pagina 1]\nLa scadenza per consegnare il modulo è il 30 novembre 2026."
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    const deviceMode = await screen.findByRole("button", { name: "AI sul telefono (Qwen)" });
+    expect(answerOnDevice).not.toHaveBeenCalled();
+    fireEvent.click(deviceMode);
+    expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("device");
+    expect(
+      screen.getByText(/domanda e testo non vengono inviati a un servizio AI/i),
+    ).toBeInTheDocument();
+    expect(answerOnDevice).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
+      target: { value: "Entro quando va consegnato il modulo?" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
+
+    await waitFor(() => expect(answerOnDevice).toHaveBeenCalledTimes(1));
+    expect(answerOnDevice).toHaveBeenCalledWith(
+      "Entro quando va consegnato il modulo?",
+      expect.stringContaining("30 novembre 2026"),
+      expect.any(Function),
+    );
+    expect(await screen.findByText("Risposta generata sul telefono.")).toBeInTheDocument();
+  });
+
+  it("usa la modalità Locale se Qwen non riesce ad avviarsi", async () => {
+    checkDeviceSupport.mockResolvedValue(true);
+    answerOnDevice.mockRejectedValue(new Error("WebGPU out of memory"));
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare interna"
+        fileName="allegato.pdf"
+        path={`circulars/${"f".repeat(64)}.pdf`}
+        url={undefined}
+        extractedText="[Pagina 1]\nLa riunione si svolgerà il 10 dicembre 2026."
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "AI sul telefono (Qwen)" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
+      target: { value: "Quando si svolgerà la riunione?" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
+
+    expect(
+      await screen.findByText(/AI generativa non disponibile.*Ho usato la modalità Locale/i),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/La riunione si svolgerà il 10 dicembre 2026/i),
+    ).toBeInTheDocument();
     expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
   });
 

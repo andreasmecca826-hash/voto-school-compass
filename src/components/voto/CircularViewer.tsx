@@ -21,6 +21,11 @@ import {
 import type { CircularAttachment } from "@/lib/voto/types";
 import { answerCircularQuestionLocally } from "@/lib/voto/circular-local-answer";
 import {
+  answerCircularQuestionOnDevice,
+  isOnDeviceCircularAiSupported,
+  releaseOnDeviceCircularAi,
+} from "@/lib/voto/on-device-circular-ai";
+import {
   analyzeCircularDocx,
   analyzeCircularPdf,
   extractCircularDocxText,
@@ -33,8 +38,10 @@ import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
+const MAX_ON_DEVICE_EVIDENCE_LENGTH = 8_000;
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
-type CircularAssistantMode = "local" | "api";
+type CircularAssistantMode = "local" | "device" | "api";
+type DeviceAiAvailability = "checking" | "supported" | "unsupported";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -113,21 +120,24 @@ export function CircularViewer({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
-  const activeAiMode = isOnline ? aiMode : "local";
+  const activeAiMode = isOnline || aiMode === "device" ? aiMode : "local";
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
   const [isAskingAi, setIsAskingAi] = useState(false);
+  const [aiProgressMessage, setAiProgressMessage] = useState<string | undefined>();
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
+  const [deviceAiAvailability, setDeviceAiAvailability] =
+    useState<DeviceAiAvailability>("checking");
   const aiRequestId = useRef(0);
 
   useEffect(() => {
     try {
       const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
-      if (!navigator.onLine) {
+      if (!navigator.onLine && savedMode !== "device") {
         setAiMode("local");
         window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
-      } else if (savedMode === "local" || savedMode === "api") {
+      } else if (savedMode === "local" || savedMode === "api" || savedMode === "device") {
         setAiMode(savedMode);
       }
     } catch {
@@ -136,7 +146,11 @@ export function CircularViewer({
   }, []);
 
   useEffect(() => {
-    if ((isOnline && (typeof navigator === "undefined" || navigator.onLine)) || aiMode === "local")
+    if (
+      (isOnline && (typeof navigator === "undefined" || navigator.onLine)) ||
+      aiMode === "local" ||
+      aiMode === "device"
+    )
       return;
     setAiMode("local");
     try {
@@ -145,6 +159,33 @@ export function CircularViewer({
       // La modalità resta locale per la sessione corrente.
     }
   }, [aiMode, isOnline]);
+
+  useEffect(() => {
+    if (!open || !isAiChatOpen) return;
+    let isCurrent = true;
+    setDeviceAiAvailability("checking");
+    void isOnDeviceCircularAiSupported().then((supported) => {
+      if (isCurrent) setDeviceAiAvailability(supported ? "supported" : "unsupported");
+    });
+    return () => {
+      isCurrent = false;
+    };
+  }, [isAiChatOpen, open]);
+
+  useEffect(() => {
+    if (deviceAiAvailability !== "unsupported" || aiMode !== "device") return;
+    setAiMode("local");
+    setAiError("AI generativa non supportata su questo telefono/browser. Ho ripristinato Locale.");
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+    } catch {
+      // Il fallback resta valido per la sessione corrente.
+    }
+  }, [aiMode, deviceAiAvailability]);
+
+  useEffect(() => {
+    if (!open) void releaseOnDeviceCircularAi();
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -156,6 +197,7 @@ export function CircularViewer({
       setAiQuestion("");
       setAiMessages([]);
       setAiError(undefined);
+      setAiProgressMessage(undefined);
       setAiDocumentTruncated(false);
       setIsAskingAi(false);
       aiRequestId.current += 1;
@@ -173,9 +215,11 @@ export function CircularViewer({
     setAiQuestion("");
     setAiMessages([]);
     setAiError(undefined);
+    setAiProgressMessage(undefined);
     setIsAskingAi(false);
     setAiDocumentTruncated(false);
     aiRequestId.current += 1;
+    void releaseOnDeviceCircularAi();
   }, [activeFile?.path, activeFile?.url, activeFile?.name]);
 
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
@@ -190,11 +234,14 @@ export function CircularViewer({
 
   function chooseAiMode(mode: CircularAssistantMode) {
     if (mode === "api" && (!isOnline || !navigator.onLine)) return;
+    if (mode === "device" && deviceAiAvailability !== "supported") return;
     if (mode === aiMode) return;
+    if (aiMode === "device") void releaseOnDeviceCircularAi();
     setAiMode(mode);
     setAiQuestion("");
     setAiMessages([]);
     setAiError(undefined);
+    setAiProgressMessage(undefined);
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
     } catch {
@@ -228,8 +275,8 @@ export function CircularViewer({
     event.preventDefault();
     const question = aiQuestion.trim();
     if (!previewUrl || !question || isAskingAi) return;
-    const responseMode =
-      isOnline && (typeof navigator === "undefined" || navigator.onLine) ? aiMode : "local";
+    const browserOnline = isOnline && (typeof navigator === "undefined" || navigator.onLine);
+    const responseMode = browserOnline ? aiMode : aiMode === "device" ? "device" : "local";
 
     const requestId = aiRequestId.current + 1;
     aiRequestId.current = requestId;
@@ -237,6 +284,7 @@ export function CircularViewer({
     setAiError(undefined);
     setAiMessages((current) => [...current, { role: "user", text: question }]);
     setIsAskingAi(true);
+    setAiProgressMessage(responseMode === "device" ? "Avvio l’AI sul telefono…" : undefined);
 
     try {
       const extractedDocument = extractedText?.trim()
@@ -253,15 +301,47 @@ export function CircularViewer({
       const documentTruncated =
         extractedDocument.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
       setAiDocumentTruncated(documentTruncated);
-      const canUseApi =
-        responseMode === "api" && typeof navigator !== "undefined" && navigator.onLine;
-      const answer = canUseApi
-        ? await askAboutCircular({
-            question,
-            documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
-            documentTruncated,
-          })
-        : answerCircularQuestionLocally(question, documentText.slice(0, MAX_AI_DOCUMENT_LENGTH));
+      const limitedDocumentText = documentText.slice(0, MAX_AI_DOCUMENT_LENGTH);
+      const canUseApi = responseMode === "api" && browserOnline;
+      let answer: string;
+      if (canUseApi) {
+        answer = await askAboutCircular({
+          question,
+          documentText: limitedDocumentText,
+          documentTruncated,
+        });
+      } else {
+        const localAnswer = answerCircularQuestionLocally(question, limitedDocumentText);
+        if (responseMode === "device") {
+          const hasRelevantPassages =
+            !localAnswer.startsWith("Non trovo") && !localAnswer.startsWith("Non riesco");
+          const evidence = hasRelevantPassages
+            ? localAnswer.slice(0, MAX_ON_DEVICE_EVIDENCE_LENGTH)
+            : limitedDocumentText.slice(0, MAX_ON_DEVICE_EVIDENCE_LENGTH);
+          try {
+            answer = await answerCircularQuestionOnDevice(question, evidence, (progress) => {
+              if (aiRequestId.current !== requestId) return;
+              const percentage = Math.round(progress.progress * 100);
+              setAiProgressMessage(`Caricamento del modello sul telefono: ${percentage}%`);
+            });
+          } catch {
+            answer = localAnswer;
+            if (aiRequestId.current === requestId) {
+              setAiMode("local");
+              setAiError(
+                "AI generativa non disponibile su questo telefono (WebGPU o memoria insufficiente). Ho usato la modalità Locale.",
+              );
+              try {
+                window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+              } catch {
+                // Il fallback resta valido per la sessione corrente.
+              }
+            }
+          }
+        } else {
+          answer = localAnswer;
+        }
+      }
       if (aiRequestId.current === requestId) {
         setAiMessages((current) => [...current, { role: "assistant", text: answer }]);
       }
@@ -270,7 +350,10 @@ export function CircularViewer({
         setAiError(error instanceof Error ? error.message : "Domanda non riuscita. Riprova.");
       }
     } finally {
-      if (aiRequestId.current === requestId) setIsAskingAi(false);
+      if (aiRequestId.current === requestId) {
+        setIsAskingAi(false);
+        setAiProgressMessage(undefined);
+      }
     }
   }
 
@@ -489,7 +572,7 @@ export function CircularViewer({
               <div
                 role="group"
                 aria-label="Modalità di risposta"
-                className={`mt-2 grid ${isOnline ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
+                className={`mt-2 grid ${isOnline || deviceAiAvailability === "supported" ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
               >
                 <button
                   type="button"
@@ -504,6 +587,21 @@ export function CircularViewer({
                 >
                   Locale (sul dispositivo)
                 </button>
+                {deviceAiAvailability === "supported" && (
+                  <button
+                    type="button"
+                    aria-pressed={activeAiMode === "device"}
+                    disabled={isAskingAi}
+                    onClick={() => chooseAiMode("device")}
+                    className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                      activeAiMode === "device"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    AI sul telefono (Qwen)
+                  </button>
+                )}
                 {isOnline && (
                   <button
                     type="button"
@@ -523,19 +621,34 @@ export function CircularViewer({
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
                 {activeAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
-                  : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                  : activeAiMode === "device"
+                    ? "Qwen generativo gira sul telefono: domanda e testo non vengono inviati a un servizio AI. Il modello si scarica al primo uso (serve Internet e spazio), richiede WebGPU e circa 1 GB di memoria grafica. Può funzionare offline finché resta nella cache del browser."
+                    : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
-                    Offline: disponibile solo Locale.{" "}
+                    {activeAiMode === "device"
+                      ? "Offline: l’AI sul telefono funziona solo se il modello è già scaricato."
+                      : "Offline: disponibile solo Locale."}{" "}
                   </span>
                 )}
                 Verifica sempre la risposta sul documento originale.
               </p>
+              {deviceAiAvailability === "checking" && (
+                <p role="status" className="text-[10px] text-muted-foreground">
+                  Verifico il supporto AI del telefono…
+                </p>
+              )}
+              {deviceAiAvailability === "unsupported" && (
+                <p role="status" className="text-[10px] text-muted-foreground">
+                  Questo browser o telefono non offre WebGPU per il modello generativo; resta
+                  disponibile la modalità Locale.
+                </p>
+              )}
             </div>
             {aiDocumentTruncated && (
               <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
-                Circolare lunga: è stato inviato un estratto del testo. La risposta potrebbe non
-                includere informazioni presenti nelle parti omesse.
+                Circolare lunga: per la domanda è stato considerato un estratto del testo. La
+                risposta potrebbe non includere informazioni presenti nelle parti omesse.
               </p>
             )}
             {aiMessages.length > 0 && (
@@ -567,8 +680,15 @@ export function CircularViewer({
                   </div>
                 ))}
                 {isAskingAi && (
-                  <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <LoaderCircle className="h-3 w-3 animate-spin" /> Sto leggendo la circolare…
+                  <p
+                    role="status"
+                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                  >
+                    <LoaderCircle className="h-3 w-3 animate-spin" />
+                    {aiProgressMessage ??
+                      (activeAiMode === "device"
+                        ? "Genero la risposta sul telefono…"
+                        : "Sto leggendo la circolare…")}
                   </p>
                 )}
               </div>
