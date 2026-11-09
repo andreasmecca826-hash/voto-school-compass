@@ -267,7 +267,7 @@ function DidupDiario() {
           <ul
             role="tabpanel"
             aria-label="Attività svolte"
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-[#454545] pb-4"
+            className="didup-diary-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-[#454545] pb-4"
           >
             {activities.map((entry, index) => (
               <DidupActivityRow key={entry.id} entry={entry} fallbackHour={index + 1} />
@@ -276,7 +276,7 @@ function DidupDiario() {
         ) : (
           <p
             role="tabpanel"
-            className="min-h-0 flex-1 overflow-y-auto px-5 py-10 text-center text-sm text-white/65"
+            className="didup-diary-scroll min-h-0 flex-1 overflow-y-auto px-5 py-10 text-center text-sm text-white/65"
           >
             Nessuna attività registrata per questa data.
           </p>
@@ -285,7 +285,7 @@ function DidupDiario() {
         <ul
           role="tabpanel"
           aria-label="Compiti assegnati"
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-[#454545] pb-4"
+          className="didup-diary-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-[#454545] pb-4"
         >
           {assignments.map((assignment) => (
             <DidupAssignmentRow key={assignment.id} assignment={assignment} />
@@ -294,7 +294,7 @@ function DidupDiario() {
       ) : (
         <p
           role="tabpanel"
-          className="min-h-0 flex-1 overflow-y-auto px-5 py-10 text-center text-sm text-white/65"
+          className="didup-diary-scroll min-h-0 flex-1 overflow-y-auto px-5 py-10 text-center text-sm text-white/65"
         >
           Nessun compito assegnato per questa data.
         </p>

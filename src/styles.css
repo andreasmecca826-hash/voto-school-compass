@@ -1711,6 +1711,13 @@
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+.didup-diary-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.didup-diary-scroll::-webkit-scrollbar {
+  display: none;
+}
 
 /* Y2K: interfaccia da portale web dei primi anni 2000, con cromo e controlli a rilievo. */
 :root[data-theme="y2k"] {
