@@ -2,27 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 
-const {
-  checkDeviceSupport,
-  checkModelDownloaded,
-  answerOnDevice,
-  releaseDevice,
-  checkVisionSupport,
-  checkVisionModelDownloaded,
-  answerVisuallyOnDevice,
-  releaseVision,
-  renderPageImages,
-  askCircularText,
-  askCircularImages,
-} = vi.hoisted(() => ({
-  checkDeviceSupport: vi.fn(),
-  checkModelDownloaded: vi.fn(),
-  answerOnDevice: vi.fn(),
-  releaseDevice: vi.fn(),
-  checkVisionSupport: vi.fn(),
-  checkVisionModelDownloaded: vi.fn(),
-  answerVisuallyOnDevice: vi.fn(),
-  releaseVision: vi.fn(),
+const { renderPageImages, askCircularText, askCircularImages } = vi.hoisted(() => ({
   renderPageImages: vi.fn(),
   askCircularText: vi.fn(),
   askCircularImages: vi.fn(),
@@ -33,20 +13,6 @@ vi.mock("@/lib/voto/circular-assistant", () => ({
   askAboutCircularImages: askCircularImages,
 }));
 
-vi.mock("@/lib/voto/on-device-circular-ai", () => ({
-  isOnDeviceCircularAiSupported: checkDeviceSupport,
-  isOnDeviceModelDownloaded: checkModelDownloaded,
-  answerCircularQuestionOnDevice: answerOnDevice,
-  releaseOnDeviceCircularAi: releaseDevice,
-}));
-
-vi.mock("@/lib/voto/on-device-circular-vision", () => ({
-  isOnDeviceVisionAiSupported: checkVisionSupport,
-  isOnDeviceVisionModelDownloaded: checkVisionModelDownloaded,
-  answerCircularQuestionVisuallyOnDevice: answerVisuallyOnDevice,
-  releaseOnDeviceCircularVision: releaseVision,
-}));
-
 vi.mock("@/lib/voto/circular-reader", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/voto/circular-reader")>()),
   renderCircularPdfPageImages: renderPageImages,
@@ -54,14 +20,6 @@ vi.mock("@/lib/voto/circular-reader", async (importOriginal) => ({
 
 afterEach(cleanup);
 beforeEach(() => {
-  checkDeviceSupport.mockReset().mockResolvedValue(false);
-  checkModelDownloaded.mockReset().mockReturnValue(false);
-  answerOnDevice.mockReset().mockResolvedValue("Risposta generata sul telefono.");
-  releaseDevice.mockReset().mockResolvedValue(undefined);
-  checkVisionSupport.mockReset().mockResolvedValue(false);
-  checkVisionModelDownloaded.mockReset().mockReturnValue(false);
-  answerVisuallyOnDevice.mockReset().mockResolvedValue("La circolare indica il 30 novembre.");
-  releaseVision.mockReset();
   renderPageImages.mockReset().mockResolvedValue({
     pages: [{ pageNumber: 1, dataUrl: "data:image/jpeg;base64,AA==" }],
     totalPages: 1,
@@ -164,7 +122,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       "true",
     );
     expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
-    expect(screen.getByText(/Offline: disponibile solo Locale/i)).toBeInTheDocument();
+    expect(screen.getByText(/Offline: disponibili solo le funzioni Locale/i)).toBeInTheDocument();
   });
 
   it("parte in Locale se si apre offline anche con API salvata", () => {
@@ -189,81 +147,6 @@ describe("visualizzatore PDF delle circolari interne", () => {
       "true",
     );
     expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
-  });
-
-  it("attiva Qwen solo dopo la scelta e l’invio della domanda", async () => {
-    checkDeviceSupport.mockResolvedValue(true);
-    checkModelDownloaded.mockReturnValue(true);
-    render(
-      <CircularViewer
-        open
-        onOpenChange={() => {}}
-        title="Circolare interna"
-        fileName="allegato.pdf"
-        path={`circulars/${"f".repeat(64)}.pdf`}
-        url={undefined}
-        extractedText="[Pagina 1]\nLa scadenza per consegnare il modulo è il 30 novembre 2026."
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
-    const deviceMode = await screen.findByRole("button", { name: "AI sul telefono (Qwen)" });
-    expect(answerOnDevice).not.toHaveBeenCalled();
-    fireEvent.click(deviceMode);
-    expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("device");
-    expect(
-      screen.getByText(/domanda e testo non vengono inviati a un servizio AI/i),
-    ).toBeInTheDocument();
-    expect(answerOnDevice).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
-      target: { value: "Entro quando va consegnato il modulo?" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
-
-    await waitFor(() => expect(answerOnDevice).toHaveBeenCalledTimes(1));
-    expect(answerOnDevice).toHaveBeenCalledWith(
-      "Entro quando va consegnato il modulo?",
-      expect.stringContaining("30 novembre 2026"),
-      expect.any(Function),
-    );
-    expect(await screen.findByText("Risposta generata sul telefono.")).toBeInTheDocument();
-  });
-
-  it("invia le immagini del PDF a Qwen2-VL senza usare Qwen testuale", async () => {
-    checkVisionSupport.mockResolvedValue(true);
-    checkVisionModelDownloaded.mockReturnValue(true);
-    window.localStorage.setItem(
-      "voto.circular-ai-models.v1",
-      JSON.stringify({ text: true, vision: true }),
-    );
-    render(
-      <CircularViewer
-        open
-        onOpenChange={() => {}}
-        title="Circolare scansionata"
-        fileName="circolare.pdf"
-        path={`circulars/${"a".repeat(64)}.pdf`}
-        url={undefined}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
-    fireEvent.click(await screen.findByRole("button", { name: "AI visiva (Qwen2-VL)" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
-      target: { value: "Entro quando va consegnato?" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
-
-    await waitFor(() => expect(answerVisuallyOnDevice).toHaveBeenCalledTimes(1));
-    expect(renderPageImages).toHaveBeenCalledTimes(1);
-    expect(answerVisuallyOnDevice).toHaveBeenCalledWith(
-      "Entro quando va consegnato?",
-      [{ pageNumber: 1, dataUrl: "data:image/jpeg;base64,AA==" }],
-      expect.any(Function),
-    );
-    expect(answerOnDevice).not.toHaveBeenCalled();
-    expect(await screen.findByText("La circolare indica il 30 novembre.")).toBeInTheDocument();
   });
 
   it("invia a Groq solo le prime tre immagini nella modalità API visiva", async () => {
@@ -298,42 +181,8 @@ describe("visualizzatore PDF delle circolari interne", () => {
       question: "Quando scade?",
       pageImages: pages.slice(0, 3),
     });
-    expect(answerVisuallyOnDevice).not.toHaveBeenCalled();
-    expect(answerOnDevice).not.toHaveBeenCalled();
     expect(await screen.findByText("La scadenza è il 30 novembre.")).toBeInTheDocument();
     expect(screen.getByText(/inviate solo le prime 3 pagine/i)).toBeInTheDocument();
-  });
-
-  it("usa la modalità Locale se Qwen non riesce ad avviarsi", async () => {
-    checkDeviceSupport.mockResolvedValue(true);
-    checkModelDownloaded.mockReturnValue(true);
-    answerOnDevice.mockRejectedValue(new Error("WebGPU out of memory"));
-    render(
-      <CircularViewer
-        open
-        onOpenChange={() => {}}
-        title="Circolare interna"
-        fileName="allegato.pdf"
-        path={`circulars/${"f".repeat(64)}.pdf`}
-        url={undefined}
-        extractedText="[Pagina 1]\nLa riunione si svolgerà il 10 dicembre 2026."
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
-    fireEvent.click(await screen.findByRole("button", { name: "AI sul telefono (Qwen)" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
-      target: { value: "Quando si svolgerà la riunione?" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
-
-    expect(
-      await screen.findByText(/Qwen non è riuscito ad avviarsi.*WebGPU out of memory/i),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText(/La riunione si svolgerà il 10 dicembre 2026/i),
-    ).toBeInTheDocument();
-    expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("local");
   });
 
   it("offre apertura e download separati per un DOCX", () => {

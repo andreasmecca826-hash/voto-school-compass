@@ -1,13 +1,11 @@
 import { askAboutCircular } from "./circular-assistant";
 import { answerCircularQuestionLocally } from "./circular-local-answer";
 import { extractCircularDocxText, extractCircularPdfText } from "./circular-reader";
-import { answerQuestionOnDevice, type OnDeviceProgressCallback } from "./on-device-circular-ai";
 import type { AppNotification } from "./types";
 
-export type CircularAssistantMode = "local" | "device" | "api";
+export type CircularAssistantMode = "local" | "api";
 
 const MAX_API_DOCUMENT_LENGTH = 60_000;
-const MAX_ON_DEVICE_DOCUMENT_LENGTH = 8_000;
 const CIRCULAR_TERMS = /\b(?:circolar\w*|avvis\w*|bachec\w*)\b/;
 const RECENT_TERMS = /\b(?:ultim\w*|recent\w*|nuov\w*)\b/;
 const CONTENT_TERMS =
@@ -152,7 +150,6 @@ export async function answerCircularChatQuestion(
   question: string,
   notifications: AppNotification[],
   mode: CircularAssistantMode,
-  onDeviceProgress?: OnDeviceProgressCallback,
 ): Promise<string | null> {
   if (!isCircularChatQuestion(question)) return null;
   const notices = latestNotices(notifications);
@@ -177,16 +174,6 @@ export async function answerCircularChatQuestion(
 
   const clippedText = document.text.slice(0, MAX_API_DOCUMENT_LENGTH);
   const prefix = `Circolare: ${notice.title} (${dateLabel(notice.date)}).\n\n`;
-  if (mode === "device") {
-    const answer = await answerQuestionOnDevice(
-      question,
-      document.text.slice(0, MAX_ON_DEVICE_DOCUMENT_LENGTH),
-      onDeviceProgress,
-    );
-    const truncatedOnDevice =
-      document.truncated || document.text.length > MAX_ON_DEVICE_DOCUMENT_LENGTH;
-    return `${prefix}${answer}${truncatedOnDevice ? "\n\nNota: per questa risposta ho analizzato al massimo 8.000 caratteri della circolare." : ""}`;
-  }
   if (mode === "api") {
     const answer = await askAboutCircular({
       question,
