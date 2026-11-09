@@ -37,6 +37,8 @@ final class WidgetData {
   static final String SCHOOL_DATA_URL = SUPABASE_URL + "/functions/v1/school-data";
   static final String AUTH_TOKEN_URL = SUPABASE_URL + "/auth/v1/token";
   private static final Object SESSION_LOCK = new Object();
+  private static final Object REFRESH_LOCK = new Object();
+  private static boolean refreshInFlight = false;
 
   interface LoginCallback { void done(String error); }
 
@@ -73,13 +75,21 @@ final class WidgetData {
   }
 
   static void refresh(Context context) {
+    synchronized (REFRESH_LOCK) {
+      if (refreshInFlight) return;
+      refreshInFlight = true;
+    }
     new Thread(() -> {
-      String[] values = fetch(context);
-      renderProvider(context, new ComponentName(context, SmallWidgetProvider.class), false, values);
-      renderProvider(context, new ComponentName(context, LargeWidgetProvider.class), true, values);
-      renderProvider(context, new ComponentName(context, MediumWidgetProvider.class), false, values);
-      renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
-      renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
+      try {
+        String[] values = fetch(context);
+        renderProvider(context, new ComponentName(context, SmallWidgetProvider.class), false, values);
+        renderProvider(context, new ComponentName(context, LargeWidgetProvider.class), true, values);
+        renderProvider(context, new ComponentName(context, MediumWidgetProvider.class), false, values);
+        renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
+        renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
+      } finally {
+        synchronized (REFRESH_LOCK) { refreshInFlight = false; }
+      }
     }).start();
   }
 
@@ -91,10 +101,7 @@ final class WidgetData {
     AppWidgetManager manager = AppWidgetManager.getInstance(context);
     int[] ids = manager.getAppWidgetIds(provider);
     if (ids.length == 0) return;
-    new Thread(() -> {
-      String[] values = fetch(context);
-      renderProvider(context, provider, large, compact, values);
-    }).start();
+    refresh(context);
   }
 
   private static void renderProvider(Context context, ComponentName provider, boolean large, String[] values) {
