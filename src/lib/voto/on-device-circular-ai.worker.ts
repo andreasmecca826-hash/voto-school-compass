@@ -3,14 +3,15 @@ import { CreateMLCEngine } from "@mlc-ai/web-llm";
 const MODEL_ID = "Qwen2-0.5B-Instruct-q4f16_1-MLC";
 
 type WorkerCommand = {
-  type: "generate";
+  type: "generate" | "prepare";
   requestId: number;
-  question: string;
-  evidence: string;
+  question?: string;
+  evidence?: string;
 };
 
 type WorkerReply =
   | { type: "progress"; requestId: number; progress: number; text: string }
+  | { type: "ready"; requestId: number }
   | { type: "answer"; requestId: number; answer: string }
   | { type: "error"; requestId: number; message: string };
 
@@ -56,7 +57,7 @@ async function generateAnswer(command: WorkerCommand) {
         },
         {
           role: "user",
-          content: `Contesto locale (documento o risposta basata sui dati dell’app):\n${command.evidence || "(nessuno)"}\n\nDomanda: ${command.question}`,
+          content: `Contesto locale (documento o risposta basata sui dati dell’app):\n${command.evidence || "(nessuno)"}\n\nDomanda: ${command.question ?? ""}`,
         },
       ],
       temperature: 0.1,
@@ -82,6 +83,20 @@ async function generateAnswer(command: WorkerCommand) {
   }
 }
 
+async function prepareModel(command: WorkerCommand) {
+  try {
+    await loadEngine(command.requestId);
+    workerScope.postMessage({ type: "ready", requestId: command.requestId });
+  } catch {
+    workerScope.postMessage({
+      type: "error",
+      requestId: command.requestId,
+      message: "Il download del modello AI sul telefono non è riuscito.",
+    });
+  }
+}
+
 workerScope.onmessage = (event) => {
-  if (event.data.type === "generate") void generateAnswer(event.data);
+  if (event.data.type === "prepare") void prepareModel(event.data);
+  else if (event.data.type === "generate") void generateAnswer(event.data);
 };

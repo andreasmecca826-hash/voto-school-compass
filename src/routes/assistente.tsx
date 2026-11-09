@@ -30,6 +30,7 @@ import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import {
   answerQuestionOnDevice,
   isOnDeviceCircularAiSupported,
+  isOnDeviceModelDownloaded,
   releaseOnDeviceCircularAi,
   type OnDeviceModelProgress,
 } from "@/lib/voto/on-device-circular-ai";
@@ -53,7 +54,7 @@ type AssistantChatMessage = {
   sources?: SchoolDocumentSource[];
 };
 
-type DeviceAiAvailability = "checking" | "supported" | "unsupported";
+type DeviceAiAvailability = "checking" | "supported" | "not-downloaded" | "unsupported";
 
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
 
@@ -79,9 +80,13 @@ function Assistant() {
   const [question, setQuestion] = useState("");
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
   const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
-  const activeAssistantMode = canUseApi || assistantMode === "device" ? assistantMode : "local";
   const [deviceAiAvailability, setDeviceAiAvailability] =
     useState<DeviceAiAvailability>("checking");
+  const deviceAiReady = deviceAiAvailability === "supported";
+  const activeAssistantMode =
+    (canUseApi && assistantMode === "api") || (assistantMode === "device" && deviceAiReady)
+      ? assistantMode
+      : "local";
   const [deviceAiProgress, setDeviceAiProgress] = useState<OnDeviceModelProgress | null>(null);
   const [deviceAiError, setDeviceAiError] = useState<string | null>(null);
   const [isReplying, setIsReplying] = useState(false);
@@ -105,7 +110,14 @@ function Assistant() {
     }
     let isCurrent = true;
     void isOnDeviceCircularAiSupported().then((supported) => {
-      if (isCurrent) setDeviceAiAvailability(supported ? "supported" : "unsupported");
+      if (isCurrent)
+        setDeviceAiAvailability(
+          supported
+            ? isOnDeviceModelDownloaded()
+              ? "supported"
+              : "not-downloaded"
+            : "unsupported",
+        );
     });
     return () => {
       isCurrent = false;
@@ -124,10 +136,12 @@ function Assistant() {
   }, [assistantMode, canUseApi]);
 
   useEffect(() => {
-    if (deviceAiAvailability !== "unsupported" || assistantMode !== "device") return;
+    if (deviceAiAvailability === "supported" || assistantMode !== "device") return;
     setAssistantMode("local");
     setDeviceAiError(
-      "AI sul telefono non supportata da questo browser o dispositivo. Ho ripristinato Locale.",
+      deviceAiAvailability === "not-downloaded"
+        ? "Scarica prima il modello da Impostazioni > AI sul dispositivo. Ho ripristinato Locale."
+        : "AI sul telefono non supportata da questo browser o dispositivo. Ho ripristinato Locale.",
     );
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
@@ -153,7 +167,12 @@ function Assistant() {
   const ask = async (text = question) => {
     const clean = text.trim();
     if (!clean || isReplying) return;
-    const requestMode = canUseApi || assistantMode === "device" ? assistantMode : "local";
+    const requestMode =
+      assistantMode === "api" && canUseApi
+        ? "api"
+        : assistantMode === "device" && deviceAiReady
+          ? "device"
+          : "local";
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
@@ -207,7 +226,7 @@ function Assistant() {
       !isAssistantSearchQuery(clean);
     const localAnswer = () =>
       answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
-        previousQuestion,
+        ...(previousQuestion ? { previousQuestion } : {}),
         source: v.source,
         lastSync: v.lastSync,
         syncError: v.error,
@@ -397,27 +416,25 @@ function Assistant() {
                 API
               </button>
             )}
-            <button
-              type="button"
-              aria-pressed={activeAssistantMode === "device"}
-              disabled={isReplying || deviceAiAvailability !== "supported"}
-              onClick={() => changeAssistantMode("device")}
-              title={
-                deviceAiAvailability === "unsupported"
-                  ? "Questo browser o dispositivo non supporta WebGPU"
-                  : "Risposte generate sul dispositivo; il modello verrà scaricato al primo utilizzo"
-              }
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${activeAssistantMode === "device" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-            >
-              AI telefono
-            </button>
+            {deviceAiAvailability === "supported" && (
+              <button
+                type="button"
+                aria-pressed={activeAssistantMode === "device"}
+                disabled={isReplying}
+                onClick={() => changeAssistantMode("device")}
+                title="Risposte generate sul dispositivo; modello già scaricato"
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${activeAssistantMode === "device" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                AI telefono
+              </button>
+            )}
           </div>
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
           {activeAssistantMode === "local"
             ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
             : activeAssistantMode === "device"
-              ? "Qwen 0,5B genera la risposta sul telefono con WebGPU: domanda e contesto non vengono inviati a Groq né a un’API LLM. Una circolare non già caricata può essere recuperata dal server VOTO. Il modello (circa 945 MB di memoria grafica richiesta) si scarica solo al primo utilizzo e può richiedere tempo."
+              ? "Qwen 0,5B genera la risposta sul telefono con WebGPU: domanda e contesto non vengono inviati a Groq né a un’API LLM. Il modello è stato preparato da Impostazioni e resta nella cache del browser."
               : "API invia a Groq la domanda e solo gli estratti pertinenti del regolamento, della ricerca PDF utente (non verificata) o della circolare. Non allega automaticamente voti, assenze o cronologia; se scrivi dati personali nella domanda, li invia. Non legge pagine con login e non fa fallback automatico. I costi dipendono dal piano Groq: per zero spese, scegli Locale o AI telefono."}{" "}
           {!canUseApi && (
             <span className="font-medium text-primary">

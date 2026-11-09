@@ -23,6 +23,7 @@ import { answerCircularQuestionLocally } from "@/lib/voto/circular-local-answer"
 import {
   answerCircularQuestionOnDevice,
   isOnDeviceCircularAiSupported,
+  isOnDeviceModelDownloaded,
   releaseOnDeviceCircularAi,
 } from "@/lib/voto/on-device-circular-ai";
 import {
@@ -41,7 +42,7 @@ const MAX_AI_DOCUMENT_LENGTH = 60_000;
 const MAX_ON_DEVICE_EVIDENCE_LENGTH = 8_000;
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
 type CircularAssistantMode = "local" | "device" | "api";
-type DeviceAiAvailability = "checking" | "supported" | "unsupported";
+type DeviceAiAvailability = "checking" | "supported" | "not-downloaded" | "unsupported";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -120,7 +121,6 @@ export function CircularViewer({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
-  const activeAiMode = isOnline || aiMode === "device" ? aiMode : "local";
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
@@ -129,6 +129,9 @@ export function CircularViewer({
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
   const [deviceAiAvailability, setDeviceAiAvailability] =
     useState<DeviceAiAvailability>("checking");
+  const deviceAiReady = deviceAiAvailability === "supported";
+  const activeAiMode =
+    (isOnline && aiMode === "api") || (aiMode === "device" && deviceAiReady) ? aiMode : "local";
   const aiRequestId = useRef(0);
 
   useEffect(() => {
@@ -165,7 +168,14 @@ export function CircularViewer({
     let isCurrent = true;
     setDeviceAiAvailability("checking");
     void isOnDeviceCircularAiSupported().then((supported) => {
-      if (isCurrent) setDeviceAiAvailability(supported ? "supported" : "unsupported");
+      if (isCurrent)
+        setDeviceAiAvailability(
+          supported
+            ? isOnDeviceModelDownloaded()
+              ? "supported"
+              : "not-downloaded"
+            : "unsupported",
+        );
     });
     return () => {
       isCurrent = false;
@@ -173,9 +183,13 @@ export function CircularViewer({
   }, [isAiChatOpen, open]);
 
   useEffect(() => {
-    if (deviceAiAvailability !== "unsupported" || aiMode !== "device") return;
+    if (deviceAiAvailability === "supported" || aiMode !== "device") return;
     setAiMode("local");
-    setAiError("AI generativa non supportata su questo telefono/browser. Ho ripristinato Locale.");
+    setAiError(
+      deviceAiAvailability === "not-downloaded"
+        ? "Scarica prima il modello da Impostazioni > AI sul dispositivo. Ho ripristinato Locale."
+        : "AI generativa non supportata su questo telefono/browser. Ho ripristinato Locale.",
+    );
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
     } catch {
@@ -572,7 +586,7 @@ export function CircularViewer({
               <div
                 role="group"
                 aria-label="Modalità di risposta"
-                className={`mt-2 grid ${isOnline || deviceAiAvailability === "supported" ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
+                className={`mt-2 grid ${isOnline && deviceAiAvailability === "supported" ? "grid-cols-3" : isOnline || deviceAiAvailability === "supported" ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
               >
                 <button
                   type="button"
@@ -622,7 +636,7 @@ export function CircularViewer({
                 {activeAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
                   : activeAiMode === "device"
-                    ? "Qwen generativo gira sul telefono: domanda e testo non vengono inviati a un servizio AI. Il modello si scarica al primo uso (serve Internet e spazio), richiede WebGPU e circa 1 GB di memoria grafica. Può funzionare offline finché resta nella cache del browser."
+                    ? "Qwen generativo gira sul telefono: domanda e testo non vengono inviati a un servizio AI. Il modello è stato preparato da Impostazioni e resta nella cache del browser."
                     : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
@@ -642,6 +656,12 @@ export function CircularViewer({
                 <p role="status" className="text-[10px] text-muted-foreground">
                   Questo browser o telefono non offre WebGPU per il modello generativo; resta
                   disponibile la modalità Locale.
+                </p>
+              )}
+              {deviceAiAvailability === "not-downloaded" && (
+                <p role="status" className="text-[10px] text-muted-foreground">
+                  Per usare AI sul telefono, scarica prima il modello da Impostazioni &gt; AI sul
+                  dispositivo.
                 </p>
               )}
             </div>

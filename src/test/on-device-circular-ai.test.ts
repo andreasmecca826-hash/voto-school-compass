@@ -1,15 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   answerCircularQuestionOnDevice,
+  downloadOnDeviceAi,
   isOnDeviceCircularAiSupported,
+  isOnDeviceModelDownloaded,
+  ON_DEVICE_MODEL_STORAGE_KEY,
   releaseOnDeviceCircularAi,
 } from "@/lib/voto/on-device-circular-ai";
 
 type WorkerCommand = {
-  type: "generate";
+  type: "generate" | "prepare";
   requestId: number;
-  question: string;
-  evidence: string;
+  question?: string;
+  evidence?: string;
 };
 
 class FakeWorker extends EventTarget {
@@ -41,11 +44,10 @@ class FakeWorker extends EventTarget {
       );
       this.dispatchEvent(
         new MessageEvent("message", {
-          data: {
-            type: "answer",
-            requestId: command.requestId,
-            answer: "La consegna è venerdì.",
-          },
+          data:
+            command.type === "prepare"
+              ? { type: "ready", requestId: command.requestId }
+              : { type: "answer", requestId: command.requestId, answer: "La consegna è venerdì." },
         }),
       );
     });
@@ -66,6 +68,7 @@ function setGpuAdapter(adapter: object | null) {
 afterEach(() => {
   releaseOnDeviceCircularAi();
   vi.unstubAllGlobals();
+  localStorage.removeItem(ON_DEVICE_MODEL_STORAGE_KEY);
   FakeWorker.instances = [];
   Reflect.deleteProperty(window.navigator, "gpu");
 });
@@ -82,6 +85,7 @@ describe("AI generativa locale delle circolari", () => {
   it("avvia il worker solo alla domanda e inoltra progresso e risposta", async () => {
     setGpuAdapter({});
     vi.stubGlobal("Worker", FakeWorker);
+    localStorage.setItem(ON_DEVICE_MODEL_STORAGE_KEY, "true");
     const onProgress = vi.fn();
 
     await expect(
@@ -105,5 +109,26 @@ describe("AI generativa locale delle circolari", () => {
 
     releaseOnDeviceCircularAi();
     expect(worker?.terminated).toBe(true);
+  });
+
+  it("scarica il modello solo su richiesta esplicita e lo marca come pronto", async () => {
+    setGpuAdapter({});
+    vi.stubGlobal("Worker", FakeWorker);
+    const onProgress = vi.fn();
+
+    await expect(downloadOnDeviceAi(onProgress)).resolves.toBeUndefined();
+    expect(FakeWorker.instances[0]?.messages[0]).toMatchObject({ type: "prepare" });
+    expect(onProgress).toHaveBeenCalled();
+    expect(isOnDeviceModelDownloaded()).toBe(true);
+  });
+
+  it("blocca una domanda se il modello non è stato scaricato dalle Impostazioni", async () => {
+    setGpuAdapter({});
+    vi.stubGlobal("Worker", FakeWorker);
+
+    await expect(answerCircularQuestionOnDevice("Quando?", "Testo")).rejects.toThrow(
+      /Impostazioni/,
+    );
+    expect(FakeWorker.instances).toHaveLength(0);
   });
 });

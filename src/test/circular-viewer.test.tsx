@@ -2,14 +2,18 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 
-const { checkDeviceSupport, answerOnDevice, releaseDevice } = vi.hoisted(() => ({
-  checkDeviceSupport: vi.fn(),
-  answerOnDevice: vi.fn(),
-  releaseDevice: vi.fn(),
-}));
+const { checkDeviceSupport, checkModelDownloaded, answerOnDevice, releaseDevice } = vi.hoisted(
+  () => ({
+    checkDeviceSupport: vi.fn(),
+    checkModelDownloaded: vi.fn(),
+    answerOnDevice: vi.fn(),
+    releaseDevice: vi.fn(),
+  }),
+);
 
 vi.mock("@/lib/voto/on-device-circular-ai", () => ({
   isOnDeviceCircularAiSupported: checkDeviceSupport,
+  isOnDeviceModelDownloaded: checkModelDownloaded,
   answerCircularQuestionOnDevice: answerOnDevice,
   releaseOnDeviceCircularAi: releaseDevice,
 }));
@@ -17,6 +21,7 @@ vi.mock("@/lib/voto/on-device-circular-ai", () => ({
 afterEach(cleanup);
 beforeEach(() => {
   checkDeviceSupport.mockReset().mockResolvedValue(false);
+  checkModelDownloaded.mockReset().mockReturnValue(false);
   answerOnDevice.mockReset().mockResolvedValue("Risposta generata sul telefono.");
   releaseDevice.mockReset().mockResolvedValue(undefined);
   window.localStorage.removeItem("voto.circular-assistant-mode.v1");
@@ -142,6 +147,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
   it("attiva Qwen solo dopo la scelta e l’invio della domanda", async () => {
     checkDeviceSupport.mockResolvedValue(true);
+    checkModelDownloaded.mockReturnValue(true);
     render(
       <CircularViewer
         open
@@ -180,6 +186,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
   it("usa la modalità Locale se Qwen non riesce ad avviarsi", async () => {
     checkDeviceSupport.mockResolvedValue(true);
+    checkModelDownloaded.mockReturnValue(true);
     answerOnDevice.mockRejectedValue(new Error("WebGPU out of memory"));
     render(
       <CircularViewer

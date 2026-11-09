@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  BrainCircuit,
   Bug,
   CalendarDays,
+  CheckCircle2,
   ChevronUp,
   Download,
   Eye,
   EyeOff,
   Github,
   Gauge,
+  LoaderCircle,
   SlidersHorizontal,
   Moon,
   RotateCcw,
@@ -32,6 +35,12 @@ import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
 import { canResetDemoData } from "@/lib/voto/demo";
 import { createCalendarIcs } from "@/lib/voto/calendar-export";
+import {
+  downloadOnDeviceAi,
+  isOnDeviceCircularAiSupported,
+  isOnDeviceModelDownloaded,
+  type OnDeviceModelProgress,
+} from "@/lib/voto/on-device-circular-ai";
 import { createPreferencesBackup, parsePreferencesBackup } from "@/lib/voto/preferences-backup";
 import { parseVotoData } from "@/lib/voto/parse";
 import { supabase } from "@/lib/supabase-auth";
@@ -275,6 +284,13 @@ function Settings() {
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
+  const [deviceAiSupported, setDeviceAiSupported] = useState<boolean | null>(null);
+  const [deviceModelDownloaded, setDeviceModelDownloaded] = useState(false);
+  const [deviceModelDownloading, setDeviceModelDownloading] = useState(false);
+  const [deviceModelProgress, setDeviceModelProgress] = useState<OnDeviceModelProgress | null>(
+    null,
+  );
+  const [deviceModelError, setDeviceModelError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -316,6 +332,30 @@ function Settings() {
     setCalendarFrom(today);
     setCalendarTo(addDaysToDateValue(today, 90));
   }, []);
+
+  useEffect(() => {
+    setDeviceModelDownloaded(isOnDeviceModelDownloaded());
+    void isOnDeviceCircularAiSupported().then(setDeviceAiSupported);
+  }, []);
+
+  const downloadDeviceModel = async () => {
+    if (deviceModelDownloading || deviceAiSupported !== true) return;
+    setDeviceModelDownloading(true);
+    setDeviceModelError(null);
+    setDeviceModelProgress(null);
+    try {
+      await downloadOnDeviceAi(setDeviceModelProgress);
+      setDeviceModelDownloaded(true);
+      toast.success("Modello AI scaricato", {
+        description: "Ora puoi attivare AI sul dispositivo dalla schermata Assistente.",
+      });
+    } catch (error) {
+      setDeviceModelError(error instanceof Error ? error.message : "Download non riuscito.");
+    } finally {
+      setDeviceModelDownloading(false);
+      setDeviceModelProgress(null);
+    }
+  };
 
   const handleInfoTap = () => {
     if (!canResetDemoData(v.source, v.url)) return;
@@ -426,6 +466,72 @@ function Settings() {
         <p className="mt-2 text-[11px] text-muted-foreground">
           Viene usato solo per mostrare il tuo nome nell’app e non modifica i dati Supabase.
         </p>
+      </section>
+
+      <SectionTitle>AI sul dispositivo</SectionTitle>
+      <section className="card-surface p-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <BrainCircuit className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold">Modello AI locale</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Scarica una volta il modello Qwen sul dispositivo. Fino al completamento non verrà
+              mostrata né usata la modalità AI sul dispositivo nella chat.
+            </p>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Richiede WebGPU, connessione Internet durante il download e circa 1 GB di memoria
+              grafica. Le domande successive restano sul dispositivo.
+            </p>
+            {deviceModelProgress && (
+              <div className="mt-3" aria-live="polite">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span>{deviceModelProgress.text || "Scaricamento modello…"}</span>
+                  <span>{Math.round(deviceModelProgress.progress * 100)}%</span>
+                </div>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width]"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, deviceModelProgress.progress * 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {deviceModelError && (
+              <p className="mt-2 text-xs text-destructive" role="alert">
+                {deviceModelError}
+              </p>
+            )}
+            <div className="mt-3 flex items-center gap-2">
+              {deviceModelDownloaded ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Modello pronto
+                </span>
+              ) : deviceAiSupported === false ? (
+                <span className="text-xs text-muted-foreground">
+                  WebGPU non disponibile su questo dispositivo.
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void downloadDeviceModel()}
+                  disabled={deviceModelDownloading || deviceAiSupported !== true}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deviceModelDownloading ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Download className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {deviceModelDownloading ? "Download in corso…" : "Scarica modello"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
 
       <SectionTitle>Prestazioni</SectionTitle>
