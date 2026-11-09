@@ -1659,6 +1659,9 @@
   --primary-foreground: oklch(1 0 0);
   --primary-soft: oklch(0.54 0.14 245 / 0.13);
   --ring: oklch(0.54 0.14 245 / 0.65);
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
 }
 
 :root[data-registry-style="didup"][data-mode="chiaro"] {
@@ -1701,7 +1704,7 @@
 
 :root[data-registry-style="didup"] body {
   background-image: none;
-  overflow-x: hidden;
+  overflow-x: clip;
   overscroll-behavior-x: none;
 }
 
