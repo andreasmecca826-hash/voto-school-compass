@@ -20,7 +20,45 @@
       <stop offset=".38" stop-color="#d72d4d" stop-opacity=".86" />
       <stop offset="1" stop-color="#78172e" stop-opacity=".76" />
     </radialGradient>
+    <pattern id="splash-wallpaper" width="480" height="450" patternUnits="userSpaceOnUse">
+      <g fill="#b52640" fill-opacity=".48">
+        <path d="m41 38 4 10 11-2-7 8 6 8-11-2-5 10-2-11-11 2 6-9-7-7 11-1z" />
+        <path d="M174 29c-6 9-8 13-8 17a8 8 0 0 0 16 0c0-4-2-8-8-17Z" />
+        <path d="M405 59c5-7 10-4 8 2 7-3 10 3 4 7 7 3 3 9-4 7-2 7-9 7-10 0-7 4-12-2-6-7-5-5-1-11 8-9Z" />
+        <path d="M99 132c-5-6-10-2-6 4-8 1-8 7-1 9-4 6 1 10 7 5 4 8 10 5 8-3 8-2 8-9 0-10 1-8-5-10-8-3Z" />
+        <path d="m267 151 5 9 10-3-6 9 6 8-11-1-4 10-3-10-10 2 5-9-7-7 11-1z" />
+        <path d="M442 194c-5 7-7 10-7 13a7 7 0 0 0 14 0c0-3-2-6-7-13Z" />
+        <path d="M42 250c4-6 8-4 7 1 6-3 9 2 4 5 6 3 3 8-3 7-2 6-8 5-8-1-6 3-10-2-5-6-4-4-1-8 5-6Z" />
+        <path d="M199 291c-6 8-8 11-8 15a8 8 0 0 0 16 0c0-4-2-7-8-15Z" />
+        <path d="m349 344 3 9 10-1-7 7 5 9-10-3-6 8-1-10-10-3 9-5-2-9 8 5z" />
+        <path d="M92 395c-4 6-6 8-6 11a6 6 0 0 0 12 0c0-3-2-5-6-11Z" />
+      </g>
+      <g fill="#ef5a70" fill-opacity=".58">
+        <circle cx="25" cy="72" r="2.5" />
+        <circle cx="64" cy="46" r="1.8" />
+        <circle cx="150" cy="57" r="2.1" />
+        <circle cx="196" cy="42" r="1.7" />
+        <circle cx="383" cy="45" r="2.2" />
+        <circle cx="426" cy="86" r="2" />
+        <circle cx="77" cy="116" r="2.2" />
+        <circle cx="125" cy="158" r="1.8" />
+        <circle cx="235" cy="128" r="2.4" />
+        <circle cx="294" cy="183" r="1.8" />
+        <circle cx="458" cy="175" r="2.2" />
+        <circle cx="19" cy="225" r="1.8" />
+        <circle cx="131" cy="271" r="2.4" />
+        <circle cx="235" cy="255" r="1.7" />
+        <circle cx="311" cy="299" r="2.2" />
+        <circle cx="390" cy="260" r="1.9" />
+        <circle cx="157" cy="359" r="2.3" />
+        <circle cx="235" cy="399" r="1.8" />
+        <circle cx="433" cy="362" r="2.2" />
+        <circle cx="287" cy="423" r="1.7" />
+      </g>
+    </pattern>
   </defs>
+
+  <rect width="480" height="900" fill="url(#splash-wallpaper)" opacity=".54" />
 
   <g opacity=".52">
     <g transform="translate(28 122) rotate(-17 20 68)">
