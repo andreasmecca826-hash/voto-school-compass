@@ -1898,6 +1898,50 @@
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] {
+  bottom: 0;
+  border-right: 2px outset #fff;
+  border-bottom: 0;
+  border-left: 2px outset #fff;
+  border-radius: 0;
+  box-shadow: 1px -1px 0 #404040;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul {
+  gap: 4px;
+  padding: 4px;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > :is(a, button) {
+  height: 3.25rem;
+  border: 2px outset #fff;
+  border-radius: 0;
+  background: linear-gradient(180deg, #dedede, #c0c0c0);
+  color: #111;
+  box-shadow: 1px 1px 0 #404040;
+  transition: none;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > :is(a, button)[aria-current="page"],
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > button[aria-expanded="true"] {
+  border-style: inset;
+  background: #b7b7b7;
+  color: #000080;
+  box-shadow: inset 1px 1px 0 #808080;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > :is(a, button) > span {
+  width: auto;
+  height: 1.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #000080;
+  box-shadow: none;
+  transition: none;
+}
 :root[data-theme="windows-98"]:not([data-registry-style="didup"]) .bg-primary-soft {
   border: 1px outset #b9d8ff;
   border-radius: 0;
