@@ -186,29 +186,6 @@ function Interrogazioni() {
                   {item.notes && !item.reminderId && (
                     <p className="mt-2 text-xs text-muted-foreground">{item.notes}</p>
                   )}
-                  <div className="mt-3 border-t border-border pt-2">
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Preparazione
-                    </p>
-                    <div className="grid grid-cols-2 gap-1">
-                      {item.checklist.map((prep) => (
-                        <button
-                          key={prep.id}
-                          type="button"
-                          onClick={() => v.toggleInterrogazionePrep(item.id, prep.id)}
-                          className={cn(
-                            "rounded-lg px-2 py-1.5 text-left text-[10px]",
-                            prep.done
-                              ? "bg-success-soft text-success line-through"
-                              : "bg-surface text-muted-foreground",
-                          )}
-                        >
-                          {prep.done ? "✓ " : "○ "}
-                          {prep.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
                 <button
                   type="button"
