@@ -9,7 +9,7 @@ const MAX_API_DOCUMENT_LENGTH = 60_000;
 const CIRCULAR_TERMS = /\b(?:circolar\w*|avvis\w*|bachec\w*)\b/;
 const RECENT_TERMS = /\b(?:ultim\w*|recent\w*|nuov\w*)\b/;
 const CONTENT_TERMS =
-  /\b(?:cosa dice|di cosa parla|contenut\w*|riassum\w*|spieg\w*|scad\w*|termin\w*|entro|quando|chi deve|a chi|destinatar\w*|rivolt\w*|cosa devo|azioni|obblig\w*|partecip\w*|parl\w*|serve\w*)/;
+  /\b(?:cosa dice|di cosa parla|contenut\w*|riassum\w*|spieg\w*|scad\w*|termin\w*|entro|quando|ora|chi deve|a chi|destinatar\w*|rivolt\w*|cosa devo|azioni|obblig\w*|partecip\w*|parl\w*|serve\w*)/;
 const SKIP_COMMAND = /^\s*(?:cerca(?:re)?|trova(?:re)?|ricerca(?:\s+rapida)?)\b/i;
 
 function normalize(value: string): string {
@@ -108,7 +108,7 @@ function chooseNotice(question: string, notices: AppNotification[]): AppNotifica
   const ranked = notices
     .map((notice) => {
       const searchable = normalize(
-        [notice.title, notice.message, notice.subject, notice.attachmentName]
+        [notice.title, notice.message, notice.extractedText, notice.subject, notice.attachmentName]
           .filter(Boolean)
           .join(" "),
       );
@@ -133,6 +133,8 @@ function internalAttachmentUrl(path: string): string {
 async function readNoticeText(
   notice: AppNotification,
 ): Promise<{ text: string; truncated: boolean }> {
+  const extractedText = notice.extractedText?.trim();
+  if (extractedText) return { text: extractedText, truncated: false };
   const path = attachmentPath(notice);
   if (path) {
     const url = internalAttachmentUrl(path);

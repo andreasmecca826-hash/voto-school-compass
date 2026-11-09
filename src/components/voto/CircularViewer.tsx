@@ -91,6 +91,7 @@ export function CircularViewer({
   url,
   path,
   attachments,
+  extractedText,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -99,6 +100,7 @@ export function CircularViewer({
   url: string | undefined;
   path?: string | undefined;
   attachments?: CircularAttachment[] | undefined;
+  extractedText?: string | undefined;
 }) {
   const files = mergeAttachments(attachments, { name: fileName, path, url });
   const isOnline = useOnlineStatus();
@@ -237,16 +239,19 @@ export function CircularViewer({
     setIsAskingAi(true);
 
     try {
-      const document = isPdf
-        ? await extractCircularPdfText(previewUrl)
-        : await extractCircularDocxText(previewUrl);
-      const documentText = document.text.trim();
+      const extractedDocument = extractedText?.trim()
+        ? { text: extractedText.trim(), truncated: false }
+        : isPdf
+          ? await extractCircularPdfText(previewUrl)
+          : await extractCircularDocxText(previewUrl);
+      const documentText = extractedDocument.text.trim();
       if (!documentText) {
         throw new Error(
           "Non trovo testo selezionabile nella circolare. Se è una scansione, serve prima un OCR.",
         );
       }
-      const documentTruncated = document.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
+      const documentTruncated =
+        extractedDocument.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
       setAiDocumentTruncated(documentTruncated);
       const canUseApi =
         responseMode === "api" && typeof navigator !== "undefined" && navigator.onLine;

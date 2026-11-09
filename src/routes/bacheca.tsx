@@ -360,6 +360,7 @@ function DidupBacheca() {
         path={selected?.attachmentPath}
         attachments={selected?.attachments}
         url={selected?.attachmentUrl}
+        extractedText={selected?.extractedText}
       />
     </div>
   );
@@ -418,6 +419,7 @@ function StandardBacheca() {
         path={selected?.attachmentPath}
         attachments={selected?.attachments}
         url={selected?.attachmentUrl}
+        extractedText={selected?.extractedText}
       />
     </div>
   );

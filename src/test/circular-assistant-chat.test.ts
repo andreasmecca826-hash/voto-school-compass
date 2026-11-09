@@ -101,4 +101,22 @@ describe("chat locale/API sulle circolari", () => {
     expect(askAboutCircularMock.mock.calls[0]?.[0]).not.toHaveProperty("title");
     expect(askAboutCircularMock.mock.calls[0]?.[0]).not.toHaveProperty("messages");
   });
+
+  it("usa il testo già estratto dal monitor senza scaricare di nuovo il PDF", async () => {
+    const storedTextNotifications: AppNotification[] = [
+      {
+        ...notifications[1]!,
+        extractedText: "La classe 2I esce alle ore 12:30 per l’assemblea.",
+      },
+    ];
+
+    await answerCircularChatQuestion("A che ora dice la circolare per la 2I?", storedTextNotifications, "api");
+
+    expect(extractPdfMock).not.toHaveBeenCalled();
+    expect(askAboutCircularMock).toHaveBeenCalledWith({
+      question: "A che ora dice la circolare per la 2I?",
+      documentText: "La classe 2I esce alle ore 12:30 per l’assemblea.",
+      documentTruncated: false,
+    });
+  });
 });
