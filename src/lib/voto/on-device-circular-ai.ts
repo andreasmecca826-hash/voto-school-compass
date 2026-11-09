@@ -76,9 +76,9 @@ function getModelWorker(): Worker {
   return worker;
 }
 
-export async function answerCircularQuestionOnDevice(
+export async function answerQuestionOnDevice(
   question: string,
-  evidence: string,
+  evidence = "",
   onProgress?: OnDeviceProgressCallback,
 ): Promise<string> {
   if (!(await isOnDeviceCircularAiSupported())) {
@@ -96,6 +96,14 @@ export async function answerCircularQuestionOnDevice(
       reject(new Error("Non è stato possibile avviare il worker AI sul telefono."));
     }
   });
+}
+
+export function answerCircularQuestionOnDevice(
+  question: string,
+  evidence: string,
+  onProgress?: OnDeviceProgressCallback,
+): Promise<string> {
+  return answerQuestionOnDevice(question, evidence, onProgress);
 }
 
 export function releaseOnDeviceCircularAi(): void {

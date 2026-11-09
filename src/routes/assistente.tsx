@@ -28,6 +28,12 @@ import { useStudy } from "@/lib/voto/study-context";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import {
+  answerQuestionOnDevice,
+  isOnDeviceCircularAiSupported,
+  releaseOnDeviceCircularAi,
+  type OnDeviceModelProgress,
+} from "@/lib/voto/on-device-circular-ai";
+import {
   getRandomCompleteThemeIntent,
   type RandomThemeConfirmation,
 } from "@/lib/voto/assistant-theme-actions";
@@ -47,6 +53,8 @@ type AssistantChatMessage = {
   sources?: SchoolDocumentSource[];
 };
 
+type DeviceAiAvailability = "checking" | "supported" | "unsupported";
+
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
 
 export const Route = createFileRoute("/assistente")({
@@ -56,7 +64,7 @@ export const Route = createFileRoute("/assistente")({
       {
         name: "description",
         content:
-          "Assistente locale e API per domande generali e documenti ufficiali Morselli-Sturzo.",
+          "Assistente Locale, AI generativa sul telefono e API per domande generali e documenti scolastici.",
       },
     ],
   }),
@@ -70,13 +78,18 @@ function Assistant() {
   const isOnline = useOnlineStatus();
   const [question, setQuestion] = useState("");
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
-  const activeAssistantMode = isOnline ? assistantMode : "local";
+  const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
+  const activeAssistantMode = canUseApi || assistantMode === "device" ? assistantMode : "local";
+  const [deviceAiAvailability, setDeviceAiAvailability] =
+    useState<DeviceAiAvailability>("checking");
+  const [deviceAiProgress, setDeviceAiProgress] = useState<OnDeviceModelProgress | null>(null);
+  const [deviceAiError, setDeviceAiError] = useState<string | null>(null);
   const [isReplying, setIsReplying] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<AssistantChatMessage[]>([
     {
       role: "assistant",
-      text: "Ciao! Sono l’assistente di VOTO. In Locale posso consultare i dati scolastici e cercare nei regolamenti ufficiali sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+      text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici sul dispositivo; con AI sul telefono genero risposte senza inviare la domanda a un servizio esterno; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
     },
   ]);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
@@ -84,27 +97,52 @@ function Assistant() {
   useEffect(() => {
     setSuggestions(pickAssistantSuggestions());
     try {
-      if (navigator.onLine && window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "api") {
-        setAssistantMode("api");
-      }
+      const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
+      if (savedMode === "device") setAssistantMode("device");
+      else if (navigator.onLine && savedMode === "api") setAssistantMode("api");
     } catch {
       // Se lo storage non è disponibile, resta attiva la modalità locale.
     }
+    let isCurrent = true;
+    void isOnDeviceCircularAiSupported().then((supported) => {
+      if (isCurrent) setDeviceAiAvailability(supported ? "supported" : "unsupported");
+    });
+    return () => {
+      isCurrent = false;
+      releaseOnDeviceCircularAi();
+    };
   }, []);
 
   useEffect(() => {
-    if (isOnline && (typeof navigator === "undefined" || navigator.onLine)) return;
+    if (canUseApi || assistantMode !== "api") return;
     setAssistantMode("local");
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
     } catch {
       // La modalità resta locale per la sessione corrente.
     }
-  }, [isOnline]);
+  }, [assistantMode, canUseApi]);
+
+  useEffect(() => {
+    if (deviceAiAvailability !== "unsupported" || assistantMode !== "device") return;
+    setAssistantMode("local");
+    setDeviceAiError(
+      "AI sul telefono non supportata da questo browser o dispositivo. Ho ripristinato Locale.",
+    );
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+    } catch {
+      // Il fallback resta valido per la sessione corrente.
+    }
+  }, [assistantMode, deviceAiAvailability]);
 
   const changeAssistantMode = (mode: CircularAssistantMode) => {
-    if (mode === "api" && (!isOnline || !navigator.onLine)) return;
+    if (mode === "api" && !canUseApi) return;
+    if (mode === "device" && deviceAiAvailability !== "supported") return;
+    if (assistantMode === "device" && mode !== "device") releaseOnDeviceCircularAi();
     setAssistantMode(mode);
+    setDeviceAiError(null);
+    setDeviceAiProgress(null);
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
     } catch {
@@ -115,8 +153,7 @@ function Assistant() {
   const ask = async (text = question) => {
     const clean = text.trim();
     if (!clean || isReplying) return;
-    const requestMode =
-      isOnline && (typeof navigator === "undefined" || navigator.onLine) ? assistantMode : "local";
+    const requestMode = canUseApi || assistantMode === "device" ? assistantMode : "local";
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
@@ -162,6 +199,35 @@ function Assistant() {
       !useSchoolPolicyAssistant &&
       requestMode === "api" &&
       !isAssistantSearchQuery(clean);
+    const useDeviceGeneral =
+      !hasImmediateActionResponse &&
+      !useCircularAssistant &&
+      !useSchoolPolicyAssistant &&
+      requestMode === "device" &&
+      !isAssistantSearchQuery(clean);
+    const localAnswer = () =>
+      answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+        previousQuestion,
+        source: v.source,
+        lastSync: v.lastSync,
+        syncError: v.error,
+        hasRemoteUrl: Boolean(v.url),
+        target: v.target,
+        theme: v.theme,
+        mode: v.mode,
+        accent: v.accent,
+        background: v.bg,
+        density: v.density,
+        reduceMotion: v.reduceMotion,
+        customFont: v.customTheme.font,
+        interfaceScale: v.interfaceScale,
+        homeScale: v.homeScale,
+        homeModules: v.homeModules,
+        flashcards: study.cards,
+        schoolEndDate: loadSchoolEndDate(),
+        schoolClosures: loadSchoolClosures(),
+        absenceHoursPerDay: loadAbsenceHoursPerDay(),
+      });
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : randomThemeIntent?.kind === "confirm"
@@ -170,36 +236,19 @@ function Assistant() {
           ? `Posso ${assignmentIntent.action.completed ? "segnare come completato" : "riaprire"} il compito “${assignmentIntent.action.title}”${assignmentIntent.action.subject ? ` di ${assignmentIntent.action.subject}` : ""}. Confermi? Non cambierò nulla finché non confermi. La modifica resta locale a VOTO e non aggiorna DidUP.`
           : assignmentIntent?.kind === "clarify" || assignmentIntent?.kind === "already"
             ? assignmentIntent.message
-            : useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi
+            : useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi || useDeviceGeneral
               ? ""
-              : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
-                  previousQuestion,
-                  source: v.source,
-                  lastSync: v.lastSync,
-                  syncError: v.error,
-                  hasRemoteUrl: Boolean(v.url),
-                  target: v.target,
-                  theme: v.theme,
-                  mode: v.mode,
-                  accent: v.accent,
-                  background: v.bg,
-                  density: v.density,
-                  reduceMotion: v.reduceMotion,
-                  customFont: v.customTheme.font,
-                  interfaceScale: v.interfaceScale,
-                  homeScale: v.homeScale,
-                  homeModules: v.homeModules,
-                  flashcards: study.cards,
-                  schoolEndDate: loadSchoolEndDate(),
-                  schoolClosures: loadSchoolClosures(),
-                  absenceHoursPerDay: loadAbsenceHoursPerDay(),
-                });
+              : localAnswer();
     setPendingAction(nextPendingAction);
     setQuestion("");
     setMessages((current) => [...current, { role: "user", text: clean }]);
 
-    if (useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi) {
+    if (useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi || useDeviceGeneral) {
       setIsReplying(true);
+      if (requestMode === "device") {
+        setDeviceAiProgress(null);
+        setDeviceAiError(null);
+      }
       try {
         let assistantMessage: AssistantChatMessage;
         if (useCircularAssistant) {
@@ -207,17 +256,29 @@ function Assistant() {
             clean,
             assistantData.notifications,
             requestMode,
+            setDeviceAiProgress,
           );
           assistantMessage = {
             role: "assistant",
             text: assistantResponse ?? "Non ho trovato una circolare pertinente.",
           };
         } else if (useSchoolPolicyAssistant) {
-          const schoolAnswer = await answerSchoolPolicyQuestion(clean, requestMode);
+          const schoolAnswer = await answerSchoolPolicyQuestion(
+            clean,
+            requestMode === "api" ? "api" : "local",
+          );
           assistantMessage = {
             role: "assistant",
-            text: schoolAnswer.text,
+            text:
+              requestMode === "device"
+                ? await answerQuestionOnDevice(clean, schoolAnswer.text, setDeviceAiProgress)
+                : schoolAnswer.text,
             sources: schoolAnswer.sources,
+          };
+        } else if (requestMode === "device") {
+          assistantMessage = {
+            role: "assistant",
+            text: await answerQuestionOnDevice(clean, localAnswer(), setDeviceAiProgress),
           };
         } else {
           assistantMessage = { role: "assistant", text: await askGeneralQuestion(clean) };
@@ -225,9 +286,11 @@ function Assistant() {
         setMessages((current) => [...current, assistantMessage]);
       } catch (error) {
         const message = error instanceof Error ? error.message : "La risposta non è disponibile.";
+        if (requestMode === "device") setDeviceAiError(message);
         setMessages((current) => [...current, { role: "assistant", text: message }]);
       } finally {
         setIsReplying(false);
+        setDeviceAiProgress(null);
       }
       return;
     }
@@ -290,8 +353,8 @@ function Assistant() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Assistente</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Locale consulta i dati dell’app e cerca nei regolamenti ufficiali; API risponde a
-            domande generali usando solo i documenti pertinenti.
+            Locale consulta i dati dell’app; AI sul telefono genera risposte localmente; API
+            risponde a domande generali usando i documenti pertinenti.
           </p>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -303,7 +366,11 @@ function Assistant() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold">
             <Sparkles className="h-4 w-4 text-primary" />
-            {activeAssistantMode === "local" ? "Modalità Locale" : "Modalità API Groq (Qwen)"}
+            {activeAssistantMode === "local"
+              ? "Modalità Locale"
+              : activeAssistantMode === "device"
+                ? "AI sul telefono (Qwen 0,5B)"
+                : "Modalità API Groq (Qwen)"}
           </div>
           <div
             className="flex rounded-xl border border-border p-1"
@@ -319,7 +386,7 @@ function Assistant() {
             >
               Locale
             </button>
-            {isOnline && (
+            {canUseApi && (
               <button
                 type="button"
                 aria-pressed={activeAssistantMode === "api"}
@@ -330,17 +397,49 @@ function Assistant() {
                 API
               </button>
             )}
+            <button
+              type="button"
+              aria-pressed={activeAssistantMode === "device"}
+              disabled={isReplying || deviceAiAvailability !== "supported"}
+              onClick={() => changeAssistantMode("device")}
+              title={
+                deviceAiAvailability === "unsupported"
+                  ? "Questo browser o dispositivo non supporta WebGPU"
+                  : "Risposte generate sul dispositivo; il modello verrà scaricato al primo utilizzo"
+              }
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${activeAssistantMode === "device" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              AI telefono
+            </button>
           </div>
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
           {activeAssistantMode === "local"
             ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
-            : "API invia a Groq la domanda e solo gli estratti pertinenti del regolamento, della ricerca PDF utente (non verificata) o della circolare. Non allega automaticamente voti, assenze o cronologia; se scrivi dati personali nella domanda, li invia. Non legge pagine con login e non fa fallback automatico. I costi dipendono dal piano Groq: per zero spese, scegli Locale."}{" "}
-          {!isOnline && (
-            <span className="font-medium text-primary">Offline: disponibile solo Locale. </span>
+            : activeAssistantMode === "device"
+              ? "Qwen 0,5B genera la risposta sul telefono con WebGPU: domanda e contesto non vengono inviati a Groq né a un’API LLM. Una circolare non già caricata può essere recuperata dal server VOTO. Il modello (circa 945 MB di memoria grafica richiesta) si scarica solo al primo utilizzo e può richiedere tempo."
+              : "API invia a Groq la domanda e solo gli estratti pertinenti del regolamento, della ricerca PDF utente (non verificata) o della circolare. Non allega automaticamente voti, assenze o cronologia; se scrivi dati personali nella domanda, li invia. Non legge pagine con login e non fa fallback automatico. I costi dipendono dal piano Groq: per zero spese, scegli Locale o AI telefono."}{" "}
+          {!canUseApi && (
+            <span className="font-medium text-primary">
+              Offline: API non disponibile; Locale
+              {deviceAiAvailability === "supported"
+                ? " e AI telefono sono disponibili"
+                : " è disponibile solo Locale"}
+              .
+            </span>
+          )}
+          {deviceAiAvailability === "unsupported" && activeAssistantMode !== "device" && (
+            <span className="font-medium text-muted-foreground">
+              Questo browser o dispositivo non supporta WebGPU per l’AI sul telefono.
+            </span>
           )}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
+        {deviceAiError && (
+          <p role="alert" className="mt-2 text-xs text-destructive">
+            {deviceAiError} Puoi continuare con Locale.
+          </p>
+        )}
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
           <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           Ricerca rapida: scrivi “cerca algebra”, “trova circolare uscita” o una parola per trovare
@@ -407,7 +506,11 @@ function Assistant() {
           <LoaderCircle className="h-4 w-4 animate-spin" />
           {activeAssistantMode === "api"
             ? "Preparo la risposta API con la domanda e le fonti pertinenti…"
-            : "Cerco nei documenti sul dispositivo…"}
+            : activeAssistantMode === "device"
+              ? deviceAiProgress
+                ? `Caricamento AI sul telefono: ${Math.round(deviceAiProgress.progress * 100)}%…`
+                : "Avvio l’AI sul telefono…"
+              : "Cerco nei documenti sul dispositivo…"}
         </p>
       )}
 

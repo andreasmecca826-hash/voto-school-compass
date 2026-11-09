@@ -6,6 +6,7 @@ import {
 } from "@/lib/voto/circular-assistant-chat";
 import { askAboutCircular } from "@/lib/voto/circular-assistant";
 import { extractCircularPdfText } from "@/lib/voto/circular-reader";
+import { answerQuestionOnDevice } from "@/lib/voto/on-device-circular-ai";
 
 vi.mock("@/lib/voto/circular-assistant", () => ({
   askAboutCircular: vi.fn(),
@@ -19,6 +20,10 @@ vi.mock("@/lib/voto/circular-reader", async (importOriginal) => {
     extractCircularDocxText: vi.fn(),
   };
 });
+
+vi.mock("@/lib/voto/on-device-circular-ai", () => ({
+  answerQuestionOnDevice: vi.fn(),
+}));
 
 const notifications: AppNotification[] = [
   {
@@ -41,6 +46,7 @@ const notifications: AppNotification[] = [
 
 const askAboutCircularMock = vi.mocked(askAboutCircular);
 const extractPdfMock = vi.mocked(extractCircularPdfText);
+const answerOnDeviceMock = vi.mocked(answerQuestionOnDevice);
 
 describe("chat locale/API sulle circolari", () => {
   beforeEach(() => {
@@ -51,6 +57,7 @@ describe("chat locale/API sulle circolari", () => {
       truncated: false,
     });
     askAboutCircularMock.mockResolvedValue("I colloqui si terranno il 12 novembre 2026.");
+    answerOnDeviceMock.mockResolvedValue("La risposta è generata sul telefono.");
   });
 
   it("riconosce domande naturali sulla circolare più recente ma lascia intatte le ricerche manuali", () => {
@@ -102,6 +109,21 @@ describe("chat locale/API sulle circolari", () => {
     expect(askAboutCircularMock.mock.calls[0]?.[0]).not.toHaveProperty("messages");
   });
 
+  it("in modalità AI sul telefono inoltra al worker il testo letto localmente e non chiama Groq", async () => {
+    const onProgress = vi.fn();
+    const question = "Quando si terranno i colloqui dell’ultima circolare?";
+
+    const answer = await answerCircularChatQuestion(question, notifications, "device", onProgress);
+
+    expect(answer).toContain("La risposta è generata sul telefono.");
+    expect(answerOnDeviceMock).toHaveBeenCalledWith(
+      question,
+      "[Pagina 1]\nI colloqui scuola-famiglia si terranno il 12 novembre 2026. Prenotare tramite registro elettronico.",
+      onProgress,
+    );
+    expect(askAboutCircularMock).not.toHaveBeenCalled();
+  });
+
   it("usa il testo già estratto dal monitor senza scaricare di nuovo il PDF", async () => {
     const storedTextNotifications: AppNotification[] = [
       {
@@ -110,7 +132,11 @@ describe("chat locale/API sulle circolari", () => {
       },
     ];
 
-    await answerCircularChatQuestion("A che ora dice la circolare per la 2I?", storedTextNotifications, "api");
+    await answerCircularChatQuestion(
+      "A che ora dice la circolare per la 2I?",
+      storedTextNotifications,
+      "api",
+    );
 
     expect(extractPdfMock).not.toHaveBeenCalled();
     expect(askAboutCircularMock).toHaveBeenCalledWith({
