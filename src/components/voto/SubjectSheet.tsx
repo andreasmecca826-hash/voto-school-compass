@@ -111,9 +111,6 @@ export function SubjectSheet({
           >
             <Calculator className="h-4 w-4" /> Che voto mi serve?
           </button>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            I voti sono in sola lettura: provengono dal file remoto.
-          </p>
         </>
       )}
     </BottomSheet>

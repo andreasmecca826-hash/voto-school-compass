@@ -191,19 +191,6 @@ function ScrutiniInfraperiodali() {
         </div>
       )}
 
-      <div
-        className={cn(
-          "mt-4 rounded-xl border p-3 text-xs leading-relaxed",
-          isDidup
-            ? "border-white/15 bg-[#262626] text-white/65"
-            : "border-primary/20 bg-primary-soft/50 text-muted-foreground",
-        )}
-      >
-        Inserisci per ogni materia il voto medio, anche decimale: VOTO propone il voto intero più
-        vicino (i mezzi voti si arrotondano per eccesso). Le pagelle sono manuali, salvate solo su
-        questo dispositivo e non modificano i voti del registro né vengono inviate ad Argo.
-      </div>
-
       <SectionTitle>Le tue pagelle</SectionTitle>
       <button
         type="button"
