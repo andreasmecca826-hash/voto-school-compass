@@ -411,6 +411,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className={cn(
             "relative flex-1",
             v.registryStyle === "didup" ? "px-0" : "px-5 pb-28",
+            v.registryStyle !== "didup" && path === "/diario" && "diario-standard-main",
             isWindows7 && "windows7-content",
           )}
           onTouchStart={handlePullStart}

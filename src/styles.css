@@ -1729,6 +1729,23 @@
   display: none;
 }
 
+.diario-standard-main {
+  min-width: 0;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+.diario-standard-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+.diario-entry-copy {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 /* Y2K: interfaccia da portale web dei primi anni 2000, con cromo e controlli a rilievo. */
 :root[data-theme="y2k"] {
   --y2k-pink: #ff62c4;

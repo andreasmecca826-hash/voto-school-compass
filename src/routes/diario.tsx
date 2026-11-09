@@ -45,7 +45,7 @@ function StandardDiario() {
   }, [entries]);
 
   return (
-    <div className="pt-3">
+    <div className="diario-standard-page pt-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold">Diario</h1>
@@ -100,19 +100,21 @@ function StandardDiario() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <p className="font-semibold">{entry.subject || "Attività"}</p>
+                          <p className="diario-entry-copy font-semibold">
+                            {entry.subject || "Attività"}
+                          </p>
                           {entry.hour && (
                             <span className="text-[11px] text-muted-foreground">
                               {entry.hour}ª ora
                             </span>
                           )}
                         </div>
-                        <p className="mt-3 text-sm leading-relaxed text-foreground">
+                        <p className="diario-entry-copy mt-3 text-sm leading-relaxed text-foreground">
                           {entry.activity}
                         </p>
                         {entry.teacher && (
-                          <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <UserRound className="h-3.5 w-3.5" />
+                          <p className="diario-entry-copy mt-3 inline-flex max-w-full flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <UserRound className="h-3.5 w-3.5 shrink-0" />
                             {entry.teacher}
                           </p>
                         )}
