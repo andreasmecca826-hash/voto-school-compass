@@ -692,6 +692,12 @@ function NotifItem({ id }: { id: string }) {
   const n = v.data.notifications.find((x) => x.id === id)!;
   const read = v.isRead(n.id, n.read);
   const M = NOTIF_META[n.type];
+  const notificationLabel =
+    n.type === "notice"
+      ? notificationContentLabel(n) === "Circolari"
+        ? "Circolare"
+        : "Comunicazione"
+      : M.label;
   return (
     <li className={cn("card-surface flex items-center gap-3 p-3.5", !read && "border-primary/30")}>
       <span
@@ -705,7 +711,7 @@ function NotifItem({ id }: { id: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{n.title}</p>
         <p className="whitespace-pre-line text-[11px] text-muted-foreground">
-          {M.label}
+          {notificationLabel}
           {n.teacher ? ` · ${n.teacher}` : ""}
           {n.message ? `\n${n.message}` : ""}
         </p>
