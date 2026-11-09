@@ -160,8 +160,8 @@ function DidupDiario() {
   const studentName = (voto.data.student.name ?? "").toUpperCase();
 
   return (
-    <div className="didup-page min-h-dvh bg-black px-2 pb-[100px] text-white">
-      <header className="flex items-start justify-between px-2 pt-5">
+    <div className="didup-page flex h-[calc(100svh-86px)] min-h-0 flex-col overflow-hidden bg-black px-2 text-white">
+      <header className="flex shrink-0 items-start justify-between px-2 pt-5">
         <div>
           <h1 className="text-[20px] font-normal leading-6">Diario</h1>
           {studentName && <p className="mt-0.5 text-[12px] leading-4">{studentName}</p>}
@@ -176,7 +176,7 @@ function DidupDiario() {
 
       <section
         aria-label="Seleziona il giorno del diario"
-        className="mx-2 mt-7 min-h-[164px] rounded-[12px] bg-[#292929] px-3 pb-3 pt-4"
+        className="mx-2 mt-7 min-h-[164px] shrink-0 rounded-[12px] bg-[#292929] px-3 pb-3 pt-4"
       >
         <div className="flex h-9 items-center justify-between">
           <button
@@ -234,7 +234,7 @@ function DidupDiario() {
       </section>
 
       <div
-        className="-mx-2 mt-7 grid h-[58px] grid-cols-2 bg-[#292929]"
+        className="-mx-2 mt-7 grid h-[58px] shrink-0 grid-cols-2 bg-[#292929]"
         role="tablist"
         aria-label="Sezione Diario"
       >
@@ -264,24 +264,38 @@ function DidupDiario() {
 
       {tab === "attivita" ? (
         activities.length ? (
-          <ul role="tabpanel" aria-label="Attività svolte" className="divide-y divide-[#454545]">
+          <ul
+            role="tabpanel"
+            aria-label="Attività svolte"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-[#454545] pb-4"
+          >
             {activities.map((entry, index) => (
               <DidupActivityRow key={entry.id} entry={entry} fallbackHour={index + 1} />
             ))}
           </ul>
         ) : (
-          <p role="tabpanel" className="px-5 py-10 text-center text-sm text-white/65">
+          <p
+            role="tabpanel"
+            className="min-h-0 flex-1 overflow-y-auto px-5 py-10 text-center text-sm text-white/65"
+          >
             Nessuna attività registrata per questa data.
           </p>
         )
       ) : assignments.length ? (
-        <ul role="tabpanel" aria-label="Compiti assegnati" className="divide-y divide-[#454545]">
+        <ul
+          role="tabpanel"
+          aria-label="Compiti assegnati"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-[#454545] pb-4"
+        >
           {assignments.map((assignment) => (
             <DidupAssignmentRow key={assignment.id} assignment={assignment} />
           ))}
         </ul>
       ) : (
-        <p role="tabpanel" className="px-5 py-10 text-center text-sm text-white/65">
+        <p
+          role="tabpanel"
+          className="min-h-0 flex-1 overflow-y-auto px-5 py-10 text-center text-sm text-white/65"
+        >
           Nessun compito assegnato per questa data.
         </p>
       )}
