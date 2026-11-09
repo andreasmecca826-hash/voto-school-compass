@@ -321,7 +321,10 @@ export function CircularViewer({
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
+  const hasTextOnlyContent = !previewUrl && Boolean(extractedText?.trim());
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
+  const canAskAi = canAnalyze || hasTextOnlyContent;
+  const effectiveAiMode = !isPdf && activeAiMode === "vision" ? "local" : activeAiMode;
   const availableAiModeCount =
     1 +
     Number(isOnline) +
@@ -382,10 +385,9 @@ export function CircularViewer({
   async function askAiAboutDocument(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = aiQuestion.trim();
-    if (!previewUrl || !question || isAskingAi) return;
+    if ((!previewUrl && !extractedText?.trim()) || !question || isAskingAi) return;
     const browserOnline = isOnline && (typeof navigator === "undefined" || navigator.onLine);
-    const responseMode =
-      browserOnline || aiMode === "device" || aiMode === "vision" ? aiMode : "local";
+    const responseMode = effectiveAiMode;
 
     const requestId = aiRequestId.current + 1;
     aiRequestId.current = requestId;
@@ -404,7 +406,8 @@ export function CircularViewer({
     try {
       let answer: string;
       if (responseMode === "vision") {
-        if (!isPdf) throw new Error("L’AI visiva Qwen2-VL è disponibile solo per i PDF.");
+        if (!isPdf || !previewUrl)
+          throw new Error("L’AI visiva Qwen2-VL è disponibile solo per i PDF.");
         const visualInput = await renderCircularPdfPageImages(previewUrl);
         setAiDocumentTruncated(visualInput.truncated);
         setAiProgressMessage("Analizzo visivamente le pagine sul telefono…");
@@ -417,11 +420,14 @@ export function CircularViewer({
           },
         );
       } else {
-        const extractedDocument = extractedText?.trim()
-          ? { text: extractedText.trim(), truncated: false }
-          : isPdf
-            ? await extractCircularPdfText(previewUrl)
-            : await extractCircularDocxText(previewUrl);
+        const availableText = extractedText?.trim();
+        const extractedDocument = availableText
+          ? { text: availableText, truncated: false }
+          : previewUrl
+            ? isPdf
+              ? await extractCircularPdfText(previewUrl)
+              : await extractCircularDocxText(previewUrl)
+            : { text: "", truncated: false };
         const documentText = extractedDocument.text.trim();
         if (!documentText) {
           throw new Error(
@@ -537,34 +543,36 @@ export function CircularViewer({
             <span className="truncate">{title}</span>
           </SheetTitle>
           <SheetDescription className="truncate">
-            {activeFile?.name ?? "Circolare"}
+            {activeFile?.name ?? (hasTextOnlyContent ? "Comunicazione testuale" : "Circolare")}
           </SheetDescription>
         </SheetHeader>
-        {canAnalyze && (
+        {canAskAi && (
           <div className="mb-3 shrink-0 space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (analysis || analysisError) setIsAnalysisOpen((openNow) => !openNow);
-                  else void analyzeDocument();
-                }}
-                disabled={isAnalyzing}
-                className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-[11px] font-semibold text-primary disabled:opacity-60"
-              >
-                {isAnalyzing ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                {isAnalyzing
-                  ? "Lettura in corso…"
-                  : analysis || analysisError
-                    ? isAnalysisOpen
-                      ? "Nascondi analisi"
-                      : "Mostra analisi"
-                    : "Riassumi sul dispositivo"}
-              </button>
+            <div className={canAnalyze ? "grid grid-cols-2 gap-2" : "grid grid-cols-1 gap-2"}>
+              {canAnalyze && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (analysis || analysisError) setIsAnalysisOpen((openNow) => !openNow);
+                    else void analyzeDocument();
+                  }}
+                  disabled={isAnalyzing}
+                  className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-[11px] font-semibold text-primary disabled:opacity-60"
+                >
+                  {isAnalyzing ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {isAnalyzing
+                    ? "Lettura in corso…"
+                    : analysis || analysisError
+                      ? isAnalysisOpen
+                        ? "Nascondi analisi"
+                        : "Mostra analisi"
+                      : "Riassumi sul dispositivo"}
+                </button>
+              )}
               <button
                 type="button"
                 aria-expanded={isAiChatOpen}
@@ -694,7 +702,7 @@ export function CircularViewer({
             )}
           </div>
         )}
-        {canAnalyze && isAiChatOpen && (
+        {canAskAi && isAiChatOpen && (
           <section
             id="circular-ai-chat"
             className="mb-3 shrink-0 space-y-2 rounded-xl border border-primary/25 bg-primary-soft/40 p-3"
@@ -710,11 +718,11 @@ export function CircularViewer({
               >
                 <button
                   type="button"
-                  aria-pressed={activeAiMode === "local"}
+                  aria-pressed={effectiveAiMode === "local"}
                   disabled={isAskingAi}
                   onClick={() => chooseAiMode("local")}
                   className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                    activeAiMode === "local"
+                    effectiveAiMode === "local"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground"
                   }`}
@@ -724,11 +732,11 @@ export function CircularViewer({
                 {circularAiModels.text && deviceAiAvailability === "supported" && (
                   <button
                     type="button"
-                    aria-pressed={activeAiMode === "device"}
+                    aria-pressed={effectiveAiMode === "device"}
                     disabled={isAskingAi}
                     onClick={() => chooseAiMode("device")}
                     className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                      activeAiMode === "device"
+                      effectiveAiMode === "device"
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground"
                     }`}
@@ -739,11 +747,11 @@ export function CircularViewer({
                 {isPdf && circularAiModels.vision && visionAiAvailability === "supported" && (
                   <button
                     type="button"
-                    aria-pressed={activeAiMode === "vision"}
+                    aria-pressed={effectiveAiMode === "vision"}
                     disabled={isAskingAi}
                     onClick={() => chooseAiMode("vision")}
                     className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                      activeAiMode === "vision"
+                      effectiveAiMode === "vision"
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground"
                     }`}
@@ -754,11 +762,11 @@ export function CircularViewer({
                 {isOnline && (
                   <button
                     type="button"
-                    aria-pressed={activeAiMode === "api"}
+                    aria-pressed={effectiveAiMode === "api"}
                     disabled={isAskingAi}
                     onClick={() => chooseAiMode("api")}
                     className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                      activeAiMode === "api"
+                      effectiveAiMode === "api"
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground"
                     }`}
@@ -768,16 +776,16 @@ export function CircularViewer({
                 )}
               </div>
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
-                {activeAiMode === "local"
+                {effectiveAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
-                  : activeAiMode === "device"
+                  : effectiveAiMode === "device"
                     ? "Qwen generativo gira sul telefono: domanda e testo non vengono inviati a un servizio AI. Il modello è stato preparato da Impostazioni e resta nella cache del browser."
-                    : activeAiMode === "vision"
+                    : effectiveAiMode === "vision"
                       ? "Qwen2-VL guarda le immagini delle prime quattro pagine PDF sul dispositivo: non estrae né invia testo a un servizio AI. Le pagine successive non vengono considerate."
                       : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
-                    {activeAiMode === "device" || activeAiMode === "vision"
+                    {effectiveAiMode === "device" || effectiveAiMode === "vision"
                       ? "Offline: l’AI sul telefono funziona solo se il modello è già scaricato."
                       : "Offline: disponibile solo Locale."}{" "}
                   </span>
@@ -812,12 +820,12 @@ export function CircularViewer({
                 </p>
               )}
             </div>
-            {aiDocumentTruncated && activeAiMode === "vision" && (
+            {aiDocumentTruncated && effectiveAiMode === "vision" && (
               <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
                 Per questa analisi visiva sono state considerate solo le prime 4 pagine del PDF.
               </p>
             )}
-            {aiDocumentTruncated && activeAiMode !== "vision" && (
+            {aiDocumentTruncated && effectiveAiMode !== "vision" && (
               <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
                 Circolare lunga: per la domanda è stato considerato un estratto del testo. La
                 risposta potrebbe non includere informazioni presenti nelle parti omesse.
@@ -858,7 +866,7 @@ export function CircularViewer({
                   >
                     <LoaderCircle className="h-3 w-3 animate-spin" />
                     {aiProgressMessage ??
-                      (activeAiMode === "device"
+                      (effectiveAiMode === "device"
                         ? "Genero la risposta sul telefono…"
                         : "Sto leggendo la circolare…")}
                   </p>
@@ -920,6 +928,15 @@ export function CircularViewer({
             title={activeFile?.name ?? title}
             src={previewUrl}
           />
+        ) : hasTextOnlyContent ? (
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Testo della comunicazione
+            </p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {extractedText}
+            </p>
+          </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />

@@ -717,7 +717,9 @@ function NotifItem({ id }: { id: string }) {
             }}
             className="press mt-2 inline-flex max-w-full items-center rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary"
           >
-            Apri circolare
+            {n.attachmentName || n.attachmentPath || n.attachmentUrl || n.attachments?.length
+              ? "Apri circolare"
+              : "Apri comunicazione"}
           </button>
         )}
       </div>
@@ -742,6 +744,7 @@ function NotifItem({ id }: { id: string }) {
             path={n.attachmentPath}
             attachments={n.attachments}
             url={n.attachmentPath ? n.attachmentUrl : undefined}
+            extractedText={n.extractedText ?? n.message ?? n.title}
           />
         </Suspense>
       )}

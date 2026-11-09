@@ -305,6 +305,30 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
   });
 
+  it("mostra e rende interrogabile una comunicazione testuale senza allegato", () => {
+    const message = "La scuola comunica che l'assemblea si terrà il 12 novembre 2026.";
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Assemblea scolastica"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        extractedText={message}
+      />,
+    );
+
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fai una domanda" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Riassumi sul dispositivo" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    expect(screen.getByRole("textbox", { name: "Domanda sulla circolare" })).toBeInTheDocument();
+  });
+
   it("preferisce il path PDF interno al duplicato esterno", () => {
     const path = `circulars/${"c".repeat(64)}.pdf`;
     render(

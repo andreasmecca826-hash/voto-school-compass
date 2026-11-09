@@ -321,6 +321,16 @@ function DidupBacheca() {
                     <span>{count}</span>
                   </button>
                 )}
+                {count === 0 && (item.message || item.extractedText || item.title) && (
+                  <button
+                    type="button"
+                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    className="press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90"
+                  >
+                    <FileText className="h-[21px] w-[21px] shrink-0" aria-hidden="true" />
+                    <span>Leggi comunicazione</span>
+                  </button>
+                )}
               </article>
             );
           })
@@ -360,7 +370,7 @@ function DidupBacheca() {
         path={selected?.attachmentPath}
         attachments={selected?.attachments}
         url={selected?.attachmentUrl}
-        extractedText={selected?.extractedText}
+        extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
       />
     </div>
   );
@@ -403,6 +413,16 @@ function StandardBacheca() {
                   {count} {count === 1 ? "allegato" : "allegati"}
                 </button>
               )}
+              {count === 0 && (item.message || item.extractedText || item.title) && (
+                <button
+                  type="button"
+                  onClick={() => openNotice(item, v.markRead, setSelected)}
+                  className="press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary"
+                >
+                  <FileText className="h-4 w-4" />
+                  Leggi comunicazione
+                </button>
+              )}
             </article>
           );
         })
@@ -419,7 +439,7 @@ function StandardBacheca() {
         path={selected?.attachmentPath}
         attachments={selected?.attachments}
         url={selected?.attachmentUrl}
-        extractedText={selected?.extractedText}
+        extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
       />
     </div>
   );

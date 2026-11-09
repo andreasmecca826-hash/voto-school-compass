@@ -128,7 +128,19 @@ const notifType = (v: unknown): NotificationType => {
   const s = String(v ?? "").toLowerCase();
   if (s === "grade" || s === "voto") return "grade";
   if (s === "reminder" || s === "promemoria") return "reminder";
-  if (s === "notice" || s === "avviso") return "notice";
+  if (
+    [
+      "notice",
+      "avviso",
+      "comunicazione",
+      "comunicazioni",
+      "communication",
+      "communications",
+      "circolare",
+      "circolari",
+    ].includes(s)
+  )
+    return "notice";
   return "note";
 };
 
