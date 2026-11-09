@@ -3,7 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
-import { notificationContentLabel, selectUpcomingReminders } from "@/lib/voto/selectors";
+import {
+  notificationContentLabel,
+  notificationDisplayTitle,
+  selectUpcomingReminders,
+} from "@/lib/voto/selectors";
 import { fmtDate, toIso } from "@/lib/voto/dates";
 import type { AppNotification } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
@@ -389,7 +393,9 @@ export function DidupDashboard() {
                   {teacher ? ` · ${teacher}` : ""}
                 </p>
                 <p className="mt-7 line-clamp-1 text-[14px] leading-6">
-                  {item.message || item.title}
+                  {item.message && item.message !== item.title
+                    ? item.message
+                    : notificationDisplayTitle(item)}
                 </p>
                 {hasFiles && (
                   <button

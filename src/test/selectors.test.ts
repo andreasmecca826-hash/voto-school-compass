@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   notificationContentLabel,
+  notificationDisplayTitle,
   selectDashboardAssignments,
   selectNotificationsByType,
   selectOpenInterrogazioni,
@@ -21,6 +22,17 @@ describe("Dashboard selectors", () => {
     expect(notificationContentLabel({ ...base, id: "text", message: "Solo testo" })).toBe(
       "Comunicazioni",
     );
+    expect(notificationDisplayTitle({ ...base, id: "text-title" })).toBe("Comunicazione");
+    expect(
+      notificationDisplayTitle({
+        ...base,
+        id: "pdf-title",
+        attachments: [{ name: "orario.pdf" }],
+      }),
+    ).toBe("Circolare");
+    expect(
+      notificationDisplayTitle({ ...base, id: "specific", title: "Orario docenti di sostegno" }),
+    ).toBe("Orario docenti di sostegno");
   });
 
   it("seleziona e ordina i compiti di oggi e domani", () => {

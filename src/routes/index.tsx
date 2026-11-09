@@ -40,6 +40,7 @@ import { fmtDate, fmtTime } from "@/lib/voto/dates";
 import {
   selectDashboardAssignments,
   selectNotificationsByType,
+  notificationDisplayTitle,
   selectOpenInterrogazioni,
   selectUpcomingReminders,
   notificationContentLabel,
@@ -709,7 +710,7 @@ function NotifItem({ id }: { id: string }) {
         <M.icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{n.title}</p>
+        <p className="truncate text-sm font-medium">{notificationDisplayTitle(n)}</p>
         <p className="whitespace-pre-line text-[11px] text-muted-foreground">
           {notificationLabel}
           {n.teacher ? ` · ${n.teacher}` : ""}

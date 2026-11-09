@@ -34,6 +34,27 @@ export function notificationContentLabel(
   return hasAttachment ? "Circolari" : "Comunicazioni";
 }
 
+const GENERIC_NOTICE_TITLES = new Set([
+  "avviso",
+  "bacheca",
+  "circolare",
+  "circolari",
+  "comunicazione",
+  "comunicazioni",
+]);
+
+export function isGenericNoticeTitle(notification: AppNotification) {
+  return (
+    notification.type === "notice" &&
+    GENERIC_NOTICE_TITLES.has(notification.title.trim().toLocaleLowerCase("it-IT"))
+  );
+}
+
+export function notificationDisplayTitle(notification: AppNotification) {
+  if (!isGenericNoticeTitle(notification)) return notification.title;
+  return notificationContentLabel(notification) === "Circolari" ? "Circolare" : "Comunicazione";
+}
+
 function reminderDaysFromNow(notification: AppNotification, now: Date): number | null {
   const date = notification.date?.slice(0, 10);
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;

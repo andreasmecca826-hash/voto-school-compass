@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, toIso } from "@/lib/voto/dates";
-import { notificationContentLabel } from "@/lib/voto/selectors";
+import { notificationContentLabel, notificationDisplayTitle } from "@/lib/voto/selectors";
 import { useVoto } from "@/lib/voto/store";
 import type { AppNotification } from "@/lib/voto/types";
 
@@ -306,7 +306,9 @@ function DidupBacheca() {
                 </div>
 
                 <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
-                  {item.message || item.title}
+                  {item.message && item.message !== item.title
+                    ? item.message
+                    : notificationDisplayTitle(item)}
                 </p>
 
                 {count > 0 && (
