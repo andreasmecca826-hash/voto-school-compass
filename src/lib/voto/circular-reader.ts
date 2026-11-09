@@ -271,6 +271,55 @@ export async function extractCircularPdfText(src: string): Promise<CircularDocum
   return readCircularPdfPages(src);
 }
 
+export interface CircularPdfPageImage {
+  pageNumber: number;
+  dataUrl: string;
+}
+
+export interface CircularPdfVisualInput {
+  pages: CircularPdfPageImage[];
+  totalPages: number;
+  truncated: boolean;
+}
+
+const MAX_VISUAL_PAGES = 4;
+const MAX_VISUAL_PAGE_DIMENSION = 1120;
+
+export async function renderCircularPdfPageImages(src: string): Promise<CircularPdfVisualInput> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
+  const loadingTask = pdfjs.getDocument({ url: src, withCredentials: true });
+  try {
+    const pdf = await loadingTask.promise;
+    const pages: CircularPdfPageImage[] = [];
+    const pageCount = Math.min(pdf.numPages, MAX_VISUAL_PAGES);
+    for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = Math.min(
+        1.5,
+        MAX_VISUAL_PAGE_DIMENSION / Math.max(baseViewport.width, baseViewport.height),
+      );
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const context = canvas.getContext("2d", { alpha: false });
+      if (!context) throw new Error("Non è possibile preparare le immagini del PDF.");
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
+      pages.push({ pageNumber, dataUrl: canvas.toDataURL("image/jpeg", 0.82) });
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+    return { pages, totalPages: pdf.numPages, truncated: pdf.numPages > pageCount };
+  } finally {
+    await loadingTask.destroy().catch(() => {});
+  }
+}
+
 export async function analyzeCircularPdf(
   src: string,
   attachments: string[] = [],

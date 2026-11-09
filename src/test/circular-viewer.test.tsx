@@ -2,14 +2,27 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 
-const { checkDeviceSupport, checkModelDownloaded, answerOnDevice, releaseDevice } = vi.hoisted(
-  () => ({
-    checkDeviceSupport: vi.fn(),
-    checkModelDownloaded: vi.fn(),
-    answerOnDevice: vi.fn(),
-    releaseDevice: vi.fn(),
-  }),
-);
+const {
+  checkDeviceSupport,
+  checkModelDownloaded,
+  answerOnDevice,
+  releaseDevice,
+  checkVisionSupport,
+  checkVisionModelDownloaded,
+  answerVisuallyOnDevice,
+  releaseVision,
+  renderPageImages,
+} = vi.hoisted(() => ({
+  checkDeviceSupport: vi.fn(),
+  checkModelDownloaded: vi.fn(),
+  answerOnDevice: vi.fn(),
+  releaseDevice: vi.fn(),
+  checkVisionSupport: vi.fn(),
+  checkVisionModelDownloaded: vi.fn(),
+  answerVisuallyOnDevice: vi.fn(),
+  releaseVision: vi.fn(),
+  renderPageImages: vi.fn(),
+}));
 
 vi.mock("@/lib/voto/on-device-circular-ai", () => ({
   isOnDeviceCircularAiSupported: checkDeviceSupport,
@@ -18,13 +31,35 @@ vi.mock("@/lib/voto/on-device-circular-ai", () => ({
   releaseOnDeviceCircularAi: releaseDevice,
 }));
 
+vi.mock("@/lib/voto/on-device-circular-vision", () => ({
+  isOnDeviceVisionAiSupported: checkVisionSupport,
+  isOnDeviceVisionModelDownloaded: checkVisionModelDownloaded,
+  answerCircularQuestionVisuallyOnDevice: answerVisuallyOnDevice,
+  releaseOnDeviceCircularVision: releaseVision,
+}));
+
+vi.mock("@/lib/voto/circular-reader", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/voto/circular-reader")>()),
+  renderCircularPdfPageImages: renderPageImages,
+}));
+
 afterEach(cleanup);
 beforeEach(() => {
   checkDeviceSupport.mockReset().mockResolvedValue(false);
   checkModelDownloaded.mockReset().mockReturnValue(false);
   answerOnDevice.mockReset().mockResolvedValue("Risposta generata sul telefono.");
   releaseDevice.mockReset().mockResolvedValue(undefined);
+  checkVisionSupport.mockReset().mockResolvedValue(false);
+  checkVisionModelDownloaded.mockReset().mockReturnValue(false);
+  answerVisuallyOnDevice.mockReset().mockResolvedValue("La circolare indica il 30 novembre.");
+  releaseVision.mockReset();
+  renderPageImages.mockReset().mockResolvedValue({
+    pages: [{ pageNumber: 1, dataUrl: "data:image/jpeg;base64,AA==" }],
+    totalPages: 1,
+    truncated: false,
+  });
   window.localStorage.removeItem("voto.circular-assistant-mode.v1");
+  window.localStorage.removeItem("voto.circular-ai-models.v1");
   Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
 });
 
@@ -182,6 +217,42 @@ describe("visualizzatore PDF delle circolari interne", () => {
       expect.any(Function),
     );
     expect(await screen.findByText("Risposta generata sul telefono.")).toBeInTheDocument();
+  });
+
+  it("invia le immagini del PDF a Qwen2-VL senza usare Qwen testuale", async () => {
+    checkVisionSupport.mockResolvedValue(true);
+    checkVisionModelDownloaded.mockReturnValue(true);
+    window.localStorage.setItem(
+      "voto.circular-ai-models.v1",
+      JSON.stringify({ text: true, vision: true }),
+    );
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare scansionata"
+        fileName="circolare.pdf"
+        path={`circulars/${"a".repeat(64)}.pdf`}
+        url={undefined}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "AI visiva (Qwen2-VL)" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
+      target: { value: "Entro quando va consegnato?" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
+
+    await waitFor(() => expect(answerVisuallyOnDevice).toHaveBeenCalledTimes(1));
+    expect(renderPageImages).toHaveBeenCalledTimes(1);
+    expect(answerVisuallyOnDevice).toHaveBeenCalledWith(
+      "Entro quando va consegnato?",
+      [{ pageNumber: 1, dataUrl: "data:image/jpeg;base64,AA==" }],
+      expect.any(Function),
+    );
+    expect(answerOnDevice).not.toHaveBeenCalled();
+    expect(await screen.findByText("La circolare indica il 30 novembre.")).toBeInTheDocument();
   });
 
   it("usa la modalità Locale se Qwen non riesce ad avviarsi", async () => {

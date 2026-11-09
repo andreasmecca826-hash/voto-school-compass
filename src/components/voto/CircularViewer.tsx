@@ -27,10 +27,22 @@ import {
   releaseOnDeviceCircularAi,
 } from "@/lib/voto/on-device-circular-ai";
 import {
+  answerCircularQuestionVisuallyOnDevice,
+  isOnDeviceVisionAiSupported,
+  isOnDeviceVisionModelDownloaded,
+  releaseOnDeviceCircularVision,
+} from "@/lib/voto/on-device-circular-vision";
+import {
+  getCircularAiModelPreferences,
+  subscribeCircularAiModelPreferences,
+  type CircularAiModelPreferences,
+} from "@/lib/voto/circular-ai-model-preferences";
+import {
   analyzeCircularDocx,
   analyzeCircularPdf,
   extractCircularDocxText,
   extractCircularPdfText,
+  renderCircularPdfPageImages,
   type CircularAnalysis,
 } from "@/lib/voto/circular-reader";
 import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circular-assistant";
@@ -41,7 +53,7 @@ import { PdfCanvasPreview } from "./PdfCanvasPreview";
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
 const MAX_ON_DEVICE_EVIDENCE_LENGTH = 8_000;
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
-type CircularAssistantMode = "local" | "device" | "api";
+type CircularAssistantMode = "local" | "device" | "vision" | "api";
 type DeviceAiAvailability = "checking" | "supported" | "not-downloaded" | "unsupported";
 
 function safeAttachmentFilename(value?: string) {
@@ -121,6 +133,10 @@ export function CircularViewer({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
+  const [circularAiModels, setCircularAiModels] = useState<CircularAiModelPreferences>({
+    text: true,
+    vision: false,
+  });
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
@@ -129,10 +145,24 @@ export function CircularViewer({
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
   const [deviceAiAvailability, setDeviceAiAvailability] =
     useState<DeviceAiAvailability>("checking");
+  const [visionAiAvailability, setVisionAiAvailability] =
+    useState<DeviceAiAvailability>("checking");
   const deviceAiReady = deviceAiAvailability === "supported";
+  const visionAiReady = visionAiAvailability === "supported";
   const activeAiMode =
-    (isOnline && aiMode === "api") || (aiMode === "device" && deviceAiReady) ? aiMode : "local";
+    (isOnline && aiMode === "api") ||
+    (aiMode === "device" && circularAiModels.text && deviceAiReady) ||
+    (aiMode === "vision" && circularAiModels.vision && visionAiReady)
+      ? aiMode
+      : "local";
   const aiRequestId = useRef(0);
+
+  useEffect(() => {
+    setCircularAiModels(getCircularAiModelPreferences());
+    return subscribeCircularAiModelPreferences(() =>
+      setCircularAiModels(getCircularAiModelPreferences()),
+    );
+  }, []);
 
   useEffect(() => {
     try {
@@ -140,7 +170,12 @@ export function CircularViewer({
       if (!navigator.onLine && savedMode !== "device") {
         setAiMode("local");
         window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
-      } else if (savedMode === "local" || savedMode === "api" || savedMode === "device") {
+      } else if (
+        savedMode === "local" ||
+        savedMode === "api" ||
+        savedMode === "device" ||
+        savedMode === "vision"
+      ) {
         setAiMode(savedMode);
       }
     } catch {
@@ -166,27 +201,50 @@ export function CircularViewer({
   useEffect(() => {
     if (!open || !isAiChatOpen) return;
     let isCurrent = true;
-    setDeviceAiAvailability("checking");
-    void isOnDeviceCircularAiSupported().then((supported) => {
-      if (isCurrent)
-        setDeviceAiAvailability(
-          supported
-            ? isOnDeviceModelDownloaded()
-              ? "supported"
-              : "not-downloaded"
-            : "unsupported",
-        );
-    });
+    if (circularAiModels.text) {
+      setDeviceAiAvailability("checking");
+      void isOnDeviceCircularAiSupported().then((supported) => {
+        if (isCurrent)
+          setDeviceAiAvailability(
+            supported
+              ? isOnDeviceModelDownloaded()
+                ? "supported"
+                : "not-downloaded"
+              : "unsupported",
+          );
+      });
+    }
+    if (circularAiModels.vision) {
+      setVisionAiAvailability("checking");
+      void isOnDeviceVisionAiSupported().then((supported) => {
+        if (isCurrent)
+          setVisionAiAvailability(
+            supported
+              ? isOnDeviceVisionModelDownloaded()
+                ? "supported"
+                : "not-downloaded"
+              : "unsupported",
+          );
+      });
+    }
     return () => {
       isCurrent = false;
     };
-  }, [isAiChatOpen, open]);
+  }, [circularAiModels.text, circularAiModels.vision, isAiChatOpen, open]);
 
   useEffect(() => {
-    if (deviceAiAvailability === "supported" || aiMode !== "device") return;
+    if (
+      (aiMode !== "device" && aiMode !== "vision") ||
+      (aiMode === "device" && deviceAiAvailability === "checking") ||
+      (aiMode === "vision" && visionAiAvailability === "checking") ||
+      (aiMode === "device" && deviceAiAvailability === "supported") ||
+      (aiMode === "vision" && visionAiAvailability === "supported")
+    )
+      return;
     setAiMode("local");
     setAiError(
-      deviceAiAvailability === "not-downloaded"
+      (aiMode === "device" && deviceAiAvailability === "not-downloaded") ||
+        (aiMode === "vision" && visionAiAvailability === "not-downloaded")
         ? "Scarica prima il modello da Impostazioni > AI sul dispositivo. Ho ripristinato Locale."
         : "AI generativa non supportata su questo telefono/browser. Ho ripristinato Locale.",
     );
@@ -195,10 +253,28 @@ export function CircularViewer({
     } catch {
       // Il fallback resta valido per la sessione corrente.
     }
-  }, [aiMode, deviceAiAvailability]);
+  }, [aiMode, deviceAiAvailability, visionAiAvailability]);
 
   useEffect(() => {
-    if (!open) void releaseOnDeviceCircularAi();
+    if (
+      (aiMode === "device" && circularAiModels.text) ||
+      (aiMode === "vision" && circularAiModels.vision) ||
+      (aiMode !== "device" && aiMode !== "vision")
+    )
+      return;
+    setAiMode("local");
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+    } catch {
+      // La modalità locale resta valida in memoria.
+    }
+  }, [aiMode, circularAiModels.text, circularAiModels.vision]);
+
+  useEffect(() => {
+    if (!open) {
+      void releaseOnDeviceCircularAi();
+      releaseOnDeviceCircularVision();
+    }
   }, [open]);
 
   useEffect(() => {
@@ -234,6 +310,7 @@ export function CircularViewer({
     setAiDocumentTruncated(false);
     aiRequestId.current += 1;
     void releaseOnDeviceCircularAi();
+    releaseOnDeviceCircularVision();
   }, [activeFile?.path, activeFile?.url, activeFile?.name]);
 
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
@@ -245,12 +322,29 @@ export function CircularViewer({
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
+  const availableAiModeCount =
+    1 +
+    Number(isOnline) +
+    Number(circularAiModels.text && deviceAiReady) +
+    Number(isPdf && circularAiModels.vision && visionAiReady);
+  const aiModeGridClass =
+    availableAiModeCount <= 1
+      ? "grid-cols-1"
+      : availableAiModeCount === 2
+        ? "grid-cols-2"
+        : availableAiModeCount === 3
+          ? "grid-cols-3"
+          : "grid-cols-4";
 
   function chooseAiMode(mode: CircularAssistantMode) {
     if (mode === "api" && (!isOnline || !navigator.onLine)) return;
-    if (mode === "device" && deviceAiAvailability !== "supported") return;
+    if (mode === "device" && (!circularAiModels.text || deviceAiAvailability !== "supported"))
+      return;
+    if (mode === "vision" && (!circularAiModels.vision || visionAiAvailability !== "supported"))
+      return;
     if (mode === aiMode) return;
     if (aiMode === "device") void releaseOnDeviceCircularAi();
+    if (aiMode === "vision") releaseOnDeviceCircularVision();
     setAiMode(mode);
     setAiQuestion("");
     setAiMessages([]);
@@ -290,7 +384,8 @@ export function CircularViewer({
     const question = aiQuestion.trim();
     if (!previewUrl || !question || isAskingAi) return;
     const browserOnline = isOnline && (typeof navigator === "undefined" || navigator.onLine);
-    const responseMode = browserOnline ? aiMode : aiMode === "device" ? "device" : "local";
+    const responseMode =
+      browserOnline || aiMode === "device" || aiMode === "vision" ? aiMode : "local";
 
     const requestId = aiRequestId.current + 1;
     aiRequestId.current = requestId;
@@ -298,62 +393,83 @@ export function CircularViewer({
     setAiError(undefined);
     setAiMessages((current) => [...current, { role: "user", text: question }]);
     setIsAskingAi(true);
-    setAiProgressMessage(responseMode === "device" ? "Avvio l’AI sul telefono…" : undefined);
+    setAiProgressMessage(
+      responseMode === "vision"
+        ? "Preparo le immagini delle pagine…"
+        : responseMode === "device"
+          ? "Avvio l’AI sul telefono…"
+          : undefined,
+    );
 
     try {
-      const extractedDocument = extractedText?.trim()
-        ? { text: extractedText.trim(), truncated: false }
-        : isPdf
-          ? await extractCircularPdfText(previewUrl)
-          : await extractCircularDocxText(previewUrl);
-      const documentText = extractedDocument.text.trim();
-      if (!documentText) {
-        throw new Error(
-          "Non trovo testo selezionabile nella circolare. Se è una scansione, serve prima un OCR.",
-        );
-      }
-      const documentTruncated =
-        extractedDocument.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
-      setAiDocumentTruncated(documentTruncated);
-      const limitedDocumentText = documentText.slice(0, MAX_AI_DOCUMENT_LENGTH);
-      const canUseApi = responseMode === "api" && browserOnline;
       let answer: string;
-      if (canUseApi) {
-        answer = await askAboutCircular({
+      if (responseMode === "vision") {
+        if (!isPdf) throw new Error("L’AI visiva Qwen2-VL è disponibile solo per i PDF.");
+        const visualInput = await renderCircularPdfPageImages(previewUrl);
+        setAiDocumentTruncated(visualInput.truncated);
+        setAiProgressMessage("Analizzo visivamente le pagine sul telefono…");
+        answer = await answerCircularQuestionVisuallyOnDevice(
           question,
-          documentText: limitedDocumentText,
-          documentTruncated,
-        });
+          visualInput.pages,
+          (progress) => {
+            if (aiRequestId.current !== requestId) return;
+            setAiProgressMessage(progress.text || "Elaborazione Qwen2-VL…");
+          },
+        );
       } else {
-        const localAnswer = answerCircularQuestionLocally(question, limitedDocumentText);
-        if (responseMode === "device") {
-          const hasRelevantPassages =
-            !localAnswer.startsWith("Non trovo") && !localAnswer.startsWith("Non riesco");
-          const evidence = hasRelevantPassages
-            ? localAnswer.slice(0, MAX_ON_DEVICE_EVIDENCE_LENGTH)
-            : limitedDocumentText.slice(0, MAX_ON_DEVICE_EVIDENCE_LENGTH);
-          try {
-            answer = await answerCircularQuestionOnDevice(question, evidence, (progress) => {
-              if (aiRequestId.current !== requestId) return;
-              const percentage = Math.round(progress.progress * 100);
-              setAiProgressMessage(`Caricamento del modello sul telefono: ${percentage}%`);
-            });
-          } catch {
-            answer = localAnswer;
-            if (aiRequestId.current === requestId) {
-              setAiMode("local");
-              setAiError(
-                "AI generativa non disponibile su questo telefono (WebGPU o memoria insufficiente). Ho usato la modalità Locale.",
-              );
-              try {
-                window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
-              } catch {
-                // Il fallback resta valido per la sessione corrente.
+        const extractedDocument = extractedText?.trim()
+          ? { text: extractedText.trim(), truncated: false }
+          : isPdf
+            ? await extractCircularPdfText(previewUrl)
+            : await extractCircularDocxText(previewUrl);
+        const documentText = extractedDocument.text.trim();
+        if (!documentText) {
+          throw new Error(
+            "Non trovo testo selezionabile nella circolare. Se è una scansione, usa Qwen visivo.",
+          );
+        }
+        const documentTruncated =
+          extractedDocument.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
+        setAiDocumentTruncated(documentTruncated);
+        const limitedDocumentText = documentText.slice(0, MAX_AI_DOCUMENT_LENGTH);
+        const canUseApi = responseMode === "api" && browserOnline;
+        if (canUseApi) {
+          answer = await askAboutCircular({
+            question,
+            documentText: limitedDocumentText,
+            documentTruncated,
+          });
+        } else {
+          const localAnswer = answerCircularQuestionLocally(question, limitedDocumentText);
+          if (responseMode === "device") {
+            const hasRelevantPassages =
+              !localAnswer.startsWith("Non trovo") && !localAnswer.startsWith("Non riesco");
+            const evidence = hasRelevantPassages
+              ? localAnswer.slice(0, MAX_ON_DEVICE_EVIDENCE_LENGTH)
+              : limitedDocumentText.slice(0, MAX_ON_DEVICE_EVIDENCE_LENGTH);
+            try {
+              answer = await answerCircularQuestionOnDevice(question, evidence, (progress) => {
+                if (aiRequestId.current !== requestId) return;
+                const percentage = Math.round(progress.progress * 100);
+                setAiProgressMessage(`Caricamento del modello sul telefono: ${percentage}%`);
+              });
+            } catch {
+              answer = localAnswer;
+              if (aiRequestId.current === requestId) {
+                setAiMode("local");
+                setAiError(
+                  "AI generativa non disponibile su questo telefono (WebGPU o memoria insufficiente). Ho usato la modalità Locale.",
+                );
+                try {
+                  window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+                } catch {
+                  // Il fallback resta valido per la sessione corrente.
+                }
               }
             }
+          } else {
+            answer = localAnswer;
           }
-        } else {
-          answer = localAnswer;
         }
       }
       if (aiRequestId.current === requestId) {
@@ -586,7 +702,7 @@ export function CircularViewer({
               <div
                 role="group"
                 aria-label="Modalità di risposta"
-                className={`mt-2 grid ${isOnline && deviceAiAvailability === "supported" ? "grid-cols-3" : isOnline || deviceAiAvailability === "supported" ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
+                className={`mt-2 grid ${aiModeGridClass} gap-1 rounded-lg bg-background/70 p-1`}
               >
                 <button
                   type="button"
@@ -601,7 +717,7 @@ export function CircularViewer({
                 >
                   Locale (sul dispositivo)
                 </button>
-                {deviceAiAvailability === "supported" && (
+                {circularAiModels.text && deviceAiAvailability === "supported" && (
                   <button
                     type="button"
                     aria-pressed={activeAiMode === "device"}
@@ -614,6 +730,21 @@ export function CircularViewer({
                     }`}
                   >
                     AI sul telefono (Qwen)
+                  </button>
+                )}
+                {isPdf && circularAiModels.vision && visionAiAvailability === "supported" && (
+                  <button
+                    type="button"
+                    aria-pressed={activeAiMode === "vision"}
+                    disabled={isAskingAi}
+                    onClick={() => chooseAiMode("vision")}
+                    className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                      activeAiMode === "vision"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    AI visiva (Qwen2-VL)
                   </button>
                 )}
                 {isOnline && (
@@ -637,10 +768,12 @@ export function CircularViewer({
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
                   : activeAiMode === "device"
                     ? "Qwen generativo gira sul telefono: domanda e testo non vengono inviati a un servizio AI. Il modello è stato preparato da Impostazioni e resta nella cache del browser."
-                    : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                    : activeAiMode === "vision"
+                      ? "Qwen2-VL guarda le immagini delle prime quattro pagine PDF sul dispositivo: non estrae né invia testo a un servizio AI. Le pagine successive non vengono considerate."
+                      : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
-                    {activeAiMode === "device"
+                    {activeAiMode === "device" || activeAiMode === "vision"
                       ? "Offline: l’AI sul telefono funziona solo se il modello è già scaricato."
                       : "Offline: disponibile solo Locale."}{" "}
                   </span>
@@ -660,12 +793,27 @@ export function CircularViewer({
               )}
               {deviceAiAvailability === "not-downloaded" && (
                 <p role="status" className="text-[10px] text-muted-foreground">
-                  Per usare AI sul telefono, scarica prima il modello da Impostazioni &gt; AI sul
-                  dispositivo.
+                  Per usare Qwen testuale sul telefono, scarica prima il modello da Impostazioni.
+                </p>
+              )}
+              {circularAiModels.vision && visionAiAvailability === "not-downloaded" && isPdf && (
+                <p role="status" className="text-[10px] text-muted-foreground">
+                  Qwen2-VL non è ancora scaricato (circa 2,7 GB). Scaricalo da Impostazioni &gt; AI
+                  sul dispositivo.
+                </p>
+              )}
+              {circularAiModels.vision && visionAiAvailability === "unsupported" && isPdf && (
+                <p role="status" className="text-[10px] text-muted-foreground">
+                  Qwen2-VL richiede WebGPU su questo dispositivo.
                 </p>
               )}
             </div>
-            {aiDocumentTruncated && (
+            {aiDocumentTruncated && activeAiMode === "vision" && (
+              <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
+                Per questa analisi visiva sono state considerate solo le prime 4 pagine del PDF.
+              </p>
+            )}
+            {aiDocumentTruncated && activeAiMode !== "vision" && (
               <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
                 Circolare lunga: per la domanda è stato considerato un estratto del testo. La
                 risposta potrebbe non includere informazioni presenti nelle parti omesse.

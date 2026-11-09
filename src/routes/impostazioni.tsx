@@ -41,6 +41,15 @@ import {
   isOnDeviceModelDownloaded,
   type OnDeviceModelProgress,
 } from "@/lib/voto/on-device-circular-ai";
+import {
+  downloadOnDeviceVisionModel,
+  isOnDeviceVisionModelDownloaded,
+} from "@/lib/voto/on-device-circular-vision";
+import {
+  getCircularAiModelPreferences,
+  setCircularAiModelPreferences,
+  type CircularAiModelPreferences,
+} from "@/lib/voto/circular-ai-model-preferences";
 import { createPreferencesBackup, parsePreferencesBackup } from "@/lib/voto/preferences-backup";
 import { parseVotoData } from "@/lib/voto/parse";
 import { supabase } from "@/lib/supabase-auth";
@@ -291,6 +300,16 @@ function Settings() {
     null,
   );
   const [deviceModelError, setDeviceModelError] = useState<string | null>(null);
+  const [visionModelDownloaded, setVisionModelDownloaded] = useState(false);
+  const [visionModelDownloading, setVisionModelDownloading] = useState(false);
+  const [visionModelProgress, setVisionModelProgress] = useState<OnDeviceModelProgress | null>(
+    null,
+  );
+  const [visionModelError, setVisionModelError] = useState<string | null>(null);
+  const [circularAiModels, setCircularAiModels] = useState<CircularAiModelPreferences>({
+    text: true,
+    vision: false,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -335,11 +354,13 @@ function Settings() {
 
   useEffect(() => {
     setDeviceModelDownloaded(isOnDeviceModelDownloaded());
+    setVisionModelDownloaded(isOnDeviceVisionModelDownloaded());
+    setCircularAiModels(getCircularAiModelPreferences());
     void isOnDeviceCircularAiSupported().then(setDeviceAiSupported);
   }, []);
 
   const downloadDeviceModel = async () => {
-    if (deviceModelDownloading || deviceAiSupported !== true) return;
+    if (deviceModelDownloading || visionModelDownloading || deviceAiSupported !== true) return;
     setDeviceModelDownloading(true);
     setDeviceModelError(null);
     setDeviceModelProgress(null);
@@ -355,6 +376,38 @@ function Settings() {
       setDeviceModelDownloading(false);
       setDeviceModelProgress(null);
     }
+  };
+
+  const downloadVisionModel = async () => {
+    if (
+      visionModelDownloading ||
+      deviceModelDownloading ||
+      !circularAiModels.vision ||
+      deviceAiSupported !== true
+    )
+      return;
+    setVisionModelDownloading(true);
+    setVisionModelError(null);
+    setVisionModelProgress(null);
+    try {
+      await downloadOnDeviceVisionModel(setVisionModelProgress);
+      setVisionModelDownloaded(true);
+      toast.success("Modello visivo Qwen2-VL scaricato", {
+        description: "Ora puoi scegliere AI visiva nella chat della circolare.",
+      });
+    } catch (error) {
+      setVisionModelError(error instanceof Error ? error.message : "Download non riuscito.");
+    } finally {
+      setVisionModelDownloading(false);
+      setVisionModelProgress(null);
+    }
+  };
+
+  const updateCircularAiModel = (model: keyof CircularAiModelPreferences) => {
+    const next = { ...circularAiModels, [model]: !circularAiModels[model] };
+    if (!next.text && !next.vision) return;
+    setCircularAiModels(next);
+    setCircularAiModelPreferences(next);
   };
 
   const handleInfoTap = () => {
@@ -475,14 +528,59 @@ function Settings() {
             <BrainCircuit className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold">Modello AI locale</h2>
+            <h2 className="text-sm font-semibold">Modelli AI per le circolari</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Scarica una volta il modello Qwen sul dispositivo. Fino al completamento non verrà
-              mostrata né usata la modalità AI sul dispositivo nella chat.
+              Scegli Qwen testuale, Qwen visivo o entrambi. Le preferenze restano in questo
+              dispositivo e puoi cambiarle quando vuoi.
             </p>
+            <div className="mt-3 space-y-2">
+              {(
+                [
+                  ["text", "Qwen testuale", "Risponde usando il testo selezionabile del PDF."],
+                  [
+                    "vision",
+                    "Qwen visivo (italiano)",
+                    "Legge le immagini delle pagine PDF, anche scansioni.",
+                  ],
+                ] as const
+              ).map(([model, label, description]) => (
+                <button
+                  key={model}
+                  type="button"
+                  role="switch"
+                  aria-label={label}
+                  aria-checked={circularAiModels[model]}
+                  onClick={() => updateCircularAiModel(model)}
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-border bg-background/60 px-3 text-left"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-semibold">{label}</span>
+                    <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                      {description}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                      circularAiModels[model] ? "bg-primary" : "bg-muted",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                        circularAiModels[model] ? "translate-x-[22px]" : "translate-x-0.5",
+                      )}
+                    />
+                  </span>
+                </button>
+              ))}
+            </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Richiede WebGPU, connessione Internet durante il download e circa 1 GB di memoria
-              grafica. Le domande successive restano sul dispositivo.
+              I modelli richiedono WebGPU. Qwen testuale richiede circa 1 GB di memoria grafica;
+              Qwen2-VL visivo richiede circa 2,7 GB di download e più memoria durante l’uso. Il
+              modello visivo viene scaricato solo premendo il pulsante qui sotto; Qwen2-VL analizza
+              solo le prime 4 pagine e non estrae testo dal PDF.
             </p>
             {deviceModelProgress && (
               <div className="mt-3" aria-live="polite">
@@ -508,17 +606,17 @@ function Settings() {
             <div className="mt-3 flex items-center gap-2">
               {deviceModelDownloaded ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Modello pronto
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Qwen testuale pronto
                 </span>
               ) : deviceAiSupported === false ? (
-                <span className="text-xs text-muted-foreground">
-                  WebGPU non disponibile su questo dispositivo.
-                </span>
+                <span className="text-xs text-muted-foreground">WebGPU non disponibile.</span>
               ) : (
                 <button
                   type="button"
                   onClick={() => void downloadDeviceModel()}
-                  disabled={deviceModelDownloading || deviceAiSupported !== true}
+                  disabled={
+                    deviceModelDownloading || visionModelDownloading || deviceAiSupported !== true
+                  }
                   className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deviceModelDownloading ? (
@@ -526,9 +624,66 @@ function Settings() {
                   ) : (
                     <Download className="h-4 w-4" aria-hidden="true" />
                   )}
-                  {deviceModelDownloading ? "Download in corso…" : "Scarica modello"}
+                  {deviceModelDownloading ? "Download in corso…" : "Scarica Qwen testuale"}
                 </button>
               )}
+            </div>
+            <div className="mt-4 border-t border-border pt-3">
+              <p className="text-xs font-semibold">Qwen2-VL visivo · circa 2,7 GB</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Modello multimodale locale, addestrato anche sulle principali lingue europee.
+                Richiede connessione solo per il download iniziale.
+              </p>
+              {visionModelProgress && (
+                <div className="mt-3" aria-live="polite">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span>{visionModelProgress.text || "Scaricamento modello visivo…"}</span>
+                    <span>{Math.round(visionModelProgress.progress * 100)}%</span>
+                  </div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-[width]"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, visionModelProgress.progress * 100))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              {visionModelError && (
+                <p className="mt-2 text-xs text-destructive" role="alert">
+                  {visionModelError}
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-2">
+                {visionModelDownloaded ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Qwen2-VL pronto
+                  </span>
+                ) : !circularAiModels.vision ? (
+                  <span className="text-xs text-muted-foreground">
+                    Attiva Qwen visivo sopra per abilitare il download.
+                  </span>
+                ) : deviceAiSupported === false ? (
+                  <span className="text-xs text-muted-foreground">WebGPU non disponibile.</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void downloadVisionModel()}
+                    disabled={
+                      visionModelDownloading || deviceModelDownloading || deviceAiSupported !== true
+                    }
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {visionModelDownloading ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                    )}
+                    {visionModelDownloading ? "Download in corso…" : "Scarica Qwen2-VL"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
