@@ -12,6 +12,8 @@ const {
   answerVisuallyOnDevice,
   releaseVision,
   renderPageImages,
+  askCircularText,
+  askCircularImages,
 } = vi.hoisted(() => ({
   checkDeviceSupport: vi.fn(),
   checkModelDownloaded: vi.fn(),
@@ -22,6 +24,13 @@ const {
   answerVisuallyOnDevice: vi.fn(),
   releaseVision: vi.fn(),
   renderPageImages: vi.fn(),
+  askCircularText: vi.fn(),
+  askCircularImages: vi.fn(),
+}));
+
+vi.mock("@/lib/voto/circular-assistant", () => ({
+  askAboutCircular: askCircularText,
+  askAboutCircularImages: askCircularImages,
 }));
 
 vi.mock("@/lib/voto/on-device-circular-ai", () => ({
@@ -58,6 +67,8 @@ beforeEach(() => {
     totalPages: 1,
     truncated: false,
   });
+  askCircularText.mockReset().mockResolvedValue("Risposta API testuale.");
+  askCircularImages.mockReset().mockResolvedValue("La scadenza è il 30 novembre.");
   window.localStorage.removeItem("voto.circular-assistant-mode.v1");
   window.localStorage.removeItem("voto.circular-ai-models.v1");
   Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
@@ -253,6 +264,44 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     expect(answerOnDevice).not.toHaveBeenCalled();
     expect(await screen.findByText("La circolare indica il 30 novembre.")).toBeInTheDocument();
+  });
+
+  it("invia a Groq solo le prime tre immagini nella modalità API visiva", async () => {
+    const pages = Array.from({ length: 4 }, (_, index) => ({
+      pageNumber: index + 1,
+      dataUrl: `data:image/jpeg;base64,${String(index).repeat(8)}`,
+    }));
+    renderPageImages.mockResolvedValue({ pages, totalPages: 7, truncated: true });
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare scansionata"
+        fileName="circolare.pdf"
+        path={`circulars/${"b".repeat(64)}.pdf`}
+        url={undefined}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "API visiva (Qwen)" }));
+    expect(
+      screen.getByText(/inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF/i),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
+      target: { value: "Quando scade?" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "Chiedi" }).closest("form")!);
+
+    await waitFor(() => expect(askCircularImages).toHaveBeenCalledTimes(1));
+    expect(askCircularImages).toHaveBeenCalledWith({
+      question: "Quando scade?",
+      pageImages: pages.slice(0, 3),
+    });
+    expect(answerVisuallyOnDevice).not.toHaveBeenCalled();
+    expect(answerOnDevice).not.toHaveBeenCalled();
+    expect(await screen.findByText("La scadenza è il 30 novembre.")).toBeInTheDocument();
+    expect(screen.getByText(/inviate solo le prime 3 pagine/i)).toBeInTheDocument();
   });
 
   it("usa la modalità Locale se Qwen non riesce ad avviarsi", async () => {

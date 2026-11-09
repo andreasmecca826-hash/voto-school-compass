@@ -9,6 +9,7 @@ type AssistantApiRequest = {
   question: string;
   documentText?: string;
   documentTruncated?: boolean;
+  pageImages?: Array<{ pageNumber: number; dataUrl: string }>;
 };
 
 async function askAssistantApi(input: AssistantApiRequest): Promise<string> {
@@ -45,6 +46,13 @@ export function askAboutCircular(input: {
   documentTruncated: boolean;
 }): Promise<string> {
   return askAssistantApi(input);
+}
+
+export function askAboutCircularImages(input: {
+  question: string;
+  pageImages: Array<{ pageNumber: number; dataUrl: string }>;
+}): Promise<string> {
+  return askAssistantApi({ question: input.question, pageImages: input.pageImages });
 }
 
 export function askWithDocument(input: {

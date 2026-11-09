@@ -45,7 +45,11 @@ import {
   renderCircularPdfPageImages,
   type CircularAnalysis,
 } from "@/lib/voto/circular-reader";
-import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circular-assistant";
+import {
+  askAboutCircular,
+  askAboutCircularImages,
+  type CircularAssistantMessage,
+} from "@/lib/voto/circular-assistant";
 import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
@@ -53,7 +57,7 @@ import { PdfCanvasPreview } from "./PdfCanvasPreview";
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
 const MAX_ON_DEVICE_EVIDENCE_LENGTH = 8_000;
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
-type CircularAssistantMode = "local" | "device" | "vision" | "api";
+type CircularAssistantMode = "local" | "device" | "vision" | "api" | "api-vision";
 type DeviceAiAvailability = "checking" | "supported" | "not-downloaded" | "unsupported";
 
 function safeAttachmentFilename(value?: string) {
@@ -150,7 +154,7 @@ export function CircularViewer({
   const deviceAiReady = deviceAiAvailability === "supported";
   const visionAiReady = visionAiAvailability === "supported";
   const activeAiMode =
-    (isOnline && aiMode === "api") ||
+    (isOnline && (aiMode === "api" || aiMode === "api-vision")) ||
     (aiMode === "device" && circularAiModels.text && deviceAiReady) ||
     (aiMode === "vision" && circularAiModels.vision && visionAiReady)
       ? aiMode
@@ -174,7 +178,8 @@ export function CircularViewer({
         savedMode === "local" ||
         savedMode === "api" ||
         savedMode === "device" ||
-        savedMode === "vision"
+        savedMode === "vision" ||
+        savedMode === "api-vision"
       ) {
         setAiMode(savedMode);
       }
@@ -325,12 +330,14 @@ export function CircularViewer({
   const documentLabel = hasTextOnlyContent ? "comunicazione" : "circolare";
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
   const canAskAi = canAnalyze || hasTextOnlyContent;
-  const effectiveAiMode = !isPdf && activeAiMode === "vision" ? "local" : activeAiMode;
+  const effectiveAiMode =
+    !isPdf && (activeAiMode === "vision" || activeAiMode === "api-vision") ? "local" : activeAiMode;
   const availableAiModeCount =
     1 +
     Number(isOnline) +
     Number(circularAiModels.text && deviceAiReady) +
-    Number(isPdf && circularAiModels.vision && visionAiReady);
+    Number(isPdf && circularAiModels.vision && visionAiReady) +
+    Number(isPdf && isOnline);
   const aiModeGridClass =
     availableAiModeCount <= 1
       ? "grid-cols-1"
@@ -338,10 +345,12 @@ export function CircularViewer({
         ? "grid-cols-2"
         : availableAiModeCount === 3
           ? "grid-cols-3"
-          : "grid-cols-4";
+          : availableAiModeCount === 4
+            ? "grid-cols-4"
+            : "grid-cols-5";
 
   function chooseAiMode(mode: CircularAssistantMode) {
-    if (mode === "api" && (!isOnline || !navigator.onLine)) return;
+    if ((mode === "api" || mode === "api-vision") && (!isOnline || !navigator.onLine)) return;
     if (mode === "device" && (!circularAiModels.text || deviceAiAvailability !== "supported"))
       return;
     if (mode === "vision" && (!circularAiModels.vision || visionAiAvailability !== "supported"))
@@ -397,7 +406,7 @@ export function CircularViewer({
     setAiMessages((current) => [...current, { role: "user", text: question }]);
     setIsAskingAi(true);
     setAiProgressMessage(
-      responseMode === "vision"
+      responseMode === "vision" || responseMode === "api-vision"
         ? "Preparo le immagini delle pagine…"
         : responseMode === "device"
           ? "Avvio l’AI sul telefono…"
@@ -406,20 +415,27 @@ export function CircularViewer({
 
     try {
       let answer: string;
-      if (responseMode === "vision") {
+      if (responseMode === "vision" || responseMode === "api-vision") {
         if (!isPdf || !previewUrl)
           throw new Error("L’AI visiva Qwen2-VL è disponibile solo per i PDF.");
         const visualInput = await renderCircularPdfPageImages(previewUrl);
-        setAiDocumentTruncated(visualInput.truncated);
-        setAiProgressMessage("Analizzo visivamente le pagine sul telefono…");
-        answer = await answerCircularQuestionVisuallyOnDevice(
-          question,
-          visualInput.pages,
-          (progress) => {
-            if (aiRequestId.current !== requestId) return;
-            setAiProgressMessage(progress.text || "Elaborazione Qwen2-VL…");
-          },
-        );
+        if (responseMode === "api-vision") {
+          const pagesForApi = visualInput.pages.slice(0, 3);
+          setAiDocumentTruncated(visualInput.truncated || visualInput.pages.length > 3);
+          setAiProgressMessage("Invio le immagini a Groq per l’analisi visiva…");
+          answer = await askAboutCircularImages({ question, pageImages: pagesForApi });
+        } else {
+          setAiDocumentTruncated(visualInput.truncated);
+          setAiProgressMessage("Analizzo visivamente le pagine sul telefono…");
+          answer = await answerCircularQuestionVisuallyOnDevice(
+            question,
+            visualInput.pages,
+            (progress) => {
+              if (aiRequestId.current !== requestId) return;
+              setAiProgressMessage(progress.text || "Elaborazione Qwen2-VL…");
+            },
+          );
+        }
       } else {
         const availableText = extractedText?.trim();
         const extractedDocument = availableText
@@ -775,6 +791,21 @@ export function CircularViewer({
                     API Groq (Qwen)
                   </button>
                 )}
+                {isPdf && isOnline && (
+                  <button
+                    type="button"
+                    aria-pressed={effectiveAiMode === "api-vision"}
+                    disabled={isAskingAi}
+                    onClick={() => chooseAiMode("api-vision")}
+                    className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                      effectiveAiMode === "api-vision"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    API visiva (Qwen)
+                  </button>
+                )}
               </div>
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
                 {effectiveAiMode === "local"
@@ -783,7 +814,9 @@ export function CircularViewer({
                     ? "Qwen generativo gira sul telefono: domanda e testo non vengono inviati a un servizio AI. Il modello è stato preparato da Impostazioni e resta nella cache del browser."
                     : effectiveAiMode === "vision"
                       ? "Qwen2-VL guarda le immagini delle prime quattro pagine PDF sul dispositivo: non estrae né invia testo a un servizio AI. Le pagine successive non vengono considerate."
-                      : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                      : effectiveAiMode === "api-vision"
+                        ? "Solo quando premi Chiedi, vengono inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF. Il documento esce dal dispositivo e la chiamata usa la quota API (eventuali limiti/costi dipendono dall’account). Non vengono inviati titolo, cronologia, voti o presenze."
+                        : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
                     {effectiveAiMode === "device" || effectiveAiMode === "vision"
@@ -821,17 +854,22 @@ export function CircularViewer({
                 </p>
               )}
             </div>
-            {aiDocumentTruncated && effectiveAiMode === "vision" && (
-              <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
-                Per questa analisi visiva sono state considerate solo le prime 4 pagine del PDF.
-              </p>
-            )}
-            {aiDocumentTruncated && effectiveAiMode !== "vision" && (
-              <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
-                Testo lungo: per la domanda è stato considerato un estratto. La risposta potrebbe
-                non includere informazioni presenti nelle parti omesse.
-              </p>
-            )}
+            {aiDocumentTruncated &&
+              (effectiveAiMode === "vision" || effectiveAiMode === "api-vision") && (
+                <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
+                  {effectiveAiMode === "api-vision"
+                    ? "Per l’analisi visiva API sono state inviate solo le prime 3 pagine del PDF."
+                    : "Per questa analisi visiva sono state considerate solo le prime 4 pagine del PDF."}
+                </p>
+              )}
+            {aiDocumentTruncated &&
+              effectiveAiMode !== "vision" &&
+              effectiveAiMode !== "api-vision" && (
+                <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
+                  Testo lungo: per la domanda è stato considerato un estratto. La risposta potrebbe
+                  non includere informazioni presenti nelle parti omesse.
+                </p>
+              )}
             {aiMessages.length > 0 && (
               <div
                 aria-live="polite"
