@@ -1701,6 +1701,8 @@
 
 :root[data-registry-style="didup"] body {
   background-image: none;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 :root[data-registry-style="didup"] .card-surface {

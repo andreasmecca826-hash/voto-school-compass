@@ -160,7 +160,7 @@ function DidupDiario() {
   const studentName = (voto.data.student.name ?? "").toUpperCase();
 
   return (
-    <div className="didup-page flex h-[calc(100svh-86px)] min-h-0 flex-col overflow-hidden bg-black px-2 text-white">
+    <div className="didup-page touch-pan-y flex h-[calc(100svh-86px)] min-h-0 flex-col overflow-hidden bg-black px-2 text-white">
       <header className="flex shrink-0 items-start justify-between px-2 pt-5">
         <div>
           <h1 className="text-[20px] font-normal leading-6">Diario</h1>
