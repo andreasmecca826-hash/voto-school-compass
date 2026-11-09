@@ -10,6 +10,7 @@ describe("parser allegati circolari multipli", () => {
           id: "notice-1",
           type: "notice",
           title: "Circolare di prova",
+          extractedText: "La classe 2I esce alle 12:30.",
           attachmentPath: `circulars/${"a".repeat(64)}.pdf`,
           attachmentName: "primo.pdf",
           attachments: [
@@ -26,6 +27,7 @@ describe("parser allegati circolari multipli", () => {
     ]);
     expect(parsed.notifications[0]?.attachmentPath).toBe(`circulars/${"a".repeat(64)}.pdf`);
     expect(parsed.notifications[0]?.attachmentName).toBe("primo.pdf");
+    expect(parsed.notifications[0]?.extractedText).toBe("La classe 2I esce alle 12:30.");
   });
 
   it("continua a leggere una circolare nel formato PDF singolo", () => {

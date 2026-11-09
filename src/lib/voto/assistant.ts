@@ -244,6 +244,63 @@ function noticeLabel(notification: VotoData["notifications"][number]): string {
   return `“${notification.title}”${dateText}${attachment}`;
 }
 
+function noticeSearchText(notification: VotoData["notifications"][number]): string {
+  return normalize(
+    [
+      notification.title,
+      notification.message,
+      notification.extractedText,
+      notification.subject,
+      notification.teacher,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+function noticeDetailLabel(notification: VotoData["notifications"][number]): string {
+  const date = displayDate(notification.date);
+  const source = notification.message?.trim() || notification.extractedText?.trim();
+  if (!source) return noticeLabel(notification);
+  const snippet = source.replace(/\s+/g, " ").trim().slice(0, 520);
+  return `“${notification.title}”${date ? ` (${date})` : ""}: ${snippet}${source.length > 520 ? "…" : ""}`;
+}
+
+function noticeQueryTerms(query: string): string[] {
+  return normalize(query)
+    .split(/[^a-z0-9àèéìòù]+/i)
+    .filter((term) => term.length >= 2)
+    .filter(
+      (term) =>
+        ![
+          "cosa",
+          "dice",
+          "dettagli",
+          "classe",
+          "esce",
+          "orario",
+          "quando",
+          "circolare",
+          "circolari",
+          "avviso",
+          "avvisi",
+          "che",
+          "una",
+          "con",
+          "nel",
+          "alle",
+          "per",
+          "del",
+          "come",
+        ].includes(term),
+    );
+}
+
+function matchesNoticeQuery(query: string, notification: VotoData["notifications"][number]): boolean {
+  const content = noticeSearchText(notification);
+  return noticeQueryTerms(query).some((term) => content.includes(term));
+}
+
 function reminderLabel(notification: VotoData["notifications"][number]): string {
   const text = notification.message?.trim() || notification.title;
   const date = displayDate(notification.date);
@@ -834,11 +891,21 @@ export function answerQuestion(
     return `${heading}:\n${shown.map((item) => `• ${item}`).join("\n")}${matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : ""}`;
   }
 
+  const asksNoticeDetails =
+    (normalized.includes("cosa dice") ||
+      normalized.includes("dettagli") ||
+      normalized.includes("classe") ||
+      normalized.includes("esce") ||
+      normalized.includes("orario") ||
+      normalized.includes("a che ora") ||
+      normalized.includes("quando")) &&
+    notices.some((notification) => matchesNoticeQuery(normalized, notification));
   if (
     normalized.includes("circolar") ||
     normalized.includes("bacheca") ||
     normalized.includes("avvisi") ||
-    normalized.includes("notiz")
+    normalized.includes("notiz") ||
+    asksNoticeDetails
   ) {
     const requestedDay = relativeDayOffset(normalized);
     const asksUnread = normalized.includes("non lett");
@@ -847,6 +914,7 @@ export function answerQuestion(
       normalized.includes("recent") ||
       normalized.includes("novit") ||
       normalized.includes("aggiornament");
+    const asksDetails = asksNoticeDetails;
     let matches = notices;
     if (requestedDay !== null)
       matches = matches.filter(
@@ -854,6 +922,15 @@ export function answerQuestion(
       );
     if (asksUnread || (asksNew && requestedDay === null))
       matches = matches.filter((notification) => !notification.read);
+    if (asksDetails) {
+      const searchTerms = noticeQueryTerms(normalized);
+      if (searchTerms.length) {
+        matches = matches.filter((notification) => {
+          const content = noticeSearchText(notification);
+          return searchTerms.some((term) => content.includes(term));
+        });
+      }
+    }
     if (!matches.length) {
       if (requestedDay !== null)
         return `Non risultano circolari per ${relativeDayLabel(requestedDay)} nei dati caricati.`;
@@ -871,7 +948,7 @@ export function answerQuestion(
           : "Circolari recenti";
     const remainder =
       matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
-    return `${heading}:\n${shown.map((notification) => `• ${noticeLabel(notification)}`).join("\n")}${remainder}\nLe trovi nella sezione Novità.`;
+    return `${heading}:\n${shown.map((notification) => `• ${asksDetails ? noticeDetailLabel(notification) : noticeLabel(notification)}`).join("\n")}${remainder}\nLe trovi nella sezione Novità.`;
   }
 
   const asksDailyOverview =

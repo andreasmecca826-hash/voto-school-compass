@@ -271,6 +271,25 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è il voto più alto in Inglese?", data)).toContain("7,00");
   });
 
+  it("cerca nei testi estratti delle circolari dettagli su classi e orari", () => {
+    const noticeData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "assemblea-1",
+          type: "notice",
+          title: "Assemblea d’istituto",
+          date: "2026-11-05",
+          extractedText: "L’assemblea riguarda la classe 2I. Gli studenti della 2I escono alle ore 12:30.",
+          read: false,
+        },
+      ],
+    };
+    const answer = answerQuestion("A che ora esce la 2I per l’assemblea?", noticeData);
+    expect(answer).toContain("12:30");
+    expect(answer).toContain("Assemblea d’istituto");
+  });
+
   it("filtra le circolari di oggi e compone un riepilogo delle novità", () => {
     const now = new Date(2026, 9, 27, 12);
     const updateData: VotoData = {

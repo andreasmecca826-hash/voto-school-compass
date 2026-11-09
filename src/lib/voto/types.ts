@@ -58,6 +58,8 @@ export interface AppNotification {
   attachmentName?: string | undefined;
   /** Allegati multipli della stessa circolare; i campi singoli restano per compatibilità. */
   attachments?: CircularAttachment[] | undefined;
+  /** Testo estratto localmente dal PDF/DOCX, se disponibile. */
+  extractedText?: string | undefined;
   read: boolean;
 }
 

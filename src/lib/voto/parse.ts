@@ -278,6 +278,7 @@ export function parseVotoData(raw: unknown): VotoData {
         attachmentUrl: legacyUrl,
         attachmentName: str(n["attachmentName"]),
         ...(attachments?.length ? { attachments } : {}),
+        extractedText: str(n["extractedText"]),
         read: n["read"] === true,
       };
     });
