@@ -75,8 +75,15 @@ final class WidgetData {
   }
 
   static void refresh(Context context) {
+    refresh(context, null);
+  }
+
+  static void refresh(Context context, android.content.BroadcastReceiver.PendingResult pendingResult) {
     synchronized (REFRESH_LOCK) {
-      if (refreshInFlight) return;
+      if (refreshInFlight) {
+        if (pendingResult != null) pendingResult.finish();
+        return;
+      }
       refreshInFlight = true;
     }
     new Thread(() -> {
@@ -89,6 +96,7 @@ final class WidgetData {
         renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
       } finally {
         synchronized (REFRESH_LOCK) { refreshInFlight = false; }
+        if (pendingResult != null) pendingResult.finish();
       }
     }).start();
   }
@@ -98,10 +106,18 @@ final class WidgetData {
   }
 
   static void update(Context context, ComponentName provider, boolean large, boolean compact) {
+    update(context, provider, large, compact, null);
+  }
+
+  static void update(Context context, ComponentName provider, boolean large, boolean compact,
+                     android.content.BroadcastReceiver.PendingResult pendingResult) {
     AppWidgetManager manager = AppWidgetManager.getInstance(context);
     int[] ids = manager.getAppWidgetIds(provider);
-    if (ids.length == 0) return;
-    refresh(context);
+    if (ids.length == 0) {
+      if (pendingResult != null) pendingResult.finish();
+      return;
+    }
+    refresh(context, pendingResult);
   }
 
   private static void renderProvider(Context context, ComponentName provider, boolean large, String[] values) {
