@@ -1717,8 +1717,13 @@
   backdrop-filter: none;
 }
 .didup-diary-scroll {
+  overflow-x: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+.didup-diary-scroll > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .didup-diary-scroll::-webkit-scrollbar {
   display: none;
