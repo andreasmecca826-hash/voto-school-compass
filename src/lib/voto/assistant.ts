@@ -421,10 +421,11 @@ export function answerQuestion(
   const asksCompleteTheme =
     (normalized.includes("oro") ||
       normalized.includes("diamante") ||
+      normalized.includes("sangue") ||
       normalized.includes("dorato")) &&
     ["sblocc", "livello", "scelg", "scegli", "attiv"].some((term) => normalized.includes(term));
   if (asksCompleteTheme)
-    return "I temi completi Oro e Diamante sono già selezionabili in Personalizza > Temi.";
+    return "I temi completi Oro, Diamante e Sangue sono già selezionabili in Personalizza > Temi.";
 
   if (
     normalized.includes("sincron") ||

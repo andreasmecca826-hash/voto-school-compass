@@ -11,6 +11,7 @@ export type RandomThemeActionIntent = { kind: "confirm"; action: RandomThemeConf
 const COMPLETE_THEME_OPTIONS = [
   { theme: "oro", label: "Oro" },
   { theme: "diamante", label: "Diamante" },
+  { theme: "sangue", label: "Sangue" },
   { theme: "tramonto", label: "Tramonto" },
   { theme: "lavender", label: "Lavender" },
   { theme: "cybercore", label: "Cybercore" },

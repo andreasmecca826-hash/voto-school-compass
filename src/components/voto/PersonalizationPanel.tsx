@@ -90,10 +90,10 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "linear-gradient(135deg,#12151c,#61a7ff)",
   },
   {
-    id: "emoji",
-    label: "Emoji",
-    description: "Palette pastello e sfondo con le emoji che scegli",
-    sw: "linear-gradient(135deg,#29223a 0%,#8d557b 52%,#f2a35e 100%)",
+    id: "diamante",
+    label: "Diamante",
+    description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
+    sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
   },
   {
     id: "oro",
@@ -102,10 +102,10 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     sw: "radial-gradient(ellipse at 16% 14%,#fff8d8 0 1.5%,#f2d16f 2.3%,transparent 19%),repeating-linear-gradient(0deg,#fff3c21a 0 1px,transparent 1px 3px),linear-gradient(102deg,#33220a 0%,#8b6420 13%,#eed06a 17%,#694710 25%,#d6ad4a 38%,#fff1b0 43%,#8b6320 51%,#d3ae54 67%,#6a4914 80%,#e7c762 91%,#221708 100%)",
   },
   {
-    id: "diamante",
-    label: "Diamante",
-    description: "Zaffiro profondo, vetro glaciale e riflessi azzurri",
-    sw: "radial-gradient(circle at 73% 20%,#fff 0 1.4%,#d5f5ff 2.4%,transparent 11%),conic-gradient(from 210deg at 70% 42%,#f3fdff 0deg,#74b9e4 28deg,#dff8ff 53deg,#3273a5 90deg,#f5fcff 120deg,#93d3f3 164deg,#f9ffff 208deg,#1c4770 260deg,#d9f4ff 320deg,#f3fdff 360deg),linear-gradient(135deg,#102039 0%,#244b70 26%,#e8fcff 38%,#79c8ed 45%,#f7ffff 52%,#416e9e 65%,#101d35 100%)",
+    id: "emoji",
+    label: "Emoji",
+    description: "Palette pastello e sfondo con le emoji che scegli",
+    sw: "linear-gradient(135deg,#29223a 0%,#8d557b 52%,#f2a35e 100%)",
   },
   {
     id: "tramonto",
@@ -148,6 +148,12 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
     label: "Windows 7",
     description: "Aero originale, finestre chiare, menu Start e taskbar",
     sw: "radial-gradient(ellipse at 28% 82%,#87e6f7 0%,transparent 44%),linear-gradient(155deg,#053c79 0%,#087fc3 46%,#55c8e8 67%,#0b5394 100%)",
+  },
+  {
+    id: "sangue",
+    label: "Sangue",
+    description: "Borgogna, colature cremisi e riflessi rubino",
+    sw: "radial-gradient(ellipse 7px 14px at 22% 0%,#9a2039 0 52%,transparent 62%),radial-gradient(ellipse 6px 13px at 48% 38%,#d72d4d99 0 50%,transparent 62%),radial-gradient(ellipse 4px 10px at 55% 43%,#8c2038aa 0 50%,transparent 62%),radial-gradient(ellipse 5px 11px at 31% 0%,#d73b56 0 52%,transparent 62%),radial-gradient(circle at 78% 18%,#ff9ba9 0 2%,#d72d4d 3%,transparent 17%),repeating-linear-gradient(135deg,transparent 0 20px,#ff536a18 20px 22px),linear-gradient(145deg,#090a11 0%,#35101c 32%,#7b1730 62%,#c8324d 84%,#230c16 100%)",
   },
   {
     id: "dark-academia",
@@ -194,26 +200,26 @@ const THEMES: { id: Theme; label: string; description: string; sw: string }[] = 
   {
     id: "primavera",
     label: "Primavera",
-    description: "Verde e colori freschi",
-    sw: "linear-gradient(135deg,#214b3b,#f7a8c4)",
+    description: "Salvia, fiori di ciliegio e luce morbida",
+    sw: "radial-gradient(ellipse at 18% 82%,#f5b7cd 0 13%,transparent 14%),radial-gradient(circle at 80% 18%,#ffe3a0 0 8%,transparent 9%),linear-gradient(145deg,#143e30 0%,#3e815c 54%,#f0bfd0 100%)",
   },
   {
     id: "estate",
     label: "Estate",
-    description: "Sole e mare",
-    sw: "linear-gradient(135deg,#075985,#ffb84d)",
+    description: "Mare turchese, riflessi d’onda e sole dorato",
+    sw: "radial-gradient(circle at 81% 21%,#ffe99d 0 10%,transparent 11%),repeating-linear-gradient(170deg,transparent 0 18px,#d2fbef26 18px 20px),linear-gradient(150deg,#102c52 0%,#0b7189 54%,#48c8c3 100%)",
   },
   {
     id: "autunno",
     label: "Autunno",
-    description: "Foglie e rame",
-    sw: "linear-gradient(135deg,#49251c,#d97932)",
+    description: "Ambra, rame e foglie color ruggine",
+    sw: "radial-gradient(circle at 78% 22%,#f3c879 0 10%,transparent 11%),linear-gradient(145deg,#271613 0%,#6b3024 43%,#b65d32 74%,#e0a04e 100%)",
   },
   {
     id: "inverno",
     label: "Inverno",
-    description: "Ghiaccio e blu profondi",
-    sw: "linear-gradient(135deg,#102a43,#bde7ff)",
+    description: "Blu notte, brina e bagliori di ghiaccio",
+    sw: "radial-gradient(ellipse at 82% 16%,#d8f7ff 0 8%,transparent 9%),radial-gradient(ellipse at 14% 86%,#8bcbe6 0 10%,transparent 11%),linear-gradient(145deg,#0a1832 0%,#23496f 56%,#b6dce9 100%)",
   },
 ];
 const CUSTOM_COLORS: {

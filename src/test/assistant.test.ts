@@ -894,11 +894,12 @@ describe("Assistente locale", () => {
     expect(passedDate).toContain("è passata da 2 giorni");
   });
 
-  it("spiega che Oro e Diamante sono già selezionabili nella personalizzazione", () => {
+  it("spiega che Oro, Diamante e Sangue sono già selezionabili nella personalizzazione", () => {
     expect(answerQuestion("Come sblocco il tema Diamante?", data)).toContain(
       "sono già selezionabili",
     );
     expect(answerQuestion("Dove trovo il tema Oro?", data)).toContain("Personalizza > Temi");
+    expect(answerQuestion("Come sblocco il tema Sangue?", data)).toContain("Diamante e Sangue");
   });
 
   it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {

@@ -107,6 +107,7 @@ export type Theme =
   | "tramonto"
   | "oro"
   | "diamante"
+  | "sangue"
   | "custom";
 export type RegistryStyle = "voto" | "didup";
 export type CustomFont = "theme" | "sans" | "display" | "mono" | "serif";
@@ -150,6 +151,7 @@ const THEME_VALUES: Theme[] = [
   "tramonto",
   "oro",
   "diamante",
+  "sangue",
   "custom",
 ];
 const ACCENT_VALUES: Accent[] = [
