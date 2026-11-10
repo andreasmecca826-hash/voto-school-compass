@@ -26,6 +26,7 @@ function makePageSlot(title: string, pageNumber: number, aspectRatio: string) {
 
 export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const horizontalScrollRatioRef = useRef(0.5);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [pageCount, setPageCount] = useState(0);
 
@@ -37,6 +38,8 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
     let observer: IntersectionObserver | undefined;
     const container = containerRef.current;
     if (!container) return;
+    const scrollport = container.parentElement;
+    if (zoom <= 1) horizontalScrollRatioRef.current = 0.5;
 
     container.replaceChildren();
     setStatus("loading");
@@ -128,6 +131,10 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
         await renderPage(1, firstPage);
         if (cancelled) return;
         firstPageRendered = true;
+        if (scrollport && zoom > 1) {
+          const maxScrollLeft = Math.max(0, scrollport.scrollWidth - scrollport.clientWidth);
+          scrollport.scrollLeft = Math.round(maxScrollLeft * horizontalScrollRatioRef.current);
+        }
         setStatus("ready");
         await new Promise<void>((resolve) => {
           if (typeof window.requestAnimationFrame === "function") {
@@ -225,6 +232,13 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
       className={`min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-black/20 p-2 ${
         zoom > 1 ? "touch-pan-x touch-pan-y overflow-x-auto" : "touch-pan-y overflow-x-hidden"
       }`}
+      onScroll={(event) => {
+        const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
+        const maxScrollLeft = scrollWidth - clientWidth;
+        if (maxScrollLeft > 0) {
+          horizontalScrollRatioRef.current = Math.min(1, Math.max(0, scrollLeft / maxScrollLeft));
+        }
+      }}
     >
       {status === "loading" && (
         <p className="p-8 text-center text-sm text-muted-foreground">Caricamento PDF…</p>

@@ -102,6 +102,8 @@ function DocxPreview({
   initialText?: string | undefined;
   zoom: number;
 }) {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const horizontalScrollRatioRef = useRef(0.5);
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement>(null);
   const fallbackText = initialText?.trim() ?? "";
@@ -143,16 +145,39 @@ function DocxPreview({
     };
   }, [fallbackText, src]);
 
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview) return;
+    if (zoom <= 1) {
+      horizontalScrollRatioRef.current = 0.5;
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const maxScrollLeft = Math.max(0, preview.scrollWidth - preview.clientWidth);
+      preview.scrollLeft = Math.round(maxScrollLeft * horizontalScrollRatioRef.current);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [status, zoom]);
+
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
       <div
         role="document"
         aria-label={title}
         aria-busy={status === "loading"}
+        ref={previewRef}
         className={`min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2 ${
           zoom > 1 ? "touch-pan-x touch-pan-y overflow-x-auto" : "touch-pan-y overflow-x-hidden"
         }`}
         style={{ "--docx-zoom": zoom } as React.CSSProperties}
+        onScroll={(event) => {
+          const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
+          const maxScrollLeft = scrollWidth - clientWidth;
+          if (maxScrollLeft > 0) {
+            horizontalScrollRatioRef.current = Math.min(1, Math.max(0, scrollLeft / maxScrollLeft));
+          }
+        }}
       >
         {status === "loading" && (
           <p className="p-8 text-center text-sm text-muted-foreground">

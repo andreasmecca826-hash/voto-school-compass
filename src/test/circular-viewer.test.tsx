@@ -192,7 +192,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByText(/inviate solo le prime 3 pagine/i)).toBeInTheDocument();
   });
 
-  it("offre apertura e download separati per un DOCX", () => {
+  it("offre apertura, download e pan centrato per un DOCX ingrandito", async () => {
     const path = `circulars/${"b".repeat(64)}.docx`;
     const extractedText = "La classe 2I esce alle ore 12:30 per l’assemblea.";
     render(
@@ -208,6 +208,11 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
 
     const docxPreview = screen.getByRole("document", { name: "modulo.docx" });
+    Object.defineProperty(docxPreview, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(docxPreview, "scrollWidth", {
+      configurable: true,
+      get: () => (Number(docxPreview.style.getPropertyValue("--docx-zoom")) > 1 ? 600 : 300),
+    });
     expect(docxPreview).toHaveTextContent(extractedText);
     expect(docxPreview).toHaveClass("overflow-x-hidden", "overflow-y-auto", "touch-pan-y");
     expect(docxPreview).not.toHaveClass("touch-pan-x");
@@ -225,6 +230,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     expect(docxPreview).toHaveClass("overflow-x-auto", "touch-pan-x", "touch-pan-y");
+    await waitFor(() => expect(docxPreview.scrollLeft).toBe(150));
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();

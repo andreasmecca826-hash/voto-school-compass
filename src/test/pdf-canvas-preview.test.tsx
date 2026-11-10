@@ -125,13 +125,17 @@ describe("anteprima PDF progressiva", () => {
     vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
     render(<PdfCanvasPreview src="/zoom.pdf" title="PDF ingrandito" zoom={1.3} />);
 
-    expect(screen.getByRole("document", { name: "PDF ingrandito" })).toHaveClass(
+    const pdfPreview = screen.getByRole("document", { name: "PDF ingrandito" });
+    Object.defineProperty(pdfPreview, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(pdfPreview, "scrollWidth", { configurable: true, value: 600 });
+    expect(pdfPreview).toHaveClass(
       "overflow-x-auto",
       "overflow-y-auto",
       "touch-pan-x",
       "touch-pan-y",
     );
     await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    await waitFor(() => expect(pdfPreview.scrollLeft).toBe(150));
     expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
     await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
 
