@@ -1,8 +1,4 @@
-import type {
-  MutableRefObject,
-  PointerEvent as ReactPointerEvent,
-  TouchEvent as ReactTouchEvent,
-} from "react";
+import type { MutableRefObject, PointerEvent as ReactPointerEvent } from "react";
 
 export interface ZoomPanState {
   pointerId: number;
@@ -21,7 +17,7 @@ export function beginZoomPan(
   zoom: number,
   stateRef: MutableRefObject<ZoomPanState | null>,
 ) {
-  if (zoom <= 1 || isInteractiveTarget(event.target)) return;
+  if (zoom <= 1 || event.pointerType === "touch" || isInteractiveTarget(event.target)) return;
 
   stateRef.current = {
     pointerId: event.pointerId,
@@ -38,7 +34,7 @@ export function moveZoomPan(
   stateRef: MutableRefObject<ZoomPanState | null>,
 ) {
   const state = stateRef.current;
-  if (!state || state.pointerId !== event.pointerId) return;
+  if (event.pointerType === "touch" || !state || state.pointerId !== event.pointerId) return;
   event.preventDefault();
   event.currentTarget.scrollLeft = state.scrollLeft - (event.clientX - state.startX);
   event.currentTarget.scrollTop = state.scrollTop - (event.clientY - state.startY);
@@ -49,37 +45,4 @@ export function endZoomPan(
   stateRef: MutableRefObject<ZoomPanState | null>,
 ) {
   if (stateRef.current?.pointerId === event.pointerId) stateRef.current = null;
-}
-
-export function beginZoomTouch(
-  event: ReactTouchEvent<HTMLDivElement>,
-  zoom: number,
-  stateRef: MutableRefObject<ZoomPanState | null>,
-) {
-  const touch = event.touches[0];
-  if (zoom <= 1 || !touch || isInteractiveTarget(event.target)) return;
-
-  stateRef.current = {
-    pointerId: -1,
-    startX: touch.clientX,
-    startY: touch.clientY,
-    scrollLeft: event.currentTarget.scrollLeft,
-    scrollTop: event.currentTarget.scrollTop,
-  };
-}
-
-export function moveZoomTouch(
-  event: ReactTouchEvent<HTMLDivElement>,
-  stateRef: MutableRefObject<ZoomPanState | null>,
-) {
-  const state = stateRef.current;
-  const touch = event.touches[0];
-  if (!state || state.pointerId !== -1 || !touch) return;
-  event.preventDefault();
-  event.currentTarget.scrollLeft = state.scrollLeft - (touch.clientX - state.startX);
-  event.currentTarget.scrollTop = state.scrollTop - (touch.clientY - state.startY);
-}
-
-export function endZoomTouch(stateRef: MutableRefObject<ZoomPanState | null>) {
-  if (stateRef.current?.pointerId === -1) stateRef.current = null;
 }

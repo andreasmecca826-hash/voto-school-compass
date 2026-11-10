@@ -17,18 +17,6 @@ class TestPointerEvent extends MouseEvent {
   }
 }
 
-function dispatchTouch(
-  target: Element,
-  type: "touchstart" | "touchmove" | "touchend",
-  point?: { clientX: number; clientY: number },
-) {
-  const event = new Event(type, { bubbles: true, cancelable: true });
-  Object.defineProperty(event, "touches", {
-    value: point ? [{ identifier: 1, target, ...point }] : [],
-  });
-  fireEvent(target, event);
-}
-
 vi.mock("@/lib/voto/circular-assistant", () => ({
   askAboutCircular: askCircularText,
   askAboutCircularImages: askCircularImages,
@@ -261,19 +249,18 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
-    expect(docxPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-none");
-    expect(docxPreview).not.toHaveClass("touch-pan-x", "touch-pan-y");
+    expect(docxPreview).toHaveClass(
+      "overflow-x-auto",
+      "overflow-y-auto",
+      "touch-pan-x",
+      "touch-pan-y",
+    );
     await waitFor(() => expect(docxPreview.scrollLeft).toBe(150));
     fireEvent.pointerDown(docxPreview, { pointerId: 1, clientX: 150, clientY: 200 });
     fireEvent.pointerMove(docxPreview, { pointerId: 1, clientX: 100, clientY: 100 });
     expect(docxPreview.scrollLeft).toBe(200);
     expect(docxPreview.scrollTop).toBe(100);
     fireEvent.pointerUp(docxPreview, { pointerId: 1 });
-    dispatchTouch(docxPreview, "touchstart", { clientX: 100, clientY: 100 });
-    dispatchTouch(docxPreview, "touchmove", { clientX: 80, clientY: 60 });
-    expect(docxPreview.scrollLeft).toBe(220);
-    expect(docxPreview.scrollTop).toBe(140);
-    dispatchTouch(docxPreview, "touchend");
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();

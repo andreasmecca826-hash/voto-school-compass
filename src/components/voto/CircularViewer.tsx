@@ -14,15 +14,7 @@ import {
   ZoomIn,
   X,
 } from "lucide-react";
-import {
-  beginZoomPan,
-  beginZoomTouch,
-  endZoomPan,
-  endZoomTouch,
-  moveZoomPan,
-  moveZoomTouch,
-  type ZoomPanState,
-} from "@/lib/voto/zoom-pan";
+import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
 import {
   Sheet,
   SheetContent,
@@ -113,7 +105,6 @@ function DocxPreview({
 }) {
   const previewRef = useRef<HTMLDivElement>(null);
   const panStateRef = useRef<ZoomPanState | null>(null);
-  const touchPanStateRef = useRef<ZoomPanState | null>(null);
   const horizontalScrollRatioRef = useRef(0.5);
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement>(null);
@@ -180,7 +171,7 @@ function DocxPreview({
         ref={previewRef}
         className={`min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2 ${
           zoom > 1
-            ? "touch-none cursor-grab select-none overflow-x-auto active:cursor-grabbing"
+            ? "touch-pan-x touch-pan-y cursor-grab select-none overflow-x-auto active:cursor-grabbing"
             : "touch-pan-y overflow-x-hidden"
         }`}
         style={{ "--docx-zoom": zoom } as React.CSSProperties}
@@ -188,10 +179,6 @@ function DocxPreview({
         onPointerMove={(event) => moveZoomPan(event, panStateRef)}
         onPointerUp={(event) => endZoomPan(event, panStateRef)}
         onPointerCancel={(event) => endZoomPan(event, panStateRef)}
-        onTouchStart={(event) => beginZoomTouch(event, zoom, touchPanStateRef)}
-        onTouchMove={(event) => moveZoomTouch(event, touchPanStateRef)}
-        onTouchEnd={() => endZoomTouch(touchPanStateRef)}
-        onTouchCancel={() => endZoomTouch(touchPanStateRef)}
         onScroll={(event) => {
           const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
           const maxScrollLeft = scrollWidth - clientWidth;
