@@ -69,4 +69,33 @@ describe("parser allegati circolari multipli", () => {
       { url: "https://didup.example/report.docx", name: "report.docx" },
     ]);
   });
+
+  it("propaga il rilevamento delle tabelle dagli allegati alla notifica", () => {
+    const parsed = parseVotoData({
+      subjects: [],
+      notifications: [
+        {
+          id: "notice-table",
+          type: "notice",
+          title: "Orario assemblea",
+          hasTables: true,
+          tableCount: 2,
+          attachments: [
+            {
+              path: `circulars/${"e".repeat(64)}.pdf`,
+              name: "orario.pdf",
+              hasTables: true,
+              tableCount: 2,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(parsed.notifications[0]).toMatchObject({ hasTables: true, tableCount: 2 });
+    expect(parsed.notifications[0]?.attachments?.[0]).toMatchObject({
+      hasTables: true,
+      tableCount: 2,
+    });
+  });
 });

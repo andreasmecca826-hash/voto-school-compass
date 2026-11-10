@@ -176,11 +176,17 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
   const name = str(
     raw["name"] ?? raw["fileName"] ?? raw["filename"] ?? raw["attachmentName"] ?? raw["nome"],
   );
+  const tableCount =
+    typeof raw["tableCount"] === "number" && raw["tableCount"] > 0
+      ? Math.floor(raw["tableCount"])
+      : undefined;
   if (!path && !url && !name) return undefined;
   return {
     ...(name ? { name } : {}),
     ...(path ? { path } : {}),
     ...(url ? { url } : {}),
+    ...(raw["hasTables"] === true || tableCount ? { hasTables: true } : {}),
+    ...(tableCount ? { tableCount } : {}),
   };
 }
 
@@ -291,6 +297,11 @@ export function parseVotoData(raw: unknown): VotoData {
         attachmentName: str(n["attachmentName"]),
         ...(attachments?.length ? { attachments } : {}),
         extractedText: str(n["extractedText"]),
+        hasTables: n["hasTables"] === true,
+        tableCount:
+          typeof n["tableCount"] === "number" && n["tableCount"] > 0
+            ? Math.floor(n["tableCount"])
+            : undefined,
         read: n["read"] === true,
       };
     });

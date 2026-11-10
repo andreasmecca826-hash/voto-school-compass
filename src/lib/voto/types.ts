@@ -41,6 +41,8 @@ export interface CircularAttachment {
   path?: string | undefined;
   /** URL sorgente per allegati non PDF ancora ospitati da DidUP. */
   url?: string | undefined;
+  hasTables?: boolean | undefined;
+  tableCount?: number | undefined;
 }
 
 export interface AppNotification {
@@ -60,6 +62,9 @@ export interface AppNotification {
   attachments?: CircularAttachment[] | undefined;
   /** Testo estratto localmente dal PDF/DOCX, se disponibile. */
   extractedText?: string | undefined;
+  /** Indica se uno o più allegati contengono tabelle rilevate durante l’estrazione. */
+  hasTables?: boolean | undefined;
+  tableCount?: number | undefined;
   read: boolean;
 }
 
