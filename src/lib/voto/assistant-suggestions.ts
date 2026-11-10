@@ -40,6 +40,7 @@ const SUGGESTIONS = [
   "A chi è rivolta l’ultima circolare?",
   "Quante flashcard ho nella sessione?",
   "Mostrami le flashcard di Inglese.",
+  "Cosa devo studiare questa settimana?",
   "Dove trovo il simulatore dei voti?",
   "Che tema sto usando?",
   "Come scelgo il tema Oro?",
