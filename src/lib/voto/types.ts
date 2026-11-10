@@ -43,6 +43,8 @@ export interface CircularAttachment {
   url?: string | undefined;
   hasTables?: boolean | undefined;
   tableCount?: number | undefined;
+  extractionMethod?: "pdf-text" | "ocr" | "docx" | "text" | "unavailable" | undefined;
+  extractionQuality?: "high" | "medium" | "low" | undefined;
 }
 
 export interface AppNotification {
@@ -65,6 +67,8 @@ export interface AppNotification {
   /** Indica se uno o più allegati contengono tabelle rilevate durante l’estrazione. */
   hasTables?: boolean | undefined;
   tableCount?: number | undefined;
+  extractionMethod?: "pdf-text" | "ocr" | "docx" | "text" | "unavailable" | undefined;
+  extractionQuality?: "high" | "medium" | "low" | undefined;
   read: boolean;
 }
 

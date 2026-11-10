@@ -180,6 +180,16 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
     typeof raw["tableCount"] === "number" && raw["tableCount"] > 0
       ? Math.floor(raw["tableCount"])
       : undefined;
+  const extractionMethod = ["pdf-text", "ocr", "docx", "text", "unavailable"].includes(
+    String(raw["extractionMethod"] ?? ""),
+  )
+    ? (String(raw["extractionMethod"]) as CircularAttachment["extractionMethod"])
+    : undefined;
+  const extractionQuality = ["high", "medium", "low"].includes(
+    String(raw["extractionQuality"] ?? ""),
+  )
+    ? (String(raw["extractionQuality"]) as CircularAttachment["extractionQuality"])
+    : undefined;
   if (!path && !url && !name) return undefined;
   return {
     ...(name ? { name } : {}),
@@ -187,6 +197,8 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
     ...(url ? { url } : {}),
     ...(raw["hasTables"] === true || tableCount ? { hasTables: true } : {}),
     ...(tableCount ? { tableCount } : {}),
+    ...(extractionMethod ? { extractionMethod } : {}),
+    ...(extractionQuality ? { extractionQuality } : {}),
   };
 }
 
@@ -302,6 +314,14 @@ export function parseVotoData(raw: unknown): VotoData {
           typeof n["tableCount"] === "number" && n["tableCount"] > 0
             ? Math.floor(n["tableCount"])
             : undefined,
+        extractionMethod: ["pdf-text", "ocr", "docx", "text", "unavailable"].includes(
+          String(n["extractionMethod"] ?? ""),
+        )
+          ? (String(n["extractionMethod"]) as AppNotification["extractionMethod"])
+          : undefined,
+        extractionQuality: ["high", "medium", "low"].includes(String(n["extractionQuality"] ?? ""))
+          ? (String(n["extractionQuality"]) as AppNotification["extractionQuality"])
+          : undefined,
         read: n["read"] === true,
       };
     });
