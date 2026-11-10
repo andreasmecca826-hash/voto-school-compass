@@ -540,7 +540,15 @@ export function CircularViewer({
         </SheetHeader>
         {canAskAi && (
           <div className="mb-3 shrink-0 space-y-2">
-            <div className={canAnalyze ? "grid grid-cols-2 gap-2" : "grid grid-cols-1 gap-2"}>
+            <div
+              className={
+                isDocx
+                  ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2"
+                  : canAnalyze
+                    ? "grid grid-cols-2 gap-2"
+                    : "grid grid-cols-1 gap-2"
+              }
+            >
               {canAnalyze && (
                 <button
                   type="button"
@@ -574,6 +582,21 @@ export function CircularViewer({
               >
                 {isAiChatOpen ? "Nascondi chat" : "Fai una domanda"}
               </button>
+              {isDocx && previewUrl && (
+                <button
+                  type="button"
+                  aria-expanded={isZoomControlsOpen}
+                  aria-label={
+                    isZoomControlsOpen
+                      ? "Nascondi controlli zoom DOCX"
+                      : "Mostra controlli zoom DOCX"
+                  }
+                  onClick={() => setIsZoomControlsOpen((openNow) => !openNow)}
+                  className="press inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-primary"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              )}
             </div>
             {isAnalysisOpen && (analysis || analysisError) && (
               <section
@@ -836,17 +859,6 @@ export function CircularViewer({
             </form>
           </section>
         )}
-        {previewUrl && isDocx && (
-          <button
-            type="button"
-            aria-expanded={isZoomControlsOpen}
-            aria-label={isZoomControlsOpen ? "Nascondi controlli zoom DOCX" : "Mostra controlli zoom DOCX"}
-            onClick={() => setIsZoomControlsOpen((openNow) => !openNow)}
-            className="press mb-2 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-primary"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-        )}
         {files.length > 1 && (
           <div className="mb-3">
             <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
@@ -877,7 +889,7 @@ export function CircularViewer({
           </div>
         )}
         {previewUrl && isPdf ? (
-          <div className="min-h-0 max-h-[42dvh] flex-1">
+          <div className="min-h-[8rem] max-h-[32dvh] min-w-0 flex-1 overflow-hidden">
             <PdfCanvasPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
@@ -885,7 +897,7 @@ export function CircularViewer({
             />
           </div>
         ) : previewUrl && isDocx ? (
-          <div className="min-h-0 max-h-[42dvh] flex-1">
+          <div className="min-h-[8rem] max-h-[32dvh] min-w-0 flex-1 overflow-hidden">
             <DocxPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
