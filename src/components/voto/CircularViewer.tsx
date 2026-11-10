@@ -149,7 +149,10 @@ function DocxPreview({
         role="document"
         aria-label={title}
         aria-busy={status === "loading"}
-        className="min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2"
+        className={`min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2 ${
+          zoom > 1 ? "touch-pan-x touch-pan-y overflow-x-auto" : "touch-pan-y overflow-x-hidden"
+        }`}
+        style={{ "--docx-zoom": zoom } as React.CSSProperties}
       >
         {status === "loading" && (
           <p className="p-8 text-center text-sm text-muted-foreground">
@@ -172,11 +175,7 @@ function DocxPreview({
           </div>
         )}
         <style ref={styleRef} />
-        <div
-          ref={bodyRef}
-          className={status === "rendered" ? "docx-preview-body" : "hidden"}
-          style={{ "--docx-zoom": zoom } as React.CSSProperties}
-        />
+        <div ref={bodyRef} className={status === "rendered" ? "docx-preview-body" : "hidden"} />
         <style>{`
         .docx-preview-body,
         .docx-preview-body .docx-wrapper {
@@ -201,6 +200,7 @@ function DocxPreview({
           padding: 1rem !important;
           overflow: visible !important;
           box-shadow: 0 1px 3px rgb(0 0 0 / 12%) !important;
+          zoom: var(--docx-zoom, 1);
         }
         .docx-preview-body section.docx:last-child {
           margin-bottom: 0 !important;
@@ -219,10 +219,6 @@ function DocxPreview({
           overflow-wrap: normal !important;
           word-break: normal !important;
           hyphens: none !important;
-        }
-        .docx-preview-body section.docx {
-          zoom: var(--docx-zoom, 1);
-          width: calc(100% / var(--docx-zoom, 1)) !important;
         }
       `}</style>
       </div>

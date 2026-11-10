@@ -222,7 +222,9 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
       role="document"
       aria-label={title}
       aria-busy={status === "loading"}
-      className="min-h-0 flex-1 touch-pan-x touch-pan-y space-y-3 overflow-auto rounded-xl border border-border bg-black/20 p-2"
+      className={`min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-black/20 p-2 ${
+        zoom > 1 ? "touch-pan-x touch-pan-y overflow-x-auto" : "touch-pan-y overflow-x-hidden"
+      }`}
     >
       {status === "loading" && (
         <p className="p-8 text-center text-sm text-muted-foreground">Caricamento PDF…</p>

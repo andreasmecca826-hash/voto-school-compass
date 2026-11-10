@@ -207,7 +207,10 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    expect(screen.getByRole("document", { name: "modulo.docx" })).toHaveTextContent(extractedText);
+    const docxPreview = screen.getByRole("document", { name: "modulo.docx" });
+    expect(docxPreview).toHaveTextContent(extractedText);
+    expect(docxPreview).toHaveClass("overflow-x-hidden", "overflow-y-auto", "touch-pan-y");
+    expect(docxPreview).not.toHaveClass("touch-pan-x");
     fireEvent.click(screen.getByRole("button", { name: "Mostra controlli zoom allegato" }));
     expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
@@ -215,9 +218,13 @@ describe("visualizzatore PDF delle circolari interne", () => {
       screen.getByRole("button", { name: "Adatta allegato allo schermo" }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Riduci zoom allegato" }));
+    expect(docxPreview.style.getPropertyValue("--docx-zoom")).toBe("0.9");
     expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
       "90%",
     );
+    fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
+    fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
+    expect(docxPreview).toHaveClass("overflow-x-auto", "touch-pan-x", "touch-pan-y");
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();

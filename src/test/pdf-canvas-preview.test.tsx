@@ -106,6 +106,8 @@ describe("anteprima PDF progressiva", () => {
     await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
     const document = screen.getByRole("document", { name: "Circolare" });
     await waitFor(() => expect(document).toHaveAttribute("aria-busy", "false"));
+    expect(document).toHaveClass("overflow-x-hidden", "overflow-y-auto", "touch-pan-y");
+    expect(document).not.toHaveClass("touch-pan-x");
     await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
     expect(container.querySelectorAll("[data-pdf-page]")).toHaveLength(3);
     expect(pages[1]!.render).not.toHaveBeenCalled();
@@ -117,6 +119,27 @@ describe("anteprima PDF progressiva", () => {
 
     await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
     expect(pages[2]!.render).not.toHaveBeenCalled();
+  });
+
+  it("applica lo zoom a tutte le pagine man mano che diventano visibili", async () => {
+    vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
+    render(<PdfCanvasPreview src="/zoom.pdf" title="PDF ingrandito" zoom={1.3} />);
+
+    expect(screen.getByRole("document", { name: "PDF ingrandito" })).toHaveClass(
+      "overflow-x-auto",
+      "overflow-y-auto",
+      "touch-pan-x",
+      "touch-pan-y",
+    );
+    await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
+    await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
+
+    const observer = TestIntersectionObserver.current!;
+    act(() => observer.trigger(observer.targets[0]!));
+
+    await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
+    expect(pages[1]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
   });
 
   it("riduce canvas e precaricamento su smartphone quando la modalità prestazioni è attiva", async () => {
