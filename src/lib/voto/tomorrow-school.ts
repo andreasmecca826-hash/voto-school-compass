@@ -68,13 +68,27 @@ export function upcomingSchoolEvents(
 ): UpcomingSchoolEvent[] {
   const events: UpcomingSchoolEvent[] = interrogazioni
     .filter((item) => !item.completed && isTomorrow(item.date, now))
-    .map((item) => ({
-      id: `interrogazione-${item.id}`,
-      title: item.subject,
-      date: item.date,
-      detail: item.notes ?? (item.hour ? `${item.hour}ª ora` : item.time),
-      source: "interrogazione",
-    }));
+    .map((item) => {
+      const firstNote = item.notes?.split(/\r?\n/)[0]?.trim();
+      const isReminderVerification = Boolean(
+        item.reminderId && /^verifica\s+di\s+/i.test(firstNote ?? ""),
+      );
+      return {
+        id: `interrogazione-${item.id}`,
+        title: isReminderVerification ? firstNote! : item.subject,
+        date: item.date,
+        detail: isReminderVerification
+          ? [
+              item.subject,
+              item.notes?.split(/\r?\n/).slice(1).join("\n"),
+              item.hour ? `${item.hour}ª ora` : item.time,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : (item.notes ?? (item.hour ? `${item.hour}ª ora` : item.time)),
+        source: "interrogazione",
+      };
+    });
 
   const assessmentPattern = /verific|interrog|compito in classe|prova|test/i;
   for (const notification of notifications) {

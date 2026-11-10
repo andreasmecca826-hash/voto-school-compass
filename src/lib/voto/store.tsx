@@ -220,13 +220,25 @@ function normalizeInterrogazioni(value: unknown): Interrogazione[] {
         typeof item.subject === "string" &&
         typeof item.date === "string",
     )
-    .map((item) => ({
-      ...item,
-      completed: item.completed === true,
-      checklist: Array.isArray(item.checklist)
-        ? item.checklist
-        : DEFAULT_PREPARATION.map((prep) => ({ ...prep })),
-    }));
+    .map((item) => {
+      const notes = typeof item.notes === "string" ? item.notes.trim() : "";
+      const firstNote = notes.split(/\r?\n/)[0]?.trim() ?? "";
+      const isLegacyReminder =
+        item.reminderId &&
+        item.subject.trim().toLocaleLowerCase("it-IT") === "promemoria" &&
+        /^verifica\s+di\s+.+/i.test(firstNote);
+      const subject = isLegacyReminder
+        ? firstNote.replace(/^verifica\s+di\s+/i, "").trim()
+        : item.subject;
+      return {
+        ...item,
+        subject,
+        completed: item.completed === true,
+        checklist: Array.isArray(item.checklist)
+          ? item.checklist
+          : DEFAULT_PREPARATION.map((prep) => ({ ...prep })),
+      };
+    });
 }
 
 interface Ctx {
