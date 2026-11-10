@@ -47,6 +47,7 @@ import {
   notificationContentLabel,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
+import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 const CircularViewer = lazy(() =>
@@ -72,6 +73,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const v = useVoto();
+  const isOnline = useOnlineStatus();
   const { isDone } = v;
   const now = useClock();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
@@ -229,9 +231,19 @@ function Dashboard() {
                 <span className="text-xs text-muted-foreground">{micro}</span>
               </div>
               <p className="mt-4 text-[10.5px] text-muted-foreground">
-                {v.source === "demo" ? "Dati demo" : `Aggiornato ${fmtTime(v.lastSync)}`}
-                {v.error && v.source !== "demo" && (
-                  <span className="text-danger"> · offline, dati salvati</span>
+                {v.source === "demo" ? (
+                  "Dati demo"
+                ) : (
+                  <>
+                    {v.source === "cache"
+                      ? `Cache locale · aggiornato ${fmtTime(v.lastSync)}`
+                      : `Aggiornato ${fmtTime(v.lastSync)}`}
+                    {(!isOnline || v.error) && (
+                      <span className="text-danger">
+                        {v.error ? " · ultimo aggiornamento non riuscito" : " · offline"}
+                      </span>
+                    )}
+                  </>
                 )}
               </p>
             </section>
