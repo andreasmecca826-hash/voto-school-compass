@@ -376,7 +376,7 @@ function Assistant() {
         <p className="mt-1 text-[11px] text-muted-foreground">
           {activeAssistantMode === "local"
             ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
-            : "API invia a Groq la domanda e solo gli estratti pertinenti del regolamento, della ricerca PDF utente (non verificata) o della circolare. Non allega automaticamente voti, assenze o cronologia; se scrivi dati personali nella domanda, li invia. Non legge pagine con login e non fa fallback automatico. I costi dipendono dal piano Groq: per evitare chiamate API, scegli Locale."}{" "}
+            : "API invia a Groq la domanda e gli estratti pertinenti dei documenti. Non invia automaticamente dati scolastici o cronologia; i dati personali scritti nella domanda vengono inviati. Per zero spese, scegli Locale o AI telefono."}{" "}
           {!canUseApi && (
             <span className="font-medium text-primary">
               Offline: API non disponibile; è disponibile Locale.
