@@ -91,9 +91,6 @@ function Assenze() {
         >
           {Math.round(v.data.attendance.absenceDays)}
         </p>
-        <p className={cn("mt-1 text-xs", isDidup ? "text-white/55" : "text-muted-foreground")}>
-          Le date sotto sono quelle presenti nel JSON sincronizzato.
-        </p>
       </section>
 
       <div className="mt-6 flex items-center justify-between">
