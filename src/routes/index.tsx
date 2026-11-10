@@ -28,6 +28,12 @@ import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
 import { countRecentOpenAssignments, dashboardMicrocopy } from "@/lib/voto/dashboard-copy";
 import {
+  attendanceMicrocopy,
+  bulletinMicrocopy,
+  interrogazioniMicrocopy,
+  notesMicrocopy,
+} from "@/lib/voto/dashboard-situations";
+import {
   openAssignmentsForTomorrow,
   tomorrowDate,
   tomorrowScheduleDay,
@@ -155,6 +161,22 @@ function Dashboard() {
     { average: avg, delta, unreadGrades, unreadOther, recentAssignments },
     microSeed,
   );
+  const phraseSeed = (offset: number) => (microSeed + offset) % 1;
+  const noteTotal = notifications.filter((notification) => notification.type === "note").length;
+  const unreadNotes = notifications.filter(
+    (notification) => notification.type === "note" && !v.isRead(notification.id, notification.read),
+  ).length;
+  const bulletinTotal = notifications.filter(
+    (notification) => notification.type === "notice",
+  ).length;
+  const unreadBulletin = notifications.filter(
+    (notification) =>
+      notification.type === "notice" && !v.isRead(notification.id, notification.read),
+  ).length;
+  const attendanceMessage = attendanceMicrocopy(attendance, phraseSeed(0.13));
+  const notesMessage = notesMicrocopy(noteTotal, unreadNotes, phraseSeed(0.37));
+  const bulletinMessage = bulletinMicrocopy(bulletinTotal, unreadBulletin, phraseSeed(0.61));
+  const interrogazioniMessage = interrogazioniMicrocopy(v.interrogazioni, phraseSeed(0.83));
 
   return (
     <div className="pt-3" style={{ zoom: v.homeScale / 100 }}>
@@ -325,6 +347,7 @@ function Dashboard() {
         {isHomeModuleVisible("presenze") && (
           <div style={{ order: homeOrder("presenze"), zoom: homeModuleScale("presenze") }}>
             <SectionTitle>Presenze</SectionTitle>
+            <p className="mb-2 text-xs text-muted-foreground">{attendanceMessage}</p>
             <section className="card-surface p-4">
               <div className="mb-4 grid grid-cols-2 rounded-xl border border-border bg-surface p-1">
                 {(["hours", "days"] as const).map((view) => (
@@ -446,31 +469,34 @@ function Dashboard() {
             {interrogazioni.length === 0 ? (
               <Empty
                 icon={<CalendarDays className="h-6 w-6" />}
-                title="Nessuna interrogazione"
+                title={interrogazioniMessage}
                 text="Aggiungila dalla sezione Interrogazioni."
               />
             ) : (
-              <ul className="space-y-2">
-                {interrogazioni.map((item) => (
-                  <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                      <CalendarDays className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">{item.subject}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {item.date ? fmtDate(item.date) : "Data da definire"}
-                        {item.hour ? ` · ${item.hour}ª ora` : item.time ? ` · ${item.time}` : ""}
-                      </p>
-                    </div>
-                    {item.notes && (
-                      <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">
-                        {item.notes}
+              <>
+                <p className="mb-2 text-xs text-muted-foreground">{interrogazioniMessage}</p>
+                <ul className="space-y-2">
+                  {interrogazioni.map((item) => (
+                    <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                        <CalendarDays className="h-4 w-4" />
                       </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{item.subject}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {item.date ? fmtDate(item.date) : "Data da definire"}
+                          {item.hour ? ` · ${item.hour}ª ora` : item.time ? ` · ${item.time}` : ""}
+                        </p>
+                      </div>
+                      {item.notes && (
+                        <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">
+                          {item.notes}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         )}
@@ -479,13 +505,16 @@ function Dashboard() {
           <div style={{ order: homeOrder("note"), zoom: homeModuleScale("note") }}>
             <SectionTitle>Note</SectionTitle>
             {notes.length === 0 ? (
-              <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" />
+              <Empty icon={<StickyNote className="h-6 w-6" />} title={notesMessage} />
             ) : (
-              <ul className="space-y-2">
-                {notes.map((n) => (
-                  <NotifItem key={n.id} id={n.id} />
-                ))}
-              </ul>
+              <>
+                <p className="mb-2 text-xs text-muted-foreground">{notesMessage}</p>
+                <ul className="space-y-2">
+                  {notes.map((n) => (
+                    <NotifItem key={n.id} id={n.id} />
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         )}
@@ -522,13 +551,16 @@ function Dashboard() {
             <SectionTitle>Bacheca</SectionTitle>
             <CircularCheckControl />
             {bulletin.length === 0 ? (
-              <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" />
+              <Empty icon={<Megaphone className="h-6 w-6" />} title={bulletinMessage} />
             ) : (
-              <ul className="space-y-2">
-                {bulletin.map((n) => (
-                  <NotifItem key={n.id} id={n.id} />
-                ))}
-              </ul>
+              <>
+                <p className="mb-2 text-xs text-muted-foreground">{bulletinMessage}</p>
+                <ul className="space-y-2">
+                  {bulletin.map((n) => (
+                    <NotifItem key={n.id} id={n.id} />
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         )}
