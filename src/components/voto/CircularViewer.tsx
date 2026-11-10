@@ -88,7 +88,7 @@ function mergeAttachments(
   return merged;
 }
 
-function DocxTextPreview({
+function DocxPreview({
   src,
   title,
   initialText,
@@ -97,59 +97,72 @@ function DocxTextPreview({
   title: string;
   initialText?: string | undefined;
 }) {
-  const [text, setText] = useState(initialText?.trim() ?? "");
-  const [status, setStatus] = useState<"loading" | "ready" | "error">(
-    initialText?.trim() ? "ready" : "loading",
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const styleRef = useRef<HTMLStyleElement>(null);
+  const fallbackText = initialText?.trim() ?? "";
+  const [status, setStatus] = useState<"loading" | "rendered" | "text" | "error">(
+    fallbackText ? "text" : "loading",
   );
 
   useEffect(() => {
-    const storedText = initialText?.trim();
-    if (storedText) {
-      setText(storedText);
-      setStatus("ready");
-      return;
-    }
-
     let cancelled = false;
-    setText("");
-    setStatus("loading");
-    void extractCircularDocxText(src)
-      .then((document) => {
+    setStatus(fallbackText ? "text" : "loading");
+    if (bodyRef.current) bodyRef.current.replaceChildren();
+    if (styleRef.current) styleRef.current.replaceChildren();
+
+    void fetch(src, { credentials: "same-origin" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`docx_download_${response.status}`);
+        return response.blob();
+      })
+      .then(async (blob) => {
+        const { renderAsync } = await import("docx-preview");
+        if (!bodyRef.current || cancelled) return;
+        await renderAsync(blob, bodyRef.current, styleRef.current ?? undefined, {
+          breakPages: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          renderHeaders: true,
+          renderFooters: true,
+          useBase64URL: true,
+        });
         if (cancelled) return;
-        const nextText = document.text.trim();
-        setText(nextText);
-        setStatus(nextText ? "ready" : "error");
+        setStatus("rendered");
       })
       .catch(() => {
-        if (!cancelled) setStatus("error");
+        if (!cancelled) setStatus(fallbackText ? "text" : "error");
       });
 
     return () => {
       cancelled = true;
     };
-  }, [initialText, src]);
+  }, [fallbackText, src]);
 
   return (
     <div
       role="document"
       aria-label={title}
       aria-busy={status === "loading"}
-      className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4"
+      className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-black/10 p-2"
     >
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        Anteprima DOCX
-      </p>
       {status === "loading" && (
-        <p className="text-sm text-muted-foreground">Lettura del documento…</p>
+        <p className="p-8 text-center text-sm text-muted-foreground">Caricamento anteprima DOCX…</p>
       )}
       {status === "error" && (
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">
           Anteprima non disponibile. Usa il pulsante sotto per aprire o scaricare il DOCX.
         </p>
       )}
-      {status === "ready" && (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>
+      {status === "text" && (
+        <div className="rounded-lg bg-card p-4">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Testo estratto
+          </p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{fallbackText}</p>
+        </div>
       )}
+      <style ref={styleRef} />
+      <div ref={bodyRef} className={status === "rendered" ? "docx-preview-body" : "hidden"} />
     </div>
   );
 }
@@ -765,7 +778,7 @@ export function CircularViewer({
             src={previewUrl}
           />
         ) : previewUrl && isDocx ? (
-          <DocxTextPreview
+          <DocxPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
