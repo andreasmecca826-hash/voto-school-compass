@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData, normalizeCachedGradeValues, parseVotoData, SchemaError } from "./parse";
 import { getCircularCheckStatus, requestCircularCheck } from "./circulars";
+import { indexCircularNotifications } from "./circular-index";
 import { SchoolAuthContext, type PrefetchedSchoolData } from "../school-auth-context";
 import { KEYS, load, save } from "./storage";
 import type { DataSource, VotoData } from "./types";
@@ -497,6 +498,13 @@ export function VotoProvider({ children }: { children: ReactNode }) {
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
   }, [refreshImpl, consumePrefetchedData]);
+
+  useEffect(() => {
+    if (!ready) return;
+    void indexCircularNotifications(data.notifications).catch(() => {
+      // L’indice è solo un acceleratore: l’app continua a funzionare senza IndexedDB.
+    });
+  }, [data.notifications, ready]);
 
   useEffect(() => {
     if (!ready || !url) return;

@@ -1,4 +1,4 @@
-import { analyzeCircularText } from "./circular-reader";
+import { analyzeCircularText, extractCircularTableRows } from "./circular-reader";
 
 const STOP_WORDS = new Set([
   "a",
@@ -85,6 +85,18 @@ const STOP_WORDS = new Set([
   "quale",
   "quali",
 ]);
+const TERM_ALIASES: Record<string, string[]> = {
+  gita: ["viaggio", "istruzione"],
+  gite: ["viaggi", "istruzione"],
+  uscita: ["visita", "didattica"],
+  compito: ["attivita", "esercitazione"],
+  compiti: ["attivita", "esercitazione"],
+  genitore: ["famiglia", "famiglie"],
+  genitori: ["famiglia", "famiglie"],
+  orario: ["ora", "ore", "giorno"],
+  consegnare: ["consegna", "consegnato", "consegnate"],
+  modulo: ["autorizzazione", "documento"],
+};
 
 function normalize(value: string): string {
   return value
@@ -96,13 +108,14 @@ function normalize(value: string): string {
 }
 
 function terms(value: string): string[] {
-  return [
+  const base = [
     ...new Set(
       normalize(value)
         .split(/\s+/)
         .filter((word) => word.length >= 3),
     ),
   ].filter((word) => !STOP_WORDS.has(word));
+  return [...new Set(base.flatMap((word) => [word, ...(TERM_ALIASES[word] ?? [])]))];
 }
 
 function relatedTerm(left: string, right: string): boolean {
@@ -163,11 +176,28 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       if (excerpt) details.push(`Estratto del documento: ${excerpt.slice(0, 560)}`);
     }
     return details.length
-      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}\n\nFonte: ${sourceLabel([...documentText.matchAll(/^\[Pagina\s+(\d+)\]$/gim)].map((match) => match[1]))}.\nAffidabilità: Media.`
+      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}\n\nFonte: ${sourceLabel([...documentText.matchAll(/^\[Pagina\s+(\d+)\]$/gim)].map((match) => match[1]))}.\nQualità estrazione: ${analysis.extractionQuality}.\nAffidabilità: ${analysis.extractionQuality === "alta" ? "Media" : "Bassa"}.`
       : "Non riesco a ricavare una sintesi locale da questa circolare. Prova con una parola chiave presente nel documento.";
   }
 
   const wantsDate = isDateQuestion(question);
+  const tableRows = extractCircularTableRows(documentText);
+  const tableMatches = tableRows
+    .map((row) => {
+      const rowTerms = terms(row.cells.join(" "));
+      const matched = questionTerms.filter((term) =>
+        rowTerms.some((rowTerm) => relatedTerm(term, rowTerm)),
+      );
+      return { row, matched: matched.length };
+    })
+    .filter(({ matched }) => matched >= 2 || (matched >= 1 && questionTerms.length <= 2))
+    .sort((left, right) => right.matched - left.matched)
+    .slice(0, 3);
+  if (tableMatches.length > 0 && (tableRows.length >= 3 || tableMatches[0]!.matched >= 2)) {
+    const pages = tableMatches.map(({ row }) => row.page);
+    const rows = tableMatches.map(({ row }) => `• ${row.cells.join(" · ")}`).join("\n");
+    return `Modalità locale: ho trovato righe pertinenti nella tabella (non è una risposta generata).\n\nCosa ho trovato:\n${rows}\n\nFonte: ${sourceLabel(pages)}.\nAffidabilità: ${tableMatches[0]!.matched >= 2 ? "Alta" : "Media"}.`;
+  }
   const passages: Passage[] = [];
   let currentPage: string | undefined;
 

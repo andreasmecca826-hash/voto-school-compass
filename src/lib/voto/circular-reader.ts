@@ -11,6 +11,7 @@ export interface CircularAnalysis {
   recipients: string[];
   attachments: string[];
   layout: "text" | "table" | "timetable";
+  extractionQuality: "alta" | "media" | "bassa";
   pagesAnalyzed: number;
   truncated: boolean;
 }
@@ -27,6 +28,11 @@ export interface CircularDocumentText {
   text: string;
   pagesAnalyzed: number;
   truncated: boolean;
+}
+
+export interface CircularTableRow {
+  page?: string;
+  cells: string[];
 }
 
 const MONTHS = [
@@ -58,6 +64,25 @@ const MAX_TEXT_LENGTH = 300_000;
 
 function clean(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+export function extractCircularTableRows(text: string): CircularTableRow[] {
+  const rows: CircularTableRow[] = [];
+  let page: string | undefined;
+  for (const rawLine of text.replace(/\r\n?/g, "\n").split("\n")) {
+    const line = rawLine.trim();
+    const pageMatch = line.match(/^\[Pagina\s+(\d+)\]$/i);
+    if (pageMatch?.[1]) {
+      page = pageMatch[1];
+      continue;
+    }
+    if (!line || /^Tabella pagina \d+:/i.test(line)) continue;
+    const cells = (line.includes("|") ? line.split("|") : line.split(/\s{3,}/))
+      .map(clean)
+      .filter(Boolean);
+    if (cells.length >= 2) rows.push({ ...(page ? { page } : {}), cells });
+  }
+  return rows;
 }
 
 function extractSummary(text: string): string | null {
@@ -163,6 +188,7 @@ export function analyzeCircularText(
   const hasTableRows =
     normalized.split("\n").filter((line) => line.trim().length > 0 && /\S\s{3,}\S/.test(line))
       .length >= 3;
+  const extractionQuality = !normalized.trim() ? "bassa" : truncated ? "media" : "alta";
   return {
     summary: isTimetable
       ? extractSummary(normalized)
@@ -183,6 +209,7 @@ export function analyzeCircularText(
       ),
     ],
     layout: isTimetable ? "timetable" : hasTableRows ? "table" : "text",
+    extractionQuality,
     pagesAnalyzed,
     truncated,
   };
