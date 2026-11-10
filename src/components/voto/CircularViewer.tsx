@@ -88,6 +88,72 @@ function mergeAttachments(
   return merged;
 }
 
+function DocxTextPreview({
+  src,
+  title,
+  initialText,
+}: {
+  src: string;
+  title: string;
+  initialText?: string | undefined;
+}) {
+  const [text, setText] = useState(initialText?.trim() ?? "");
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    initialText?.trim() ? "ready" : "loading",
+  );
+
+  useEffect(() => {
+    const storedText = initialText?.trim();
+    if (storedText) {
+      setText(storedText);
+      setStatus("ready");
+      return;
+    }
+
+    let cancelled = false;
+    setText("");
+    setStatus("loading");
+    void extractCircularDocxText(src)
+      .then((document) => {
+        if (cancelled) return;
+        const nextText = document.text.trim();
+        setText(nextText);
+        setStatus(nextText ? "ready" : "error");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialText, src]);
+
+  return (
+    <div
+      role="document"
+      aria-label={title}
+      aria-busy={status === "loading"}
+      className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4"
+    >
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        Anteprima DOCX
+      </p>
+      {status === "loading" && (
+        <p className="text-sm text-muted-foreground">Lettura del documento…</p>
+      )}
+      {status === "error" && (
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Anteprima non disponibile. Usa il pulsante sotto per aprire o scaricare il DOCX.
+        </p>
+      )}
+      {status === "ready" && (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>
+      )}
+    </div>
+  );
+}
+
 export function CircularViewer({
   open,
   onOpenChange,
@@ -697,6 +763,13 @@ export function CircularViewer({
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
+          />
+        ) : previewUrl && isDocx ? (
+          <DocxTextPreview
+            key={activeFile?.path ?? activeFile?.url ?? activeIndex}
+            title={activeFile?.name ?? title}
+            src={previewUrl}
+            initialText={extractedText}
           />
         ) : hasTextOnlyContent ? (
           <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4">

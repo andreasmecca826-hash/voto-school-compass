@@ -187,6 +187,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
   it("offre apertura e download separati per un DOCX", () => {
     const path = `circulars/${"b".repeat(64)}.docx`;
+    const extractedText = "La classe 2I esce alle ore 12:30 per l’assemblea.";
     render(
       <CircularViewer
         open
@@ -195,9 +196,11 @@ describe("visualizzatore PDF delle circolari interne", () => {
         fileName="modulo.docx"
         path={path}
         url={undefined}
+        extractedText={extractedText}
       />,
     );
 
+    expect(screen.getByRole("document", { name: "modulo.docx" })).toHaveTextContent(extractedText);
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
