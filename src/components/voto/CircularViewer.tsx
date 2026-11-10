@@ -149,31 +149,35 @@ function DocxPreview({
         role="document"
         aria-label={title}
         aria-busy={status === "loading"}
-        className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2"
+        className="min-h-0 flex-1 touch-pan-x touch-pan-y overflow-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2"
       >
-      {status === "loading" && (
-        <p className="p-8 text-center text-sm text-muted-foreground">Caricamento anteprima DOCX…</p>
-      )}
-      {status === "error" && (
-        <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">
-          Anteprima non disponibile. Usa il pulsante sotto per aprire o scaricare il DOCX.
-        </p>
-      )}
-      {status === "text" && (
-        <div className="rounded-lg bg-card p-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Testo estratto
+        {status === "loading" && (
+          <p className="p-8 text-center text-sm text-muted-foreground">
+            Caricamento anteprima DOCX…
           </p>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{fallbackText}</p>
-        </div>
-      )}
-      <style ref={styleRef} />
-      <div
-        ref={bodyRef}
-        className={status === "rendered" ? "docx-preview-body" : "hidden"}
-        style={{ "--docx-zoom": zoom } as React.CSSProperties}
-      />
-      <style>{`
+        )}
+        {status === "error" && (
+          <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">
+            Anteprima non disponibile. Usa il pulsante sotto per aprire o scaricare il DOCX.
+          </p>
+        )}
+        {status === "text" && (
+          <div className="rounded-lg bg-card p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Testo estratto
+            </p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {fallbackText}
+            </p>
+          </div>
+        )}
+        <style ref={styleRef} />
+        <div
+          ref={bodyRef}
+          className={status === "rendered" ? "docx-preview-body" : "hidden"}
+          style={{ "--docx-zoom": zoom } as React.CSSProperties}
+        />
+        <style>{`
         .docx-preview-body,
         .docx-preview-body .docx-wrapper {
           min-height: 100% !important;
@@ -195,7 +199,7 @@ function DocxPreview({
           min-height: auto !important;
           margin: 0 0 0.75rem !important;
           padding: 1rem !important;
-          overflow: hidden !important;
+          overflow: visible !important;
           box-shadow: 0 1px 3px rgb(0 0 0 / 12%) !important;
         }
         .docx-preview-body section.docx:last-child {
@@ -210,7 +214,9 @@ function DocxPreview({
         }
         .docx-preview-body td,
         .docx-preview-body th {
-          overflow-wrap: anywhere;
+          overflow-wrap: normal !important;
+          word-break: normal !important;
+          hyphens: none !important;
         }
         .docx-preview-body section.docx {
           zoom: var(--docx-zoom, 1);
@@ -293,7 +299,6 @@ export function CircularViewer({
     if (open) {
       setSelectedIndex(0);
       setIsZoomControlsOpen(false);
-    setAttachmentZoom(1);
       setAttachmentZoom(1);
       setAnalysis(null);
       setAnalysisError(undefined);
@@ -377,7 +382,7 @@ export function CircularViewer({
       setIsAnalysisOpen(true);
     } catch {
       setAnalysisError(
-        "Non sono riuscito a leggere questo PDF. Verifica la connessione o scarica il documento e riprova.",
+        `Non sono riuscito a leggere questo ${isPdf ? "PDF" : "DOCX"}. Verifica la connessione o scarica il documento e riprova.`,
       );
       setIsAnalysisOpen(true);
     } finally {
@@ -905,21 +910,21 @@ export function CircularViewer({
         {previewUrl && isPdf ? (
           <div className="min-h-[10rem] min-w-0 flex-1 overflow-hidden">
             <PdfCanvasPreview
-            key={activeFile?.path ?? activeFile?.url ?? activeIndex}
-            title={activeFile?.name ?? title}
-            src={previewUrl}
-            zoom={attachmentZoom}
+              key={activeFile?.path ?? activeFile?.url ?? activeIndex}
+              title={activeFile?.name ?? title}
+              src={previewUrl}
+              zoom={attachmentZoom}
             />
           </div>
         ) : previewUrl && isDocx ? (
           <div className="min-h-[10rem] min-w-0 flex-1 overflow-hidden">
             <DocxPreview
-            key={activeFile?.path ?? activeFile?.url ?? activeIndex}
-            title={activeFile?.name ?? title}
-            src={previewUrl}
-            initialText={extractedText}
-            zoom={attachmentZoom}
-          />
+              key={activeFile?.path ?? activeFile?.url ?? activeIndex}
+              title={activeFile?.name ?? title}
+              src={previewUrl}
+              initialText={extractedText}
+              zoom={attachmentZoom}
+            />
           </div>
         ) : hasTextOnlyContent ? (
           <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4">
@@ -952,7 +957,7 @@ export function CircularViewer({
                 Apri PDF
               </button>
             )}
-            {!isPdf && previewUrl && (
+            {isDocx && previewUrl && (
               <button
                 type="button"
                 onClick={openAttachment}
@@ -969,7 +974,13 @@ export function CircularViewer({
               className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-2 text-[10px] font-semibold text-primary-foreground"
             >
               <Download className="h-3.5 w-3.5 shrink-0" />
-              {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
+              {isDownloading
+                ? "Download in corso…"
+                : isPdf
+                  ? "Scarica PDF"
+                  : isDocx
+                    ? "Scarica DOCX"
+                    : "Scarica allegato"}
             </button>
           </div>
         )}
