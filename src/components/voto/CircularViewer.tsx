@@ -198,6 +198,13 @@ function DocxPreview({
         .docx-preview-body th {
           overflow-wrap: anywhere;
         }
+        @media (max-width: 480px) {
+          .docx-preview-body section.docx {
+            zoom: 0.88;
+            width: 113.64% !important;
+            padding: 0.8rem !important;
+          }
+        }
       `}</style>
     </div>
   );
