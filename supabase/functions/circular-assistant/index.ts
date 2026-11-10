@@ -127,6 +127,36 @@ function parseRequest(value: unknown): {
 
 const GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
 
+function quotaFromHeaders(headers: Headers) {
+  const numberHeader = (name: string) => {
+    const value = headers.get(name);
+    if (value === null) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+  const stringHeader = (name: string) => headers.get(name) ?? undefined;
+  return {
+    ...(numberHeader("x-ratelimit-limit-requests") !== undefined
+      ? { limitRequests: numberHeader("x-ratelimit-limit-requests") }
+      : {}),
+    ...(numberHeader("x-ratelimit-remaining-requests") !== undefined
+      ? { remainingRequests: numberHeader("x-ratelimit-remaining-requests") }
+      : {}),
+    ...(stringHeader("x-ratelimit-reset-requests")
+      ? { resetRequests: stringHeader("x-ratelimit-reset-requests") }
+      : {}),
+    ...(numberHeader("x-ratelimit-limit-tokens") !== undefined
+      ? { limitTokens: numberHeader("x-ratelimit-limit-tokens") }
+      : {}),
+    ...(numberHeader("x-ratelimit-remaining-tokens") !== undefined
+      ? { remainingTokens: numberHeader("x-ratelimit-remaining-tokens") }
+      : {}),
+    ...(stringHeader("x-ratelimit-reset-tokens")
+      ? { resetTokens: stringHeader("x-ratelimit-reset-tokens") }
+      : {}),
+  };
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -248,9 +278,11 @@ Deno.serve(async (request: Request) => {
       clearTimeout(timeout);
     }
 
+    const quota = quotaFromHeaders(response.headers);
+
     if (response.status === 429) {
       return jsonResponse(
-        { error: "Hai raggiunto un limite della quota gratuita Groq. Riprova più tardi." },
+        { error: "Hai raggiunto un limite della quota gratuita Groq. Riprova più tardi.", quota },
         429,
       );
     }
@@ -259,6 +291,7 @@ Deno.serve(async (request: Request) => {
         {
           error:
             "La quota gratuita Groq non è disponibile o è esaurita. Non è stato effettuato alcun addebito.",
+          quota,
         },
         402,
       );
@@ -298,7 +331,7 @@ Deno.serve(async (request: Request) => {
     if (typeof answer !== "string" || !answer.trim()) {
       return jsonResponse({ error: "Il modello non ha restituito una risposta." }, 502);
     }
-    return jsonResponse({ answer: answer.trim().slice(0, 8_000) }, 200);
+    return jsonResponse({ answer: answer.trim().slice(0, 8_000), quota }, 200);
   } catch (error) {
     console.error("circular assistant request failed", {
       errorType: error instanceof Error ? error.name : "UnknownError",

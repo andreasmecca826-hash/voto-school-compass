@@ -12,7 +12,7 @@ import {
   isCircularFollowUpQuestion,
   type CircularAssistantMode,
 } from "@/lib/voto/circular-assistant-chat";
-import { askGeneralQuestion } from "@/lib/voto/circular-assistant";
+import { askGeneralQuestion, getLastApiQuota, type ApiQuota } from "@/lib/voto/circular-assistant";
 import { isAssistantSearchQuery } from "@/lib/voto/assistant-search";
 import { AssistantMarkdown } from "@/components/voto/AssistantMarkdown";
 import {
@@ -71,6 +71,7 @@ function Assistant() {
   const isOnline = useOnlineStatus();
   const [question, setQuestion] = useState("");
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
+  const [apiQuota, setApiQuota] = useState<ApiQuota | null>(() => getLastApiQuota());
   const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
   const activeAssistantMode = canUseApi && assistantMode === "api" ? "api" : "local";
   const [isReplying, setIsReplying] = useState(false);
@@ -261,9 +262,11 @@ function Assistant() {
           assistantMessage = { role: "assistant", text: await askGeneralQuestion(clean) };
         }
         setMessages((current) => [...current, assistantMessage]);
+        setApiQuota(getLastApiQuota());
       } catch (error) {
         const message = error instanceof Error ? error.message : "La risposta non è disponibile.";
         setMessages((current) => [...current, { role: "assistant", text: message }]);
+        setApiQuota(getLastApiQuota());
       } finally {
         setIsReplying(false);
       }
@@ -381,6 +384,26 @@ function Assistant() {
           )}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
+        {apiQuota && (
+          <div className="mt-3 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <strong className="text-foreground">Ultima quota Groq ricevuta</strong>
+              <span>
+                Richieste: {apiQuota.remainingRequests ?? "non disponibile"}
+                {apiQuota.limitRequests !== undefined ? ` / ${apiQuota.limitRequests}` : ""}
+              </span>
+              <span>
+                Token: {apiQuota.remainingTokens ?? "non disponibile"}
+                {apiQuota.limitTokens !== undefined ? ` / ${apiQuota.limitTokens}` : ""}
+              </span>
+            </div>
+            <p className="mt-1">
+              Osservata {new Date(apiQuota.observedAt).toLocaleString("it-IT")}. È una fotografia
+              dell’ultima chiamata API, non un contatore locale garantito.
+              {apiQuota.resetRequests ? ` Reset richieste: ${apiQuota.resetRequests}.` : ""}
+            </p>
+          </div>
+        )}
         <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
           <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           Ricerca rapida: scrivi “cerca algebra”, “trova circolare uscita” o una parola per trovare
