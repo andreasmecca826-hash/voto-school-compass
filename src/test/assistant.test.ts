@@ -963,14 +963,14 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Come sblocco il tema Sangue?", data)).toContain("Diamante e Sangue");
   });
 
-  it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
+  it("mostra quattro suggerimenti locali distinti e supportati", () => {
     const first = pickAssistantSuggestions(() => 0);
     const second = pickAssistantSuggestions(() => 0.99);
 
-    expect(first).toHaveLength(2);
-    expect(new Set(first).size).toBe(2);
-    expect(second).toHaveLength(2);
-    expect(new Set(second).size).toBe(2);
+    expect(first).toHaveLength(4);
+    expect(new Set(first).size).toBe(4);
+    expect(second).toHaveLength(4);
+    expect(new Set(second).size).toBe(4);
     expect(second).not.toEqual(first);
     for (const suggestion of [...first, ...second]) {
       expect(answerQuestion(suggestion, data)).not.toContain("Non ho capito la domanda");
