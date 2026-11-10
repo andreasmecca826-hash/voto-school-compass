@@ -95,17 +95,16 @@ function DocxPreview({
   src,
   title,
   initialText,
-  showZoomControls,
+  zoom,
 }: {
   src: string;
   title: string;
   initialText?: string | undefined;
-  showZoomControls: boolean;
+  zoom: number;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement>(null);
   const fallbackText = initialText?.trim() ?? "";
-  const [zoom, setZoom] = useState(1);
   const [status, setStatus] = useState<"loading" | "rendered" | "text" | "error">(
     fallbackText ? "text" : "loading",
   );
@@ -146,45 +145,6 @@ function DocxPreview({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
-      {showZoomControls && (
-        <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Riduci zoom DOCX"
-            onClick={() => setZoom((current) => Math.max(0.7, Math.round((current - 0.1) * 10) / 10))}
-            className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Reimposta zoom DOCX"
-            onClick={() => setZoom(1)}
-            className="press min-w-[48px] rounded-lg px-1.5 py-1 text-[10px] font-semibold text-primary"
-          >
-            {Math.round(zoom * 100)}%
-          </button>
-          <button
-            type="button"
-            aria-label="Aumenta zoom DOCX"
-            onClick={() => setZoom((current) => Math.min(1.4, Math.round((current + 0.1) * 10) / 10))}
-            className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Adatta DOCX allo schermo"
-            onClick={() => setZoom(0.88)}
-            className="press rounded-lg px-2 py-1 text-[10px] font-medium text-muted-foreground"
-          >
-            Adatta
-          </button>
-        </div>
-        </div>
-      )}
       <div
         role="document"
         aria-label={title}
@@ -285,6 +245,7 @@ export function CircularViewer({
   const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomControlsOpen, setIsZoomControlsOpen] = useState(false);
+  const [attachmentZoom, setAttachmentZoom] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -332,6 +293,8 @@ export function CircularViewer({
     if (open) {
       setSelectedIndex(0);
       setIsZoomControlsOpen(false);
+    setAttachmentZoom(1);
+      setAttachmentZoom(1);
       setAnalysis(null);
       setAnalysisError(undefined);
       setIsAnalysisOpen(false);
@@ -586,14 +549,14 @@ export function CircularViewer({
               >
                 {isAiChatOpen ? "Nascondi chat" : "Fai una domanda"}
               </button>
-              {isDocx && previewUrl && (
+              {(isPdf || isDocx) && previewUrl && (
                 <button
                   type="button"
                   aria-expanded={isZoomControlsOpen}
                   aria-label={
                     isZoomControlsOpen
-                      ? "Nascondi controlli zoom DOCX"
-                      : "Mostra controlli zoom DOCX"
+                      ? "Nascondi controlli zoom allegato"
+                      : "Mostra controlli zoom allegato"
                   }
                   onClick={() => setIsZoomControlsOpen((openNow) => !openNow)}
                   className="press inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-primary"
@@ -602,6 +565,53 @@ export function CircularViewer({
                 </button>
               )}
             </div>
+            {(isPdf || isDocx) && isZoomControlsOpen && (
+              <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label="Riduci zoom allegato"
+                    onClick={() =>
+                      setAttachmentZoom((current) =>
+                        Math.max(0.7, Math.round((current - 0.1) * 10) / 10),
+                      )
+                    }
+                    className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Reimposta zoom allegato"
+                    onClick={() => setAttachmentZoom(1)}
+                    className="press min-w-[48px] rounded-lg px-1.5 py-1 text-[10px] font-semibold text-primary"
+                  >
+                    {Math.round(attachmentZoom * 100)}%
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Aumenta zoom allegato"
+                    onClick={() =>
+                      setAttachmentZoom((current) =>
+                        Math.min(1.4, Math.round((current + 0.1) * 10) / 10),
+                      )
+                    }
+                    className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Adatta allegato allo schermo"
+                    onClick={() => setAttachmentZoom(0.88)}
+                    className="press rounded-lg px-2 py-1 text-[10px] font-medium text-muted-foreground"
+                  >
+                    Adatta
+                  </button>
+                </div>
+              </div>
+            )}
             {isAnalysisOpen && (analysis || analysisError) && (
               <section
                 aria-label="Analisi locale della circolare"
@@ -898,6 +908,7 @@ export function CircularViewer({
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
+            zoom={attachmentZoom}
             />
           </div>
         ) : previewUrl && isDocx ? (
@@ -907,7 +918,7 @@ export function CircularViewer({
             title={activeFile?.name ?? title}
             src={previewUrl}
             initialText={extractedText}
-            showZoomControls={isZoomControlsOpen}
+            zoom={attachmentZoom}
           />
           </div>
         ) : hasTextOnlyContent ? (

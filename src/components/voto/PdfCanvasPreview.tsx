@@ -4,6 +4,7 @@ import { getPdfRenderProfile } from "@/lib/voto/pdf-render-profile";
 type PdfCanvasPreviewProps = {
   src: string;
   title: string;
+  zoom?: number;
   onError?: () => void;
 };
 
@@ -23,7 +24,7 @@ function makePageSlot(title: string, pageNumber: number, aspectRatio: string) {
   return slot;
 }
 
-export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [pageCount, setPageCount] = useState(0);
@@ -75,7 +76,8 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         });
         const firstPage = await pdf.getPage(1);
         if (cancelled) return;
-        const firstViewport = firstPage.getViewport({ scale: renderProfile.pageScale });
+        const pageScale = renderProfile.pageScale * zoom;
+        const firstViewport = firstPage.getViewport({ scale: pageScale });
         const aspectRatio = `${firstViewport.width} / ${firstViewport.height}`;
         const slots = Array.from({ length: pdf.numPages }, (_, index) =>
           makePageSlot(title, index + 1, aspectRatio),
@@ -85,7 +87,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         const renderPage = async (pageNumber: number, knownPage?: typeof firstPage) => {
           const page = knownPage ?? (await pdf.getPage(pageNumber));
           if (cancelled) return;
-          const viewport = page.getViewport({ scale: renderProfile.pageScale });
+          const viewport = page.getViewport({ scale: pageScale });
           const slot = slots[pageNumber - 1];
           if (!slot) throw new Error("pdf_page_slot_missing");
           slot.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
@@ -211,7 +213,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
       container.replaceChildren();
       if (disposeLoadingTask) void disposeLoadingTask().catch(() => {});
     };
-  }, [src, title, onError]);
+  }, [src, title, zoom, onError]);
 
   return (
     <div
