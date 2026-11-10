@@ -14,6 +14,8 @@ describe("risposte locali sulle circolari", () => {
     expect(answer).toContain("[Pagina 1]");
     expect(answer).toContain("12 novembre 2026");
     expect(answer).toContain("non è una risposta generata");
+    expect(answer).toContain("Fonte: Pagina 1");
+    expect(answer).toContain("Affidabilità:");
   });
 
   it("non inventa una risposta se non trova passaggi pertinenti", () => {
@@ -34,5 +36,6 @@ describe("risposte locali sulle circolari", () => {
     expect(answer).toContain("Sintesi estratta");
     expect(answer).toContain("12 novembre 2026");
     expect(answer).toContain("non una risposta generata");
+    expect(answer).toContain("Fonte: pagina non indicata");
   });
 });

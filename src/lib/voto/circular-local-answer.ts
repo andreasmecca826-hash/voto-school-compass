@@ -124,6 +124,20 @@ interface Passage {
   text: string;
   page?: string;
   score: number;
+  matchedTerms: number;
+}
+
+function confidenceLabel(score: number, matchedTerms: number, hasPage: boolean): string {
+  if (matchedTerms >= 3 || (matchedTerms >= 2 && hasPage && score >= 4)) return "Alta";
+  if (matchedTerms >= 2 || hasPage) return "Media";
+  return "Bassa";
+}
+
+function sourceLabel(pages: Array<string | undefined>): string {
+  const uniquePages = [...new Set(pages.filter((page): page is string => Boolean(page)))];
+  return uniquePages.length > 0
+    ? `${uniquePages.length > 1 ? "Pagine" : "Pagina"} ${uniquePages.join(", ")}`
+    : "pagina non indicata";
 }
 
 export function answerCircularQuestionLocally(question: string, documentText: string): string {
@@ -149,7 +163,7 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       if (excerpt) details.push(`Estratto del documento: ${excerpt.slice(0, 560)}`);
     }
     return details.length
-      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}`
+      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}\n\nFonte: ${sourceLabel([...documentText.matchAll(/^\[Pagina\s+(\d+)\]$/gim)].map((match) => match[1]))}.\nAffidabilità: Media.`
       : "Non riesco a ricavare una sintesi locale da questa circolare. Prova con una parola chiave presente nel documento.";
   }
 
@@ -180,6 +194,7 @@ export function answerCircularQuestionLocally(question: string, documentText: st
           text: sentence.slice(0, 560),
           ...(currentPage ? { page: currentPage } : {}),
           score,
+          matchedTerms: matchedTerms.length,
         });
       }
     }
@@ -192,5 +207,8 @@ export function answerCircularQuestionLocally(question: string, documentText: st
   }
 
   const excerpts = selected.map(({ page, text }) => `${page ? `[Pagina ${page}] ` : ""}${text}`);
-  return `Modalità locale: passaggi pertinenti trovati nel documento (non è una risposta generata).\n\n${excerpts.join("\n\n")}`;
+  const matchedTerms = Math.max(...selected.map((passage) => passage.matchedTerms));
+  const bestScore = Math.max(...selected.map((passage) => passage.score));
+  const pages = selected.map((passage) => passage.page);
+  return `Modalità locale: passaggi pertinenti trovati nel documento (non è una risposta generata).\n\nCosa ho trovato:\n${excerpts.join("\n\n")}\n\nFonte: ${sourceLabel(pages)}.\nAffidabilità: ${confidenceLabel(bestScore, matchedTerms, pages.some(Boolean))}.`;
 }
