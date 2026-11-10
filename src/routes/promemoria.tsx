@@ -211,8 +211,9 @@ function StandardPromemoria() {
               onClick={() => {
                 const date = reminderDateToIso(reminder.date);
                 const title = reminder.title.trim();
-                const subject = reminder.subject?.trim() || title || "Promemoria";
+                const subject = reminder.subject?.trim() || "Promemoria";
                 const notes = [
+                  title && title !== subject ? title : undefined,
                   reminder.message?.trim(),
                   !date ? "Data non specificata nel promemoria: da definire." : undefined,
                 ]

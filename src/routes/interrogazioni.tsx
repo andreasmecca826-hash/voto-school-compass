@@ -125,9 +125,14 @@ function Interrogazioni() {
           {items.map((item) => {
             const reminderDescription = item.reminderId ? item.notes?.trim() : undefined;
             const subjectLabel = item.subject.trim();
+            const isVerification =
+              item.reminderId &&
+              (/^verifica\b/i.test(subjectLabel) ||
+                /\bverifica\b/i.test(reminderDescription ?? ""));
             const showSubjectLabel =
               reminderDescription &&
               subjectLabel &&
+              !isVerification &&
               subjectLabel.toLocaleLowerCase("it-IT") !== "promemoria" &&
               subjectLabel !== reminderDescription;
 
@@ -160,11 +165,18 @@ function Interrogazioni() {
                         item.completed && "line-through",
                       )}
                     >
-                      {reminderDescription || item.subject}
+                      {isVerification ? subjectLabel : reminderDescription || item.subject}
                     </p>
                     {item.reminderId && (
-                      <span className="shrink-0 rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
-                        Promemoria
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold",
+                          isVerification
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                            : "bg-primary-soft text-primary",
+                        )}
+                      >
+                        {isVerification ? "Verifica" : "Promemoria"}
                       </span>
                     )}
                   </div>
@@ -183,7 +195,7 @@ function Interrogazioni() {
                       </span>
                     )}
                   </div>
-                  {item.notes && !item.reminderId && (
+                  {item.notes && (!item.reminderId || isVerification) && (
                     <p className="mt-2 text-xs text-muted-foreground">{item.notes}</p>
                   )}
                 </div>
