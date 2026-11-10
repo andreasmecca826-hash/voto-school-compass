@@ -8,6 +8,15 @@ const { renderPageImages, askCircularText, askCircularImages } = vi.hoisted(() =
   askCircularImages: vi.fn(),
 }));
 
+class TestPointerEvent extends MouseEvent {
+  readonly pointerId: number;
+
+  constructor(type: string, init: MouseEventInit & { pointerId?: number } = {}) {
+    super(type, init);
+    this.pointerId = init.pointerId ?? 1;
+  }
+}
+
 vi.mock("@/lib/voto/circular-assistant", () => ({
   askAboutCircular: askCircularText,
   askAboutCircularImages: askCircularImages,
@@ -18,8 +27,12 @@ vi.mock("@/lib/voto/circular-reader", async (importOriginal) => ({
   renderCircularPdfPageImages: renderPageImages,
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 beforeEach(() => {
+  vi.stubGlobal("PointerEvent", TestPointerEvent);
   renderPageImages.mockReset().mockResolvedValue({
     pages: [{ pageNumber: 1, dataUrl: "data:image/jpeg;base64,AA==" }],
     totalPages: 1,
@@ -211,9 +224,14 @@ describe("visualizzatore PDF delle circolari interne", () => {
 
     const docxPreview = screen.getByRole("document", { name: "modulo.docx" });
     Object.defineProperty(docxPreview, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(docxPreview, "clientHeight", { configurable: true, value: 300 });
     Object.defineProperty(docxPreview, "scrollWidth", {
       configurable: true,
       get: () => (Number(docxPreview.style.getPropertyValue("--docx-zoom")) > 1 ? 600 : 300),
+    });
+    Object.defineProperty(docxPreview, "scrollHeight", {
+      configurable: true,
+      get: () => (Number(docxPreview.style.getPropertyValue("--docx-zoom")) > 1 ? 900 : 300),
     });
     expect(docxPreview).toHaveTextContent(extractedText);
     expect(docxPreview).toHaveClass("overflow-x-hidden", "overflow-y-auto", "touch-pan-y");
@@ -231,9 +249,14 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
-    expect(docxPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-auto");
+    expect(docxPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-none");
     expect(docxPreview).not.toHaveClass("touch-pan-x", "touch-pan-y");
     await waitFor(() => expect(docxPreview.scrollLeft).toBe(150));
+    fireEvent.pointerDown(docxPreview, { pointerId: 1, clientX: 150, clientY: 200 });
+    fireEvent.pointerMove(docxPreview, { pointerId: 1, clientX: 100, clientY: 100 });
+    expect(docxPreview.scrollLeft).toBe(200);
+    expect(docxPreview.scrollTop).toBe(100);
+    fireEvent.pointerUp(docxPreview, { pointerId: 1 });
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();

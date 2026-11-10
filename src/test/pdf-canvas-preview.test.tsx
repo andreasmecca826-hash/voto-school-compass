@@ -1,6 +1,15 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PdfCanvasPreview } from "@/components/voto/PdfCanvasPreview";
+
+class TestPointerEvent extends MouseEvent {
+  readonly pointerId: number;
+
+  constructor(type: string, init: MouseEventInit & { pointerId?: number } = {}) {
+    super(type, init);
+    this.pointerId = init.pointerId ?? 1;
+  }
+}
 
 const { getDocumentMock } = vi.hoisted(() => ({ getDocumentMock: vi.fn() }));
 
@@ -77,6 +86,7 @@ function setupPdf() {
 beforeEach(() => {
   setupPdf();
   TestIntersectionObserver.current = undefined;
+  vi.stubGlobal("PointerEvent", TestPointerEvent);
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
     () => ({ setTransform: vi.fn() }) as unknown as CanvasRenderingContext2D,
   );
@@ -127,11 +137,18 @@ describe("anteprima PDF progressiva", () => {
 
     const pdfPreview = screen.getByRole("document", { name: "PDF ingrandito" });
     Object.defineProperty(pdfPreview, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(pdfPreview, "clientHeight", { configurable: true, value: 300 });
     Object.defineProperty(pdfPreview, "scrollWidth", { configurable: true, value: 600 });
-    expect(pdfPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-auto");
+    Object.defineProperty(pdfPreview, "scrollHeight", { configurable: true, value: 900 });
+    expect(pdfPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-none");
     expect(pdfPreview).not.toHaveClass("touch-pan-x", "touch-pan-y");
     await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
     await waitFor(() => expect(pdfPreview.scrollLeft).toBe(150));
+    fireEvent.pointerDown(pdfPreview, { pointerId: 1, clientX: 150, clientY: 200 });
+    fireEvent.pointerMove(pdfPreview, { pointerId: 1, clientX: 100, clientY: 100 });
+    expect(pdfPreview.scrollLeft).toBe(200);
+    expect(pdfPreview.scrollTop).toBe(100);
+    fireEvent.pointerUp(pdfPreview, { pointerId: 1 });
     expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
     await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
 

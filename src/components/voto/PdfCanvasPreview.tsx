@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getPdfRenderProfile } from "@/lib/voto/pdf-render-profile";
+import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
 
 type PdfCanvasPreviewProps = {
   src: string;
@@ -26,6 +27,7 @@ function makePageSlot(title: string, pageNumber: number, aspectRatio: string) {
 
 export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const panStateRef = useRef<ZoomPanState | null>(null);
   const horizontalScrollRatioRef = useRef(0.5);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [pageCount, setPageCount] = useState(0);
@@ -230,8 +232,14 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
       aria-label={title}
       aria-busy={status === "loading"}
       className={`min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-black/20 p-2 ${
-        zoom > 1 ? "touch-auto overflow-x-auto" : "touch-pan-y overflow-x-hidden"
+        zoom > 1
+          ? "touch-none cursor-grab select-none overflow-x-auto active:cursor-grabbing"
+          : "touch-pan-y overflow-x-hidden"
       }`}
+      onPointerDown={(event) => beginZoomPan(event, zoom, panStateRef)}
+      onPointerMove={(event) => moveZoomPan(event, panStateRef)}
+      onPointerUp={(event) => endZoomPan(event, panStateRef)}
+      onPointerCancel={(event) => endZoomPan(event, panStateRef)}
       onScroll={(event) => {
         const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
         const maxScrollLeft = scrollWidth - clientWidth;
