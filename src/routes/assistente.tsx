@@ -531,7 +531,7 @@ function Assistant() {
       )}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        {suggestions.map((suggestion) => (
+        {suggestions.slice(0, 2).map((suggestion) => (
           <button
             key={suggestion}
             type="button"
