@@ -516,7 +516,7 @@ export function CircularViewer({
           <div className="mb-3 shrink-0 space-y-2">
             <div
               className={
-                isDocx
+                isPdf || isDocx
                   ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2"
                   : canAnalyze
                     ? "grid grid-cols-2 gap-2"
