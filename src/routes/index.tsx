@@ -693,10 +693,11 @@ function NotifItem({ id }: { id: string }) {
   const n = v.data.notifications.find((x) => x.id === id)!;
   const read = v.isRead(n.id, n.read);
   const M = NOTIF_META[n.type];
+  const message = n.message && n.message !== n.title ? n.message : "";
   const details =
-    n.type === "notice"
-      ? [n.teacher, n.message].filter(Boolean).join("\n")
-      : `${M.label}${n.teacher ? ` · ${n.teacher}` : ""}${n.message ? `\n${n.message}` : ""}`;
+    n.type === "grade"
+      ? `${M.label}${n.teacher ? ` · ${n.teacher}` : ""}${message ? `\n${message}` : ""}`
+      : [n.teacher, message].filter(Boolean).join("\n");
   return (
     <li className={cn("card-surface flex items-center gap-3 p-3.5", !read && "border-primary/30")}>
       <span
