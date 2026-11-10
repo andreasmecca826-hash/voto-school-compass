@@ -463,7 +463,7 @@ function StandardBacheca() {
             ...(item.attachments ?? []).map((attachment) => attachment.tableCount ?? 0),
           );
           const contentLabel = notificationContentLabel(item);
-          const title = notificationDisplayTitle(item);
+          const title = isGenericNoticeTitle(item) ? "" : notificationDisplayTitle(item);
           const summary =
             item.message?.trim() &&
             item.message.trim() !== title &&
@@ -479,7 +479,7 @@ function StandardBacheca() {
                       {[item.subject, item.teacher].filter(Boolean).join(" · ")}
                     </p>
                   )}
-                  <h2 className="mt-1 text-sm font-semibold">{title}</h2>
+                  {title && <h2 className="mt-1 text-sm font-semibold">{title}</h2>}
                   {summary && <p className="mt-1 whitespace-pre-line text-sm">{summary}</p>}
                 </div>
                 {item.date && (
