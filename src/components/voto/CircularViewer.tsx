@@ -889,7 +889,7 @@ export function CircularViewer({
           </div>
         )}
         {previewUrl && isPdf ? (
-          <div className="min-h-[8rem] max-h-[32dvh] min-w-0 flex-1 overflow-hidden">
+          <div className="min-h-[10rem] min-w-0 flex-1 overflow-hidden">
             <PdfCanvasPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
@@ -897,7 +897,7 @@ export function CircularViewer({
             />
           </div>
         ) : previewUrl && isDocx ? (
-          <div className="min-h-[8rem] max-h-[32dvh] min-w-0 flex-1 overflow-hidden">
+          <div className="min-h-[10rem] min-w-0 flex-1 overflow-hidden">
             <DocxPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
