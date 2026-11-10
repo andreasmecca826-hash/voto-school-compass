@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, toIso } from "@/lib/voto/dates";
+import { matchesNoticeQuery } from "@/lib/voto/bacheca-search";
 import {
   isGenericNoticeTitle,
   notificationContentLabel,
@@ -49,21 +50,6 @@ function attachmentCount(item: AppNotification) {
   return item.attachmentPath || item.attachmentUrl ? 1 : 0;
 }
 
-function noticeSearchText(item: AppNotification) {
-  return [
-    item.title,
-    item.message,
-    item.extractedText,
-    item.teacher,
-    item.subject,
-    item.attachmentName,
-    ...(item.attachments ?? []).flatMap((attachment) => [attachment.name, attachment.path]),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase("it-IT");
-}
-
 function openNotice(
   item: AppNotification,
   markRead: (ids: string[]) => void,
@@ -102,7 +88,7 @@ function DidupBacheca() {
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLocaleLowerCase("it-IT");
     return notices.filter((item) => {
-      if (query && !noticeSearchText(item).includes(query)) {
+      if (query && !matchesNoticeQuery(item, query)) {
         return false;
       }
       const date = item.date?.slice(0, 10) ?? "";
@@ -411,7 +397,7 @@ function StandardBacheca() {
   const filteredNotices = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("it-IT");
     return normalizedQuery
-      ? notices.filter((item) => noticeSearchText(item).includes(normalizedQuery))
+      ? notices.filter((item) => matchesNoticeQuery(item, normalizedQuery))
       : notices;
   }, [notices, query]);
 
