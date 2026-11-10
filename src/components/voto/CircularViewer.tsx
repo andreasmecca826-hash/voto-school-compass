@@ -95,10 +95,12 @@ function DocxPreview({
   src,
   title,
   initialText,
+  showZoomControls,
 }: {
   src: string;
   title: string;
   initialText?: string | undefined;
+  showZoomControls: boolean;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement>(null);
@@ -144,8 +146,9 @@ function DocxPreview({
 
   return (
     <div className="min-h-0 flex-1 space-y-2">
-      <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
-        <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
+      {showZoomControls && (
+        <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
+          <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -180,7 +183,8 @@ function DocxPreview({
             Adatta
           </button>
         </div>
-      </div>
+        </div>
+      )}
       <div
         role="document"
         aria-label={title}
@@ -276,7 +280,7 @@ export function CircularViewer({
   const files = mergeAttachments(attachments, { name: fileName, path, url });
   const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isZoomControlsOpen, setIsZoomControlsOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -323,7 +327,7 @@ export function CircularViewer({
   useEffect(() => {
     if (open) {
       setSelectedIndex(0);
-      setIsPreviewOpen(false);
+      setIsZoomControlsOpen(false);
       setAnalysis(null);
       setAnalysisError(undefined);
       setIsAnalysisOpen(false);
@@ -342,7 +346,7 @@ export function CircularViewer({
   const activeFile = files[activeIndex];
 
   useEffect(() => {
-    setIsPreviewOpen(false);
+    setIsZoomControlsOpen(false);
     setAnalysis(null);
     setAnalysisError(undefined);
     setIsAnalysisOpen(false);
@@ -364,7 +368,6 @@ export function CircularViewer({
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
-  const canPreviewAttachment = Boolean(previewUrl && (isPdf || isDocx));
   const hasTextOnlyContent = !previewUrl && Boolean(extractedText?.trim());
   const documentLabel = hasTextOnlyContent ? "comunicazione" : "circolare";
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
@@ -833,16 +836,15 @@ export function CircularViewer({
             </form>
           </section>
         )}
-        {canPreviewAttachment && (
+        {previewUrl && isDocx && (
           <button
             type="button"
-            aria-expanded={isPreviewOpen}
-            aria-label={isPreviewOpen ? "Nascondi anteprima allegato" : "Mostra anteprima allegato"}
-            onClick={() => setIsPreviewOpen((openNow) => !openNow)}
-            className="press mb-2 inline-flex h-9 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-[11px] font-semibold text-foreground"
+            aria-expanded={isZoomControlsOpen}
+            aria-label={isZoomControlsOpen ? "Nascondi controlli zoom DOCX" : "Mostra controlli zoom DOCX"}
+            onClick={() => setIsZoomControlsOpen((openNow) => !openNow)}
+            className="press mb-2 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-primary"
           >
-            <Search className="h-4 w-4 text-primary" />
-            {isPreviewOpen ? "Nascondi anteprima" : "Mostra anteprima"}
+            <Search className="h-4 w-4" />
           </button>
         )}
         {files.length > 1 && (
@@ -874,19 +876,24 @@ export function CircularViewer({
             </div>
           </div>
         )}
-        {isPreviewOpen && previewUrl && isPdf ? (
-          <PdfCanvasPreview
+        {previewUrl && isPdf ? (
+          <div className="min-h-0 max-h-[42dvh] flex-1">
+            <PdfCanvasPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
-          />
-        ) : isPreviewOpen && previewUrl && isDocx ? (
-          <DocxPreview
+            />
+          </div>
+        ) : previewUrl && isDocx ? (
+          <div className="min-h-0 max-h-[42dvh] flex-1">
+            <DocxPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
             initialText={extractedText}
+            showZoomControls={isZoomControlsOpen}
           />
+          </div>
         ) : hasTextOnlyContent ? (
           <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">

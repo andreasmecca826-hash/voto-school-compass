@@ -46,7 +46,6 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Mostra anteprima allegato" }));
     expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     const openPdfButton = screen.getByRole("button", { name: "Apri PDF" });
     const downloadPdfButton = screen.getByRole("button", { name: "Scarica PDF" });
@@ -201,8 +200,8 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Mostra anteprima allegato" }));
     expect(screen.getByRole("document", { name: "modulo.docx" })).toHaveTextContent(extractedText);
+    fireEvent.click(screen.getByRole("button", { name: "Mostra controlli zoom DOCX" }));
     expect(screen.getByRole("button", { name: "Riduci zoom DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Adatta DOCX allo schermo" })).toBeInTheDocument();
@@ -256,7 +255,6 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Mostra anteprima allegato" }));
     expect(screen.getByRole("document", { name: "circolare.pdf" })).toBeInTheDocument();
   });
 
@@ -280,7 +278,6 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(secondAttachmentTab);
 
     expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Mostra anteprima allegato" }));
     expect(screen.getByRole("document", { name: "secondo.pdf" })).toBeInTheDocument();
   });
 });
