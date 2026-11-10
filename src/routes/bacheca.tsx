@@ -404,16 +404,20 @@ function StandardBacheca() {
         notices.map((item) => {
           const count = attachmentCount(item);
           const contentLabel = notificationContentLabel(item);
+          const title = notificationDisplayTitle(item);
+          const summary =
+            item.message?.trim() && item.message.trim() !== title ? item.message.trim() : "";
           return (
             <article key={item.id} className="card-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase text-muted-foreground">
-                    {contentLabel}
-                    {item.subject ? ` · ${item.subject}` : ""}
-                    {item.teacher ? ` · ${item.teacher}` : ""}
-                  </p>
-                  <h2 className="mt-1 text-sm font-semibold">{item.message || item.title}</h2>
+                  {(item.subject || item.teacher) && (
+                    <p className="text-[11px] font-medium uppercase text-muted-foreground">
+                      {[item.subject, item.teacher].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                  <h2 className="mt-1 text-sm font-semibold">{title}</h2>
+                  {summary && <p className="mt-1 whitespace-pre-line text-sm">{summary}</p>}
                 </div>
                 {item.date && (
                   <time className="shrink-0 text-[11px] text-muted-foreground">
@@ -438,7 +442,7 @@ function StandardBacheca() {
                   className="press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary"
                 >
                   <FileText className="h-4 w-4" />
-                  Apri comunicazione
+                  {contentLabel === "Circolari" ? "Apri circolare" : "Apri comunicazione"}
                 </button>
               )}
             </article>
