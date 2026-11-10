@@ -125,7 +125,7 @@ function DocxPreview({
         if (!bodyRef.current || cancelled) return;
         await renderAsync(blob, bodyRef.current, styleRef.current ?? undefined, {
           breakPages: true,
-          ignoreWidth: false,
+          ignoreWidth: true,
           ignoreHeight: true,
           renderHeaders: true,
           renderFooters: true,
@@ -149,7 +149,7 @@ function DocxPreview({
         role="document"
         aria-label={title}
         aria-busy={status === "loading"}
-        className="min-h-0 flex-1 touch-pan-x touch-pan-y overflow-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2"
+        className="min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2"
       >
         {status === "loading" && (
           <p className="p-8 text-center text-sm text-muted-foreground">
@@ -181,9 +181,9 @@ function DocxPreview({
         .docx-preview-body,
         .docx-preview-body .docx-wrapper {
           min-height: 100% !important;
-          width: max-content !important;
-          max-width: none !important;
-          min-width: 100% !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
           margin: 0 !important;
           padding: 0 !important;
           background: transparent !important;
@@ -193,8 +193,9 @@ function DocxPreview({
         }
         .docx-preview-body section.docx {
           box-sizing: border-box !important;
-          max-width: none !important;
-          min-width: max-content !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
           min-height: auto !important;
           margin: 0 0 0.75rem !important;
           padding: 1rem !important;
@@ -221,6 +222,7 @@ function DocxPreview({
         }
         .docx-preview-body section.docx {
           zoom: var(--docx-zoom, 1);
+          width: calc(100% / var(--docx-zoom, 1)) !important;
         }
       `}</style>
       </div>
