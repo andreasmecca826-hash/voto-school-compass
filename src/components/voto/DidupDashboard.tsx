@@ -375,6 +375,7 @@ export function DidupDashboard() {
             const contentLabel = notificationContentLabel(item);
             const hasFiles = contentLabel === "Circolari";
             const teacher = item.teacher || teacherForSubject(item.subject);
+            const subtitle = [item.subject, teacher].filter(Boolean).join(" · ");
             return (
               <article
                 key={item.id}
@@ -388,10 +389,7 @@ export function DidupDashboard() {
                   className="absolute right-0 top-0 h-[40px] w-[40px] select-none"
                 />
                 <p className="mt-2 text-[18px] uppercase">{contentLabel}</p>
-                <p className="text-[13px]">
-                  {item.subject || contentLabel}
-                  {teacher ? ` · ${teacher}` : ""}
-                </p>
+                {subtitle && <p className="text-[13px]">{subtitle}</p>}
                 <p className="mt-7 line-clamp-1 text-[14px] leading-6">
                   {item.message && item.message !== item.title
                     ? item.message
