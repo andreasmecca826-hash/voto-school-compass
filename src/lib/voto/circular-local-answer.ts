@@ -1,4 +1,4 @@
-import { analyzeCircularText, extractCircularTableRows } from "./circular-reader";
+import { analyzeCircularText, extractCircularTableRows, normalizeOcrText } from "./circular-reader";
 
 const STOP_WORDS = new Set([
   "a",
@@ -154,9 +154,10 @@ function sourceLabel(pages: Array<string | undefined>): string {
 }
 
 export function answerCircularQuestionLocally(question: string, documentText: string): string {
+  const searchableDocument = normalizeOcrText(documentText);
   const questionTerms = terms(question);
   if (questionTerms.length === 0) {
-    const analysis = analyzeCircularText(documentText);
+    const analysis = analyzeCircularText(searchableDocument);
     const details = [
       analysis.summary ? `Sintesi estratta: ${analysis.summary}` : "",
       analysis.deadlines.length
@@ -168,7 +169,7 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       analysis.actions.length ? `Indicazioni: ${analysis.actions.join(" ")}` : "",
     ].filter(Boolean);
     if (details.length === 0) {
-      const excerpt = documentText
+      const excerpt = searchableDocument
         .replace(/^\[Pagina\s+\d+\]\s*$/gim, "")
         .split(/(?<=[.!?])\s+|\n+/)
         .map((sentence) => sentence.trim())
@@ -176,12 +177,12 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       if (excerpt) details.push(`Estratto del documento: ${excerpt.slice(0, 560)}`);
     }
     return details.length
-      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}\n\nFonte: ${sourceLabel([...documentText.matchAll(/^\[Pagina\s+(\d+)\]$/gim)].map((match) => match[1]))}.\nQualità estrazione: ${analysis.extractionQuality}.\nAffidabilità: ${analysis.extractionQuality === "alta" ? "Media" : "Bassa"}.`
+      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}\n\nFonte: ${sourceLabel([...searchableDocument.matchAll(/^\[Pagina\s+(\d+)\]$/gim)].map((match) => match[1]))}.\nQualità estrazione: ${analysis.extractionQuality}.\nAffidabilità: ${analysis.extractionQuality === "alta" ? "Media" : "Bassa"}.`
       : "Non riesco a ricavare una sintesi locale da questa circolare. Prova con una parola chiave presente nel documento.";
   }
 
   const wantsDate = isDateQuestion(question);
-  const tableRows = extractCircularTableRows(documentText);
+  const tableRows = extractCircularTableRows(searchableDocument);
   const tableMatches = tableRows
     .map((row) => {
       const rowTerms = terms(row.cells.join(" "));
@@ -201,7 +202,7 @@ export function answerCircularQuestionLocally(question: string, documentText: st
   const passages: Passage[] = [];
   let currentPage: string | undefined;
 
-  for (const rawLine of documentText.split(/\r?\n/)) {
+  for (const rawLine of searchableDocument.split(/\r?\n/)) {
     const pageMatch = rawLine.trim().match(/^\[Pagina\s+(\d+)\]$/i);
     if (pageMatch?.[1]) {
       currentPage = pageMatch[1];

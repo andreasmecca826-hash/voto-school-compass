@@ -11,6 +11,10 @@ const RECENT_TERMS = /\b(?:ultim\w*|recent\w*|nuov\w*)\b/;
 const CONTENT_TERMS =
   /\b(?:cosa dice|di cosa parla|contenut\w*|riassum\w*|spieg\w*|scad\w*|termin\w*|entro|quando|ora|chi deve|a chi|destinatar\w*|rivolt\w*|cosa devo|azioni|obblig\w*|partecip\w*|parl\w*|serve\w*)/;
 const SKIP_COMMAND = /^\s*(?:cerca(?:re)?|trova(?:re)?|ricerca(?:\s+rapida)?)\b/i;
+const FOLLOW_UP_TERMS =
+  /^(?:quando|dove|chi|a chi|e\s+(?:quando|dove|chi)|quale|quali|perche|perché|e poi|cosa succede)\??\s*$/i;
+const COMPARE_TERMS =
+  /\b(?:confronta|confrontare|differenze|differenza|cambiato|cambiate|rispetto)\b/i;
 
 function normalize(value: string): string {
   return value
@@ -50,6 +54,14 @@ export function isCircularChatQuestion(question: string): boolean {
   return RECENT_TERMS.test(normalized) || CONTENT_TERMS.test(normalized);
 }
 
+export function isCircularFollowUpQuestion(question: string, previousQuestion?: string): boolean {
+  return Boolean(
+    previousQuestion &&
+    FOLLOW_UP_TERMS.test(question.trim()) &&
+    isCircularChatQuestion(previousQuestion),
+  );
+}
+
 function asksForCircularList(question: string): boolean {
   const normalized = normalize(question);
   const asksList = /\b(?:quali|lista|elenco|ultim\w*|recent\w*|mostra)\b/.test(normalized);
@@ -72,6 +84,19 @@ function formatCircularList(notices: AppNotification[]): string {
       return `• ${dateLabel(notice.date)} — ${notice.title}${attachments ? ` (allegati: ${attachments})` : ""}`;
     })
     .join("\n")}`;
+}
+
+function asksForCircularComparison(question: string): boolean {
+  return COMPARE_TERMS.test(normalize(question));
+}
+
+function normalizeComparisonLine(line: string): string {
+  return line
+    .toLocaleLowerCase("it-IT")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function chooseNotice(question: string, notices: AppNotification[]): AppNotification | undefined {
@@ -153,15 +178,45 @@ export async function answerCircularChatQuestion(
   question: string,
   notifications: AppNotification[],
   mode: CircularAssistantMode,
+  previousQuestion?: string,
 ): Promise<string | null> {
-  if (!isCircularChatQuestion(question)) return null;
+  const isFollowUp = isCircularFollowUpQuestion(question, previousQuestion);
+  if (!isCircularChatQuestion(question) && !isFollowUp) return null;
+  const effectiveQuestion = isFollowUp ? `${previousQuestion} ${question}` : question;
   const notices = latestNotices(notifications);
-  if (asksForCircularList(question)) return formatCircularList(notices);
   if (notices.length === 0) {
     return "Non trovo circolari caricate nei dati locali. Aggiorna la Bacheca e riprova.";
   }
 
-  const notice = chooseNotice(question, notices);
+  if (asksForCircularComparison(effectiveQuestion)) {
+    if (notices.length < 2) return "Mi servono almeno due circolari locali per fare un confronto.";
+    try {
+      const [newer, older] = notices;
+      if (!newer || !older) return "Mi servono almeno due circolari locali per fare un confronto.";
+      const [newerDocument, olderDocument] = await Promise.all([
+        readNoticeText(newer),
+        readNoticeText(older),
+      ]);
+      const olderLines = new Set(
+        olderDocument.text
+          .split(/\r?\n/)
+          .map(normalizeComparisonLine)
+          .filter((line) => line.length >= 18),
+      );
+      const changes = newerDocument.text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length >= 18 && !olderLines.has(normalizeComparisonLine(line)))
+        .slice(0, 6);
+      return `Confronto locale:\n• Più recente: ${newer.title}\n• Precedente: ${older.title}\n\n${changes.length ? `Elementi presenti nella più recente e non trovati nella precedente:\n${changes.map((line) => `• ${line}`).join("\n")}` : "Non ho trovato differenze testuali evidenti nelle parti estratte."}`;
+    } catch {
+      return "Non riesco a leggere localmente entrambe le circolari per confrontarle.";
+    }
+  }
+
+  if (asksForCircularList(effectiveQuestion)) return formatCircularList(notices);
+
+  const notice = chooseNotice(effectiveQuestion, notices);
   if (!notice) return "Non trovo la circolare richiesta nei dati locali.";
 
   let document: { text: string; truncated: boolean };
@@ -179,14 +234,14 @@ export async function answerCircularChatQuestion(
   const prefix = `Circolare: ${notice.title} (${dateLabel(notice.date)}).\n\n`;
   if (mode === "api") {
     const answer = await askAboutCircular({
-      question,
+      question: effectiveQuestion,
       documentText: clippedText,
       documentTruncated: document.truncated || document.text.length > MAX_API_DOCUMENT_LENGTH,
     });
     return `${prefix}${answer}`;
   }
 
-  const answer = answerCircularQuestionLocally(question, document.text);
+  const answer = answerCircularQuestionLocally(effectiveQuestion, document.text);
   const truncatedNotice = document.truncated
     ? "\n\nNota: il documento è lungo; ho analizzato solo la parte estratta disponibile."
     : "";

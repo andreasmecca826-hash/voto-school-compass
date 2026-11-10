@@ -66,6 +66,17 @@ function clean(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+export function normalizeOcrText(text: string): string {
+  return text
+    .replace(/\bO(?=\d{1,2}:\d{2})/g, "0")
+    .replace(/(?<=\d)\s*[lI]\s*(?=(?:A|B|C|D|E|F)\b)/g, "I")
+    .replace(/\blunedi\b/gi, "lunedì")
+    .replace(/\bmartedi\b/gi, "martedì")
+    .replace(/\bmercoledi\b/gi, "mercoledì")
+    .replace(/\bgiovedi\b/gi, "giovedì")
+    .replace(/\bvenerdi\b/gi, "venerdì");
+}
+
 export function extractCircularTableRows(text: string): CircularTableRow[] {
   const rows: CircularTableRow[] = [];
   let page: string | undefined;

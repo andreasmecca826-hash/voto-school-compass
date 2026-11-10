@@ -9,6 +9,7 @@ import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import {
   answerCircularChatQuestion,
   isCircularChatQuestion,
+  isCircularFollowUpQuestion,
   type CircularAssistantMode,
 } from "@/lib/voto/circular-assistant-chat";
 import { askGeneralQuestion } from "@/lib/voto/circular-assistant";
@@ -48,6 +49,7 @@ type AssistantChatMessage = {
 };
 
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
+const ASSISTANT_MESSAGES_KEY = "voto.assistant-messages.v1";
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -73,13 +75,38 @@ function Assistant() {
   const activeAssistantMode = canUseApi && assistantMode === "api" ? "api" : "local";
   const [isReplying, setIsReplying] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [messages, setMessages] = useState<AssistantChatMessage[]>([
-    {
-      role: "assistant",
-      text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
-    },
-  ]);
+  const [messages, setMessages] = useState<AssistantChatMessage[]>(() => {
+    if (typeof window === "undefined") {
+      return [
+        {
+          role: "assistant",
+          text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+        },
+      ];
+    }
+    try {
+      const saved = window.localStorage.getItem(ASSISTANT_MESSAGES_KEY);
+      const parsed = saved ? (JSON.parse(saved) as AssistantChatMessage[]) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed.slice(-20);
+    } catch {
+      // La chat parte vuota se la memoria locale non è disponibile.
+    }
+    return [
+      {
+        role: "assistant",
+        text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+      },
+    ];
+  });
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ASSISTANT_MESSAGES_KEY, JSON.stringify(messages.slice(-20)));
+    } catch {
+      // La chat resta disponibile nella sessione corrente.
+    }
+  }, [messages]);
 
   useEffect(() => {
     setSuggestions(pickAssistantSuggestions());
@@ -156,7 +183,9 @@ function Assistant() {
       Boolean(nextPendingAction) ||
       assignmentIntent?.kind === "clarify" ||
       assignmentIntent?.kind === "already";
-    const useCircularAssistant = !hasImmediateActionResponse && isCircularChatQuestion(clean);
+    const useCircularAssistant =
+      !hasImmediateActionResponse &&
+      (isCircularChatQuestion(clean) || isCircularFollowUpQuestion(clean, previousQuestion));
     const useSchoolPolicyAssistant =
       !hasImmediateActionResponse && !useCircularAssistant && isSchoolPolicyQuestion(clean);
     const useGeneralApi =
@@ -212,6 +241,7 @@ function Assistant() {
             clean,
             assistantData.notifications,
             requestMode,
+            previousQuestion,
           );
           assistantMessage = {
             role: "assistant",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeCircularText,
   extractCircularTableRows,
+  normalizeOcrText,
   reconstructPositionedText,
 } from "@/lib/voto/circular-reader";
 
@@ -97,5 +98,9 @@ describe("lettore locale delle circolari", () => {
       { page: "3", cells: ["2I", "lunedì", "08:00"] },
       { page: "3", cells: ["2L", "martedì", "10:00"] },
     ]);
+  });
+
+  it("corregge solo errori OCR comuni negli orari e nei giorni", () => {
+    expect(normalizeOcrText("Lunedi alle O8:00 per la 2 l A")).toBe("lunedì alle 08:00 per la 2IA");
   });
 });
