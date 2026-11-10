@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, LoaderCircle, Search, Send, Sparkles, UserRound } from "lucide-react";
+import { Bot, LoaderCircle, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getAssignmentActionIntent,
@@ -404,11 +404,6 @@ function Assistant() {
             </p>
           </div>
         )}
-        <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
-          <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          Ricerca rapida: scrivi “cerca algebra”, “trova circolare uscita” o una parola per trovare
-          corrispondenze in voti, materie, compiti, note, avvisi, diario e interrogazioni.
-        </p>
       </section>
 
       <div className="mt-5 space-y-3">
