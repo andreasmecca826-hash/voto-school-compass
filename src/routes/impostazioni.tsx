@@ -447,8 +447,9 @@ function Settings() {
             <span className="block text-sm font-semibold">Modalità prestazioni</span>
             <span className="mt-1 block text-xs text-muted-foreground">
               Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
-              per rendere l’app più fluida sui telefoni meno recenti. Sui telefoni riduce inoltre
-              leggermente la definizione delle anteprime PDF.
+              per rendere l’app più fluida sui telefoni meno recenti. Su smartphone alleggerisce le
+              anteprime PDF e aspetta che le pagine si avvicinino allo schermo prima di
+              renderizzarle.
             </span>
           </span>
           <span

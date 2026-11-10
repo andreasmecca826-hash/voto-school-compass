@@ -11,10 +11,15 @@ vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({
 
 class TestIntersectionObserver {
   static current: TestIntersectionObserver | undefined;
+  static options: IntersectionObserverInit | undefined;
   readonly targets: Element[] = [];
 
-  constructor(private readonly callback: IntersectionObserverCallback) {
+  constructor(
+    private readonly callback: IntersectionObserverCallback,
+    options?: IntersectionObserverInit,
+  ) {
     TestIntersectionObserver.current = this;
+    TestIntersectionObserver.options = options;
   }
 
   observe(target: Element) {
@@ -79,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  document.documentElement.removeAttribute("data-performance");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -111,6 +117,24 @@ describe("anteprima PDF progressiva", () => {
 
     await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
     expect(pages[2]!.render).not.toHaveBeenCalled();
+  });
+
+  it("riduce canvas e precaricamento su smartphone quando la modalità prestazioni è attiva", async () => {
+    vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: true })),
+    );
+    vi.stubGlobal("devicePixelRatio", 3);
+    document.documentElement.dataset["performance"] = "on";
+    render(<PdfCanvasPreview src="/mobile.pdf" title="Anteprima alleggerita" />);
+
+    await waitFor(() => expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1 }));
+    await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
+
+    expect(TestIntersectionObserver.options?.rootMargin).toBe("300px 0px");
+    expect(document.querySelector("canvas")?.width).toBe(750);
   });
 
   it("renderizza tutte le pagine se IntersectionObserver non è disponibile", async () => {

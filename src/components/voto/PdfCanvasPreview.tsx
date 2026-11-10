@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { getPdfRenderProfile } from "@/lib/voto/pdf-render-profile";
 
 type PdfCanvasPreviewProps = {
   src: string;
   title: string;
   onError?: () => void;
 };
-
-const PAGE_SCALE = 1.25;
-const PAGE_ROOT_MARGIN = "900px 0px";
 
 function makePageSlot(title: string, pageNumber: number, aspectRatio: string) {
   const slot = document.createElement("div");
@@ -70,12 +68,14 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         const smallScreen =
           typeof window.matchMedia === "function" &&
           window.matchMedia("(max-width: 767px)").matches;
-        const devicePixelRatio = window.devicePixelRatio || 1;
-        const renderRatio =
-          performanceMode && smallScreen ? Math.min(devicePixelRatio, 1.5) : devicePixelRatio;
+        const renderProfile = getPdfRenderProfile({
+          performanceMode,
+          smallScreen,
+          devicePixelRatio: window.devicePixelRatio || 1,
+        });
         const firstPage = await pdf.getPage(1);
         if (cancelled) return;
-        const firstViewport = firstPage.getViewport({ scale: PAGE_SCALE });
+        const firstViewport = firstPage.getViewport({ scale: renderProfile.pageScale });
         const aspectRatio = `${firstViewport.width} / ${firstViewport.height}`;
         const slots = Array.from({ length: pdf.numPages }, (_, index) =>
           makePageSlot(title, index + 1, aspectRatio),
@@ -85,7 +85,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         const renderPage = async (pageNumber: number, knownPage?: typeof firstPage) => {
           const page = knownPage ?? (await pdf.getPage(pageNumber));
           if (cancelled) return;
-          const viewport = page.getViewport({ scale: PAGE_SCALE });
+          const viewport = page.getViewport({ scale: renderProfile.pageScale });
           const slot = slots[pageNumber - 1];
           if (!slot) throw new Error("pdf_page_slot_missing");
           slot.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
@@ -93,12 +93,12 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           const canvas = document.createElement("canvas");
           canvas.setAttribute("aria-label", `${title}, pagina ${pageNumber}`);
           canvas.className = "block h-auto w-full rounded-lg bg-white shadow-sm";
-          canvas.width = Math.ceil(viewport.width * renderRatio);
-          canvas.height = Math.ceil(viewport.height * renderRatio);
+          canvas.width = Math.ceil(viewport.width * renderProfile.renderRatio);
+          canvas.height = Math.ceil(viewport.height * renderProfile.renderRatio);
           canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
           const context = canvas.getContext("2d");
           if (!context) throw new Error("canvas_context_unavailable");
-          context.setTransform(renderRatio, 0, 0, renderRatio, 0, 0);
+          context.setTransform(renderProfile.renderRatio, 0, 0, renderProfile.renderRatio, 0, 0);
 
           const task = page.render({ canvas: null, canvasContext: context, viewport });
           const cancelTask = () => task.cancel();
@@ -184,7 +184,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
               }
               void renderQueuedPages();
             },
-            { root: container.parentElement, rootMargin: PAGE_ROOT_MARGIN },
+            { root: container.parentElement, rootMargin: renderProfile.rootMargin },
           );
           slots.slice(1).forEach((slot) => observer?.observe(slot));
         } else {
