@@ -120,8 +120,8 @@ function DocxPreview({
         if (!bodyRef.current || cancelled) return;
         await renderAsync(blob, bodyRef.current, styleRef.current ?? undefined, {
           breakPages: true,
-          ignoreWidth: false,
-          ignoreHeight: false,
+          ignoreWidth: true,
+          ignoreHeight: true,
           renderHeaders: true,
           renderFooters: true,
           useBase64URL: true,
@@ -163,6 +163,42 @@ function DocxPreview({
       )}
       <style ref={styleRef} />
       <div ref={bodyRef} className={status === "rendered" ? "docx-preview-body" : "hidden"} />
+      <style>{`
+        .docx-preview-body,
+        .docx-preview-body .docx-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: transparent !important;
+        }
+        .docx-preview-body section.docx {
+          box-sizing: border-box !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          min-height: auto !important;
+          margin: 0 0 0.75rem !important;
+          padding: 1rem !important;
+          overflow: hidden !important;
+          box-shadow: 0 1px 3px rgb(0 0 0 / 12%) !important;
+        }
+        .docx-preview-body section.docx:last-child {
+          margin-bottom: 0 !important;
+        }
+        .docx-preview-body table,
+        .docx-preview-body img {
+          max-width: 100% !important;
+        }
+        .docx-preview-body table {
+          table-layout: auto !important;
+        }
+        .docx-preview-body td,
+        .docx-preview-body th {
+          overflow-wrap: anywhere;
+        }
+      `}</style>
     </div>
   );
 }
