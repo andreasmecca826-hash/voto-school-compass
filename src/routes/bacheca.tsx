@@ -405,13 +405,62 @@ function DidupBacheca() {
 function StandardBacheca() {
   const v = useVoto();
   const [selected, setSelected] = useState<AppNotification | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
+  const filteredNotices = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("it-IT");
+    return normalizedQuery
+      ? notices.filter((item) => noticeSearchText(item).includes(normalizedQuery))
+      : notices;
+  }, [notices, query]);
 
   return (
     <div className="space-y-3 pt-3">
-      <h1 className="font-display text-2xl font-semibold">Bacheca</h1>
-      {notices.length ? (
-        notices.map((item) => {
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-semibold">Bacheca</h1>
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Cerca nella bacheca"
+          aria-expanded={searchOpen}
+          className="press rounded-full p-2 text-primary"
+        >
+          <Search className="h-6 w-6" aria-hidden="true" />
+        </button>
+      </div>
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Cerca nella Bacheca</DialogTitle>
+          <DialogDescription>
+            Cerca circolari e comunicazioni per nome, testo, materia o allegato.
+          </DialogDescription>
+          <div className="mt-4 flex items-center gap-2">
+            <Search className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <input
+              id="standard-bacheca-query"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Nome o testo..."
+              aria-label="Cerca circolari e comunicazioni per nome"
+              className="h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              autoFocus
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setSearchOpen(false);
+            }}
+            className="mt-4 self-end text-sm font-medium text-primary"
+          >
+            Azzera ricerca
+          </button>
+        </DialogContent>
+      </Dialog>
+      {filteredNotices.length ? (
+        filteredNotices.map((item) => {
           const count = attachmentCount(item);
           const contentLabel = notificationContentLabel(item);
           const title = notificationDisplayTitle(item);
@@ -460,7 +509,9 @@ function StandardBacheca() {
         })
       ) : (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          Nessuna circolare o comunicazione in bacheca.
+          {query.trim()
+            ? "Nessuna circolare o comunicazione corrisponde alla ricerca."
+            : "Nessuna circolare o comunicazione in bacheca."}
         </p>
       )}
       <CircularViewer
