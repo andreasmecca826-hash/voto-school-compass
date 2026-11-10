@@ -60,7 +60,9 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
-    expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent("110%");
+    expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
+      "110%",
+    );
     expect(screen.queryByRole("region", { name: "Analisi locale della circolare" })).toBeNull();
     expect(
       screen.queryByRole("heading", { name: "Fai una domanda alla circolare" }),
@@ -209,9 +211,13 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mostra controlli zoom allegato" }));
     expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Adatta allegato allo schermo" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Adatta allegato allo schermo" }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Riduci zoom allegato" }));
-    expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent("90%");
+    expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
+      "90%",
+    );
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
