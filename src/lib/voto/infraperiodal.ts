@@ -53,13 +53,13 @@ export function normalizeManualReports(value: unknown): ManualInfraperiodReport[
     const entries = rawEntries.flatMap((entry: unknown): ManualReportEntry[] => {
       if (
         !isRecord(entry) ||
-        typeof entry.id !== "string" ||
-        typeof entry.subject !== "string" ||
-        typeof entry.rawGrade !== "string"
+        typeof entry["id"] !== "string" ||
+        typeof entry["subject"] !== "string" ||
+        typeof entry["rawGrade"] !== "string"
       ) {
         return [];
       }
-      return [{ id: entry.id, subject: entry.subject, rawGrade: entry.rawGrade }];
+      return [{ id: entry["id"], subject: entry["subject"], rawGrade: entry["rawGrade"] }];
     });
     return [{ id, title, createdAt, entries }];
   });

@@ -31,7 +31,10 @@ function dateLabel(value?: string): string {
   const iso = value?.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
   const italian = value?.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/);
-  if (italian) return `${italian[1].padStart(2, "0")}/${italian[2].padStart(2, "0")}/${italian[3]}`;
+  if (italian) {
+    const [, day, month, year] = italian;
+    return `${day?.padStart(2, "0") ?? "00"}/${month?.padStart(2, "0") ?? "00"}/${year ?? "0000"}`;
+  }
   return value?.trim() || "data non indicata";
 }
 

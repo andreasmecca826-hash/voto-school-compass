@@ -393,7 +393,8 @@ function validateSnapshotContinuity(previous: VotoData, next: VotoData, raw: unk
     ["diary", "diario"],
     ["attendanceEvents", "assenze e ritardi"],
   ] as const) {
-    if (previous[key].length > 0 && !Array.isArray(payload[key])) {
+    const previousSection = previous[key];
+    if (previousSection && previousSection.length > 0 && !Array.isArray(payload[key])) {
       throw new SchemaError(
         `La risposta del registro è incompleta: manca la sezione ${label}. Mantengo gli ultimi dati validi.`,
       );

@@ -3,10 +3,28 @@ import { groupDidupAssignments } from "@/lib/voto/didup-assignments";
 import type { Assignment } from "@/lib/voto/types";
 
 const sample: Assignment[] = [
-  { id: "older", title: "Compito A", assignedDate: "2026-11-03", dueDate: "2026-11-10" },
-  { id: "newer", title: "Compito B", assignedDate: "2026-11-05", dueDate: "2026-11-11" },
-  { id: "undated", title: "Compito C", dueDate: "2026-11-12" },
-  { id: "same-day", title: "Compito D", assignedDate: "2026-11-05", dueDate: "2026-11-09" },
+  {
+    id: "older",
+    title: "Compito A",
+    assignedDate: "2026-11-03",
+    dueDate: "2026-11-10",
+    completed: false,
+  },
+  {
+    id: "newer",
+    title: "Compito B",
+    assignedDate: "2026-11-05",
+    dueDate: "2026-11-11",
+    completed: false,
+  },
+  { id: "undated", title: "Compito C", dueDate: "2026-11-12", completed: false },
+  {
+    id: "same-day",
+    title: "Compito D",
+    assignedDate: "2026-11-05",
+    dueDate: "2026-11-09",
+    completed: false,
+  },
 ];
 
 describe("groupDidupAssignments", () => {
@@ -24,8 +42,8 @@ describe("groupDidupAssignments", () => {
 
   it("mantiene il raggruppamento per materia", () => {
     const assignments: Assignment[] = [
-      { id: "b", title: "B", subject: "Italiano", dueDate: "2026-11-11" },
-      { id: "a", title: "A", subject: "Matematica", dueDate: "2026-11-10" },
+      { id: "b", title: "B", subject: "Italiano", dueDate: "2026-11-11", completed: false },
+      { id: "a", title: "A", subject: "Matematica", dueDate: "2026-11-10", completed: false },
     ];
 
     expect(groupDidupAssignments(assignments, "subject").map((group) => group.label)).toEqual([

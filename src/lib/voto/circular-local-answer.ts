@@ -176,7 +176,11 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       let score = matchedTerms.length;
       if (wantsDate && containsDate(sentence)) score += 2;
       if (score > 0) {
-        passages.push({ text: sentence.slice(0, 560), page: currentPage, score });
+        passages.push({
+          text: sentence.slice(0, 560),
+          ...(currentPage ? { page: currentPage } : {}),
+          score,
+        });
       }
     }
   }
