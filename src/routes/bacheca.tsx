@@ -4,7 +4,11 @@ import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, toIso } from "@/lib/voto/dates";
-import { notificationContentLabel, notificationDisplayTitle } from "@/lib/voto/selectors";
+import {
+  isGenericNoticeTitle,
+  notificationContentLabel,
+  notificationDisplayTitle,
+} from "@/lib/voto/selectors";
 import { useVoto } from "@/lib/voto/store";
 import type { AppNotification } from "@/lib/voto/types";
 
@@ -270,6 +274,12 @@ function DidupBacheca() {
           filtered.map((item) => {
             const count = attachmentCount(item);
             const contentLabel = notificationContentLabel(item);
+            const summary =
+              item.message && item.message !== item.title
+                ? item.message
+                : isGenericNoticeTitle(item)
+                  ? ""
+                  : notificationDisplayTitle(item);
             return (
               <article
                 key={item.id}
@@ -305,11 +315,11 @@ function DidupBacheca() {
                   </span>
                 </div>
 
-                <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
-                  {item.message && item.message !== item.title
-                    ? item.message
-                    : notificationDisplayTitle(item)}
-                </p>
+                {summary && (
+                  <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
+                    {summary}
+                  </p>
+                )}
 
                 {count > 0 && (
                   <button

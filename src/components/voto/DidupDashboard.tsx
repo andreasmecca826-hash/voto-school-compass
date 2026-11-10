@@ -6,6 +6,7 @@ import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import {
   notificationContentLabel,
   notificationDisplayTitle,
+  isGenericNoticeTitle,
   selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 import { fmtDate, toIso } from "@/lib/voto/dates";
@@ -376,6 +377,12 @@ export function DidupDashboard() {
             const hasFiles = contentLabel === "Circolari";
             const teacher = item.teacher || teacherForSubject(item.subject);
             const subtitle = [item.subject, teacher].filter(Boolean).join(" · ");
+            const summary =
+              item.message && item.message !== item.title
+                ? item.message
+                : isGenericNoticeTitle(item)
+                  ? ""
+                  : notificationDisplayTitle(item);
             return (
               <article
                 key={item.id}
@@ -390,11 +397,7 @@ export function DidupDashboard() {
                 />
                 <p className="mt-2 text-[18px] uppercase">{contentLabel}</p>
                 {subtitle && <p className="text-[13px]">{subtitle}</p>}
-                <p className="mt-7 line-clamp-1 text-[14px] leading-6">
-                  {item.message && item.message !== item.title
-                    ? item.message
-                    : notificationDisplayTitle(item)}
-                </p>
+                {summary && <p className="mt-7 line-clamp-1 text-[14px] leading-6">{summary}</p>}
                 {hasFiles && (
                   <button
                     type="button"
