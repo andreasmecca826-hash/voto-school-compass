@@ -448,6 +448,10 @@ function StandardBacheca() {
       {filteredNotices.length ? (
         filteredNotices.map((item) => {
           const count = attachmentCount(item);
+          const tableCount = Math.max(
+            item.tableCount ?? 0,
+            ...(item.attachments ?? []).map((attachment) => attachment.tableCount ?? 0),
+          );
           const contentLabel = notificationContentLabel(item);
           const title = notificationDisplayTitle(item);
           const summary =
@@ -471,14 +475,21 @@ function StandardBacheca() {
                 )}
               </div>
               {count > 0 && (
-                <button
-                  type="button"
-                  onClick={() => openNotice(item, v.markRead, setSelected)}
-                  className="press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary"
-                >
-                  <FileText className="h-4 w-4" />
-                  {count} {count === 1 ? "allegato" : "allegati"}
-                </button>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <button
+                    type="button"
+                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    className="press inline-flex items-center gap-2 text-xs font-medium text-primary"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {count} {count === 1 ? "allegato" : "allegati"}
+                  </button>
+                  {tableCount > 0 && (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                      {tableCount} {tableCount === 1 ? "tabella" : "tabelle"}
+                    </span>
+                  )}
+                </div>
               )}
               {count === 0 && (item.message || item.extractedText || item.title) && (
                 <button

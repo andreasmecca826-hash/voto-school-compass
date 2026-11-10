@@ -334,4 +334,19 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("document", { name: "secondo.pdf" })).toBeInTheDocument();
   });
+
+  it("mostra il numero di tabelle dell'allegato attivo", () => {
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare con tabella"
+        fileName={undefined}
+        url={undefined}
+        attachments={[{ name: "orario.pdf", tableCount: 2 }]}
+      />,
+    );
+
+    expect(screen.getByText("Contiene 2 tabelle")).toBeInTheDocument();
+  });
 });

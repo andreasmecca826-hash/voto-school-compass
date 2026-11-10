@@ -938,6 +938,11 @@ export function CircularViewer({
             </div>
           </div>
         )}
+        {activeFile?.tableCount && activeFile.tableCount > 0 ? (
+          <p className="mb-3 inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+            Contiene {activeFile.tableCount} {activeFile.tableCount === 1 ? "tabella" : "tabelle"}
+          </p>
+        ) : null}
         {previewUrl && isPdf ? (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <PdfCanvasPreview
