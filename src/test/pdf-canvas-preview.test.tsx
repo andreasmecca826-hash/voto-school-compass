@@ -11,6 +11,18 @@ class TestPointerEvent extends MouseEvent {
   }
 }
 
+function dispatchTouch(
+  target: Element,
+  type: "touchstart" | "touchmove" | "touchend",
+  point?: { clientX: number; clientY: number },
+) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "touches", {
+    value: point ? [{ identifier: 1, target, ...point }] : [],
+  });
+  fireEvent(target, event);
+}
+
 const { getDocumentMock } = vi.hoisted(() => ({ getDocumentMock: vi.fn() }));
 
 vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({
@@ -149,6 +161,11 @@ describe("anteprima PDF progressiva", () => {
     expect(pdfPreview.scrollLeft).toBe(200);
     expect(pdfPreview.scrollTop).toBe(100);
     fireEvent.pointerUp(pdfPreview, { pointerId: 1 });
+    dispatchTouch(pdfPreview, "touchstart", { clientX: 100, clientY: 100 });
+    dispatchTouch(pdfPreview, "touchmove", { clientX: 80, clientY: 60 });
+    expect(pdfPreview.scrollLeft).toBe(220);
+    expect(pdfPreview.scrollTop).toBe(140);
+    dispatchTouch(pdfPreview, "touchend");
     expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
     await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
 

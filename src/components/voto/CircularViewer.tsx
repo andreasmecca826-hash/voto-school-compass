@@ -14,7 +14,15 @@ import {
   ZoomIn,
   X,
 } from "lucide-react";
-import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
+import {
+  beginZoomPan,
+  beginZoomTouch,
+  endZoomPan,
+  endZoomTouch,
+  moveZoomPan,
+  moveZoomTouch,
+  type ZoomPanState,
+} from "@/lib/voto/zoom-pan";
 import {
   Sheet,
   SheetContent,
@@ -105,6 +113,7 @@ function DocxPreview({
 }) {
   const previewRef = useRef<HTMLDivElement>(null);
   const panStateRef = useRef<ZoomPanState | null>(null);
+  const touchPanStateRef = useRef<ZoomPanState | null>(null);
   const horizontalScrollRatioRef = useRef(0.5);
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement>(null);
@@ -179,6 +188,10 @@ function DocxPreview({
         onPointerMove={(event) => moveZoomPan(event, panStateRef)}
         onPointerUp={(event) => endZoomPan(event, panStateRef)}
         onPointerCancel={(event) => endZoomPan(event, panStateRef)}
+        onTouchStart={(event) => beginZoomTouch(event, zoom, touchPanStateRef)}
+        onTouchMove={(event) => moveZoomTouch(event, touchPanStateRef)}
+        onTouchEnd={() => endZoomTouch(touchPanStateRef)}
+        onTouchCancel={() => endZoomTouch(touchPanStateRef)}
         onScroll={(event) => {
           const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
           const maxScrollLeft = scrollWidth - clientWidth;

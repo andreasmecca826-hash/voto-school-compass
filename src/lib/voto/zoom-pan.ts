@@ -1,4 +1,8 @@
-import type { MutableRefObject, PointerEvent as ReactPointerEvent } from "react";
+import type {
+  MutableRefObject,
+  PointerEvent as ReactPointerEvent,
+  TouchEvent as ReactTouchEvent,
+} from "react";
 
 export interface ZoomPanState {
   pointerId: number;
@@ -8,14 +12,16 @@ export interface ZoomPanState {
   scrollTop: number;
 }
 
+function isInteractiveTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest("button, a, input, textarea, select"));
+}
+
 export function beginZoomPan(
   event: ReactPointerEvent<HTMLDivElement>,
   zoom: number,
   stateRef: MutableRefObject<ZoomPanState | null>,
 ) {
-  if (zoom <= 1) return;
-  const target = event.target;
-  if (target instanceof Element && target.closest("button, a, input, textarea, select")) return;
+  if (zoom <= 1 || isInteractiveTarget(event.target)) return;
 
   stateRef.current = {
     pointerId: event.pointerId,
@@ -43,4 +49,37 @@ export function endZoomPan(
   stateRef: MutableRefObject<ZoomPanState | null>,
 ) {
   if (stateRef.current?.pointerId === event.pointerId) stateRef.current = null;
+}
+
+export function beginZoomTouch(
+  event: ReactTouchEvent<HTMLDivElement>,
+  zoom: number,
+  stateRef: MutableRefObject<ZoomPanState | null>,
+) {
+  const touch = event.touches[0];
+  if (zoom <= 1 || !touch || isInteractiveTarget(event.target)) return;
+
+  stateRef.current = {
+    pointerId: -1,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    scrollLeft: event.currentTarget.scrollLeft,
+    scrollTop: event.currentTarget.scrollTop,
+  };
+}
+
+export function moveZoomTouch(
+  event: ReactTouchEvent<HTMLDivElement>,
+  stateRef: MutableRefObject<ZoomPanState | null>,
+) {
+  const state = stateRef.current;
+  const touch = event.touches[0];
+  if (!state || state.pointerId !== -1 || !touch) return;
+  event.preventDefault();
+  event.currentTarget.scrollLeft = state.scrollLeft - (touch.clientX - state.startX);
+  event.currentTarget.scrollTop = state.scrollTop - (touch.clientY - state.startY);
+}
+
+export function endZoomTouch(stateRef: MutableRefObject<ZoomPanState | null>) {
+  if (stateRef.current?.pointerId === -1) stateRef.current = null;
 }

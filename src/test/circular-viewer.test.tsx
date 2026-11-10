@@ -17,6 +17,18 @@ class TestPointerEvent extends MouseEvent {
   }
 }
 
+function dispatchTouch(
+  target: Element,
+  type: "touchstart" | "touchmove" | "touchend",
+  point?: { clientX: number; clientY: number },
+) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "touches", {
+    value: point ? [{ identifier: 1, target, ...point }] : [],
+  });
+  fireEvent(target, event);
+}
+
 vi.mock("@/lib/voto/circular-assistant", () => ({
   askAboutCircular: askCircularText,
   askAboutCircularImages: askCircularImages,
@@ -257,6 +269,11 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(docxPreview.scrollLeft).toBe(200);
     expect(docxPreview.scrollTop).toBe(100);
     fireEvent.pointerUp(docxPreview, { pointerId: 1 });
+    dispatchTouch(docxPreview, "touchstart", { clientX: 100, clientY: 100 });
+    dispatchTouch(docxPreview, "touchmove", { clientX: 80, clientY: 60 });
+    expect(docxPreview.scrollLeft).toBe(220);
+    expect(docxPreview.scrollTop).toBe(140);
+    dispatchTouch(docxPreview, "touchend");
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
