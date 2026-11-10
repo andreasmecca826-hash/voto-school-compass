@@ -26,6 +26,7 @@ import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
 import { emptySchedule, loadSchedule, type Schedule } from "@/lib/voto/orario";
 import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
+import { countRecentOpenAssignments, dashboardMicrocopy } from "@/lib/voto/dashboard-copy";
 import {
   openAssignmentsForTomorrow,
   tomorrowDate,
@@ -74,6 +75,7 @@ function Dashboard() {
   const { isDone } = v;
   const now = useClock();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
+  const [microSeed, setMicroSeed] = useState(0);
   const [schedule, setSchedule] = useState<Schedule>(() => emptySchedule());
   const { subjects, config } = useSchoolPeriods();
   const { assignments, notifications, previousAverage } = v.data;
@@ -109,7 +111,10 @@ function Dashboard() {
     () => selectOpenInterrogazioni(v.interrogazioni),
     [v.interrogazioni],
   );
-  useEffect(() => setSchedule(loadSchedule()), []);
+  useEffect(() => {
+    setSchedule(loadSchedule());
+    setMicroSeed(Math.random());
+  }, []);
   const nextLesson = useMemo(() => getNextScheduledLesson(schedule, now), [schedule, now]);
   const lessonPreparation = useMemo(() => {
     if (!nextLesson) return null;
@@ -137,18 +142,19 @@ function Dashboard() {
       v.homeModules.find((module) => module.id === id)?.scale ?? 100,
     ) / v.homeScale;
 
-  const micro =
-    avg === null
-      ? "Nessun voto ancora: il primo arriverà presto."
-      : delta !== null && delta > 0.05
-        ? "Stai migliorando: continua così."
-        : delta !== null && delta < -0.05
-          ? "Leggero calo: punta sulle materie più deboli."
-          : avg >= 8
-            ? "Andamento solido e costante."
-            : avg >= 6
-              ? "Sei in linea, c'è margine per crescere."
-              : "Serve un recupero mirato: usa il simulatore.";
+  const unreadGrades = notifications.filter(
+    (notification) =>
+      notification.type === "grade" && !v.isRead(notification.id, notification.read),
+  ).length;
+  const unreadOther = notifications.filter(
+    (notification) =>
+      notification.type !== "grade" && !v.isRead(notification.id, notification.read),
+  ).length;
+  const recentAssignments = countRecentOpenAssignments(assignments, now, isDone);
+  const micro = dashboardMicrocopy(
+    { average: avg, delta, unreadGrades, unreadOther, recentAssignments },
+    microSeed,
+  );
 
   return (
     <div className="pt-3" style={{ zoom: v.homeScale / 100 }}>
