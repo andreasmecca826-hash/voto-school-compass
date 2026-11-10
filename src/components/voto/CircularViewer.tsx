@@ -5,7 +5,9 @@ import {
   ExternalLink,
   FileText,
   LoaderCircle,
+  Minus,
   Paperclip,
+  Plus,
   ShieldCheck,
   Sparkles,
   Users,
@@ -100,6 +102,7 @@ function DocxPreview({
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement>(null);
   const fallbackText = initialText?.trim() ?? "";
+  const [zoom, setZoom] = useState(1);
   const [status, setStatus] = useState<"loading" | "rendered" | "text" | "error">(
     fallbackText ? "text" : "loading",
   );
@@ -139,12 +142,50 @@ function DocxPreview({
   }, [fallbackText, src]);
 
   return (
-    <div
-      role="document"
-      aria-label={title}
-      aria-busy={status === "loading"}
-      className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-black/10 p-2"
-    >
+    <div className="min-h-0 flex-1 space-y-2">
+      <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
+        <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Riduci zoom DOCX"
+            onClick={() => setZoom((current) => Math.max(0.7, Math.round((current - 0.1) * 10) / 10))}
+            className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Reimposta zoom DOCX"
+            onClick={() => setZoom(1)}
+            className="press min-w-[48px] rounded-lg px-1.5 py-1 text-[10px] font-semibold text-primary"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            type="button"
+            aria-label="Aumenta zoom DOCX"
+            onClick={() => setZoom((current) => Math.min(1.4, Math.round((current + 0.1) * 10) / 10))}
+            className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Adatta DOCX allo schermo"
+            onClick={() => setZoom(0.88)}
+            className="press rounded-lg px-2 py-1 text-[10px] font-medium text-muted-foreground"
+          >
+            Adatta
+          </button>
+        </div>
+      </div>
+      <div
+        role="document"
+        aria-label={title}
+        aria-busy={status === "loading"}
+        className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-black/10 p-2"
+      >
       {status === "loading" && (
         <p className="p-8 text-center text-sm text-muted-foreground">Caricamento anteprima DOCX…</p>
       )}
@@ -162,7 +203,11 @@ function DocxPreview({
         </div>
       )}
       <style ref={styleRef} />
-      <div ref={bodyRef} className={status === "rendered" ? "docx-preview-body" : "hidden"} />
+      <div
+        ref={bodyRef}
+        className={status === "rendered" ? "docx-preview-body" : "hidden"}
+        style={{ "--docx-zoom": zoom } as React.CSSProperties}
+      />
       <style>{`
         .docx-preview-body,
         .docx-preview-body .docx-wrapper {
@@ -198,14 +243,12 @@ function DocxPreview({
         .docx-preview-body th {
           overflow-wrap: anywhere;
         }
-        @media (max-width: 480px) {
-          .docx-preview-body section.docx {
-            zoom: 0.88;
-            width: 113.64% !important;
-            padding: 0.8rem !important;
-          }
+        .docx-preview-body section.docx {
+          zoom: var(--docx-zoom, 1);
+          width: calc(100% / var(--docx-zoom, 1)) !important;
         }
       `}</style>
+      </div>
     </div>
   );
 }

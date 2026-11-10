@@ -201,6 +201,11 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
 
     expect(screen.getByRole("document", { name: "modulo.docx" })).toHaveTextContent(extractedText);
+    expect(screen.getByRole("button", { name: "Riduci zoom DOCX" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Aumenta zoom DOCX" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adatta DOCX allo schermo" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Riduci zoom DOCX" }));
+    expect(screen.getByRole("button", { name: "Reimposta zoom DOCX" })).toHaveTextContent("90%");
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
