@@ -3,6 +3,7 @@ import { CalendarDays, Check, Clock3, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Empty, SectionTitle } from "@/components/voto/ui";
 import { fmtDate } from "@/lib/voto/dates";
+import { presentInterrogazione } from "@/lib/voto/interrogazioni";
 import { useVoto } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
 
@@ -123,18 +124,13 @@ function Interrogazioni() {
       ) : (
         <ul className="space-y-2">
           {items.map((item) => {
-            const reminderDescription = item.reminderId ? item.notes?.trim() : undefined;
-            const subjectLabel = item.subject.trim();
-            const isVerification =
-              item.reminderId &&
-              (/^verifica\b/i.test(subjectLabel) ||
-                /\bverifica\b/i.test(reminderDescription ?? ""));
+            const presentation = presentInterrogazione(item);
             const showSubjectLabel =
-              reminderDescription &&
-              subjectLabel &&
-              !isVerification &&
-              subjectLabel.toLocaleLowerCase("it-IT") !== "promemoria" &&
-              subjectLabel !== reminderDescription;
+              item.notes &&
+              presentation.subject &&
+              !presentation.isVerification &&
+              presentation.subject.toLocaleLowerCase("it-IT") !== "promemoria" &&
+              presentation.subject !== item.notes;
 
             return (
               <li
@@ -165,23 +161,23 @@ function Interrogazioni() {
                         item.completed && "line-through",
                       )}
                     >
-                      {isVerification ? subjectLabel : reminderDescription || item.subject}
+                      {presentation.title}
                     </p>
                     {item.reminderId && (
                       <span
                         className={cn(
                           "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold",
-                          isVerification
+                          presentation.isVerification
                             ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
                             : "bg-primary-soft text-primary",
                         )}
                       >
-                        {isVerification ? "Verifica" : "Promemoria"}
+                        {presentation.isVerification ? "Verifica" : "Promemoria"}
                       </span>
                     )}
                   </div>
                   {showSubjectLabel && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">{subjectLabel}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{presentation.subject}</p>
                   )}
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
@@ -195,8 +191,8 @@ function Interrogazioni() {
                       </span>
                     )}
                   </div>
-                  {item.notes && (!item.reminderId || isVerification) && (
-                    <p className="mt-2 text-xs text-muted-foreground">{item.notes}</p>
+                  {presentation.notes && (
+                    <p className="mt-2 text-xs text-muted-foreground">{presentation.notes}</p>
                   )}
                 </div>
                 <button

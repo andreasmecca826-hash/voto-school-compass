@@ -1,5 +1,5 @@
 import { DAYS, type Schedule } from "./orario";
-import type { Interrogazione } from "./interrogazioni";
+import { presentInterrogazione, type Interrogazione } from "./interrogazioni";
 import type { AppNotification, Assignment } from "./types";
 
 export function localDateKey(date: Date): string {
@@ -69,23 +69,18 @@ export function upcomingSchoolEvents(
   const events: UpcomingSchoolEvent[] = interrogazioni
     .filter((item) => !item.completed && isTomorrow(item.date, now))
     .map((item) => {
-      const firstNote = item.notes?.split(/\r?\n/)[0]?.trim();
-      const isReminderVerification = Boolean(
-        item.reminderId && /^verifica\s+di\s+/i.test(firstNote ?? ""),
-      );
+      const presentation = presentInterrogazione(item);
       return {
         id: `interrogazione-${item.id}`,
-        title: isReminderVerification ? firstNote! : item.subject,
+        title: presentation.title,
         date: item.date,
-        detail: isReminderVerification
-          ? [
-              item.subject,
-              item.notes?.split(/\r?\n/).slice(1).join("\n"),
-              item.hour ? `${item.hour}ª ora` : item.time,
-            ]
-              .filter(Boolean)
-              .join(" · ")
-          : (item.notes ?? (item.hour ? `${item.hour}ª ora` : item.time)),
+        detail: [
+          presentation.isVerification ? presentation.subject : "",
+          presentation.notes,
+          item.hour ? `${item.hour}ª ora` : item.time,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         source: "interrogazione",
       };
     });

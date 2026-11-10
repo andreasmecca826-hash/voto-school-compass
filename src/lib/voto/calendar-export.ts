@@ -1,4 +1,4 @@
-import type { Interrogazione } from "./interrogazioni";
+import { presentInterrogazione, type Interrogazione } from "./interrogazioni";
 import type { AppNotification, Assignment } from "./types";
 
 export interface CalendarExportData {
@@ -164,12 +164,18 @@ export function createCalendarIcs(
     for (const item of data.interrogazioni) {
       const date = eventDate(item.date);
       if (!date || !dateInRange(date, options.from, options.to) || item.completed) continue;
+      const presentation = presentInterrogazione(item);
       events.push({
         uid: `interrogazione-${encodeURIComponent(item.id)}@voto.app`,
         date,
         time: eventTime(item.time),
-        summary: `Interrogazione: ${item.subject}`,
-        description: item.notes?.trim() || `Preparazione per ${item.subject}.`,
+        summary: `${presentation.isVerification ? "Verifica" : "Interrogazione"}: ${presentation.title}`,
+        description: [
+          presentation.isVerification ? `Materia: ${presentation.subject}` : "",
+          presentation.notes ?? `Preparazione per ${presentation.subject}.`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
         category: "Interrogazioni",
       });
     }

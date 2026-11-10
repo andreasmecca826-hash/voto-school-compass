@@ -34,7 +34,7 @@ import {
   tomorrowSubjects,
   upcomingSchoolEvents,
 } from "@/lib/voto/tomorrow-school";
-import type { Interrogazione } from "@/lib/voto/interrogazioni";
+import { presentInterrogazione, type Interrogazione } from "@/lib/voto/interrogazioni";
 import type { AppNotification, Assignment } from "@/lib/voto/types";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { fmtDate, fmtTime } from "@/lib/voto/dates";
@@ -440,25 +440,32 @@ function Dashboard() {
             ) : (
               <>
                 <ul className="space-y-2">
-                  {interrogazioni.map((item) => (
-                    <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                        <CalendarDays className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{item.subject}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {item.date ? fmtDate(item.date) : "Data da definire"}
-                          {item.hour ? ` · ${item.hour}ª ora` : item.time ? ` · ${item.time}` : ""}
-                        </p>
-                      </div>
-                      {item.notes && (
-                        <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">
-                          {item.notes}
+                  {interrogazioni.map((item) => {
+                    const presentation = presentInterrogazione(item);
+                    return (
+                      <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                          <CalendarDays className="h-4 w-4" />
                         </span>
-                      )}
-                    </li>
-                  ))}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{presentation.title}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {item.date ? fmtDate(item.date) : "Data da definire"}
+                            {item.hour
+                              ? ` · ${item.hour}ª ora`
+                              : item.time
+                                ? ` · ${item.time}`
+                                : ""}
+                          </p>
+                        </div>
+                        {presentation.subject && presentation.isVerification && (
+                          <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">
+                            {presentation.subject}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             )}
