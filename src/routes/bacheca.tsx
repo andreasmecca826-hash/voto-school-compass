@@ -49,6 +49,21 @@ function attachmentCount(item: AppNotification) {
   return item.attachmentPath || item.attachmentUrl ? 1 : 0;
 }
 
+function noticeSearchText(item: AppNotification) {
+  return [
+    item.title,
+    item.message,
+    item.extractedText,
+    item.teacher,
+    item.subject,
+    item.attachmentName,
+    ...(item.attachments ?? []).flatMap((attachment) => [attachment.name, attachment.path]),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase("it-IT");
+}
+
 function openNotice(
   item: AppNotification,
   markRead: (ids: string[]) => void,
@@ -87,12 +102,7 @@ function DidupBacheca() {
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLocaleLowerCase("it-IT");
     return notices.filter((item) => {
-      if (
-        query &&
-        ![item.title, item.message, item.teacher, item.subject]
-          .filter(Boolean)
-          .some((field) => field!.toLocaleLowerCase("it-IT").includes(query))
-      ) {
+      if (query && !noticeSearchText(item).includes(query)) {
         return false;
       }
       const date = item.date?.slice(0, 10) ?? "";
@@ -157,10 +167,10 @@ function DidupBacheca() {
           className="flex max-h-[78dvh] w-[min(73vw,350px)] max-w-[350px] flex-col items-stretch gap-0 overflow-y-auto rounded-[11px] border-0 bg-[#292929] px-6 pb-[19px] pt-[40px] text-white shadow-xl sm:rounded-[11px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-9 [&>button]:w-9 [&>button]:opacity-100 [&>button>svg]:h-5 [&>button>svg]:w-5"
         >
           <DialogTitle className="text-left text-[18px] font-normal tracking-wide text-white">
-            FILTRA
+            CERCA IN BACHECA
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Filtra le circolari per testo e intervallo di date.
+            Cerca circolari e comunicazioni per nome, testo, allegato e intervallo di date.
           </DialogDescription>
 
           <div className="-ml-6 mt-[46px] flex items-center gap-[18px]">
@@ -174,8 +184,8 @@ function DidupBacheca() {
               onChange={(event) =>
                 setDraftFilters((current) => ({ ...current, query: event.target.value }))
               }
-              placeholder="Cerca..."
-              aria-label="Cerca circolari"
+              placeholder="Nome o testo..."
+              aria-label="Cerca circolari e comunicazioni per nome"
               className="h-[60px] min-w-0 flex-1 rounded-[10px] border border-white bg-[#333638] px-5 text-[18px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
             />
           </div>
@@ -370,7 +380,7 @@ function DidupBacheca() {
       <button
         type="button"
         onClick={openFilter}
-        aria-label="Filtra la bacheca"
+        aria-label="Cerca nella bacheca"
         aria-expanded={filterOpen}
         className="press fixed bottom-[120px] z-30 flex h-[70px] w-[70px] items-center justify-center rounded-[18px] bg-[#0aa0b1] text-white shadow-lg"
         style={{ right: "max(20px, calc((100vw - 480px) / 2 + 20px))" }}
