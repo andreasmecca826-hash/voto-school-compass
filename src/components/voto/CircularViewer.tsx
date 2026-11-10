@@ -145,7 +145,7 @@ function DocxPreview({
   }, [fallbackText, src]);
 
   return (
-    <div className="min-h-0 flex-1 space-y-2">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
       {showZoomControls && (
         <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
           <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
@@ -189,7 +189,7 @@ function DocxPreview({
         role="document"
         aria-label={title}
         aria-busy={status === "loading"}
-        className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-black/10 p-2"
+        className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2"
       >
       {status === "loading" && (
         <p className="p-8 text-center text-sm text-muted-foreground">Caricamento anteprima DOCX…</p>
@@ -216,12 +216,16 @@ function DocxPreview({
       <style>{`
         .docx-preview-body,
         .docx-preview-body .docx-wrapper {
+          min-height: 100% !important;
           width: 100% !important;
           max-width: 100% !important;
           min-width: 0 !important;
           margin: 0 !important;
           padding: 0 !important;
           background: transparent !important;
+        }
+        .docx-preview-body .docx-wrapper {
+          height: max-content !important;
         }
         .docx-preview-body section.docx {
           box-sizing: border-box !important;
