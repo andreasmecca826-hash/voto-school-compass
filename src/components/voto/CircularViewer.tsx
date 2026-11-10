@@ -8,6 +8,7 @@ import {
   Minus,
   Paperclip,
   Plus,
+  Search,
   ShieldCheck,
   Sparkles,
   Users,
@@ -275,6 +276,7 @@ export function CircularViewer({
   const files = mergeAttachments(attachments, { name: fileName, path, url });
   const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -321,6 +323,7 @@ export function CircularViewer({
   useEffect(() => {
     if (open) {
       setSelectedIndex(0);
+      setIsPreviewOpen(false);
       setAnalysis(null);
       setAnalysisError(undefined);
       setIsAnalysisOpen(false);
@@ -339,6 +342,7 @@ export function CircularViewer({
   const activeFile = files[activeIndex];
 
   useEffect(() => {
+    setIsPreviewOpen(false);
     setAnalysis(null);
     setAnalysisError(undefined);
     setIsAnalysisOpen(false);
@@ -360,6 +364,7 @@ export function CircularViewer({
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
+  const canPreviewAttachment = Boolean(previewUrl && (isPdf || isDocx));
   const hasTextOnlyContent = !previewUrl && Boolean(extractedText?.trim());
   const documentLabel = hasTextOnlyContent ? "comunicazione" : "circolare";
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
@@ -828,6 +833,18 @@ export function CircularViewer({
             </form>
           </section>
         )}
+        {canPreviewAttachment && (
+          <button
+            type="button"
+            aria-expanded={isPreviewOpen}
+            aria-label={isPreviewOpen ? "Nascondi anteprima allegato" : "Mostra anteprima allegato"}
+            onClick={() => setIsPreviewOpen((openNow) => !openNow)}
+            className="press mb-2 inline-flex h-9 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-[11px] font-semibold text-foreground"
+          >
+            <Search className="h-4 w-4 text-primary" />
+            {isPreviewOpen ? "Nascondi anteprima" : "Mostra anteprima"}
+          </button>
+        )}
         {files.length > 1 && (
           <div className="mb-3">
             <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
@@ -857,13 +874,13 @@ export function CircularViewer({
             </div>
           </div>
         )}
-        {previewUrl && isPdf ? (
+        {isPreviewOpen && previewUrl && isPdf ? (
           <PdfCanvasPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
             src={previewUrl}
           />
-        ) : previewUrl && isDocx ? (
+        ) : isPreviewOpen && previewUrl && isDocx ? (
           <DocxPreview
             key={activeFile?.path ?? activeFile?.url ?? activeIndex}
             title={activeFile?.name ?? title}
