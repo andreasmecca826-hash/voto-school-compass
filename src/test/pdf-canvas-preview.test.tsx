@@ -128,12 +128,8 @@ describe("anteprima PDF progressiva", () => {
     const pdfPreview = screen.getByRole("document", { name: "PDF ingrandito" });
     Object.defineProperty(pdfPreview, "clientWidth", { configurable: true, value: 300 });
     Object.defineProperty(pdfPreview, "scrollWidth", { configurable: true, value: 600 });
-    expect(pdfPreview).toHaveClass(
-      "overflow-x-auto",
-      "overflow-y-auto",
-      "touch-pan-x",
-      "touch-pan-y",
-    );
+    expect(pdfPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-auto");
+    expect(pdfPreview).not.toHaveClass("touch-pan-x", "touch-pan-y");
     await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
     await waitFor(() => expect(pdfPreview.scrollLeft).toBe(150));
     expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });

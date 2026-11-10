@@ -56,7 +56,9 @@ describe("visualizzatore PDF delle circolari interne", () => {
       screen.queryByText("Se l’anteprima non si carica, puoi scaricare il PDF."),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Riassumi sul dispositivo" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Mostra controlli zoom allegato" }));
+    const zoomToggle = screen.getByRole("button", { name: "Mostra controlli zoom allegato" });
+    expect(zoomToggle.querySelector("svg")).toHaveClass("lucide-zoom-in");
+    fireEvent.click(zoomToggle);
     expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
@@ -229,7 +231,8 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
-    expect(docxPreview).toHaveClass("overflow-x-auto", "touch-pan-x", "touch-pan-y");
+    expect(docxPreview).toHaveClass("overflow-x-auto", "overflow-y-auto", "touch-auto");
+    expect(docxPreview).not.toHaveClass("touch-pan-x", "touch-pan-y");
     await waitFor(() => expect(docxPreview.scrollLeft).toBe(150));
     expect(screen.getByRole("button", { name: "Apri DOCX" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Scarica DOCX" })).toBeInTheDocument();

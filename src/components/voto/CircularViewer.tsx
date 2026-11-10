@@ -8,10 +8,10 @@ import {
   Minus,
   Paperclip,
   Plus,
-  Search,
   ShieldCheck,
   Sparkles,
   Users,
+  ZoomIn,
   X,
 } from "lucide-react";
 import {
@@ -168,7 +168,7 @@ function DocxPreview({
         aria-busy={status === "loading"}
         ref={previewRef}
         className={`min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2 ${
-          zoom > 1 ? "touch-pan-x touch-pan-y overflow-x-auto" : "touch-pan-y overflow-x-hidden"
+          zoom > 1 ? "touch-auto overflow-x-auto" : "touch-pan-y overflow-x-hidden"
         }`}
         style={{ "--docx-zoom": zoom } as React.CSSProperties}
         onScroll={(event) => {
@@ -589,7 +589,7 @@ export function CircularViewer({
                   onClick={() => setIsZoomControlsOpen((openNow) => !openNow)}
                   className="press inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-primary"
                 >
-                  <Search className="h-4 w-4" />
+                  <ZoomIn className="h-4 w-4" />
                 </button>
               )}
             </div>

@@ -230,7 +230,7 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
       aria-label={title}
       aria-busy={status === "loading"}
       className={`min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-black/20 p-2 ${
-        zoom > 1 ? "touch-pan-x touch-pan-y overflow-x-auto" : "touch-pan-y overflow-x-hidden"
+        zoom > 1 ? "touch-auto overflow-x-auto" : "touch-pan-y overflow-x-hidden"
       }`}
       onScroll={(event) => {
         const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
