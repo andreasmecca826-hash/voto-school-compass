@@ -87,7 +87,10 @@ function Dashboard() {
     config.selection === "all" && avg !== null && previousAverage !== undefined
       ? avg - previousAverage
       : null;
-  const today = useMemo(() => selectDashboardAssignments(assignments, now), [assignments, now]);
+  const today = useMemo(
+    () => selectDashboardAssignments(assignments, now, isDone),
+    [assignments, isDone, now],
+  );
   const attendance = v.data.attendance ?? {
     absenceDays: 0,
     absenceHours: 0,

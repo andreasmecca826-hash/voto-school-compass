@@ -69,6 +69,16 @@ describe("Dashboard selectors", () => {
     ]);
   });
 
+  it("esclude i compiti già completati anche con scadenza oggi o domani", () => {
+    const now = new Date(2026, 9, 26);
+    const assignments = [
+      { id: "done", title: "Già finito", dueDate: "2026-10-26", completed: true },
+      { id: "open", title: "Da fare", dueDate: "2026-10-27", completed: false },
+    ];
+
+    expect(selectDashboardAssignments(assignments, now).map((item) => item.id)).toEqual(["open"]);
+  });
+
   it("filtra notifiche e interrogazioni aperte con un limite", () => {
     const notifications = [
       { id: "n1", type: "note" as const, title: "Nota", read: false },
