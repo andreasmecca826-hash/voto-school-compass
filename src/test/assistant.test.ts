@@ -384,6 +384,44 @@ describe("Assistente locale", () => {
     expect(overview).toContain("Comunicazione di bacheca");
   });
 
+  it("offre un briefing locale della dashboard con l’evento più recente", () => {
+    const now = new Date(2026, 9, 27, 18);
+    const dashboardData: VotoData = {
+      ...data,
+      assignments: [
+        {
+          id: "recent-task",
+          title: "Relazione di storia",
+          subject: "Storia",
+          assignedDate: "2026-10-27",
+          dueDate: "2026-10-30",
+          completed: false,
+        },
+      ],
+      notifications: [
+        {
+          id: "older-notice",
+          type: "notice",
+          title: "Avviso di ieri",
+          date: "2026-10-26",
+          read: false,
+        },
+      ],
+    };
+
+    const answer = answerQuestion(
+      "Cosa è successo nella dashboard?",
+      dashboardData,
+      emptySchedule(),
+      now,
+    );
+
+    expect(answer).toContain("Media generale");
+    expect(answer).toContain("Evento più recente nelle ultime 24 ore");
+    expect(answer).toContain("Relazione di storia");
+    expect(answer).toContain("Avviso di ieri");
+  });
+
   it("non presenta un promemoria senza data come prossimo", () => {
     const noDateReminderData: VotoData = {
       ...data,

@@ -215,6 +215,69 @@ function latestGrade(data: VotoData) {
   );
 }
 
+type RecentDashboardUpdate = {
+  date: string;
+  text: string;
+};
+
+function localDateTime(value: string | undefined): number | null {
+  if (!value?.trim()) return null;
+  const raw = value.trim();
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00`) : new Date(raw);
+  const time = parsed.getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+function recentDashboardUpdates(data: VotoData, now: Date): RecentDashboardUpdate[] {
+  const lowerBound = now.getTime() - 24 * 60 * 60 * 1000;
+  const upperBound = now.getTime();
+  const updates: Array<RecentDashboardUpdate & { occurredAt: number }> = [];
+
+  data.subjects.forEach((subject) => {
+    subject.grades.forEach((grade) => {
+      const occurredAt = localDateTime(grade.date);
+      if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+      updates.push({
+        date: grade.date,
+        occurredAt,
+        text: `voto ${grade.label} in ${subject.name}`,
+      });
+    });
+  });
+
+  data.assignments.forEach((assignment) => {
+    const occurredAt = localDateTime(assignment.assignedDate);
+    if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+    updates.push({
+      date: assignment.assignedDate!,
+      occurredAt,
+      text: `compito “${assignment.title}”${assignment.subject ? ` di ${assignment.subject}` : ""}`,
+    });
+  });
+
+  data.notifications.forEach((notification) => {
+    const occurredAt = localDateTime(notification.date);
+    if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+    const kind =
+      notification.type === "grade"
+        ? "notifica di voto"
+        : notification.type === "notice"
+          ? "comunicazione"
+          : notification.type === "note"
+            ? "nota"
+            : "promemoria";
+    updates.push({
+      date: notification.date!,
+      occurredAt,
+      text: `${kind} “${notification.title}”`,
+    });
+  });
+
+  return updates
+    .sort((left, right) => right.occurredAt - left.occurredAt)
+    .map(({ date, text }) => ({ date, text }));
+}
+
 function gradeToneLabel(value: number | null): string {
   const tone = gradeTone(value);
   if (tone === "good") return "verde (da 6 in su)";
@@ -778,15 +841,55 @@ export function answerQuestion(
     "compit",
     "scadenz",
   ].some((term) => normalized.includes(term));
+  const asksDashboardOverview =
+    normalized.includes("dashboard") ||
+    normalized.includes("situazione generale") ||
+    normalized.includes("cosa e successo") ||
+    normalized.includes("cosa è successo") ||
+    normalized.includes("ultimo aggiornamento");
   if (
-    (normalized.includes("novit") || normalized.includes("aggiornament")) &&
+    (normalized.includes("novit") ||
+      normalized.includes("aggiornament") ||
+      asksDashboardOverview) &&
     !asksCategorySpecificUpdates
   ) {
     const recentGrade = latestGrade(data);
+    const recentUpdates = recentDashboardUpdates(data, now);
+    const currentAverage = overallAverage(data.subjects);
     const todayNotices = notices.filter(
       (notification) => notification.date?.slice(0, 10) === localDateKey(now),
     );
     const lines: string[] = [];
+    if (currentAverage !== null) {
+      const delta =
+        data.previousAverage === undefined ? null : currentAverage - data.previousAverage;
+      const trend =
+        delta === null
+          ? ""
+          : delta > 0.05
+            ? `, in crescita di ${number(delta)} punti`
+            : delta < -0.05
+              ? `, in calo di ${number(Math.abs(delta))} punti`
+              : ", stabile rispetto all’ultimo dato";
+      lines.push(`Media generale: ${number(currentAverage)} su 10${trend}.`);
+    } else {
+      lines.push("Media generale: non ancora calcolabile perché non ci sono voti sufficienti.");
+    }
+    if (recentUpdates.length) {
+      lines.push(
+        `Evento più recente nelle ultime 24 ore: ${recentUpdates[0]!.text} (${displayDate(recentUpdates[0]!.date) ?? recentUpdates[0]!.date}).`,
+      );
+      if (recentUpdates.length > 1) {
+        lines.push(
+          `Altre novità recenti: ${recentUpdates
+            .slice(1, 4)
+            .map((item) => item.text)
+            .join("; ")}.`,
+        );
+      }
+    } else {
+      lines.push("Nessun nuovo evento registrato nelle ultime 24 ore.");
+    }
     if (recentGrade) {
       const date = displayDate(recentGrade.grade.date);
       lines.push(
@@ -803,9 +906,7 @@ export function answerQuestion(
       return days !== null && days >= 0;
     });
     if (nextReminder) lines.push(`Promemoria: ${reminderLabel(nextReminder)}.`);
-    return lines.length
-      ? lines.join("\n")
-      : "Non risultano nuovi voti, circolari o promemoria nei dati caricati.";
+    return lines.join("\n");
   }
 
   if (normalized.includes("orario") || normalized.includes("lezion")) {
