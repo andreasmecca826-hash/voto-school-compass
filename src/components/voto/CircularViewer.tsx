@@ -125,7 +125,7 @@ function DocxPreview({
         if (!bodyRef.current || cancelled) return;
         await renderAsync(blob, bodyRef.current, styleRef.current ?? undefined, {
           breakPages: true,
-          ignoreWidth: true,
+          ignoreWidth: false,
           ignoreHeight: true,
           renderHeaders: true,
           renderFooters: true,
@@ -181,9 +181,9 @@ function DocxPreview({
         .docx-preview-body,
         .docx-preview-body .docx-wrapper {
           min-height: 100% !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
+          width: max-content !important;
+          max-width: none !important;
+          min-width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
           background: transparent !important;
@@ -193,9 +193,8 @@ function DocxPreview({
         }
         .docx-preview-body section.docx {
           box-sizing: border-box !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
+          max-width: none !important;
+          min-width: max-content !important;
           min-height: auto !important;
           margin: 0 0 0.75rem !important;
           padding: 1rem !important;
@@ -212,6 +211,8 @@ function DocxPreview({
         .docx-preview-body table {
           table-layout: auto !important;
         }
+        .docx-preview-body span,
+        .docx-preview-body p,
         .docx-preview-body td,
         .docx-preview-body th {
           overflow-wrap: normal !important;
@@ -220,7 +221,6 @@ function DocxPreview({
         }
         .docx-preview-body section.docx {
           zoom: var(--docx-zoom, 1);
-          width: calc(100% / var(--docx-zoom, 1)) !important;
         }
       `}</style>
       </div>
