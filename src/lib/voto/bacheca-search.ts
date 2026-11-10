@@ -1,5 +1,14 @@
 import type { AppNotification } from "./types";
 
+export function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("it-IT")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function noticeSearchText(item: AppNotification): string {
   return [
     item.title,
@@ -10,12 +19,13 @@ export function noticeSearchText(item: AppNotification): string {
     item.attachmentName,
     ...(item.attachments ?? []).flatMap((attachment) => [attachment.name, attachment.path]),
   ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase("it-IT");
+    .filter((value): value is string => Boolean(value))
+    .map(normalizeSearchText)
+    .join(" ");
 }
 
 export function matchesNoticeQuery(item: AppNotification, query: string): boolean {
-  const normalizedQuery = query.trim().toLocaleLowerCase("it-IT");
-  return !normalizedQuery || noticeSearchText(item).includes(normalizedQuery);
+  const terms = normalizeSearchText(query).split(" ").filter(Boolean);
+  const searchableText = noticeSearchText(item);
+  return terms.every((term) => searchableText.includes(term));
 }

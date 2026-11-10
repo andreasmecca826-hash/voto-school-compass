@@ -33,4 +33,10 @@ describe("ricerca Bacheca", () => {
     expect(matchesNoticeQuery(notice, "circolare inesistente")).toBe(false);
     expect(matchesNoticeQuery(notice, "")).toBe(true);
   });
+
+  it("richiede tutte le parole e ignora gli accenti", () => {
+    expect(matchesNoticeQuery(notice, "assemblea venerdi")).toBe(true);
+    expect(matchesNoticeQuery(notice, "ASSEMBLÈA PALESTRA")).toBe(true);
+    expect(matchesNoticeQuery(notice, "assemblea mensa")).toBe(false);
+  });
 });

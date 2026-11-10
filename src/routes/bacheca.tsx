@@ -156,7 +156,7 @@ function DidupBacheca() {
             CERCA IN BACHECA
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Cerca circolari e comunicazioni per nome, testo, allegato e intervallo di date.
+            Cerca una o più parole in nome, testo, allegato e intervallo di date.
           </DialogDescription>
 
           <div className="-ml-6 mt-[46px] flex items-center gap-[18px]">
@@ -170,7 +170,7 @@ function DidupBacheca() {
               onChange={(event) =>
                 setDraftFilters((current) => ({ ...current, query: event.target.value }))
               }
-              placeholder="Nome o testo..."
+              placeholder="Parole da cercare..."
               aria-label="Cerca circolari e comunicazioni per nome"
               className="h-[60px] min-w-0 flex-1 rounded-[10px] border border-white bg-[#333638] px-5 text-[18px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
             />
@@ -419,15 +419,15 @@ function StandardBacheca() {
         <DialogContent className="max-w-md">
           <DialogTitle>Cerca nella Bacheca</DialogTitle>
           <DialogDescription>
-            Cerca circolari e comunicazioni per nome, testo, materia o allegato.
+            Cerca una o più parole in nome, testo, materia o allegato.
           </DialogDescription>
           <div className="mt-4 flex items-center gap-2">
             <Search className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <input
-              id="standard-bacheca-query"
+              id="didup-bacheca-query"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Nome o testo..."
+              placeholder="Parole da cercare..."
               aria-label="Cerca circolari e comunicazioni per nome"
               className="h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
               autoFocus
