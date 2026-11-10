@@ -50,6 +50,14 @@ function attachmentCount(item: AppNotification) {
   return item.attachmentPath || item.attachmentUrl ? 1 : 0;
 }
 
+function isRedundantNoticeText(item: AppNotification, text?: string) {
+  if (!text?.trim()) return true;
+  const value = text.trim().toLocaleLowerCase("it-IT");
+  const label = notificationContentLabel(item).toLocaleLowerCase("it-IT");
+  const singular = label === "circolari" ? "circolare" : "comunicazione";
+  return new Set([label, singular, item.title.trim().toLocaleLowerCase("it-IT")]).has(value);
+}
+
 function openNotice(
   item: AppNotification,
   markRead: (ids: string[]) => void,
@@ -271,7 +279,9 @@ function DidupBacheca() {
             const count = attachmentCount(item);
             const contentLabel = notificationContentLabel(item);
             const summary =
-              item.message && item.message !== item.title
+              item.message &&
+              item.message !== item.title &&
+              !isRedundantNoticeText(item, item.message)
                 ? item.message
                 : isGenericNoticeTitle(item)
                   ? ""
@@ -455,7 +465,11 @@ function StandardBacheca() {
           const contentLabel = notificationContentLabel(item);
           const title = notificationDisplayTitle(item);
           const summary =
-            item.message?.trim() && item.message.trim() !== title ? item.message.trim() : "";
+            item.message?.trim() &&
+            item.message.trim() !== title &&
+            !isRedundantNoticeText(item, item.message)
+              ? item.message.trim()
+              : "";
           return (
             <article key={item.id} className="card-surface p-4">
               <div className="flex items-start justify-between gap-3">
