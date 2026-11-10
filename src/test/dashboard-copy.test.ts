@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { countRecentOpenAssignments, dashboardMicrocopy } from "@/lib/voto/dashboard-copy";
-import type { Assignment } from "@/lib/voto/types";
+import {
+  countRecentOpenAssignments,
+  dashboardMicrocopy,
+  selectLatestDashboardEvent,
+} from "@/lib/voto/dashboard-copy";
+import type { AppNotification, Assignment } from "@/lib/voto/types";
 
 const assignment = (id: string, assignedDate?: string, completed = false): Assignment => ({
   id,
@@ -9,51 +13,62 @@ const assignment = (id: string, assignedDate?: string, completed = false): Assig
   completed,
 });
 
+const notification = (
+  id: string,
+  type: AppNotification["type"],
+  date: string,
+): AppNotification => ({
+  id,
+  type,
+  title: id,
+  date,
+  read: false,
+});
+
 const isDone = (_id: string, completed: boolean) => completed;
 
-describe("frasi contestuali del dashboard", () => {
-  it("mostra una frase sui voti da leggere", () => {
-    expect(
-      dashboardMicrocopy(
-        { average: 7, delta: null, unreadGrades: 1, unreadOther: 0, recentAssignments: 0 },
-        0,
-      ),
-    ).toMatch(/voto/i);
+const context = (latestEvent: ReturnType<typeof selectLatestDashboardEvent>) => ({
+  average: 7,
+  delta: null,
+  latestEvent,
+});
+
+describe("frase della Media generale", () => {
+  it("mostra l’evento più recente entro 24 ore", () => {
+    const latest = selectLatestDashboardEvent(
+      [notification("voto", "grade", "2026-11-10")],
+      [assignment("compito", "2026-11-09")],
+      new Date(2026, 10, 10, 18),
+    );
+
+    expect(latest?.kind).toBe("grade");
+    expect(dashboardMicrocopy(context(latest), 0)).toMatch(/voto/i);
   });
 
-  it("mostra una frase sui compiti assegnati di recente", () => {
-    expect(
-      dashboardMicrocopy(
-        { average: 7, delta: null, unreadGrades: 0, unreadOther: 0, recentAssignments: 1 },
-        0,
-      ),
-    ).toMatch(/compito/i);
+  it("preferisce un compito più recente a un voto precedente", () => {
+    const latest = selectLatestDashboardEvent(
+      [notification("voto", "grade", "2026-11-09")],
+      [assignment("compito", "2026-11-10")],
+      new Date(2026, 10, 10, 18),
+    );
+
+    expect(latest?.kind).toBe("assignment");
+    expect(dashboardMicrocopy(context(latest), 0)).toMatch(/compito/i);
   });
 
-  it("non segnala assenza di novità quando ci sono altre notifiche non lette", () => {
-    expect(
-      dashboardMicrocopy(
-        { average: 7, delta: null, unreadGrades: 0, unreadOther: 2, recentAssignments: 0 },
-        0,
-      ),
-    ).toMatch(/novità|aggiornamenti|messaggi/i);
+  it("usa una frase generica sulla media quando non accade nulla da oltre un giorno", () => {
+    const latest = selectLatestDashboardEvent(
+      [notification("voto-vecchio", "grade", "2026-11-08")],
+      [assignment("compito-vecchio", "2026-11-08")],
+      new Date(2026, 10, 10, 18),
+    );
+
+    expect(latest).toBeNull();
+    expect(dashboardMicrocopy(context(latest), 0)).toMatch(/strada|media|solido|crescere|voto/i);
   });
+});
 
-  it("varia le frasi quando non ci sono novità e mantiene la scelta per lo stesso seed", () => {
-    const context = {
-      average: 7,
-      delta: null,
-      unreadGrades: 0,
-      unreadOther: 0,
-      recentAssignments: 0,
-    };
-    const first = dashboardMicrocopy(context, 0);
-    const last = dashboardMicrocopy(context, 0.99);
-
-    expect(first).not.toBe(last);
-    expect(dashboardMicrocopy(context, 0)).toBe(first);
-  });
-
+describe("conteggio dei compiti recenti", () => {
   it("conta i compiti aperti assegnati oggi o nei due giorni precedenti", () => {
     const now = new Date(2026, 10, 10, 12);
     const assignments = [

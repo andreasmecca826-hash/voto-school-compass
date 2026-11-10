@@ -26,13 +26,7 @@ import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
 import { emptySchedule, loadSchedule, type Schedule } from "@/lib/voto/orario";
 import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
-import { countRecentOpenAssignments, dashboardMicrocopy } from "@/lib/voto/dashboard-copy";
-import {
-  attendanceMicrocopy,
-  bulletinMicrocopy,
-  interrogazioniMicrocopy,
-  notesMicrocopy,
-} from "@/lib/voto/dashboard-situations";
+import { dashboardMicrocopy, selectLatestDashboardEvent } from "@/lib/voto/dashboard-copy";
 import {
   openAssignmentsForTomorrow,
   tomorrowDate,
@@ -148,36 +142,8 @@ function Dashboard() {
       v.homeModules.find((module) => module.id === id)?.scale ?? 100,
     ) / v.homeScale;
 
-  const unreadGrades = notifications.filter(
-    (notification) =>
-      notification.type === "grade" && !v.isRead(notification.id, notification.read),
-  ).length;
-  const unreadOther = notifications.filter(
-    (notification) =>
-      notification.type !== "grade" && !v.isRead(notification.id, notification.read),
-  ).length;
-  const recentAssignments = countRecentOpenAssignments(assignments, now, isDone);
-  const micro = dashboardMicrocopy(
-    { average: avg, delta, unreadGrades, unreadOther, recentAssignments },
-    microSeed,
-  );
-  const phraseSeed = (offset: number) => (microSeed + offset) % 1;
-  const noteTotal = notifications.filter((notification) => notification.type === "note").length;
-  const unreadNotes = notifications.filter(
-    (notification) => notification.type === "note" && !v.isRead(notification.id, notification.read),
-  ).length;
-  const bulletinTotal = notifications.filter(
-    (notification) => notification.type === "notice",
-  ).length;
-  const unreadBulletin = notifications.filter(
-    (notification) =>
-      notification.type === "notice" && !v.isRead(notification.id, notification.read),
-  ).length;
-  const attendanceMessage = attendanceMicrocopy(attendance, phraseSeed(0.13));
-  const notesMessage = notesMicrocopy(noteTotal, unreadNotes, phraseSeed(0.37));
-  const bulletinMessage = bulletinMicrocopy(bulletinTotal, unreadBulletin, phraseSeed(0.61));
-  const interrogazioniMessage = interrogazioniMicrocopy(v.interrogazioni, phraseSeed(0.83));
-
+  const latestEvent = selectLatestDashboardEvent(notifications, assignments, now);
+  const micro = dashboardMicrocopy({ average: avg, delta, latestEvent }, microSeed);
   return (
     <div className="pt-3" style={{ zoom: v.homeScale / 100 }}>
       {v.source === "demo" && (
@@ -347,7 +313,6 @@ function Dashboard() {
         {isHomeModuleVisible("presenze") && (
           <div style={{ order: homeOrder("presenze"), zoom: homeModuleScale("presenze") }}>
             <SectionTitle>Presenze</SectionTitle>
-            <p className="mb-2 text-xs text-muted-foreground">{attendanceMessage}</p>
             <section className="card-surface p-4">
               <div className="mb-4 grid grid-cols-2 rounded-xl border border-border bg-surface p-1">
                 {(["hours", "days"] as const).map((view) => (
@@ -469,12 +434,11 @@ function Dashboard() {
             {interrogazioni.length === 0 ? (
               <Empty
                 icon={<CalendarDays className="h-6 w-6" />}
-                title={interrogazioniMessage}
+                title="Nessuna interrogazione in programma"
                 text="Aggiungila dalla sezione Interrogazioni."
               />
             ) : (
               <>
-                <p className="mb-2 text-xs text-muted-foreground">{interrogazioniMessage}</p>
                 <ul className="space-y-2">
                   {interrogazioni.map((item) => (
                     <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
@@ -505,10 +469,9 @@ function Dashboard() {
           <div style={{ order: homeOrder("note"), zoom: homeModuleScale("note") }}>
             <SectionTitle>Note</SectionTitle>
             {notes.length === 0 ? (
-              <Empty icon={<StickyNote className="h-6 w-6" />} title={notesMessage} />
+              <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" />
             ) : (
               <>
-                <p className="mb-2 text-xs text-muted-foreground">{notesMessage}</p>
                 <ul className="space-y-2">
                   {notes.map((n) => (
                     <NotifItem key={n.id} id={n.id} />
@@ -551,10 +514,9 @@ function Dashboard() {
             <SectionTitle>Bacheca</SectionTitle>
             <CircularCheckControl />
             {bulletin.length === 0 ? (
-              <Empty icon={<Megaphone className="h-6 w-6" />} title={bulletinMessage} />
+              <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" />
             ) : (
               <>
-                <p className="mb-2 text-xs text-muted-foreground">{bulletinMessage}</p>
                 <ul className="space-y-2">
                   {bulletin.map((n) => (
                     <NotifItem key={n.id} id={n.id} />

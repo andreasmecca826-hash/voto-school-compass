@@ -1,4 +1,4 @@
-import type { Assignment } from "./types";
+import type { AppNotification, Assignment } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RECENT_ASSIGNMENT_DAYS = 3;
@@ -6,9 +6,14 @@ const RECENT_ASSIGNMENT_DAYS = 3;
 type DashboardCopyContext = {
   average: number | null;
   delta: number | null;
-  unreadGrades: number;
-  unreadOther: number;
-  recentAssignments: number;
+  latestEvent: DashboardEvent | null;
+};
+
+export type DashboardEventKind = "grade" | "assignment" | "other";
+
+export type DashboardEvent = {
+  kind: DashboardEventKind;
+  occurredAt: number;
 };
 
 function pick<T>(items: T[], seed: number): T {
@@ -36,67 +41,62 @@ export function countRecentOpenAssignments(
   }).length;
 }
 
-const gradePhrases = [
-  ({ unreadGrades }: DashboardCopyContext) =>
-    unreadGrades === 1
-      ? "C’è un nuovo voto da scoprire: apri Voti e togli la curiosità."
-      : `Ci sono ${unreadGrades} nuovi voti da scoprire: uno alla volta, senza panico.`,
-  ({ unreadGrades }: DashboardCopyContext) =>
-    unreadGrades === 1
-      ? "Il registro ha lasciato un voto in sospeso: sorpresa o conferma?"
-      : `Il registro ha lasciato ${unreadGrades} voti in sospeso: suspense scolastica!`,
-  ({ unreadGrades }: DashboardCopyContext) =>
-    unreadGrades === 1
-      ? "È arrivato un voto nuovo. Respira: è solo un numero, ma merita un’occhiata."
-      : `Sono arrivati ${unreadGrades} voti nuovi: il tabellone ti aspetta.`,
-];
+const recentEventPhrases: Record<DashboardEventKind, string[]> = {
+  grade: [
+    "È arrivato un voto nuovo: dagli un’occhiata quando vuoi.",
+    "Il registro ha appena aggiunto un voto: sorpresa o conferma?",
+    "C’è un voto recente da scoprire: respira e controlla con calma.",
+  ],
+  assignment: [
+    "È arrivato un compito nuovo: affrontalo prima che si moltiplichi.",
+    "Un compito recente è in agenda: piccolo passo oggi, grande pace domani.",
+    "Nuovo compito in vista: matita pronta, missione attivata.",
+  ],
+  other: [
+    "È arrivato un aggiornamento nel registro: dagli un’occhiata.",
+    "La scuola ha lasciato una novità recente: la trovi qui appena vuoi.",
+    "C’è una comunicazione recente da controllare: niente panico, solo un’occhiata.",
+  ],
+};
 
-const assignmentPhrases = [
-  ({ recentAssignments }: DashboardCopyContext) =>
-    recentAssignments === 1
-      ? "È arrivato un compito nuovo: affrontalo prima che si moltiplichi."
-      : `Sono arrivati ${recentAssignments} compiti nuovi: modalità eroe, ma uno alla volta.`,
-  ({ recentAssignments }: DashboardCopyContext) =>
-    recentAssignments === 1
-      ? "Un nuovo compito è in agenda: matita pronta, missione attivata."
-      : `${recentAssignments} compiti freschi di registro: il diario oggi non scherza.`,
-  ({ recentAssignments }: DashboardCopyContext) =>
-    recentAssignments === 1
-      ? "Nuovo compito in vista. Piccolo passo oggi, grande pace domani."
-      : `Nuovi compiti in vista (${recentAssignments}): meglio iniziare prima della maratona.`,
-];
+function eventTime(value: string | undefined): number | null {
+  if (!value?.trim()) return null;
+  const raw = value.trim();
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00`) : new Date(raw);
+  const time = parsed.getTime();
+  return Number.isFinite(time) ? time : null;
+}
 
-const combinedNewsPhrases = [
-  ({ unreadGrades, recentAssignments }: DashboardCopyContext) =>
-    `Novità doppia: ${unreadGrades} ${unreadGrades === 1 ? "voto" : "voti"} e ${recentAssignments} ${recentAssignments === 1 ? "compito" : "compiti"}.`,
-  ({ unreadGrades, recentAssignments }: DashboardCopyContext) =>
-    `Il registro si è svegliato: ${unreadGrades} ${unreadGrades === 1 ? "voto" : "voti"} e ${recentAssignments} ${recentAssignments === 1 ? "compito" : "compiti"} da controllare.`,
-  ({ unreadGrades, recentAssignments }: DashboardCopyContext) =>
-    `Voti e compiti fanno squadra: ${unreadGrades} ${unreadGrades === 1 ? "voto" : "voti"}, ${recentAssignments} ${recentAssignments === 1 ? "compito" : "compiti"}.`,
-];
+export function selectLatestDashboardEvent(
+  notifications: AppNotification[],
+  assignments: Assignment[],
+  now: Date,
+): DashboardEvent | null {
+  const lowerBound = now.getTime() - DAY_MS;
+  const upperBound = now.getTime();
+  const candidates: DashboardEvent[] = [];
 
-const otherUpdatePhrases = [
-  ({ unreadOther }: DashboardCopyContext) =>
-    unreadOther === 1
-      ? "C’è una novità da controllare nel registro: aprila prima che scappi."
-      : `Ci sono ${unreadOther} novità da controllare: il registro ha qualcosa da raccontare.`,
-  ({ unreadOther }: DashboardCopyContext) =>
-    unreadOther === 1
-      ? "È arrivato un aggiornamento: la curiosità è autorizzata."
-      : `Sono arrivati ${unreadOther} aggiornamenti: detective del registro, tocca a te.`,
-  ({ unreadOther }: DashboardCopyContext) =>
-    unreadOther === 1
-      ? "Il registro ha lasciato un messaggio in sospeso."
-      : `Il registro ha lasciato ${unreadOther} messaggi in sospeso: niente panico, solo un’occhiata.`,
-];
+  notifications.forEach((notification) => {
+    const occurredAt = eventTime(notification.date);
+    if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+    candidates.push({
+      kind: notification.type === "grade" ? "grade" : "other",
+      occurredAt,
+    });
+  });
 
-const quietPhrases = [
-  "Dai dati caricati non risultano novità recenti: il registro oggi fa il timido.",
-  "Nessun nuovo voto o compito rilevato: persino il diario si è preso una pausa caffè.",
-  "Per ora tutto tranquillo nei dati del registro. L’intervallo è salvo.",
-  "Nessuna novità recente da inseguire: puoi respirare prima della prossima campanella.",
-  "Silenzio dal registro. Non è un bug: oggi la suspense è in pausa.",
-];
+  assignments.forEach((assignment) => {
+    const occurredAt = eventTime(assignment.assignedDate);
+    if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+    candidates.push({ kind: "assignment", occurredAt });
+  });
+
+  return candidates.reduce<DashboardEvent | null>(
+    (latest, candidate) =>
+      latest === null || candidate.occurredAt >= latest.occurredAt ? candidate : latest,
+    null,
+  );
+}
 
 function averagePhrases(average: number | null, delta: number | null): string[] {
   if (average === null) {
@@ -141,12 +141,9 @@ function averagePhrases(average: number | null, delta: number | null): string[] 
 }
 
 export function dashboardMicrocopy(context: DashboardCopyContext, seed: number): string {
-  if (context.unreadGrades > 0 && context.recentAssignments > 0) {
-    return pick(combinedNewsPhrases, seed)(context);
+  if (context.latestEvent) {
+    return pick(recentEventPhrases[context.latestEvent.kind], seed);
   }
-  if (context.unreadGrades > 0) return pick(gradePhrases, seed)(context);
-  if (context.recentAssignments > 0) return pick(assignmentPhrases, seed)(context);
-  if (context.unreadOther > 0) return pick(otherUpdatePhrases, seed)(context);
 
-  return pick([...quietPhrases, ...averagePhrases(context.average, context.delta)], seed);
+  return pick(averagePhrases(context.average, context.delta), seed);
 }
