@@ -7,6 +7,24 @@ import { useVoto, useClock } from "@/lib/voto/store";
 
 const COMPLETED_KEY = "voto.study-planner.completed.v1";
 const POSTPONED_KEY = "voto.study-planner.postponed.v1";
+const START_KEY = "voto.study-planner.start.v1";
+const END_KEY = "voto.study-planner.end.v1";
+
+function loadString(key: string, fallback: string): string {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveString(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // La scelta resta valida nella sessione corrente.
+  }
+}
 
 function loadRecord(key: string): Record<string, string> {
   try {
@@ -38,10 +56,28 @@ function kindLabel(task: StudyPlanTask): string {
       : "Interrogazione";
 }
 
+function minutesFromTime(value: string): number {
+  const [hours = "14", minutes = "00"] = value.split(":");
+  return Number(hours) * 60 + Number(minutes);
+}
+
+function timeLabel(value: number): string {
+  const normalized = Math.max(0, value);
+  return `${String(Math.floor(normalized / 60) % 24).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+}
+
+function taskTime(start: string, tasks: StudyPlanTask[], index: number): string {
+  const from =
+    minutesFromTime(start) + tasks.slice(0, index).reduce((total, item) => total + item.minutes, 0);
+  return `${timeLabel(from)}–${timeLabel(from + (tasks[index]?.minutes ?? 0))}`;
+}
+
 export function StudyPlannerTool() {
   const { data, interrogazioni } = useVoto();
   const now = useClock();
   const [minutesDraft, setMinutesDraft] = useState("90");
+  const [studyStart, setStudyStart] = useState(() => loadString(START_KEY, "14:00"));
+  const [studyEnd, setStudyEnd] = useState(() => loadString(END_KEY, "15:00"));
   const minutesPerDay = Math.max(30, Math.min(360, Number(minutesDraft) || 90));
   const [completed, setCompleted] = useState<Record<string, string>>(() =>
     loadRecord(COMPLETED_KEY),
@@ -60,23 +96,31 @@ export function StudyPlannerTool() {
         minutesPerDay,
         completedIds,
         earliestDates: postponed,
+        studyStart,
+        studyEnd,
       }),
-    [completedIds, data.assignments, interrogazioni, minutesPerDay, now, postponed],
+    [
+      completedIds,
+      data.assignments,
+      interrogazioni,
+      minutesPerDay,
+      now,
+      postponed,
+      studyEnd,
+      studyStart,
+    ],
   );
-  const plannedTasks = plan.reduce((total, day) => total + day.tasks.length, 0);
+  const plannedTasks = plan.reduce(
+    (total, day) => total + day.tasks.filter((task) => !task.completed).length,
+    0,
+  );
   const openTasks =
     data.assignments.filter((item) => !item.completed).length +
     interrogazioni.filter((item) => !item.completed).length;
 
   const completeTask = (task: StudyPlanTask) => {
-    const final =
-      task.id in completed
-        ? (() => {
-            const copy = { ...completed };
-            delete copy[task.id];
-            return copy;
-          })()
-        : { ...completed, [task.id]: new Date().toISOString() };
+    if (task.completed) return;
+    const final = { ...completed, [task.id]: new Date().toISOString() };
     setCompleted(final);
     saveRecord(COMPLETED_KEY, final);
   };
@@ -148,8 +192,40 @@ export function StudyPlannerTool() {
               <RotateCcw /> Azzera
             </Button>
           </div>
+          <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-border/70 pt-3">
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Dalle
+              <input
+                type="time"
+                value={studyStart}
+                onChange={(event) => {
+                  setStudyStart(event.target.value);
+                  saveString(START_KEY, event.target.value);
+                }}
+                className="mt-1 block h-10 rounded-lg border border-input bg-background px-2 text-sm font-semibold text-foreground"
+                aria-label="Inizio orario di studio"
+              />
+            </label>
+            <span className="pb-2 text-xs text-muted-foreground">alle</span>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Fine
+              <input
+                type="time"
+                value={studyEnd}
+                onChange={(event) => {
+                  setStudyEnd(event.target.value);
+                  saveString(END_KEY, event.target.value);
+                }}
+                className="mt-1 block h-10 rounded-lg border border-input bg-background px-2 text-sm font-semibold text-foreground"
+                aria-label="Fine orario di studio"
+              />
+            </label>
+            <span className="pb-2 text-[11px] text-muted-foreground">
+              La fascia limita il piano giornaliero.
+            </span>
+          </div>
           <div className="mt-3 flex flex-wrap gap-2" aria-label="Preset tempo di studio">
-            {[30, 60, 90, 120, 180].map((minutes) => (
+            {[30, 45, 60, 90, 120, 180].map((minutes) => (
               <button
                 key={minutes}
                 type="button"
@@ -190,13 +266,24 @@ export function StudyPlannerTool() {
             </div>
             {day.tasks.length ? (
               <div className="divide-y divide-border">
-                {day.tasks.map((task) => (
-                  <div key={task.id} className="flex items-start gap-3 px-4 py-3">
-                    <span className="mt-0.5 rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
-                      {task.minutes} min
+                {day.tasks.map((task, index) => (
+                  <div
+                    key={task.id}
+                    className={`flex items-start gap-3 px-4 py-3 ${task.completed ? "bg-surface/60 opacity-70" : ""}`}
+                  >
+                    <span
+                      className={`mt-0.5 rounded-full px-2 py-1 text-[10px] font-semibold ${task.completed ? "bg-success/15 text-success" : "bg-primary-soft text-primary"}`}
+                    >
+                      {task.completed
+                        ? "✓ Fatto"
+                        : `${taskTime(studyStart, day.tasks, index)} · ${task.minutes} min`}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{task.title}</p>
+                      <p
+                        className={`text-sm font-medium ${task.completed ? "text-muted-foreground line-through" : ""}`}
+                      >
+                        {task.title}
+                      </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {kindLabel(task)}
                         {task.subject ? ` · ${task.subject}` : ""}
@@ -209,6 +296,7 @@ export function StudyPlannerTool() {
                         size="icon"
                         title="Segna completata"
                         aria-label={`Segna completata: ${task.title}`}
+                        disabled={task.completed}
                         onClick={() => completeTask(task)}
                       >
                         <Check />

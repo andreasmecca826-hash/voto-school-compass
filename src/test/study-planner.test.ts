@@ -74,7 +74,8 @@ describe("Smart Study Planner", () => {
     const task = first[0]?.tasks[0];
     expect(task).toBeTruthy();
     const completed = buildStudyPlan({ ...base, completedIds: new Set(["assignment:a"]) });
-    expect(completed.flatMap((day) => day.tasks)).toHaveLength(0);
+    expect(completed.flatMap((day) => day.tasks)).toHaveLength(1);
+    expect(completed.flatMap((day) => day.tasks)[0]?.completed).toBe(true);
     const postponed = buildStudyPlan({ ...base, earliestDates: { "assignment:a": "2026-11-10" } });
     expect(postponed[0]?.tasks).toHaveLength(0);
     expect(postponed[1]?.tasks[0]?.title).toBe("Ripasso");

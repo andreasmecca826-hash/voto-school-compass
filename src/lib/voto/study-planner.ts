@@ -13,6 +13,7 @@ export interface StudyPlanTask {
   dueDate?: string;
   date: string;
   minutes: number;
+  completed: boolean;
 }
 
 export interface StudyPlanDay {
@@ -31,6 +32,8 @@ export interface StudyPlanInput {
   horizonDays?: number;
   completedIds?: ReadonlySet<string>;
   earliestDates?: Readonly<Record<string, string>>;
+  studyStart?: string;
+  studyEnd?: string;
 }
 
 const DAY_LABELS = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
@@ -62,6 +65,12 @@ function daysBetween(start: string, end: string): number {
   return Math.round((to - from) / 86_400_000);
 }
 
+function timeMinutes(value: string | undefined, fallback: number): number {
+  const match = value?.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return fallback;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
 function lessonCount(schedule: Schedule, date: Date): number {
   const weekday = date.getDay();
   if (weekday < 1 || weekday > 5) return 0;
@@ -79,10 +88,16 @@ export function buildStudyPlan(input: StudyPlanInput): StudyPlanDay[] {
   const start = new Date(input.now);
   start.setHours(12, 0, 0, 0);
   const startKey = dateKey(start);
+  const windowStart = timeMinutes(input.studyStart, 14 * 60);
+  const windowEnd = Math.max(windowStart + 30, timeMinutes(input.studyEnd, 15 * 60));
+  const windowMinutes = windowEnd - windowStart;
   const days: StudyPlanDay[] = Array.from({ length: horizon }, (_, index) => {
     const date = addDays(start, index);
     const scheduledLessons = lessonCount(input.schedule, date);
-    const availableMinutes = Math.max(30, input.minutesPerDay - scheduledLessons * 10);
+    const availableMinutes = Math.max(
+      30,
+      Math.min(windowMinutes, input.minutesPerDay) - scheduledLessons * 10,
+    );
     return {
       date: dateKey(date),
       label: formatStudyPlanDate(dateKey(date)),
@@ -95,7 +110,7 @@ export function buildStudyPlan(input: StudyPlanInput): StudyPlanDay[] {
   const candidates: Array<StudyPlanTask & { priority: number; deadline: string }> = [];
 
   for (const assignment of input.assignments) {
-    if (assignment.completed || completed.has(`assignment:${assignment.id}`)) continue;
+    const isCompleted = assignment.completed || completed.has(`assignment:${assignment.id}`);
     const dueDate = parseDate(assignment.dueDate);
     if (dueDate && (daysBetween(startKey, dueDate) < 0 || daysBetween(endKey, dueDate) > 0))
       continue;
@@ -108,14 +123,15 @@ export function buildStudyPlan(input: StudyPlanInput): StudyPlanDay[] {
       kind: "compito",
       ...(dueDate ? { dueDate } : {}),
       date: startKey,
-      minutes: 30,
+      minutes: isCompleted ? 0 : 30,
+      completed: isCompleted,
       priority: dueDate ? daysBetween(startKey, dueDate) : horizon + 2,
       deadline,
     });
   }
 
   for (const exam of input.interrogazioni) {
-    if (exam.completed || completed.has(`exam:${exam.id}`)) continue;
+    const isCompleted = exam.completed || completed.has(`exam:${exam.id}`);
     const dueDate = parseDate(exam.date);
     if (!dueDate || daysBetween(startKey, dueDate) < 0 || daysBetween(endKey, dueDate) > 0)
       continue;
@@ -128,7 +144,8 @@ export function buildStudyPlan(input: StudyPlanInput): StudyPlanDay[] {
       kind: isVerification ? "verifica" : "interrogazione",
       dueDate,
       date: startKey,
-      minutes: isVerification ? 50 : 40,
+      minutes: isCompleted ? 0 : isVerification ? 50 : 40,
+      completed: isCompleted,
       priority: Math.max(0, daysBetween(startKey, dueDate) - 1),
       deadline: dueDate,
     });
