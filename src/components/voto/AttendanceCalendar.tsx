@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { AlertCircle, CalendarDays, ChevronDown } from "lucide-react";
+import { useMemo } from "react";
+import { CalendarDays } from "lucide-react";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { useVoto } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
@@ -7,7 +7,7 @@ import type { AttendanceEvent } from "@/lib/voto/types";
 
 type DayStatus = "present" | "absence" | "exception" | "future";
 type CalendarDay = { date: string; day: number; status: DayStatus; event?: AttendanceEvent };
-type Month = { key: string; label: string; days: CalendarDay[]; exceptionCount: number };
+type Month = { key: string; label: string; days: CalendarDay[] };
 
 const MONTHS = [
   "Gennaio",
@@ -60,9 +60,6 @@ function createMonths(year: number, events: AttendanceEvent[], today: string): M
       key: `${monthYear}-${String(monthIndex + 1).padStart(2, "0")}`,
       label: MONTHS[monthIndex] ?? "",
       days,
-      exceptionCount: days.filter(
-        (item) => item.status === "absence" || item.status === "exception",
-      ).length,
     };
   });
 }
@@ -77,7 +74,6 @@ const statusLabel: Record<DayStatus, string> = {
 export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
   const v = useVoto();
   const { config } = useSchoolPeriods();
-  const [openMonth, setOpenMonth] = useState<string | null>(null);
   const events = v.data.attendanceEvents ?? EMPTY_EVENTS;
   const today = new Date().toISOString().slice(0, 10);
   const months = useMemo(
@@ -150,7 +146,6 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
 
       <div className="space-y-2">
         {months.map((month) => {
-          const expanded = openMonth === month.key;
           return (
             <div
               key={month.key}
@@ -159,20 +154,10 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
                 isDidup ? "border-white/10 bg-[#262626]" : "border-border bg-card",
               )}
             >
-              <button
-                type="button"
-                aria-expanded={expanded}
-                onClick={() => setOpenMonth(expanded ? null : month.key)}
-                className="flex min-h-[68px] w-full items-center gap-3 px-4 py-3 text-left"
-              >
+              <div className="flex min-h-[68px] w-full items-center gap-3 px-4 py-3 text-left">
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 font-display text-base font-semibold">
+                  <span className="font-display text-base font-semibold">
                     {month.label}
-                    {month.exceptionCount > 0 && (
-                      <AlertCircle
-                        className={cn("h-4 w-4", isDidup ? "text-[#f39a16]" : "text-warning")}
-                      />
-                    )}
                   </span>
                   <span
                     className={cn(
@@ -180,17 +165,10 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
                       isDidup ? "text-white/45" : "text-muted-foreground",
                     )}
                   >
-                    {month.days.length} giorni feriali · {month.exceptionCount} eventi
+                    {month.days.length} giorni feriali
                   </span>
                 </span>
-                <ChevronDown
-                  className={cn(
-                    "h-5 w-5 shrink-0 transition-transform",
-                    expanded && "rotate-180",
-                    isDidup ? "text-white/60" : "text-muted-foreground",
-                  )}
-                />
-              </button>
+              </div>
               <div
                 className="no-scrollbar flex flex-nowrap gap-[5px] overflow-x-auto px-4 pb-4"
                 aria-label={`Calendario presenze ${month.label}`}
@@ -206,7 +184,6 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
                       item.status === "absence" && "bg-[#ef3125]",
                       item.status === "exception" && "bg-[#f39a16]",
                       item.status === "future" && "bg-[#aeb3b8]",
-                      expanded && "h-4 w-4",
                     )}
                   />
                 ))}
@@ -215,13 +192,13 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
           );
         })}
       </div>
-      <p
-        className={cn("text-[10px] leading-4", isDidup ? "text-white/40" : "text-muted-foreground")}
-      >
-        {knownExceptions
-          ? `${knownExceptions} ritardi o uscite anticipate rilevati.`
-          : "I colori vengono aggiornati quando arrivano eventi dal registro."}
-      </p>
+      {knownExceptions > 0 && (
+        <p
+          className={cn("text-[10px] leading-4", isDidup ? "text-white/40" : "text-muted-foreground")}
+        >
+          {knownExceptions} ritardi o uscite anticipate rilevati.
+        </p>
+      )}
     </section>
   );
 }
