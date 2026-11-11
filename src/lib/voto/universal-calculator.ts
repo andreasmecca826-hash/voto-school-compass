@@ -7,7 +7,8 @@ export type UniversalToolId =
   | "discount"
   | "qr"
   | "documents"
-  | "tables";
+  | "tables"
+  | "share";
 
 export type ConversionCategory =
   "length" | "mass" | "volume" | "area" | "speed" | "temperature" | "currency";

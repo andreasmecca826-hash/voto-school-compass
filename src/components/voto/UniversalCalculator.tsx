@@ -11,6 +11,7 @@ import {
   Ruler,
   Search,
   Scale,
+  Share2,
   Sparkles,
   Table2,
   Trash2,
@@ -125,6 +126,15 @@ const TOOLS: {
     keywords: "righe colonne csv foglio dati esporta excel",
     icon: Table2,
     tone: "text-success",
+  },
+  {
+    id: "share",
+    title: "Condivisione sicura compiti",
+    description: "Condividi solo il compito scelto, senza voti o dati dell’app",
+    category: "Documenti e creazione",
+    keywords: "condividi compito messaggio privacy share",
+    icon: Share2,
+    tone: "text-primary",
   },
 ];
 

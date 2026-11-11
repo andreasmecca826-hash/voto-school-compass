@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  Camera,
   CalendarDays,
   CalendarX2,
   Calculator,
@@ -22,6 +23,7 @@ import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
 import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
 import { StudyPlannerTool } from "@/components/voto/StudyPlannerTool";
+import { InterrogationPrepTool, PhotoImportTool } from "@/components/voto/StudyLabFeatures";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -93,6 +95,20 @@ const TOOLS = [
     subtitle: "Decidi tu cosa studiare, quando e per quanto tempo",
     icon: ListChecks,
     tone: "text-primary bg-surface",
+  },
+  {
+    id: "interrogation-prep",
+    title: "Prima dell’interrogazione",
+    subtitle: "Checklist, argomenti, conto alla rovescia e domande di ripasso",
+    icon: ListChecks,
+    tone: "text-warning bg-surface",
+  },
+  {
+    id: "photo-import",
+    title: "Importa da foto",
+    subtitle: "Leggi appunti, lavagna o diario con OCR locale",
+    icon: Camera,
+    tone: "text-success bg-surface",
   },
   {
     id: "classroom-seating",
@@ -199,6 +215,8 @@ function Studio() {
               {tool === "absence-calculator" && <AbsenceCalculator />}
               {tool === "school-end" && <SchoolEndDateTool />}
               {tool === "classroom-seating" && <ClassroomSeatingTool />}
+              {tool === "interrogation-prep" && <InterrogationPrepTool />}
+              {tool === "photo-import" && <PhotoImportTool />}
             </>
           )}
         </>

@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   Plus,
   QrCode,
+  Share2,
   Table2,
   Trash2,
 } from "lucide-react";
@@ -16,7 +17,7 @@ import {
 } from "@/lib/voto/circular-reader";
 import { createCsv, type UniversalToolId } from "@/lib/voto/universal-calculator";
 
-type CreationToolId = Extract<UniversalToolId, "qr" | "documents" | "tables">;
+type CreationToolId = Extract<UniversalToolId, "qr" | "documents" | "tables" | "share">;
 
 const TOOL_INFO: Record<
   CreationToolId,
@@ -37,7 +38,98 @@ const TOOL_INFO: Record<
     description: "Componi una tabella personalizzata e scaricala come file CSV.",
     icon: Table2,
   },
+  share: {
+    title: "Condivisione sicura compiti",
+    description: "Prepara un messaggio con il solo compito che vuoi condividere.",
+    icon: Share2,
+  },
 };
+
+function SecureShareTool() {
+  const [subject, setSubject] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [notice, setNotice] = useState("");
+  const message = [
+    subject.trim() && `Materia: ${subject.trim()}`,
+    title.trim() && `Compito: ${title.trim()}`,
+    content.trim(),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  async function share() {
+    if (!message) {
+      setNotice("Inserisci almeno il testo del compito.");
+      return;
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: title.trim() || "Compito", text: message });
+        setNotice("Condivisione completata.");
+      } else {
+        await navigator.clipboard.writeText(message);
+        setNotice("Testo copiato: ora puoi incollarlo nell’app che preferisci.");
+      }
+    } catch {
+      setNotice("Condivisione annullata o non disponibile.");
+    }
+  }
+
+  return (
+    <section className="card-surface space-y-3 p-4" aria-label="Condivisione sicura compiti">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block space-y-1 text-xs font-semibold">
+          Materia
+          <input
+            className="h-11 w-full rounded-lg border border-input bg-card px-3 text-sm font-normal"
+            value={subject}
+            onChange={(event) => setSubject(event.target.value)}
+            placeholder="Es. Matematica"
+            maxLength={80}
+          />
+        </label>
+        <label className="block space-y-1 text-xs font-semibold">
+          Titolo
+          <input
+            className="h-11 w-full rounded-lg border border-input bg-card px-3 text-sm font-normal"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Es. Esercizi pag. 42"
+            maxLength={120}
+          />
+        </label>
+      </div>
+      <label className="block space-y-1 text-xs font-semibold">
+        Testo del compito
+        <textarea
+          className="min-h-32 w-full rounded-lg border border-input bg-card p-3 text-sm font-normal"
+          value={content}
+          onChange={(event) => setContent(event.target.value.slice(0, 4000))}
+          placeholder="Scrivi solo ciò che vuoi condividere…"
+          maxLength={4000}
+        />
+      </label>
+      <button
+        type="button"
+        onClick={share}
+        disabled={!message}
+        className="press inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        <Share2 className="h-4 w-4" /> Condividi compito
+      </button>
+      {notice && (
+        <p role="status" className="rounded-lg bg-primary-soft px-3 py-2 text-xs text-primary">
+          {notice}
+        </p>
+      )}
+      <p className="text-[10px] leading-4 text-muted-foreground">
+        Il testo viene inviato solo quando premi il pulsante e non include automaticamente voti,
+        assenze o dati dell’app. Non viene creato un link pubblico né salvato un archivio online.
+      </p>
+    </section>
+  );
+}
 
 function useLocalOcr() {
   const [progress, setProgress] = useState(0);
@@ -490,6 +582,7 @@ export function UniversalCreationPanel({ tool }: { tool: CreationToolId }) {
       {tool === "qr" && <QrTool />}
       {tool === "documents" && <DocumentReaderTool />}
       {tool === "tables" && <TableGeneratorTool />}
+      {tool === "share" && <SecureShareTool />}
     </div>
   );
 }

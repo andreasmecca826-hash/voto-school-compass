@@ -1,10 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Calculator, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Calculator,
+  ChevronRight,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useUi } from "@/components/voto/AppShell";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { Chip, GradePill, ProgressBar, SubjectMark } from "@/components/voto/ui";
-import { fmt, gradeTone, subjectStats } from "@/lib/voto/calc";
+import { fmt, gradeTone, overallAverage, subjectStats } from "@/lib/voto/calc";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import { useVoto } from "@/lib/voto/store";
 import type { PeriodSelection } from "@/lib/voto/periods";
@@ -114,6 +121,7 @@ function Voti() {
           Media più bassa
         </Chip>
       </div>
+      <SubjectMap subjects={subjects} />
       <ul className="mt-4 space-y-2">
         {list.map(({ s, st, latestGrade }) => (
           <li key={s.id}>
@@ -143,6 +151,83 @@ function Voti() {
         ))}
       </ul>
     </div>
+  );
+}
+
+function SubjectMap({ subjects }: { subjects: ReturnType<typeof useSchoolPeriods>["subjects"] }) {
+  const ranked = subjects
+    .map((subject) => ({ subject, stats: subjectStats(subject) }))
+    .filter(({ stats }) => stats.avg !== null)
+    .sort((a, b) => (b.stats.avg ?? 0) - (a.stats.avg ?? 0));
+  const strongest = ranked[0];
+  const weakest = ranked[ranked.length - 1];
+  const average = overallAverage(subjects);
+  return (
+    <section className="card-surface mt-4 space-y-3 p-4" aria-labelledby="subject-map-title">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="subject-map-title" className="flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 text-primary" /> Mappa delle materie
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Punti di forza, materie da seguire e andamento recente.
+          </p>
+        </div>
+        <span className="rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
+          Media {average === null ? "—" : fmt(average, 2)}
+        </span>
+      </div>
+      {ranked.length === 0 ? (
+        <p className="rounded-lg bg-surface p-3 text-xs text-muted-foreground">
+          Aggiungi almeno un voto per visualizzare la mappa.
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg bg-success-soft p-3">
+              <p className="flex items-center gap-1 font-semibold text-success">
+                <TrendingUp className="h-3.5 w-3.5" /> Punto di forza
+              </p>
+              <p className="mt-1 truncate text-sm font-medium">{strongest?.subject.name}</p>
+              <p className="mt-0.5 text-muted-foreground">{fmt(strongest?.stats.avg ?? 0, 1)}</p>
+            </div>
+            <div className="rounded-lg bg-danger-soft p-3">
+              <p className="flex items-center gap-1 font-semibold text-danger">
+                <TrendingDown className="h-3.5 w-3.5" /> Da seguire
+              </p>
+              <p className="mt-1 truncate text-sm font-medium">{weakest?.subject.name}</p>
+              <p className="mt-0.5 text-muted-foreground">{fmt(weakest?.stats.avg ?? 0, 1)}</p>
+            </div>
+          </div>
+          <div className="space-y-2" aria-label="Andamento per materia">
+            {ranked.map(({ subject, stats }) => (
+              <div key={subject.id} className="flex items-center gap-2">
+                <span className="w-24 truncate text-xs">{subject.name}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.max(4, Math.min(100, ((stats.avg ?? 0) / 10) * 100))}%`,
+                      background: subject.color,
+                    }}
+                  />
+                </div>
+                <span className="tabular w-8 text-right text-xs font-semibold">
+                  {fmt(stats.avg ?? 0, 1)}
+                </span>
+                <span
+                  className={`w-10 text-right text-[10px] ${stats.trend === null ? "text-muted-foreground" : stats.trend >= 0 ? "text-success" : "text-danger"}`}
+                >
+                  {stats.trend === null
+                    ? "—"
+                    : `${stats.trend >= 0 ? "+" : ""}${fmt(stats.trend, 1)}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
   );
 }
 
