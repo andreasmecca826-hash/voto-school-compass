@@ -1,6 +1,15 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PdfCanvasPreview } from "@/components/voto/PdfCanvasPreview";
+
+class TestPointerEvent extends MouseEvent {
+  readonly pointerId: number;
+
+  constructor(type: string, init: MouseEventInit & { pointerId?: number } = {}) {
+    super(type, init);
+    this.pointerId = init.pointerId ?? 1;
+  }
+}
 
 const { getDocumentMock } = vi.hoisted(() => ({ getDocumentMock: vi.fn() }));
 
@@ -11,10 +20,15 @@ vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({
 
 class TestIntersectionObserver {
   static current: TestIntersectionObserver | undefined;
+  static options: IntersectionObserverInit | undefined;
   readonly targets: Element[] = [];
 
-  constructor(private readonly callback: IntersectionObserverCallback) {
+  constructor(
+    private readonly callback: IntersectionObserverCallback,
+    options?: IntersectionObserverInit,
+  ) {
     TestIntersectionObserver.current = this;
+    TestIntersectionObserver.options = options;
   }
 
   observe(target: Element) {
@@ -31,14 +45,19 @@ class TestIntersectionObserver {
   }
 
   trigger(target: Element) {
+    this.triggerMany([target]);
+  }
+
+  triggerMany(targets: Element[]) {
     this.callback(
-      [{ isIntersecting: true, target } as IntersectionObserverEntry],
+      targets.map((target) => ({ isIntersecting: true, target }) as IntersectionObserverEntry),
       this as unknown as IntersectionObserver,
     );
   }
 }
 
 let pages: ReturnType<typeof makePage>[] = [];
+let requestedPages: number[] = [];
 
 function makePage() {
   return {
@@ -49,12 +68,16 @@ function makePage() {
 
 function setupPdf() {
   pages = [makePage(), makePage(), makePage()];
+  requestedPages = [];
   const destroy = vi.fn().mockResolvedValue(undefined);
   getDocumentMock.mockClear();
   getDocumentMock.mockReturnValue({
     promise: Promise.resolve({
       numPages: pages.length,
-      getPage: vi.fn(async (pageNumber: number) => pages[pageNumber - 1]!),
+      getPage: vi.fn(async (pageNumber: number) => {
+        requestedPages.push(pageNumber);
+        return pages[pageNumber - 1]!;
+      }),
     }),
     destroy,
   });
@@ -63,6 +86,7 @@ function setupPdf() {
 beforeEach(() => {
   setupPdf();
   TestIntersectionObserver.current = undefined;
+  vi.stubGlobal("PointerEvent", TestPointerEvent);
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
     () => ({ setTransform: vi.fn() }) as unknown as CanvasRenderingContext2D,
   );
@@ -70,6 +94,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  document.documentElement.removeAttribute("data-performance");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -91,6 +116,8 @@ describe("anteprima PDF progressiva", () => {
     await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
     const document = screen.getByRole("document", { name: "Circolare" });
     await waitFor(() => expect(document).toHaveAttribute("aria-busy", "false"));
+    expect(document).toHaveClass("overflow-x-hidden", "overflow-y-auto", "touch-pan-y");
+    expect(document).not.toHaveClass("touch-pan-x");
     await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
     expect(container.querySelectorAll("[data-pdf-page]")).toHaveLength(3);
     expect(pages[1]!.render).not.toHaveBeenCalled();
@@ -104,6 +131,56 @@ describe("anteprima PDF progressiva", () => {
     expect(pages[2]!.render).not.toHaveBeenCalled();
   });
 
+  it("applica lo zoom a tutte le pagine man mano che diventano visibili", async () => {
+    vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
+    render(<PdfCanvasPreview src="/zoom.pdf" title="PDF ingrandito" zoom={1.3} />);
+
+    const pdfPreview = screen.getByRole("document", { name: "PDF ingrandito" });
+    Object.defineProperty(pdfPreview, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(pdfPreview, "clientHeight", { configurable: true, value: 300 });
+    Object.defineProperty(pdfPreview, "scrollWidth", { configurable: true, value: 600 });
+    Object.defineProperty(pdfPreview, "scrollHeight", { configurable: true, value: 900 });
+    expect(pdfPreview).toHaveClass(
+      "overflow-x-auto",
+      "overflow-y-auto",
+      "touch-pan-x",
+      "touch-pan-y",
+    );
+    await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    await waitFor(() => expect(pdfPreview.scrollLeft).toBe(150));
+    fireEvent.pointerDown(pdfPreview, { pointerId: 1, clientX: 150, clientY: 200 });
+    fireEvent.pointerMove(pdfPreview, { pointerId: 1, clientX: 100, clientY: 100 });
+    expect(pdfPreview.scrollLeft).toBe(200);
+    expect(pdfPreview.scrollTop).toBe(100);
+    fireEvent.pointerUp(pdfPreview, { pointerId: 1 });
+    expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
+    await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
+
+    const observer = TestIntersectionObserver.current!;
+    act(() => observer.trigger(observer.targets[0]!));
+
+    await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
+    expect(pages[1]!.getViewport).toHaveBeenCalledWith({ scale: 1.625 });
+  });
+
+  it("riduce canvas e precaricamento su smartphone quando la modalità prestazioni è attiva", async () => {
+    vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: true })),
+    );
+    vi.stubGlobal("devicePixelRatio", 3);
+    document.documentElement.dataset["performance"] = "on";
+    render(<PdfCanvasPreview src="/mobile.pdf" title="Anteprima alleggerita" />);
+
+    await waitFor(() => expect(pages[0]!.getViewport).toHaveBeenCalledWith({ scale: 1 }));
+    await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
+
+    expect(TestIntersectionObserver.options?.rootMargin).toBe("300px 0px");
+    expect(document.querySelector("canvas")?.width).toBe(750);
+  });
+
   it("renderizza tutte le pagine se IntersectionObserver non è disponibile", async () => {
     vi.stubGlobal("IntersectionObserver", undefined);
     render(<PdfCanvasPreview src="/example.pdf" title="Circolare senza observer" />);
@@ -113,5 +190,37 @@ describe("anteprima PDF progressiva", () => {
       expect(pages[1]!.render).toHaveBeenCalledOnce();
       expect(pages[2]!.render).toHaveBeenCalledOnce();
     });
+  });
+
+  it("dà priorità alla pagina vicina anche se quella lontana entra prima in coda", async () => {
+    vi.stubGlobal("IntersectionObserver", TestIntersectionObserver);
+    render(<PdfCanvasPreview src="/priorita.pdf" title="Priorità circolari" />);
+
+    await waitFor(() => expect(pages[0]!.render).toHaveBeenCalledOnce());
+    await waitFor(() => expect(TestIntersectionObserver.current).toBeDefined());
+
+    const scrollport = screen.getByRole("document", { name: "Priorità circolari" });
+    vi.spyOn(scrollport, "getBoundingClientRect").mockReturnValue({
+      top: 0,
+      bottom: 500,
+    } as DOMRect);
+
+    const observer = TestIntersectionObserver.current!;
+    const fartherPage = observer.targets[0]!;
+    const closerPage = observer.targets[1]!;
+    vi.spyOn(fartherPage, "getBoundingClientRect").mockReturnValue({
+      top: 900,
+      bottom: 1000,
+    } as DOMRect);
+    vi.spyOn(closerPage, "getBoundingClientRect").mockReturnValue({
+      top: 550,
+      bottom: 650,
+    } as DOMRect);
+
+    act(() => observer.triggerMany([fartherPage, closerPage]));
+
+    expect(requestedPages).toEqual([1, 3]);
+    await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
+    expect(requestedPages).toEqual([1, 3, 2]);
   });
 });

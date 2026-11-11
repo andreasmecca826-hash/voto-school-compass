@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  notificationContentLabel,
+  notificationDisplayTitle,
   selectDashboardAssignments,
   selectNotificationsByType,
   selectOpenInterrogazioni,
@@ -8,6 +10,31 @@ import {
 } from "@/lib/voto/selectors";
 
 describe("Dashboard selectors", () => {
+  it("classifica avvisi con allegati come Circolari e avvisi solo testuali come Comunicazioni", () => {
+    const base = { type: "notice" as const, title: "Avviso", read: false };
+
+    expect(
+      notificationContentLabel({ ...base, id: "pdf", attachments: [{ name: "circolare.pdf" }] }),
+    ).toBe("Circolari");
+    expect(notificationContentLabel({ ...base, id: "docx", attachmentName: "modulo.docx" })).toBe(
+      "Circolari",
+    );
+    expect(notificationContentLabel({ ...base, id: "text", message: "Solo testo" })).toBe(
+      "Comunicazioni",
+    );
+    expect(notificationDisplayTitle({ ...base, id: "text-title" })).toBe("Comunicazione");
+    expect(
+      notificationDisplayTitle({
+        ...base,
+        id: "pdf-title",
+        attachments: [{ name: "orario.pdf" }],
+      }),
+    ).toBe("Circolare");
+    expect(
+      notificationDisplayTitle({ ...base, id: "specific", title: "Orario docenti di sostegno" }),
+    ).toBe("Orario docenti di sostegno");
+  });
+
   it("seleziona e ordina i compiti di oggi e domani", () => {
     const now = new Date(2026, 9, 26);
     const assignments = [
@@ -40,6 +67,16 @@ describe("Dashboard selectors", () => {
       "today",
       "tomorrow",
     ]);
+  });
+
+  it("esclude i compiti già completati anche con scadenza oggi o domani", () => {
+    const now = new Date(2026, 9, 26);
+    const assignments = [
+      { id: "done", title: "Già finito", dueDate: "2026-10-26", completed: true },
+      { id: "open", title: "Da fare", dueDate: "2026-10-27", completed: false },
+    ];
+
+    expect(selectDashboardAssignments(assignments, now).map((item) => item.id)).toEqual(["open"]);
   });
 
   it("filtra notifiche e interrogazioni aperte con un limite", () => {

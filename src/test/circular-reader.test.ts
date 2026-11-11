@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { analyzeCircularText, reconstructPositionedText } from "@/lib/voto/circular-reader";
+import {
+  analyzeCircularText,
+  extractCircularTableRows,
+  normalizeOcrText,
+  reconstructPositionedText,
+} from "@/lib/voto/circular-reader";
 
 describe("lettore locale delle circolari", () => {
   it("estrae date, destinatari, riepilogo e allegati senza modificare il testo originale", () => {
@@ -82,5 +87,20 @@ describe("lettore locale delle circolari", () => {
     );
     expect(result.layout).toBe("table");
     expect(result.summary).toBeNull();
+  });
+
+  it("estrae celle e pagina dalle righe di una tabella", () => {
+    const rows = extractCircularTableRows(
+      "[Pagina 3]\nClasse | Giorno | Ora\n2I | lunedì | 08:00\n2L | martedì | 10:00",
+    );
+    expect(rows).toEqual([
+      { page: "3", cells: ["Classe", "Giorno", "Ora"] },
+      { page: "3", cells: ["2I", "lunedì", "08:00"] },
+      { page: "3", cells: ["2L", "martedì", "10:00"] },
+    ]);
+  });
+
+  it("corregge solo errori OCR comuni negli orari e nei giorni", () => {
+    expect(normalizeOcrText("Lunedi alle O8:00 per la 2 l A")).toBe("lunedì alle 08:00 per la 2IA");
   });
 });

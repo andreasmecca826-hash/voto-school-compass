@@ -1,7 +1,9 @@
+import { ChevronDown, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadAbsenceHoursPerDay, saveAbsenceHoursPerDay } from "@/lib/voto/absence-preferences";
 import { calculateAbsencePlan } from "@/lib/voto/absence-calculator";
 import { fmt } from "@/lib/voto/calc";
+import { cn } from "@/lib/utils";
 import { useVoto } from "@/lib/voto/store";
 
 function numericInput(value: string): number {
@@ -17,12 +19,16 @@ export function AbsenceCalculator() {
   const [currentHoursInput, setCurrentHoursInput] = useState(String(attendance.absenceHours));
   const [absenceLimitInput, setAbsenceLimitInput] = useState(String(attendance.absenceLimitHours));
   const [annualHoursInput, setAnnualHoursInput] = useState(String(attendance.annualHours));
-  const [simulatedDaysInput, setSimulatedDaysInput] = useState("0");
-  const [simulatedHoursInput, setSimulatedHoursInput] = useState("0");
+  const [simulatedDaysInput, setSimulatedDaysInput] = useState("");
+  const [simulatedHoursInput, setSimulatedHoursInput] = useState("");
   const [hoursPerDayInput, setHoursPerDayInput] = useState("6");
+  const [editCurrentData, setEditCurrentData] = useState(false);
+  const [editDayLength, setEditDayLength] = useState(false);
+
   useEffect(() => {
     setHoursPerDayInput(String(loadAbsenceHoursPerDay()));
   }, []);
+
   useEffect(() => {
     setCurrentDaysInput(String(attendance.absenceDays));
     setCurrentHoursInput(String(attendance.absenceHours));
@@ -34,206 +40,279 @@ export function AbsenceCalculator() {
     attendance.absenceLimitHours,
     attendance.annualHours,
   ]);
+
   const updateHoursPerDay = (value: string) => {
     setHoursPerDayInput(value);
     const parsed = numericInput(value);
     if (parsed > 0) saveAbsenceHoursPerDay(parsed);
   };
+
+  const currentDays = numericInput(currentDaysInput);
+  const simulatedDays = numericInput(simulatedDaysInput);
+  const simulatedManualHours = numericInput(simulatedHoursInput);
+  const hoursPerDay = numericInput(hoursPerDayInput);
+  const simulatedDayHours = simulatedDays * hoursPerDay;
+  const simulatedHours = simulatedDayHours + simulatedManualHours;
   const calculation = calculateAbsencePlan({
     absenceHours: numericInput(currentHoursInput),
     absenceLimitHours: numericInput(absenceLimitInput),
     annualHours: numericInput(annualHoursInput),
-    // Il limite del registro è espresso in ore: convertiamo quindi i giorni
-    // simulati usando le ore di lezione per giornata.
-    simulatedHours:
-      numericInput(simulatedHoursInput) +
-      numericInput(simulatedDaysInput) * numericInput(hoursPerDayInput),
-    hoursPerDay: numericInput(hoursPerDayInput),
+    simulatedHours,
+    hoursPerDay,
   });
-  const percent = calculation.currentAnnualPercentage;
-  const currentDays = numericInput(currentDaysInput);
-  const simulatedDays = numericInput(simulatedDaysInput);
+  const simulationStarted = simulatedDays > 0 || simulatedManualHours > 0;
+  const usagePercent = calculation.hasConfiguredLimit
+    ? (calculation.absenceHours / calculation.absenceLimitHours) * 100
+    : 0;
+  const progressWidth = Math.min(100, Math.max(0, usagePercent));
+  const annualPercent = calculation.currentAnnualPercentage;
   const totalDaysAfterSimulation = currentDays + simulatedDays;
-  const simulatedManualHours = numericInput(simulatedHoursInput);
-  const simulatedDayHours = simulatedDays * calculation.hoursPerDay;
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">
-        Il registro stabilisce il limite in <strong>ore di assenza</strong>. I giorni sono mostrati
-        come riferimento; per la simulazione vengono convertiti in ore usando le ore di lezione per
-        giornata. Le modifiche valgono solo per questo calcolo e non cambiano i dati Supabase.
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Il limite è espresso in ore. I dati iniziali arrivano dal registro; puoi modificarli solo
+        per questa prova.
       </p>
 
-      <section
-        className="rounded-xl border border-primary/20 bg-primary-soft/50 p-3 text-xs leading-relaxed"
-        aria-label="Come viene calcolato il limite"
-      >
-        <p className="font-semibold">Come leggere il risultato</p>
-        <p className="mt-1 text-muted-foreground">
-          <strong>Ore ancora disponibili</strong> = limite massimo − ore già conteggiate. Le
-          giornate intere sono una stima: ore disponibili ÷ ore di lezione per giornata.
-        </p>
-      </section>
-
-      <section className="card-surface space-y-3 p-4" aria-labelledby="absence-current-title">
-        <h3 id="absence-current-title" className="text-sm font-semibold">
-          Situazione attuale
-        </h3>
-        <div className="grid grid-cols-2 gap-2">
-          <NumberField
-            id="absence-current-days"
-            label="Giorni già assenti"
-            value={currentDaysInput}
-            onChange={setCurrentDaysInput}
-            step="0.5"
-            help="Dato informativo del registro; il limite viene verificato sulle ore."
-          />
-          <NumberField
-            id="absence-current-hours"
-            label="Ore di assenza conteggiate"
-            value={currentHoursInput}
-            onChange={setCurrentHoursInput}
-            step="0.5"
-            help="Sono queste ore che vengono confrontate con il limite."
-          />
-          <NumberField
-            id="absence-limit-hours"
-            label="Limite massimo (ore)"
-            value={absenceLimitInput}
-            onChange={setAbsenceLimitInput}
-            step="0.5"
-            help="Puoi correggerlo se il limite del tuo istituto è diverso."
-          />
-          <NumberField
-            id="absence-annual-hours"
-            label="Monte ore annuale"
-            value={annualHoursInput}
-            onChange={setAnnualHoursInput}
-            step="0.5"
-            help="Serve per calcolare la percentuale di assenze."
-          />
-          <Metric
-            label="Limite massimo"
-            value={
-              calculation.hasConfiguredLimit
+      <section className="card-surface space-y-4 p-4" aria-labelledby="absence-current-title">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 id="absence-current-title" className="text-sm font-semibold">
+              Situazione attuale
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {numberLabel(calculation.absenceHours)} ore conteggiate · {numberLabel(currentDays)}{" "}
+              giorni nel registro
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-muted-foreground">Limite</p>
+            <p className="tabular text-sm font-semibold">
+              {calculation.hasConfiguredLimit
                 ? `${numberLabel(calculation.absenceLimitHours)} h`
-                : "Non impostato"
-            }
-          />
-          <Metric
-            label="Ore ancora disponibili"
-            value={
-              calculation.hasConfiguredLimit ? `${numberLabel(calculation.remainingHours)} h` : "—"
-            }
-          />
-          <Metric
-            label="Giornate intere stimate"
-            value={
-              calculation.hasConfiguredLimit ? `${calculation.fullDaysRemaining ?? "—"} gg` : "—"
-            }
-          />
-          <Metric
-            label="Monte ore annuale"
-            value={calculation.annualHours > 0 ? `${numberLabel(calculation.annualHours)} h` : "—"}
-          />
+                : "Non impostato"}
+            </p>
+          </div>
         </div>
-        {percent !== null && (
-          <p className="text-[11px] text-muted-foreground">
-            Le ore attuali corrispondono al {numberLabel(percent)}% del monte ore annuale.
+
+        {calculation.hasConfiguredLimit ? (
+          <>
+            <div
+              role="progressbar"
+              aria-label="Limite di assenze già utilizzato"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.min(100, Math.round(usagePercent))}
+              className="h-2 overflow-hidden rounded-full bg-surface"
+            >
+              <div
+                className={cn(
+                  "h-full rounded-full transition-[width]",
+                  usagePercent >= 90 ? "bg-danger" : "bg-primary",
+                )}
+                style={{ width: `${progressWidth}%` }}
+              />
+            </div>
+
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  {calculation.exceededHours > 0 ? "Limite superato di" : "Ti restano"}
+                </p>
+                <p
+                  className={cn(
+                    "tabular font-display text-3xl font-bold",
+                    calculation.exceededHours > 0 ? "text-danger" : "text-foreground",
+                  )}
+                >
+                  {numberLabel(
+                    calculation.exceededHours > 0
+                      ? calculation.exceededHours
+                      : calculation.remainingHours,
+                  )}
+                  <span className="ml-1 text-base font-semibold">h</span>
+                </p>
+              </div>
+              <p className="max-w-[45%] text-right text-xs text-muted-foreground">
+                ≈ {calculation.fullDaysRemaining ?? "—"} giornate intere
+                {hoursPerDay > 0 && ` da ${numberLabel(hoursPerDay)} h`}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+              <span>{numberLabel(usagePercent)}% del limite usato</span>
+              {annualPercent !== null && (
+                <span>{numberLabel(annualPercent)}% del monte ore annuale</span>
+              )}
+            </div>
+          </>
+        ) : (
+          <p role="status" className="rounded-lg bg-warning/10 p-3 text-xs text-warning">
+            Il registro non ha fornito un limite valido. Puoi inserirlo in “Modifica dati”.
           </p>
         )}
-        {calculation.hasConfiguredLimit && calculation.exceededHours > 0 && (
-          <p role="status" className="text-xs font-medium text-danger">
-            Il limite risulta già superato di {numberLabel(calculation.exceededHours)} ore.
-          </p>
-        )}
-        {!calculation.hasConfiguredLimit && (
-          <p role="status" className="text-xs text-warning">
-            Non trovo un limite valido nei dati caricati: controlla la configurazione del registro.
-          </p>
+
+        <button
+          type="button"
+          aria-expanded={editCurrentData}
+          aria-controls="absence-current-fields"
+          onClick={() => setEditCurrentData((open) => !open)}
+          className="press inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-primary"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          {editCurrentData ? "Nascondi dati" : "Modifica dati"}
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform", editCurrentData && "rotate-180")}
+          />
+        </button>
+
+        {editCurrentData && (
+          <div id="absence-current-fields" className="space-y-3 border-t border-border pt-3">
+            <p className="text-[11px] text-muted-foreground">
+              Questi valori servono solo a personalizzare il calcolo: non cambiano il registro.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField
+                id="absence-current-days"
+                label="Giorni già assenti"
+                value={currentDaysInput}
+                onChange={setCurrentDaysInput}
+                step="0.5"
+              />
+              <NumberField
+                id="absence-current-hours"
+                label="Ore conteggiate"
+                value={currentHoursInput}
+                onChange={setCurrentHoursInput}
+                step="0.5"
+              />
+              <NumberField
+                id="absence-limit-hours"
+                label="Limite massimo (ore)"
+                value={absenceLimitInput}
+                onChange={setAbsenceLimitInput}
+                step="0.5"
+              />
+              <NumberField
+                id="absence-annual-hours"
+                label="Monte ore annuale"
+                value={annualHoursInput}
+                onChange={setAnnualHoursInput}
+                step="0.5"
+              />
+            </div>
+          </div>
         )}
       </section>
 
       <section className="card-surface space-y-3 p-4" aria-labelledby="absence-simulation-title">
-        <h3 id="absence-simulation-title" className="text-sm font-semibold">
-          Simula nuove assenze
-        </h3>
-        <p className="text-[11px] text-muted-foreground">
-          Inserisci giorni e ore aggiuntive. I giorni vengono trasformati in ore: ad esempio, 2
-          giorni × 6 ore = 12 ore aggiunte al conteggio.
-        </p>
-        <NumberField
-          id="absence-extra-days"
-          label="Giorni interi da aggiungere"
-          value={simulatedDaysInput}
-          onChange={setSimulatedDaysInput}
-          step="1"
-        />
-        <NumberField
-          id="absence-extra-hours"
-          label="Ore aggiuntive da aggiungere"
-          value={simulatedHoursInput}
-          onChange={setSimulatedHoursInput}
-          step="0.5"
-        />
-        <NumberField
-          id="absence-hours-per-day"
-          label="Ore di lezione per giornata"
-          value={hoursPerDayInput}
-          onChange={updateHoursPerDay}
-          step="0.5"
-          help="Usato per la conversione in giornate equivalenti; la preferenza resta su questo dispositivo ed è condivisa con l’assistente."
-        />
+        <div>
+          <h3 id="absence-simulation-title" className="text-sm font-semibold">
+            Fai una prova
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Quante altre assenze vuoi aggiungere? Inserisci giorni, ore o entrambi.
+          </p>
+        </div>
 
-        {calculation.hasConfiguredLimit && (
+        <div className="grid grid-cols-2 gap-3">
+          <NumberField
+            id="absence-extra-days"
+            label="Giorni in più"
+            value={simulatedDaysInput}
+            onChange={setSimulatedDaysInput}
+            step="1"
+          />
+          <NumberField
+            id="absence-extra-hours"
+            label="Ore in più"
+            value={simulatedHoursInput}
+            onChange={setSimulatedHoursInput}
+            step="0.5"
+          />
+        </div>
+
+        <div className="rounded-lg bg-surface px-3 py-2.5">
+          <button
+            type="button"
+            aria-expanded={editDayLength}
+            aria-controls="absence-day-length"
+            onClick={() => setEditDayLength((open) => !open)}
+            className="press flex min-h-7 w-full items-center justify-between gap-2 text-left text-[11px] text-muted-foreground"
+          >
+            <span>
+              1 giornata = {numberLabel(hoursPerDay)} ore
+              {!editDayLength && " · cambia"}
+            </span>
+            <ChevronDown
+              className={cn("h-4 w-4 shrink-0 transition-transform", editDayLength && "rotate-180")}
+            />
+          </button>
+          {editDayLength && (
+            <div id="absence-day-length" className="mt-2">
+              <NumberField
+                id="absence-hours-per-day"
+                label="Ore di lezione per giornata"
+                value={hoursPerDayInput}
+                onChange={updateHoursPerDay}
+                step="0.5"
+                help="Salvato solo su questo dispositivo."
+              />
+            </div>
+          )}
+        </div>
+
+        {!simulationStarted ? (
+          <p className="rounded-lg bg-surface p-3 text-xs text-muted-foreground">
+            Inserisci un numero per vedere come cambierebbe il totale.
+          </p>
+        ) : !calculation.hasConfiguredLimit ? (
+          <p className="rounded-lg bg-warning/10 p-3 text-xs text-warning">
+            Prima inserisci il limite massimo in “Modifica dati”.
+          </p>
+        ) : (
           <div
             aria-live="polite"
-            className="rounded-xl border border-border bg-surface p-3 text-xs"
-          >
-            <p>
-              La simulazione aggiunge {numberLabel(simulatedDayHours)} ore dai giorni e{" "}
-              {numberLabel(simulatedManualHours)} ore inserite manualmente: in totale{" "}
-              {numberLabel(calculation.simulatedHours)} ore aggiuntive. Avresti quindi{" "}
-              {numberLabel(totalDaysAfterSimulation)} giornate e{" "}
-              {numberLabel(calculation.simulatedTotalHours)} ore di assenza totali.
-            </p>
-            {calculation.simulatedExceededHours > 0 ? (
-              <p className="mt-1 font-semibold text-danger">
-                Il totale simulato supererebbe il limite di{" "}
-                {numberLabel(calculation.simulatedExceededHours)} ore.
-              </p>
-            ) : calculation.simulatedRemainingHours === 0 ? (
-              <p className="mt-1 font-semibold text-warning">
-                {calculation.simulatedHours > 0
-                  ? "Con questi valori raggiungeresti esattamente il limite."
-                  : "Hai raggiunto esattamente il limite."}
-              </p>
-            ) : (
-              <p className="mt-1 font-semibold text-success">
-                Resteresti sotto il limite: avresti ancora{" "}
-                {numberLabel(calculation.simulatedRemainingHours)} ore.
-              </p>
+            className={cn(
+              "space-y-2 rounded-xl border p-3",
+              calculation.simulatedExceededHours > 0
+                ? "border-danger/25 bg-danger-soft/50"
+                : calculation.simulatedRemainingHours === 0
+                  ? "border-warning/25 bg-warning/10"
+                  : "border-success/25 bg-success-soft/40",
             )}
-            <p className="mt-2 text-muted-foreground">
-              Dopo la simulazione resterebbero {calculation.fullDaysAfterSimulation ?? "—"} giornate
-              intere
-              {calculation.hoursPerDay > 0
-                ? ` da ${numberLabel(calculation.hoursPerDay)} ore.`
-                : "; inserisci le ore per giornata per calcolare l’equivalenza."}
+          >
+            <p className="text-xs font-semibold text-muted-foreground">Dopo la prova</p>
+            <p
+              className={cn(
+                "text-sm font-semibold",
+                calculation.simulatedExceededHours > 0
+                  ? "text-danger"
+                  : calculation.simulatedRemainingHours === 0
+                    ? "text-warning"
+                    : "text-success",
+              )}
+            >
+              {calculation.simulatedExceededHours > 0
+                ? `Supereresti il limite di ${numberLabel(calculation.simulatedExceededHours)} h`
+                : calculation.simulatedRemainingHours === 0
+                  ? "Raggiungeresti il limite"
+                  : `Ti resterebbero ${numberLabel(calculation.simulatedRemainingHours)} h`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Totale: {numberLabel(calculation.simulatedTotalHours)} h su{" "}
+              {numberLabel(calculation.absenceLimitHours)} h · circa{" "}
+              {numberLabel(totalDaysAfterSimulation)} giorni complessivi.
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Le nuove assenze aggiungono {numberLabel(simulatedHours)} h al conteggio.
+              {calculation.fullDaysAfterSimulation !== null &&
+                ` Resterebbero circa ${calculation.fullDaysAfterSimulation} giornate intere.`}
             </p>
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-surface p-3">
-      <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-semibold tabular">{value}</p>
     </div>
   );
 }

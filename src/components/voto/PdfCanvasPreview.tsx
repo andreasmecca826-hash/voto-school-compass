@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { getPdfRenderProfile } from "@/lib/voto/pdf-render-profile";
+import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
 
 type PdfCanvasPreviewProps = {
   src: string;
   title: string;
+  zoom?: number;
   onError?: () => void;
 };
-
-const PAGE_SCALE = 1.25;
-const PAGE_ROOT_MARGIN = "900px 0px";
 
 function makePageSlot(title: string, pageNumber: number, aspectRatio: string) {
   const slot = document.createElement("div");
@@ -25,8 +25,10 @@ function makePageSlot(title: string, pageNumber: number, aspectRatio: string) {
   return slot;
 }
 
-export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const panStateRef = useRef<ZoomPanState | null>(null);
+  const horizontalScrollRatioRef = useRef(0.5);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [pageCount, setPageCount] = useState(0);
 
@@ -38,6 +40,8 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
     let observer: IntersectionObserver | undefined;
     const container = containerRef.current;
     if (!container) return;
+    const scrollport = container.parentElement;
+    if (zoom <= 1) horizontalScrollRatioRef.current = 0.5;
 
     container.replaceChildren();
     setStatus("loading");
@@ -70,12 +74,15 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         const smallScreen =
           typeof window.matchMedia === "function" &&
           window.matchMedia("(max-width: 767px)").matches;
-        const devicePixelRatio = window.devicePixelRatio || 1;
-        const renderRatio =
-          performanceMode && smallScreen ? Math.min(devicePixelRatio, 1.5) : devicePixelRatio;
+        const renderProfile = getPdfRenderProfile({
+          performanceMode,
+          smallScreen,
+          devicePixelRatio: window.devicePixelRatio || 1,
+        });
         const firstPage = await pdf.getPage(1);
         if (cancelled) return;
-        const firstViewport = firstPage.getViewport({ scale: PAGE_SCALE });
+        const pageScale = renderProfile.pageScale * zoom;
+        const firstViewport = firstPage.getViewport({ scale: pageScale });
         const aspectRatio = `${firstViewport.width} / ${firstViewport.height}`;
         const slots = Array.from({ length: pdf.numPages }, (_, index) =>
           makePageSlot(title, index + 1, aspectRatio),
@@ -85,20 +92,22 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         const renderPage = async (pageNumber: number, knownPage?: typeof firstPage) => {
           const page = knownPage ?? (await pdf.getPage(pageNumber));
           if (cancelled) return;
-          const viewport = page.getViewport({ scale: PAGE_SCALE });
+          const viewport = page.getViewport({ scale: pageScale });
           const slot = slots[pageNumber - 1];
           if (!slot) throw new Error("pdf_page_slot_missing");
           slot.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
+          const basePageWidth = viewport.width / zoom;
+          slot.style.width = zoom === 1 ? "100%" : `${basePageWidth * zoom}px`;
 
           const canvas = document.createElement("canvas");
           canvas.setAttribute("aria-label", `${title}, pagina ${pageNumber}`);
           canvas.className = "block h-auto w-full rounded-lg bg-white shadow-sm";
-          canvas.width = Math.ceil(viewport.width * renderRatio);
-          canvas.height = Math.ceil(viewport.height * renderRatio);
+          canvas.width = Math.ceil(viewport.width * renderProfile.renderRatio);
+          canvas.height = Math.ceil(viewport.height * renderProfile.renderRatio);
           canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
           const context = canvas.getContext("2d");
           if (!context) throw new Error("canvas_context_unavailable");
-          context.setTransform(renderRatio, 0, 0, renderRatio, 0, 0);
+          context.setTransform(renderProfile.renderRatio, 0, 0, renderProfile.renderRatio, 0, 0);
 
           const task = page.render({ canvas: null, canvasContext: context, viewport });
           const cancelTask = () => task.cancel();
@@ -124,6 +133,10 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
         await renderPage(1, firstPage);
         if (cancelled) return;
         firstPageRendered = true;
+        if (scrollport && zoom > 1) {
+          const maxScrollLeft = Math.max(0, scrollport.scrollWidth - scrollport.clientWidth);
+          scrollport.scrollLeft = Math.round(maxScrollLeft * horizontalScrollRatioRef.current);
+        }
         setStatus("ready");
         await new Promise<void>((resolve) => {
           if (typeof window.requestAnimationFrame === "function") {
@@ -138,12 +151,26 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
           const pageQueue: number[] = [];
           const queuedPages = new Set<number>([1]);
           let processingQueue = false;
+          const distanceFromViewport = (pageNumber: number) => {
+            const slot = slots[pageNumber - 1];
+            const scrollport = container.parentElement;
+            if (!slot || !scrollport) return Number.MAX_SAFE_INTEGER;
+            const pageRect = slot.getBoundingClientRect();
+            const scrollRect = scrollport.getBoundingClientRect();
+            if (pageRect.bottom < scrollRect.top) return scrollRect.top - pageRect.bottom;
+            if (pageRect.top > scrollRect.bottom) return pageRect.top - scrollRect.bottom;
+            return 0;
+          };
 
           const renderQueuedPages = async () => {
             if (processingQueue) return;
             processingQueue = true;
             try {
               while (pageQueue.length > 0 && !cancelled) {
+                pageQueue.sort(
+                  (left, right) =>
+                    distanceFromViewport(left) - distanceFromViewport(right) || left - right,
+                );
                 const pageNumber = pageQueue.shift();
                 if (pageNumber === undefined) continue;
                 try {
@@ -170,7 +197,7 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
               }
               void renderQueuedPages();
             },
-            { root: container.parentElement, rootMargin: PAGE_ROOT_MARGIN },
+            { root: container.parentElement, rootMargin: renderProfile.rootMargin },
           );
           slots.slice(1).forEach((slot) => observer?.observe(slot));
         } else {
@@ -197,14 +224,29 @@ export function PdfCanvasPreview({ src, title, onError }: PdfCanvasPreviewProps)
       container.replaceChildren();
       if (disposeLoadingTask) void disposeLoadingTask().catch(() => {});
     };
-  }, [src, title, onError]);
+  }, [src, title, zoom, onError]);
 
   return (
     <div
       role="document"
       aria-label={title}
       aria-busy={status === "loading"}
-      className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-black/20 p-2"
+      className={`min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-black/20 p-2 ${
+        zoom > 1
+          ? "touch-pan-x touch-pan-y cursor-grab select-none overflow-x-auto active:cursor-grabbing"
+          : "touch-pan-y overflow-x-hidden"
+      }`}
+      onPointerDown={(event) => beginZoomPan(event, zoom, panStateRef)}
+      onPointerMove={(event) => moveZoomPan(event, panStateRef)}
+      onPointerUp={(event) => endZoomPan(event, panStateRef)}
+      onPointerCancel={(event) => endZoomPan(event, panStateRef)}
+      onScroll={(event) => {
+        const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
+        const maxScrollLeft = scrollWidth - clientWidth;
+        if (maxScrollLeft > 0) {
+          horizontalScrollRatioRef.current = Math.min(1, Math.max(0, scrollLeft / maxScrollLeft));
+        }
+      }}
     >
       {status === "loading" && (
         <p className="p-8 text-center text-sm text-muted-foreground">Caricamento PDF…</p>

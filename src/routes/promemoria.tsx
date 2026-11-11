@@ -150,6 +150,10 @@ function StandardPromemoria() {
   );
   const renderReminder = (reminder: (typeof upcoming)[number]) => {
     const read = v.isRead(reminder.id, reminder.read);
+    const message =
+      reminder.message?.trim() && reminder.message.trim() !== reminder.title.trim()
+        ? reminder.message.trim()
+        : "";
     const addedToVerifications = v.interrogazioni.some((item) => item.reminderId === reminder.id);
     return (
       <li key={reminder.id} className={`card-surface p-4 ${!read ? "border-primary/30" : ""}`}>
@@ -166,9 +170,9 @@ function StandardPromemoria() {
                 </span>
               )}
             </div>
-            {reminder.message ? (
+            {message ? (
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">
-                {reminder.message}
+                {message}
               </p>
             ) : (
               <p className="mt-2 text-xs text-muted-foreground">
@@ -207,8 +211,9 @@ function StandardPromemoria() {
               onClick={() => {
                 const date = reminderDateToIso(reminder.date);
                 const title = reminder.title.trim();
-                const subject = reminder.subject?.trim() || title || "Promemoria";
+                const subject = reminder.subject?.trim() || "Promemoria";
                 const notes = [
+                  title && title !== subject ? title : undefined,
                   reminder.message?.trim(),
                   !date ? "Data non specificata nel promemoria: da definire." : undefined,
                 ]

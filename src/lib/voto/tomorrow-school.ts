@@ -1,5 +1,5 @@
 import { DAYS, type Schedule } from "./orario";
-import type { Interrogazione } from "./interrogazioni";
+import { presentInterrogazione, type Interrogazione } from "./interrogazioni";
 import type { AppNotification, Assignment } from "./types";
 
 export function localDateKey(date: Date): string {
@@ -68,13 +68,22 @@ export function upcomingSchoolEvents(
 ): UpcomingSchoolEvent[] {
   const events: UpcomingSchoolEvent[] = interrogazioni
     .filter((item) => !item.completed && isTomorrow(item.date, now))
-    .map((item) => ({
-      id: `interrogazione-${item.id}`,
-      title: item.subject,
-      date: item.date,
-      detail: item.notes ?? (item.hour ? `${item.hour}ª ora` : item.time),
-      source: "interrogazione",
-    }));
+    .map((item) => {
+      const presentation = presentInterrogazione(item);
+      return {
+        id: `interrogazione-${item.id}`,
+        title: presentation.title,
+        date: item.date,
+        detail: [
+          presentation.isVerification ? presentation.subject : "",
+          presentation.notes,
+          item.hour ? `${item.hour}ª ora` : item.time,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        source: "interrogazione",
+      };
+    });
 
   const assessmentPattern = /verific|interrog|compito in classe|prova|test/i;
   for (const notification of notifications) {

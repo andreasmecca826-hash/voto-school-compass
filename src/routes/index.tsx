@@ -26,6 +26,7 @@ import { resolveHomeModuleScale } from "@/lib/voto/home-customization";
 import { emptySchedule, loadSchedule, type Schedule } from "@/lib/voto/orario";
 import { getNextScheduledLesson } from "@/lib/voto/next-lesson";
 import { cn } from "@/lib/utils";
+import { dashboardMicrocopy, selectLatestDashboardEvent } from "@/lib/voto/dashboard-copy";
 import {
   openAssignmentsForTomorrow,
   tomorrowDate,
@@ -33,17 +34,20 @@ import {
   tomorrowSubjects,
   upcomingSchoolEvents,
 } from "@/lib/voto/tomorrow-school";
-import type { Interrogazione } from "@/lib/voto/interrogazioni";
+import { presentInterrogazione, type Interrogazione } from "@/lib/voto/interrogazioni";
 import type { AppNotification, Assignment } from "@/lib/voto/types";
 import { average, averageHistory, fmt, neededGrade, overallAverage } from "@/lib/voto/calc";
 import { fmtDate, fmtTime } from "@/lib/voto/dates";
 import {
   selectDashboardAssignments,
   selectNotificationsByType,
+  notificationDisplayTitle,
   selectOpenInterrogazioni,
   selectUpcomingReminders,
+  notificationContentLabel,
 } from "@/lib/voto/selectors";
 import { useClock, useVoto } from "@/lib/voto/store";
+import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 const CircularViewer = lazy(() =>
@@ -69,9 +73,11 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const v = useVoto();
+  const isOnline = useOnlineStatus();
   const { isDone } = v;
   const now = useClock();
   const [attendanceView, setAttendanceView] = useState<"hours" | "days">("hours");
+  const [microSeed, setMicroSeed] = useState(0);
   const [schedule, setSchedule] = useState<Schedule>(() => emptySchedule());
   const { subjects, config } = useSchoolPeriods();
   const { assignments, notifications, previousAverage } = v.data;
@@ -81,7 +87,10 @@ function Dashboard() {
     config.selection === "all" && avg !== null && previousAverage !== undefined
       ? avg - previousAverage
       : null;
-  const today = useMemo(() => selectDashboardAssignments(assignments, now), [assignments, now]);
+  const today = useMemo(
+    () => selectDashboardAssignments(assignments, now, isDone),
+    [assignments, isDone, now],
+  );
   const attendance = v.data.attendance ?? {
     absenceDays: 0,
     absenceHours: 0,
@@ -107,7 +116,10 @@ function Dashboard() {
     () => selectOpenInterrogazioni(v.interrogazioni),
     [v.interrogazioni],
   );
-  useEffect(() => setSchedule(loadSchedule()), []);
+  useEffect(() => {
+    setSchedule(loadSchedule());
+    setMicroSeed(Math.random());
+  }, []);
   const nextLesson = useMemo(() => getNextScheduledLesson(schedule, now), [schedule, now]);
   const lessonPreparation = useMemo(() => {
     if (!nextLesson) return null;
@@ -135,19 +147,8 @@ function Dashboard() {
       v.homeModules.find((module) => module.id === id)?.scale ?? 100,
     ) / v.homeScale;
 
-  const micro =
-    avg === null
-      ? "Nessun voto ancora: il primo arriverà presto."
-      : delta !== null && delta > 0.05
-        ? "Stai migliorando: continua così."
-        : delta !== null && delta < -0.05
-          ? "Leggero calo: punta sulle materie più deboli."
-          : avg >= 8
-            ? "Andamento solido e costante."
-            : avg >= 6
-              ? "Sei in linea, c'è margine per crescere."
-              : "Serve un recupero mirato: usa il simulatore.";
-
+  const latestEvent = selectLatestDashboardEvent(notifications, assignments, now);
+  const micro = dashboardMicrocopy({ average: avg, delta, latestEvent }, microSeed);
   return (
     <div className="pt-3" style={{ zoom: v.homeScale / 100 }}>
       {v.source === "demo" && (
@@ -233,9 +234,19 @@ function Dashboard() {
                 <span className="text-xs text-muted-foreground">{micro}</span>
               </div>
               <p className="mt-4 text-[10.5px] text-muted-foreground">
-                {v.source === "demo" ? "Dati demo" : `Aggiornato ${fmtTime(v.lastSync)}`}
-                {v.error && v.source !== "demo" && (
-                  <span className="text-danger"> · offline, dati salvati</span>
+                {v.source === "demo" ? (
+                  "Dati demo"
+                ) : (
+                  <>
+                    {v.source === "cache"
+                      ? `Cache locale · aggiornato ${fmtTime(v.lastSync)}`
+                      : `Aggiornato ${fmtTime(v.lastSync)}`}
+                    {(!isOnline || v.error) && (
+                      <span className="text-danger">
+                        {v.error ? " · ultimo aggiornamento non riuscito" : " · offline"}
+                      </span>
+                    )}
+                  </>
                 )}
               </p>
             </section>
@@ -438,31 +449,40 @@ function Dashboard() {
             {interrogazioni.length === 0 ? (
               <Empty
                 icon={<CalendarDays className="h-6 w-6" />}
-                title="Nessuna interrogazione"
+                title="Nessuna interrogazione in programma"
                 text="Aggiungila dalla sezione Interrogazioni."
               />
             ) : (
-              <ul className="space-y-2">
-                {interrogazioni.map((item) => (
-                  <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                      <CalendarDays className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">{item.subject}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {item.date ? fmtDate(item.date) : "Data da definire"}
-                        {item.hour ? ` · ${item.hour}ª ora` : item.time ? ` · ${item.time}` : ""}
-                      </p>
-                    </div>
-                    {item.notes && (
-                      <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">
-                        {item.notes}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-2">
+                  {interrogazioni.map((item) => {
+                    const presentation = presentInterrogazione(item);
+                    return (
+                      <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                          <CalendarDays className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{presentation.title}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {item.date ? fmtDate(item.date) : "Data da definire"}
+                            {item.hour
+                              ? ` · ${item.hour}ª ora`
+                              : item.time
+                                ? ` · ${item.time}`
+                                : ""}
+                          </p>
+                        </div>
+                        {presentation.subject && presentation.isVerification && (
+                          <span className="max-w-[35%] truncate text-[10px] text-muted-foreground">
+                            {presentation.subject}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             )}
           </div>
         )}
@@ -473,11 +493,13 @@ function Dashboard() {
             {notes.length === 0 ? (
               <Empty icon={<StickyNote className="h-6 w-6" />} title="Nessuna nota" />
             ) : (
-              <ul className="space-y-2">
-                {notes.map((n) => (
-                  <NotifItem key={n.id} id={n.id} />
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-2">
+                  {notes.map((n) => (
+                    <NotifItem key={n.id} id={n.id} />
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         )}
@@ -516,11 +538,13 @@ function Dashboard() {
             {bulletin.length === 0 ? (
               <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" />
             ) : (
-              <ul className="space-y-2">
-                {bulletin.map((n) => (
-                  <NotifItem key={n.id} id={n.id} />
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-2">
+                  {bulletin.map((n) => (
+                    <NotifItem key={n.id} id={n.id} />
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         )}
@@ -691,6 +715,11 @@ function NotifItem({ id }: { id: string }) {
   const n = v.data.notifications.find((x) => x.id === id)!;
   const read = v.isRead(n.id, n.read);
   const M = NOTIF_META[n.type];
+  const message = n.message && n.message !== n.title ? n.message : "";
+  const details =
+    n.type === "grade"
+      ? `${M.label}${n.teacher ? ` · ${n.teacher}` : ""}${message ? `\n${message}` : ""}`
+      : [n.teacher, message].filter(Boolean).join("\n");
   return (
     <li className={cn("card-surface flex items-center gap-3 p-3.5", !read && "border-primary/30")}>
       <span
@@ -702,12 +731,10 @@ function NotifItem({ id }: { id: string }) {
         <M.icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{n.title}</p>
-        <p className="whitespace-pre-line text-[11px] text-muted-foreground">
-          {M.label}
-          {n.teacher ? ` · ${n.teacher}` : ""}
-          {n.message ? `\n${n.message}` : ""}
-        </p>
+        <p className="truncate text-sm font-medium">{notificationDisplayTitle(n)}</p>
+        {details && (
+          <p className="whitespace-pre-line text-[11px] text-muted-foreground">{details}</p>
+        )}
         {n.type === "notice" && (
           <button
             type="button"
@@ -717,7 +744,7 @@ function NotifItem({ id }: { id: string }) {
             }}
             className="press mt-2 inline-flex max-w-full items-center rounded-lg bg-primary-soft px-2.5 py-1.5 text-[11px] font-semibold text-primary"
           >
-            Apri circolare
+            {notificationContentLabel(n) === "Circolari" ? "Apri circolare" : "Apri comunicazione"}
           </button>
         )}
       </div>
@@ -742,6 +769,7 @@ function NotifItem({ id }: { id: string }) {
             path={n.attachmentPath}
             attachments={n.attachments}
             url={n.attachmentPath ? n.attachmentUrl : undefined}
+            extractedText={n.extractedText ?? n.message ?? n.title}
           />
         </Suspense>
       )}

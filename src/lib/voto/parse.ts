@@ -128,7 +128,19 @@ const notifType = (v: unknown): NotificationType => {
   const s = String(v ?? "").toLowerCase();
   if (s === "grade" || s === "voto") return "grade";
   if (s === "reminder" || s === "promemoria") return "reminder";
-  if (s === "notice" || s === "avviso") return "notice";
+  if (
+    [
+      "notice",
+      "avviso",
+      "comunicazione",
+      "comunicazioni",
+      "communication",
+      "communications",
+      "circolare",
+      "circolari",
+    ].includes(s)
+  )
+    return "notice";
   return "note";
 };
 
@@ -164,11 +176,29 @@ function parseCircularAttachment(raw: unknown): CircularAttachment | undefined {
   const name = str(
     raw["name"] ?? raw["fileName"] ?? raw["filename"] ?? raw["attachmentName"] ?? raw["nome"],
   );
+  const tableCount =
+    typeof raw["tableCount"] === "number" && raw["tableCount"] > 0
+      ? Math.floor(raw["tableCount"])
+      : undefined;
+  const extractionMethod = ["pdf-text", "ocr", "docx", "text", "unavailable"].includes(
+    String(raw["extractionMethod"] ?? ""),
+  )
+    ? (String(raw["extractionMethod"]) as CircularAttachment["extractionMethod"])
+    : undefined;
+  const extractionQuality = ["high", "medium", "low"].includes(
+    String(raw["extractionQuality"] ?? ""),
+  )
+    ? (String(raw["extractionQuality"]) as CircularAttachment["extractionQuality"])
+    : undefined;
   if (!path && !url && !name) return undefined;
   return {
     ...(name ? { name } : {}),
     ...(path ? { path } : {}),
     ...(url ? { url } : {}),
+    ...(raw["hasTables"] === true || tableCount ? { hasTables: true } : {}),
+    ...(tableCount ? { tableCount } : {}),
+    ...(extractionMethod ? { extractionMethod } : {}),
+    ...(extractionQuality ? { extractionQuality } : {}),
   };
 }
 
@@ -278,6 +308,20 @@ export function parseVotoData(raw: unknown): VotoData {
         attachmentUrl: legacyUrl,
         attachmentName: str(n["attachmentName"]),
         ...(attachments?.length ? { attachments } : {}),
+        extractedText: str(n["extractedText"]),
+        hasTables: n["hasTables"] === true,
+        tableCount:
+          typeof n["tableCount"] === "number" && n["tableCount"] > 0
+            ? Math.floor(n["tableCount"])
+            : undefined,
+        extractionMethod: ["pdf-text", "ocr", "docx", "text", "unavailable"].includes(
+          String(n["extractionMethod"] ?? ""),
+        )
+          ? (String(n["extractionMethod"]) as AppNotification["extractionMethod"])
+          : undefined,
+        extractionQuality: ["high", "medium", "low"].includes(String(n["extractionQuality"] ?? ""))
+          ? (String(n["extractionQuality"]) as AppNotification["extractionQuality"])
+          : undefined,
         read: n["read"] === true,
       };
     });
@@ -369,7 +413,8 @@ function validateSnapshotContinuity(previous: VotoData, next: VotoData, raw: unk
     ["diary", "diario"],
     ["attendanceEvents", "assenze e ritardi"],
   ] as const) {
-    if (previous[key].length > 0 && !Array.isArray(payload[key])) {
+    const previousSection = previous[key];
+    if (previousSection && previousSection.length > 0 && !Array.isArray(payload[key])) {
       throw new SchemaError(
         `La risposta del registro è incompleta: manca la sezione ${label}. Mantengo gli ultimi dati validi.`,
       );

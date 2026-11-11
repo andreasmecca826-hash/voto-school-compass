@@ -29,6 +29,7 @@ export const KEYS = {
   infraperiodalReports: "voto.infraperiodalReports",
   schoolEndDate: "voto.schoolEndDate",
   absenceHoursPerDay: "voto.absenceHoursPerDay",
+  studyWheel: "voto.studyWheel",
   schoolClosures: "voto.schoolClosures",
   schoolExcludeWeekends: "voto.schoolExcludeWeekends",
 } as const;

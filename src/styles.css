@@ -1659,6 +1659,9 @@
   --primary-foreground: oklch(1 0 0);
   --primary-soft: oklch(0.54 0.14 245 / 0.13);
   --ring: oklch(0.54 0.14 245 / 0.65);
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
 }
 
 :root[data-registry-style="didup"][data-mode="chiaro"] {
@@ -1701,6 +1704,8 @@
 
 :root[data-registry-style="didup"] body {
   background-image: none;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 :root[data-registry-style="didup"] .card-surface {
@@ -1710,6 +1715,35 @@
   box-shadow: 0 1px 3px oklch(0.2 0.03 245 / 0.08);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+.didup-diary-scroll {
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.didup-diary-scroll > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.didup-diary-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.diario-standard-main {
+  min-width: 0;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+.diario-standard-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+.diario-entry-copy {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* Y2K: interfaccia da portale web dei primi anni 2000, con cromo e controlli a rilievo. */
@@ -1888,6 +1922,50 @@
   box-shadow: 0 -1px 2px #404040;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] {
+  bottom: 0;
+  border-right: 2px outset #fff;
+  border-bottom: 0;
+  border-left: 2px outset #fff;
+  border-radius: 0;
+  box-shadow: 1px -1px 0 #404040;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul {
+  gap: 4px;
+  padding: 4px;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > :is(a, button) {
+  height: 3.25rem;
+  border: 2px outset #fff;
+  border-radius: 0;
+  background: linear-gradient(180deg, #dedede, #c0c0c0);
+  color: #111;
+  box-shadow: 1px 1px 0 #404040;
+  transition: none;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > :is(a, button)[aria-current="page"],
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > button[aria-expanded="true"] {
+  border-style: inset;
+  background: #b7b7b7;
+  color: #000080;
+  box-shadow: inset 1px 1px 0 #808080;
+}
+:root[data-theme="windows-98"]:not([data-registry-style="didup"])
+  nav[aria-label="Navigazione principale"] ul > li > :is(a, button) > span {
+  width: auto;
+  height: 1.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #000080;
+  box-shadow: none;
+  transition: none;
 }
 :root[data-theme="windows-98"]:not([data-registry-style="didup"]) .bg-primary-soft {
   border: 1px outset #b9d8ff;

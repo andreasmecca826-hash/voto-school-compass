@@ -18,6 +18,7 @@ import {
   searchAssistantData,
 } from "./assistant-search";
 import { answerSchoolRegulation } from "./school-regulations";
+import { buildStudyPlan } from "./study-planner";
 
 export interface AssistantContext {
   previousQuestion?: string;
@@ -215,6 +216,69 @@ function latestGrade(data: VotoData) {
   );
 }
 
+type RecentDashboardUpdate = {
+  date: string;
+  text: string;
+};
+
+function localDateTime(value: string | undefined): number | null {
+  if (!value?.trim()) return null;
+  const raw = value.trim();
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00`) : new Date(raw);
+  const time = parsed.getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+function recentDashboardUpdates(data: VotoData, now: Date): RecentDashboardUpdate[] {
+  const lowerBound = now.getTime() - 24 * 60 * 60 * 1000;
+  const upperBound = now.getTime();
+  const updates: Array<RecentDashboardUpdate & { occurredAt: number }> = [];
+
+  data.subjects.forEach((subject) => {
+    subject.grades.forEach((grade) => {
+      const occurredAt = localDateTime(grade.date);
+      if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+      updates.push({
+        date: grade.date,
+        occurredAt,
+        text: `voto ${grade.label} in ${subject.name}`,
+      });
+    });
+  });
+
+  data.assignments.forEach((assignment) => {
+    const occurredAt = localDateTime(assignment.assignedDate);
+    if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+    updates.push({
+      date: assignment.assignedDate!,
+      occurredAt,
+      text: `compito “${assignment.title}”${assignment.subject ? ` di ${assignment.subject}` : ""}`,
+    });
+  });
+
+  data.notifications.forEach((notification) => {
+    const occurredAt = localDateTime(notification.date);
+    if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
+    const kind =
+      notification.type === "grade"
+        ? "notifica di voto"
+        : notification.type === "notice"
+          ? "comunicazione"
+          : notification.type === "note"
+            ? "nota"
+            : "promemoria";
+    updates.push({
+      date: notification.date!,
+      occurredAt,
+      text: `${kind} “${notification.title}”`,
+    });
+  });
+
+  return updates
+    .sort((left, right) => right.occurredAt - left.occurredAt)
+    .map(({ date, text }) => ({ date, text }));
+}
+
 function gradeToneLabel(value: number | null): string {
   const tone = gradeTone(value);
   if (tone === "good") return "verde (da 6 in su)";
@@ -242,6 +306,66 @@ function noticeLabel(notification: VotoData["notifications"][number]): string {
     ? ` — allegato: ${notification.attachmentName}`
     : "";
   return `“${notification.title}”${dateText}${attachment}`;
+}
+
+function noticeSearchText(notification: VotoData["notifications"][number]): string {
+  return normalize(
+    [
+      notification.title,
+      notification.message,
+      notification.extractedText,
+      notification.subject,
+      notification.teacher,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+function noticeDetailLabel(notification: VotoData["notifications"][number]): string {
+  const date = displayDate(notification.date);
+  const source = notification.message?.trim() || notification.extractedText?.trim();
+  if (!source) return noticeLabel(notification);
+  const snippet = source.replace(/\s+/g, " ").trim().slice(0, 520);
+  return `“${notification.title}”${date ? ` (${date})` : ""}: ${snippet}${source.length > 520 ? "…" : ""}`;
+}
+
+function noticeQueryTerms(query: string): string[] {
+  return normalize(query)
+    .split(/[^a-z0-9àèéìòù]+/i)
+    .filter((term) => term.length >= 2)
+    .filter(
+      (term) =>
+        ![
+          "cosa",
+          "dice",
+          "dettagli",
+          "classe",
+          "esce",
+          "orario",
+          "quando",
+          "circolare",
+          "circolari",
+          "avviso",
+          "avvisi",
+          "che",
+          "una",
+          "con",
+          "nel",
+          "alle",
+          "per",
+          "del",
+          "come",
+        ].includes(term),
+    );
+}
+
+function matchesNoticeQuery(
+  query: string,
+  notification: VotoData["notifications"][number],
+): boolean {
+  const content = noticeSearchText(notification);
+  return noticeQueryTerms(query).some((term) => content.includes(term));
 }
 
 function reminderLabel(notification: VotoData["notifications"][number]): string {
@@ -301,7 +425,37 @@ export function answerQuestion(
         normalized.includes(term),
       ));
   if (asksNtfyMessage) {
-    return "Le notifiche ntfy del monitor sono brevi: «Ci sono novità in bacheca», «Ci sono novità nei voti» o «Ci sono novità nei compiti». Per leggere i dettagli apri la sezione corrispondente in VOTO. Da questa chat non posso cambiare il topic o le impostazioni ntfy.";
+    return "Le notifiche ntfy del monitor sono brevi: «Ci sono novità in bacheca», «Ci sono novità nei voti» o «Ci sono novità nei compiti». In VOTO, gli avvisi con PDF o DOCX sono Circolari; quelli composti solo da testo sono Comunicazioni. Per ricevere push distinti («Nuove circolari in bacheca» e «Nuove comunicazioni in bacheca») va aggiornato il monitor ntfy esterno, il cui mittente non è incluso in questa app. Per leggere i dettagli apri la sezione corrispondente in VOTO.";
+  }
+
+  const asksStudyPlan =
+    (normalized.includes("cosa devo studiare") ||
+      normalized.includes("piano di studio") ||
+      normalized.includes("organizza lo studio")) &&
+    (normalized.includes("settimana") ||
+      normalized.includes("giorni") ||
+      normalized.includes("oggi"));
+  if (asksStudyPlan) {
+    const plan = buildStudyPlan({
+      assignments: data.assignments,
+      interrogazioni,
+      schedule,
+      now,
+      minutesPerDay: 90,
+      horizonDays: 7,
+    });
+    const daysWithTasks = plan.filter((day) => day.tasks.length > 0);
+    if (!daysWithTasks.length) {
+      return "Non trovo compiti, verifiche o interrogazioni da pianificare nei prossimi sette giorni.";
+    }
+    return `Piano di studio locale per i prossimi sette giorni (90 minuti al giorno):\n${daysWithTasks
+      .map(
+        (day) =>
+          `• ${day.label}: ${day.tasks.map((task) => `${task.title} (${task.minutes} min)`).join(", ")}`,
+      )
+      .join(
+        "\n",
+      )}\n\nPuoi personalizzare il tempo e spuntare o rimandare le attività in Studio Lab > Smart Study Planner.`;
   }
 
   if (
@@ -312,7 +466,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e alcune preferenze locali. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e usare lo Smart Study Planner locale per organizzare compiti, verifiche e interrogazioni. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   if (
@@ -348,6 +502,10 @@ export function answerQuestion(
       [
         ["simulator", "calcolo media", "voto necessario"],
         "Studio Lab > Calcolo media e simulatore voti",
+      ],
+      [
+        ["pianificatore", "piano di studio", "cosa devo studiare"],
+        "Studio Lab > Smart Study Planner",
       ],
       [["voto", "materia"], "Voti"],
       [["studio lab", "flashcard", "ruota del ripasso"], "Studio Lab"],
@@ -718,15 +876,55 @@ export function answerQuestion(
     "compit",
     "scadenz",
   ].some((term) => normalized.includes(term));
+  const asksDashboardOverview =
+    normalized.includes("dashboard") ||
+    normalized.includes("situazione generale") ||
+    normalized.includes("cosa e successo") ||
+    normalized.includes("cosa è successo") ||
+    normalized.includes("ultimo aggiornamento");
   if (
-    (normalized.includes("novit") || normalized.includes("aggiornament")) &&
+    (normalized.includes("novit") ||
+      normalized.includes("aggiornament") ||
+      asksDashboardOverview) &&
     !asksCategorySpecificUpdates
   ) {
     const recentGrade = latestGrade(data);
+    const recentUpdates = recentDashboardUpdates(data, now);
+    const currentAverage = overallAverage(data.subjects);
     const todayNotices = notices.filter(
       (notification) => notification.date?.slice(0, 10) === localDateKey(now),
     );
     const lines: string[] = [];
+    if (currentAverage !== null) {
+      const delta =
+        data.previousAverage === undefined ? null : currentAverage - data.previousAverage;
+      const trend =
+        delta === null
+          ? ""
+          : delta > 0.05
+            ? `, in crescita di ${number(delta)} punti`
+            : delta < -0.05
+              ? `, in calo di ${number(Math.abs(delta))} punti`
+              : ", stabile rispetto all’ultimo dato";
+      lines.push(`Media generale: ${number(currentAverage)} su 10${trend}.`);
+    } else {
+      lines.push("Media generale: non ancora calcolabile perché non ci sono voti sufficienti.");
+    }
+    if (recentUpdates.length) {
+      lines.push(
+        `Evento più recente nelle ultime 24 ore: ${recentUpdates[0]!.text} (${displayDate(recentUpdates[0]!.date) ?? recentUpdates[0]!.date}).`,
+      );
+      if (recentUpdates.length > 1) {
+        lines.push(
+          `Altre novità recenti: ${recentUpdates
+            .slice(1, 4)
+            .map((item) => item.text)
+            .join("; ")}.`,
+        );
+      }
+    } else {
+      lines.push("Nessun nuovo evento registrato nelle ultime 24 ore.");
+    }
     if (recentGrade) {
       const date = displayDate(recentGrade.grade.date);
       lines.push(
@@ -743,9 +941,7 @@ export function answerQuestion(
       return days !== null && days >= 0;
     });
     if (nextReminder) lines.push(`Promemoria: ${reminderLabel(nextReminder)}.`);
-    return lines.length
-      ? lines.join("\n")
-      : "Non risultano nuovi voti, circolari o promemoria nei dati caricati.";
+    return lines.join("\n");
   }
 
   if (normalized.includes("orario") || normalized.includes("lezion")) {
@@ -834,11 +1030,21 @@ export function answerQuestion(
     return `${heading}:\n${shown.map((item) => `• ${item}`).join("\n")}${matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : ""}`;
   }
 
+  const asksNoticeDetails =
+    (normalized.includes("cosa dice") ||
+      normalized.includes("dettagli") ||
+      normalized.includes("classe") ||
+      normalized.includes("esce") ||
+      normalized.includes("orario") ||
+      normalized.includes("a che ora") ||
+      normalized.includes("quando")) &&
+    notices.some((notification) => matchesNoticeQuery(normalized, notification));
   if (
     normalized.includes("circolar") ||
     normalized.includes("bacheca") ||
     normalized.includes("avvisi") ||
-    normalized.includes("notiz")
+    normalized.includes("notiz") ||
+    asksNoticeDetails
   ) {
     const requestedDay = relativeDayOffset(normalized);
     const asksUnread = normalized.includes("non lett");
@@ -847,6 +1053,7 @@ export function answerQuestion(
       normalized.includes("recent") ||
       normalized.includes("novit") ||
       normalized.includes("aggiornament");
+    const asksDetails = asksNoticeDetails;
     let matches = notices;
     if (requestedDay !== null)
       matches = matches.filter(
@@ -854,6 +1061,15 @@ export function answerQuestion(
       );
     if (asksUnread || (asksNew && requestedDay === null))
       matches = matches.filter((notification) => !notification.read);
+    if (asksDetails) {
+      const searchTerms = noticeQueryTerms(normalized);
+      if (searchTerms.length) {
+        matches = matches.filter((notification) => {
+          const content = noticeSearchText(notification);
+          return searchTerms.some((term) => content.includes(term));
+        });
+      }
+    }
     if (!matches.length) {
       if (requestedDay !== null)
         return `Non risultano circolari per ${relativeDayLabel(requestedDay)} nei dati caricati.`;
@@ -871,7 +1087,7 @@ export function answerQuestion(
           : "Circolari recenti";
     const remainder =
       matches.length > shown.length ? `\nE altre ${matches.length - shown.length}.` : "";
-    return `${heading}:\n${shown.map((notification) => `• ${noticeLabel(notification)}`).join("\n")}${remainder}\nLe trovi nella sezione Novità.`;
+    return `${heading}:\n${shown.map((notification) => `• ${asksDetails ? noticeDetailLabel(notification) : noticeLabel(notification)}`).join("\n")}${remainder}\nLe trovi nella sezione Novità.`;
   }
 
   const asksDailyOverview =

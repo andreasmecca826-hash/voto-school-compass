@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useVotoData } from "@/lib/voto/store";
+import { useVoto } from "@/lib/voto/store";
 import { getClassTeachers, saveClassTeachers } from "@/lib/voto/teachers";
 import type { TeacherEntry } from "@/lib/voto/teachers";
 
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/professori")({
 });
 
 function Professori() {
-  const voto = useVotoData();
+  const voto = useVoto();
   const [teachers, setTeachers] = useState<TeacherEntry[]>(() => getClassTeachers());
   const [query, setQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);

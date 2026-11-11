@@ -7,6 +7,28 @@ afterEach(() => {
 });
 
 describe("validazione delle risposte del registro", () => {
+  it("riconosce comunicazioni testuali senza allegato come avvisi della Bacheca", () => {
+    const result = parseVotoData({
+      subjects: [],
+      notifications: [
+        {
+          id: "com-1",
+          type: "comunicazione",
+          title: "Assemblea scolastica",
+          message: "L'assemblea si terrà il 12 novembre.",
+        },
+      ],
+    });
+
+    expect(result.notifications[0]).toMatchObject({
+      id: "com-1",
+      type: "notice",
+      title: "Assemblea scolastica",
+      message: "L'assemblea si terrà il 12 novembre.",
+    });
+    expect(result.notifications[0]?.attachmentName).toBeUndefined();
+  });
+
   it("rifiuta una collezione presente ma con il tipo sbagliato", () => {
     expect(() =>
       parseVotoData({

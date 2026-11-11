@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, LoaderCircle, Search, Send, Sparkles, UserRound } from "lucide-react";
+import { Bot, LoaderCircle, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getAssignmentActionIntent,
@@ -9,9 +9,10 @@ import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
 import {
   answerCircularChatQuestion,
   isCircularChatQuestion,
+  isCircularFollowUpQuestion,
   type CircularAssistantMode,
 } from "@/lib/voto/circular-assistant-chat";
-import { askGeneralQuestion } from "@/lib/voto/circular-assistant";
+import { askGeneralQuestion, getLastApiQuota, type ApiQuota } from "@/lib/voto/circular-assistant";
 import { isAssistantSearchQuery } from "@/lib/voto/assistant-search";
 import { AssistantMarkdown } from "@/components/voto/AssistantMarkdown";
 import {
@@ -48,6 +49,7 @@ type AssistantChatMessage = {
 };
 
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
+const ASSISTANT_MESSAGES_KEY = "voto.assistant-messages.v1";
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -55,8 +57,7 @@ export const Route = createFileRoute("/assistente")({
       { title: "Assistente — VOTO." },
       {
         name: "description",
-        content:
-          "Assistente locale e API per domande generali e documenti ufficiali Morselli-Sturzo.",
+        content: "Assistente Locale e API per domande generali e documenti scolastici.",
       },
     ],
   }),
@@ -70,40 +71,71 @@ function Assistant() {
   const isOnline = useOnlineStatus();
   const [question, setQuestion] = useState("");
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
-  const activeAssistantMode = isOnline ? assistantMode : "local";
+  const [apiQuota, setApiQuota] = useState<ApiQuota | null>(() => getLastApiQuota());
+  const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
+  const activeAssistantMode = canUseApi && assistantMode === "api" ? "api" : "local";
   const [isReplying, setIsReplying] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [messages, setMessages] = useState<AssistantChatMessage[]>([
-    {
-      role: "assistant",
-      text: "Ciao! Sono l’assistente di VOTO. In Locale posso consultare i dati scolastici e cercare nei regolamenti ufficiali sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
-    },
-  ]);
+  const [messages, setMessages] = useState<AssistantChatMessage[]>(() => {
+    if (typeof window === "undefined") {
+      return [
+        {
+          role: "assistant",
+          text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+        },
+      ];
+    }
+    try {
+      const saved = window.localStorage.getItem(ASSISTANT_MESSAGES_KEY);
+      const parsed = saved ? (JSON.parse(saved) as AssistantChatMessage[]) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed.slice(-20);
+    } catch {
+      // La chat parte vuota se la memoria locale non è disponibile.
+    }
+    return [
+      {
+        role: "assistant",
+        text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+      },
+    ];
+  });
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ASSISTANT_MESSAGES_KEY, JSON.stringify(messages.slice(-20)));
+    } catch {
+      // La chat resta disponibile nella sessione corrente.
+    }
+  }, [messages]);
 
   useEffect(() => {
     setSuggestions(pickAssistantSuggestions());
     try {
-      if (navigator.onLine && window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "api") {
-        setAssistantMode("api");
+      const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
+      if (navigator.onLine && savedMode === "api") setAssistantMode("api");
+      else if (savedMode === "device" || savedMode === "vision" || savedMode === "api-vision") {
+        setAssistantMode("local");
+        window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
       }
+      window.localStorage.removeItem("voto.circular-ai-models.v1");
     } catch {
       // Se lo storage non è disponibile, resta attiva la modalità locale.
     }
   }, []);
 
   useEffect(() => {
-    if (isOnline && (typeof navigator === "undefined" || navigator.onLine)) return;
+    if (canUseApi || assistantMode !== "api") return;
     setAssistantMode("local");
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
     } catch {
       // La modalità resta locale per la sessione corrente.
     }
-  }, [isOnline]);
+  }, [assistantMode, canUseApi]);
 
   const changeAssistantMode = (mode: CircularAssistantMode) => {
-    if (mode === "api" && (!isOnline || !navigator.onLine)) return;
+    if (mode === "api" && !canUseApi) return;
     setAssistantMode(mode);
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
@@ -115,8 +147,7 @@ function Assistant() {
   const ask = async (text = question) => {
     const clean = text.trim();
     if (!clean || isReplying) return;
-    const requestMode =
-      isOnline && (typeof navigator === "undefined" || navigator.onLine) ? assistantMode : "local";
+    const requestMode = assistantMode === "api" && canUseApi ? "api" : "local";
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
@@ -153,7 +184,9 @@ function Assistant() {
       Boolean(nextPendingAction) ||
       assignmentIntent?.kind === "clarify" ||
       assignmentIntent?.kind === "already";
-    const useCircularAssistant = !hasImmediateActionResponse && isCircularChatQuestion(clean);
+    const useCircularAssistant =
+      !hasImmediateActionResponse &&
+      (isCircularChatQuestion(clean) || isCircularFollowUpQuestion(clean, previousQuestion));
     const useSchoolPolicyAssistant =
       !hasImmediateActionResponse && !useCircularAssistant && isSchoolPolicyQuestion(clean);
     const useGeneralApi =
@@ -162,6 +195,29 @@ function Assistant() {
       !useSchoolPolicyAssistant &&
       requestMode === "api" &&
       !isAssistantSearchQuery(clean);
+    const localAnswer = () =>
+      answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
+        ...(previousQuestion ? { previousQuestion } : {}),
+        source: v.source,
+        lastSync: v.lastSync,
+        syncError: v.error,
+        hasRemoteUrl: Boolean(v.url),
+        target: v.target,
+        theme: v.theme,
+        mode: v.mode,
+        accent: v.accent,
+        background: v.bg,
+        density: v.density,
+        reduceMotion: v.reduceMotion,
+        customFont: v.customTheme.font,
+        interfaceScale: v.interfaceScale,
+        homeScale: v.homeScale,
+        homeModules: v.homeModules,
+        flashcards: study.cards,
+        schoolEndDate: loadSchoolEndDate(),
+        schoolClosures: loadSchoolClosures(),
+        absenceHoursPerDay: loadAbsenceHoursPerDay(),
+      });
     const response = dayToClear
       ? `Posso cancellare tutte le lezioni dell’orario di ${DAYS.find((day) => day.id === dayToClear)?.label}.${lessonsToClear.length ? ` Lezioni: ${lessonsToClear.join("; ")}.` : " L’orario risulta già vuoto."} Vuoi confermare?`
       : randomThemeIntent?.kind === "confirm"
@@ -172,28 +228,7 @@ function Assistant() {
             ? assignmentIntent.message
             : useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi
               ? ""
-              : answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
-                  previousQuestion,
-                  source: v.source,
-                  lastSync: v.lastSync,
-                  syncError: v.error,
-                  hasRemoteUrl: Boolean(v.url),
-                  target: v.target,
-                  theme: v.theme,
-                  mode: v.mode,
-                  accent: v.accent,
-                  background: v.bg,
-                  density: v.density,
-                  reduceMotion: v.reduceMotion,
-                  customFont: v.customTheme.font,
-                  interfaceScale: v.interfaceScale,
-                  homeScale: v.homeScale,
-                  homeModules: v.homeModules,
-                  flashcards: study.cards,
-                  schoolEndDate: loadSchoolEndDate(),
-                  schoolClosures: loadSchoolClosures(),
-                  absenceHoursPerDay: loadAbsenceHoursPerDay(),
-                });
+              : localAnswer();
     setPendingAction(nextPendingAction);
     setQuestion("");
     setMessages((current) => [...current, { role: "user", text: clean }]);
@@ -207,13 +242,17 @@ function Assistant() {
             clean,
             assistantData.notifications,
             requestMode,
+            previousQuestion,
           );
           assistantMessage = {
             role: "assistant",
             text: assistantResponse ?? "Non ho trovato una circolare pertinente.",
           };
         } else if (useSchoolPolicyAssistant) {
-          const schoolAnswer = await answerSchoolPolicyQuestion(clean, requestMode);
+          const schoolAnswer = await answerSchoolPolicyQuestion(
+            clean,
+            requestMode === "api" ? "api" : "local",
+          );
           assistantMessage = {
             role: "assistant",
             text: schoolAnswer.text,
@@ -223,9 +262,11 @@ function Assistant() {
           assistantMessage = { role: "assistant", text: await askGeneralQuestion(clean) };
         }
         setMessages((current) => [...current, assistantMessage]);
+        setApiQuota(getLastApiQuota());
       } catch (error) {
         const message = error instanceof Error ? error.message : "La risposta non è disponibile.";
         setMessages((current) => [...current, { role: "assistant", text: message }]);
+        setApiQuota(getLastApiQuota());
       } finally {
         setIsReplying(false);
       }
@@ -290,8 +331,8 @@ function Assistant() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Assistente</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Locale consulta i dati dell’app e cerca nei regolamenti ufficiali; API risponde a
-            domande generali usando solo i documenti pertinenti.
+            Locale consulta i dati dell’app; API risponde a domande generali usando i documenti
+            pertinenti.
           </p>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -319,7 +360,7 @@ function Assistant() {
             >
               Locale
             </button>
-            {isOnline && (
+            {canUseApi && (
               <button
                 type="button"
                 aria-pressed={activeAssistantMode === "api"}
@@ -335,17 +376,34 @@ function Assistant() {
         <p className="mt-1 text-[11px] text-muted-foreground">
           {activeAssistantMode === "local"
             ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
-            : "API invia a Groq la domanda e solo gli estratti pertinenti del regolamento, della ricerca PDF utente (non verificata) o della circolare. Non allega automaticamente voti, assenze o cronologia; se scrivi dati personali nella domanda, li invia. Non legge pagine con login e non fa fallback automatico. I costi dipendono dal piano Groq: per zero spese, scegli Locale."}{" "}
-          {!isOnline && (
-            <span className="font-medium text-primary">Offline: disponibile solo Locale. </span>
+            : "API invia a Groq la domanda e gli estratti pertinenti dei documenti. Non invia automaticamente dati scolastici o cronologia; i dati personali scritti nella domanda vengono inviati. Per zero spese, scegli Locale o AI telefono."}{" "}
+          {!canUseApi && (
+            <span className="font-medium text-primary">
+              Offline: API non disponibile; è disponibile Locale.
+            </span>
           )}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
-        <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
-          <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          Ricerca rapida: scrivi “cerca algebra”, “trova circolare uscita” o una parola per trovare
-          corrispondenze in voti, materie, compiti, note, avvisi, diario e interrogazioni.
-        </p>
+        {apiQuota && (
+          <div className="mt-3 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <strong className="text-foreground">Ultima quota Groq ricevuta</strong>
+              <span>
+                Richieste: {apiQuota.remainingRequests ?? "non disponibile"}
+                {apiQuota.limitRequests !== undefined ? ` / ${apiQuota.limitRequests}` : ""}
+              </span>
+              <span>
+                Token: {apiQuota.remainingTokens ?? "non disponibile"}
+                {apiQuota.limitTokens !== undefined ? ` / ${apiQuota.limitTokens}` : ""}
+              </span>
+            </div>
+            <p className="mt-1">
+              Osservata {new Date(apiQuota.observedAt).toLocaleString("it-IT")}. È una fotografia
+              dell’ultima chiamata API, non un contatore locale garantito.
+              {apiQuota.resetRequests ? ` Reset richieste: ${apiQuota.resetRequests}.` : ""}
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="mt-5 space-y-3">
@@ -473,7 +531,7 @@ function Assistant() {
       )}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        {suggestions.map((suggestion) => (
+        {suggestions.slice(0, 2).map((suggestion) => (
           <button
             key={suggestion}
             type="button"

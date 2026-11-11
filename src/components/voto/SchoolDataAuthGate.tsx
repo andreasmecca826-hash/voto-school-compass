@@ -77,7 +77,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    const savedDemoMode = load(KEYS.demoMode, false) === true;
+    const savedDemoMode = load<boolean>(KEYS.demoMode, false) === true;
     if (savedDemoMode) {
       setStep("ready");
     }

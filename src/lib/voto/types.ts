@@ -41,6 +41,10 @@ export interface CircularAttachment {
   path?: string | undefined;
   /** URL sorgente per allegati non PDF ancora ospitati da DidUP. */
   url?: string | undefined;
+  hasTables?: boolean | undefined;
+  tableCount?: number | undefined;
+  extractionMethod?: "pdf-text" | "ocr" | "docx" | "text" | "unavailable" | undefined;
+  extractionQuality?: "high" | "medium" | "low" | undefined;
 }
 
 export interface AppNotification {
@@ -58,6 +62,13 @@ export interface AppNotification {
   attachmentName?: string | undefined;
   /** Allegati multipli della stessa circolare; i campi singoli restano per compatibilità. */
   attachments?: CircularAttachment[] | undefined;
+  /** Testo estratto localmente dal PDF/DOCX, se disponibile. */
+  extractedText?: string | undefined;
+  /** Indica se uno o più allegati contengono tabelle rilevate durante l’estrazione. */
+  hasTables?: boolean | undefined;
+  tableCount?: number | undefined;
+  extractionMethod?: "pdf-text" | "ocr" | "docx" | "text" | "unavailable" | undefined;
+  extractionQuality?: "high" | "medium" | "low" | undefined;
   read: boolean;
 }
 

@@ -411,6 +411,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className={cn(
             "relative flex-1",
             v.registryStyle === "didup" ? "px-0" : "px-5 pb-28",
+            v.registryStyle !== "didup" && path === "/diario" && "diario-standard-main",
             isWindows7 && "windows7-content",
           )}
           onTouchStart={handlePullStart}
@@ -782,9 +783,6 @@ function MoreMenu({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block font-display text-lg font-semibold">Studio Lab.</span>
-            <span className="mt-1 block text-xs text-muted-foreground">
-              Calcolo media e simulatore · Ruota · Flashcard
-            </span>
           </span>
         </Link>
       </Button>

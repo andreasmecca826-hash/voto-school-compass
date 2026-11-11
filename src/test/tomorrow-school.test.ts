@@ -99,4 +99,24 @@ describe("Domani a scuola", () => {
     );
     expect(events.map((event) => event.id)).toEqual(["interrogazione-soon", "promemoria-test"]);
   });
+
+  it("mostra il titolo della verifica e conserva la materia nel dettaglio", () => {
+    const events = upcomingSchoolEvents(
+      [
+        {
+          ...makeInterrogazione("chemistry", "2026-10-30"),
+          subject: "Chimica",
+          reminderId: "reminder-chemistry",
+          notes: "Verifica di chimica\nStruttura dell'atomo",
+        },
+      ],
+      [],
+      new Date(2026, 9, 29, 12),
+    );
+
+    expect(events[0]).toMatchObject({
+      title: "Verifica di chimica",
+      detail: "Chimica · Struttura dell'atomo",
+    });
+  });
 });

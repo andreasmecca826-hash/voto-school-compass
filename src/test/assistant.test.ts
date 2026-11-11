@@ -33,13 +33,16 @@ const data: VotoData = {
 };
 
 describe("Assistente locale", () => {
-  it("spiega i messaggi generici delle notifiche ntfy", () => {
+  it("spiega i messaggi ntfy e distingue Circolari da Comunicazioni", () => {
     const answer = answerQuestion("Perché ntfy mostra un testo diverso?", data);
 
     expect(answer).toContain("Ci sono novità in bacheca");
     expect(answer).toContain("Ci sono novità nei voti");
     expect(answer).toContain("Ci sono novità nei compiti");
     expect(answer).toContain("apri la sezione corrispondente in VOTO");
+    expect(answer).toContain("avvisi con PDF o DOCX sono Circolari");
+    expect(answer).toContain("composti solo da testo sono Comunicazioni");
+    expect(answer).toContain("monitor ntfy esterno");
   });
 
   it("indirizza alle pagelle e chiarisce che i riepiloghi non sono ufficiali", () => {
@@ -271,6 +274,26 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Qual è il voto più alto in Inglese?", data)).toContain("7,00");
   });
 
+  it("cerca nei testi estratti delle circolari dettagli su classi e orari", () => {
+    const noticeData: VotoData = {
+      ...data,
+      notifications: [
+        {
+          id: "assemblea-1",
+          type: "notice",
+          title: "Assemblea d’istituto",
+          date: "2026-11-05",
+          extractedText:
+            "L’assemblea riguarda la classe 2I. Gli studenti della 2I escono alle ore 12:30.",
+          read: false,
+        },
+      ],
+    };
+    const answer = answerQuestion("A che ora esce la 2I per l’assemblea?", noticeData);
+    expect(answer).toContain("12:30");
+    expect(answer).toContain("Assemblea d’istituto");
+  });
+
   it("filtra le circolari di oggi e compone un riepilogo delle novità", () => {
     const now = new Date(2026, 9, 27, 12);
     const updateData: VotoData = {
@@ -359,6 +382,44 @@ describe("Assistente locale", () => {
     const overview = answerQuestion("Quali sono le novità?", updatesData, emptySchedule(), now);
     expect(overview).toContain("Ultimo voto");
     expect(overview).toContain("Comunicazione di bacheca");
+  });
+
+  it("offre un briefing locale della dashboard con l’evento più recente", () => {
+    const now = new Date(2026, 9, 27, 18);
+    const dashboardData: VotoData = {
+      ...data,
+      assignments: [
+        {
+          id: "recent-task",
+          title: "Relazione di storia",
+          subject: "Storia",
+          assignedDate: "2026-10-27",
+          dueDate: "2026-10-30",
+          completed: false,
+        },
+      ],
+      notifications: [
+        {
+          id: "older-notice",
+          type: "notice",
+          title: "Avviso di ieri",
+          date: "2026-10-26",
+          read: false,
+        },
+      ],
+    };
+
+    const answer = answerQuestion(
+      "Cosa è successo nella dashboard?",
+      dashboardData,
+      emptySchedule(),
+      now,
+    );
+
+    expect(answer).toContain("Media generale");
+    expect(answer).toContain("Evento più recente nelle ultime 24 ore");
+    expect(answer).toContain("Relazione di storia");
+    expect(answer).toContain("Avviso di ieri");
   });
 
   it("non presenta un promemoria senza data come prossimo", () => {
@@ -902,14 +963,14 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Come sblocco il tema Sangue?", data)).toContain("Diamante e Sangue");
   });
 
-  it("mostra due suggerimenti casuali distinti, entrambi supportati", () => {
+  it("mostra quattro suggerimenti locali distinti e supportati", () => {
     const first = pickAssistantSuggestions(() => 0);
     const second = pickAssistantSuggestions(() => 0.99);
 
-    expect(first).toHaveLength(2);
-    expect(new Set(first).size).toBe(2);
-    expect(second).toHaveLength(2);
-    expect(new Set(second).size).toBe(2);
+    expect(first).toHaveLength(4);
+    expect(new Set(first).size).toBe(4);
+    expect(second).toHaveLength(4);
+    expect(new Set(second).size).toBe(4);
     expect(second).not.toEqual(first);
     for (const suggestion of [...first, ...second]) {
       expect(answerQuestion(suggestion, data)).not.toContain("Non ho capito la domanda");

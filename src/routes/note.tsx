@@ -67,6 +67,10 @@ function Note() {
         <ul className="space-y-3">
           {notes.map((note) => {
             const read = v.isRead(note.id, note.read);
+            const message =
+              note.message?.trim() && note.message.trim() !== note.title.trim()
+                ? note.message.trim()
+                : "";
             return (
               <li key={note.id} className={`card-surface p-4 ${!read ? "border-primary/30" : ""}`}>
                 <div className="flex items-start gap-3">
@@ -82,9 +86,9 @@ function Note() {
                         </span>
                       )}
                     </div>
-                    {note.message ? (
+                    {message ? (
                       <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">
-                        {note.message}
+                        {message}
                       </p>
                     ) : (
                       <p className="mt-2 text-xs text-muted-foreground">

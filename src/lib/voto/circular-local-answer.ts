@@ -1,4 +1,4 @@
-import { analyzeCircularText } from "./circular-reader";
+import { analyzeCircularText, extractCircularTableRows, normalizeOcrText } from "./circular-reader";
 
 const STOP_WORDS = new Set([
   "a",
@@ -85,6 +85,18 @@ const STOP_WORDS = new Set([
   "quale",
   "quali",
 ]);
+const TERM_ALIASES: Record<string, string[]> = {
+  gita: ["viaggio", "istruzione"],
+  gite: ["viaggi", "istruzione"],
+  uscita: ["visita", "didattica"],
+  compito: ["attivita", "esercitazione"],
+  compiti: ["attivita", "esercitazione"],
+  genitore: ["famiglia", "famiglie"],
+  genitori: ["famiglia", "famiglie"],
+  orario: ["ora", "ore", "giorno"],
+  consegnare: ["consegna", "consegnato", "consegnate"],
+  modulo: ["autorizzazione", "documento"],
+};
 
 function normalize(value: string): string {
   return value
@@ -96,13 +108,14 @@ function normalize(value: string): string {
 }
 
 function terms(value: string): string[] {
-  return [
+  const base = [
     ...new Set(
       normalize(value)
         .split(/\s+/)
         .filter((word) => word.length >= 3),
     ),
   ].filter((word) => !STOP_WORDS.has(word));
+  return [...new Set(base.flatMap((word) => [word, ...(TERM_ALIASES[word] ?? [])]))];
 }
 
 function relatedTerm(left: string, right: string): boolean {
@@ -124,12 +137,27 @@ interface Passage {
   text: string;
   page?: string;
   score: number;
+  matchedTerms: number;
+}
+
+function confidenceLabel(score: number, matchedTerms: number, hasPage: boolean): string {
+  if (matchedTerms >= 3 || (matchedTerms >= 2 && hasPage && score >= 4)) return "Alta";
+  if (matchedTerms >= 2 || hasPage) return "Media";
+  return "Bassa";
+}
+
+function sourceLabel(pages: Array<string | undefined>): string {
+  const uniquePages = [...new Set(pages.filter((page): page is string => Boolean(page)))];
+  return uniquePages.length > 0
+    ? `${uniquePages.length > 1 ? "Pagine" : "Pagina"} ${uniquePages.join(", ")}`
+    : "pagina non indicata";
 }
 
 export function answerCircularQuestionLocally(question: string, documentText: string): string {
+  const searchableDocument = normalizeOcrText(documentText);
   const questionTerms = terms(question);
   if (questionTerms.length === 0) {
-    const analysis = analyzeCircularText(documentText);
+    const analysis = analyzeCircularText(searchableDocument);
     const details = [
       analysis.summary ? `Sintesi estratta: ${analysis.summary}` : "",
       analysis.deadlines.length
@@ -141,7 +169,7 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       analysis.actions.length ? `Indicazioni: ${analysis.actions.join(" ")}` : "",
     ].filter(Boolean);
     if (details.length === 0) {
-      const excerpt = documentText
+      const excerpt = searchableDocument
         .replace(/^\[Pagina\s+\d+\]\s*$/gim, "")
         .split(/(?<=[.!?])\s+|\n+/)
         .map((sentence) => sentence.trim())
@@ -149,15 +177,32 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       if (excerpt) details.push(`Estratto del documento: ${excerpt.slice(0, 560)}`);
     }
     return details.length
-      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}`
+      ? `Modalità locale: sintesi ed elementi estratti sul dispositivo, non una risposta generata.\n\n${details.join("\n")}\n\nFonte: ${sourceLabel([...searchableDocument.matchAll(/^\[Pagina\s+(\d+)\]$/gim)].map((match) => match[1]))}.\nQualità estrazione: ${analysis.extractionQuality}.\nAffidabilità: ${analysis.extractionQuality === "alta" ? "Media" : "Bassa"}.`
       : "Non riesco a ricavare una sintesi locale da questa circolare. Prova con una parola chiave presente nel documento.";
   }
 
   const wantsDate = isDateQuestion(question);
+  const tableRows = extractCircularTableRows(searchableDocument);
+  const tableMatches = tableRows
+    .map((row) => {
+      const rowTerms = terms(row.cells.join(" "));
+      const matched = questionTerms.filter((term) =>
+        rowTerms.some((rowTerm) => relatedTerm(term, rowTerm)),
+      );
+      return { row, matched: matched.length };
+    })
+    .filter(({ matched }) => matched >= 2 || (matched >= 1 && questionTerms.length <= 2))
+    .sort((left, right) => right.matched - left.matched)
+    .slice(0, 3);
+  if (tableMatches.length > 0 && (tableRows.length >= 3 || tableMatches[0]!.matched >= 2)) {
+    const pages = tableMatches.map(({ row }) => row.page);
+    const rows = tableMatches.map(({ row }) => `• ${row.cells.join(" · ")}`).join("\n");
+    return `Modalità locale: ho trovato righe pertinenti nella tabella (non è una risposta generata).\n\nCosa ho trovato:\n${rows}\n\nFonte: ${sourceLabel(pages)}.\nAffidabilità: ${tableMatches[0]!.matched >= 2 ? "Alta" : "Media"}.`;
+  }
   const passages: Passage[] = [];
   let currentPage: string | undefined;
 
-  for (const rawLine of documentText.split(/\r?\n/)) {
+  for (const rawLine of searchableDocument.split(/\r?\n/)) {
     const pageMatch = rawLine.trim().match(/^\[Pagina\s+(\d+)\]$/i);
     if (pageMatch?.[1]) {
       currentPage = pageMatch[1];
@@ -176,7 +221,12 @@ export function answerCircularQuestionLocally(question: string, documentText: st
       let score = matchedTerms.length;
       if (wantsDate && containsDate(sentence)) score += 2;
       if (score > 0) {
-        passages.push({ text: sentence.slice(0, 560), page: currentPage, score });
+        passages.push({
+          text: sentence.slice(0, 560),
+          ...(currentPage ? { page: currentPage } : {}),
+          score,
+          matchedTerms: matchedTerms.length,
+        });
       }
     }
   }
@@ -188,5 +238,8 @@ export function answerCircularQuestionLocally(question: string, documentText: st
   }
 
   const excerpts = selected.map(({ page, text }) => `${page ? `[Pagina ${page}] ` : ""}${text}`);
-  return `Modalità locale: passaggi pertinenti trovati nel documento (non è una risposta generata).\n\n${excerpts.join("\n\n")}`;
+  const matchedTerms = Math.max(...selected.map((passage) => passage.matchedTerms));
+  const bestScore = Math.max(...selected.map((passage) => passage.score));
+  const pages = selected.map((passage) => passage.page);
+  return `Modalità locale: passaggi pertinenti trovati nel documento (non è una risposta generata).\n\nCosa ho trovato:\n${excerpts.join("\n\n")}\n\nFonte: ${sourceLabel(pages)}.\nAffidabilità: ${confidenceLabel(bestScore, matchedTerms, pages.some(Boolean))}.`;
 }

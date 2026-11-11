@@ -11,6 +11,7 @@ export interface CircularAnalysis {
   recipients: string[];
   attachments: string[];
   layout: "text" | "table" | "timetable";
+  extractionQuality: "alta" | "media" | "bassa";
   pagesAnalyzed: number;
   truncated: boolean;
 }
@@ -27,6 +28,11 @@ export interface CircularDocumentText {
   text: string;
   pagesAnalyzed: number;
   truncated: boolean;
+}
+
+export interface CircularTableRow {
+  page?: string;
+  cells: string[];
 }
 
 const MONTHS = [
@@ -58,6 +64,36 @@ const MAX_TEXT_LENGTH = 300_000;
 
 function clean(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+export function normalizeOcrText(text: string): string {
+  return text
+    .replace(/\bO(?=\d{1,2}:\d{2})/g, "0")
+    .replace(/(?<=\d)\s*[lI]\s*(?=(?:A|B|C|D|E|F)\b)/g, "I")
+    .replace(/\blunedi\b/gi, "lunedì")
+    .replace(/\bmartedi\b/gi, "martedì")
+    .replace(/\bmercoledi\b/gi, "mercoledì")
+    .replace(/\bgiovedi\b/gi, "giovedì")
+    .replace(/\bvenerdi\b/gi, "venerdì");
+}
+
+export function extractCircularTableRows(text: string): CircularTableRow[] {
+  const rows: CircularTableRow[] = [];
+  let page: string | undefined;
+  for (const rawLine of text.replace(/\r\n?/g, "\n").split("\n")) {
+    const line = rawLine.trim();
+    const pageMatch = line.match(/^\[Pagina\s+(\d+)\]$/i);
+    if (pageMatch?.[1]) {
+      page = pageMatch[1];
+      continue;
+    }
+    if (!line || /^Tabella pagina \d+:/i.test(line)) continue;
+    const cells = (line.includes("|") ? line.split("|") : line.split(/\s{3,}/))
+      .map(clean)
+      .filter(Boolean);
+    if (cells.length >= 2) rows.push({ ...(page ? { page } : {}), cells });
+  }
+  return rows;
 }
 
 function extractSummary(text: string): string | null {
@@ -163,6 +199,7 @@ export function analyzeCircularText(
   const hasTableRows =
     normalized.split("\n").filter((line) => line.trim().length > 0 && /\S\s{3,}\S/.test(line))
       .length >= 3;
+  const extractionQuality = !normalized.trim() ? "bassa" : truncated ? "media" : "alta";
   return {
     summary: isTimetable
       ? extractSummary(normalized)
@@ -183,6 +220,7 @@ export function analyzeCircularText(
       ),
     ],
     layout: isTimetable ? "timetable" : hasTableRows ? "table" : "text",
+    extractionQuality,
     pagesAnalyzed,
     truncated,
   };
@@ -269,6 +307,55 @@ async function readCircularPdfPages(src: string) {
 
 export async function extractCircularPdfText(src: string): Promise<CircularDocumentText> {
   return readCircularPdfPages(src);
+}
+
+export interface CircularPdfPageImage {
+  pageNumber: number;
+  dataUrl: string;
+}
+
+export interface CircularPdfVisualInput {
+  pages: CircularPdfPageImage[];
+  totalPages: number;
+  truncated: boolean;
+}
+
+const MAX_VISUAL_PAGES = 4;
+const MAX_VISUAL_PAGE_DIMENSION = 1120;
+
+export async function renderCircularPdfPageImages(src: string): Promise<CircularPdfVisualInput> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
+  const loadingTask = pdfjs.getDocument({ url: src, withCredentials: true });
+  try {
+    const pdf = await loadingTask.promise;
+    const pages: CircularPdfPageImage[] = [];
+    const pageCount = Math.min(pdf.numPages, MAX_VISUAL_PAGES);
+    for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = Math.min(
+        1.5,
+        MAX_VISUAL_PAGE_DIMENSION / Math.max(baseViewport.width, baseViewport.height),
+      );
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const context = canvas.getContext("2d", { alpha: false });
+      if (!context) throw new Error("Non è possibile preparare le immagini del PDF.");
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
+      pages.push({ pageNumber, dataUrl: canvas.toDataURL("image/jpeg", 0.82) });
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+    return { pages, totalPages: pdf.numPages, truncated: pdf.numPages > pageCount };
+  } finally {
+    await loadingTask.destroy().catch(() => {});
+  }
 }
 
 export async function analyzeCircularPdf(

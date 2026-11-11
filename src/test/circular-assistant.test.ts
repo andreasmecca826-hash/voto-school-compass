@@ -6,7 +6,11 @@ vi.mock("@/lib/supabase-auth", () => ({
   supabase: { functions: { invoke } },
 }));
 
-import { askAboutCircular, askGeneralQuestion } from "@/lib/voto/circular-assistant";
+import {
+  askAboutCircular,
+  askAboutCircularImages,
+  askGeneralQuestion,
+} from "@/lib/voto/circular-assistant";
 
 describe("assistente AI delle circolari", () => {
   beforeEach(() => invoke.mockReset());
@@ -48,6 +52,24 @@ describe("assistente AI delle circolari", () => {
     });
     expect(invoke.mock.calls[0]?.[1]?.body).not.toHaveProperty("history");
     expect(invoke.mock.calls[0]?.[1]?.body).not.toHaveProperty("circularTitle");
+  });
+
+  it("invia le immagini delle pagine solo nella richiesta API visiva esplicita", async () => {
+    const pageImages = [
+      { pageNumber: 1, dataUrl: "data:image/jpeg;base64,AA==" },
+      { pageNumber: 2, dataUrl: "data:image/jpeg;base64,BB==" },
+    ];
+    invoke.mockResolvedValue({ data: { answer: "La scadenza è il 12 novembre." }, error: null });
+
+    await expect(askAboutCircularImages({ question: "Quando scade?", pageImages })).resolves.toBe(
+      "La scadenza è il 12 novembre.",
+    );
+
+    expect(invoke).toHaveBeenCalledWith("circular-assistant", {
+      body: { question: "Quando scade?", pageImages },
+    });
+    expect(invoke.mock.calls[0]?.[1]?.body).not.toHaveProperty("documentText");
+    expect(invoke.mock.calls[0]?.[1]?.body).not.toHaveProperty("history");
   });
 
   it("mostra il messaggio di errore del backend", async () => {

@@ -14,6 +14,8 @@ describe("risposte locali sulle circolari", () => {
     expect(answer).toContain("[Pagina 1]");
     expect(answer).toContain("12 novembre 2026");
     expect(answer).toContain("non è una risposta generata");
+    expect(answer).toContain("Fonte: Pagina 1");
+    expect(answer).toContain("Affidabilità:");
   });
 
   it("non inventa una risposta se non trova passaggi pertinenti", () => {
@@ -34,5 +36,21 @@ describe("risposte locali sulle circolari", () => {
     expect(answer).toContain("Sintesi estratta");
     expect(answer).toContain("12 novembre 2026");
     expect(answer).toContain("non una risposta generata");
+    expect(answer).toContain("Fonte: pagina non indicata");
+  });
+
+  it("risponde usando la riga pertinente di una tabella e riconosce i sinonimi", () => {
+    const answer = answerCircularQuestionLocally(
+      "A che ora c'è la gita per la 2I?",
+      [
+        "[Pagina 2]",
+        "Classe   Attività   Ora",
+        "2I       viaggio di istruzione   08:00",
+        "2L       laboratorio   10:00",
+      ].join("\n"),
+    );
+    expect(answer).toContain("2I");
+    expect(answer).toContain("08:00");
+    expect(answer).toContain("Fonte: Pagina 2");
   });
 });

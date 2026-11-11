@@ -8,6 +8,7 @@ import {
   Calculator,
   CircleDot,
   Layers,
+  ListChecks,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalcul
 import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
 import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
+import { StudyPlannerTool } from "@/components/voto/StudyPlannerTool";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -74,6 +76,13 @@ const TOOLS = [
     subtitle: "Domanda. Risposta. Ripeti.",
     icon: Layers,
     tone: "text-success bg-surface",
+  },
+  {
+    id: "planner",
+    title: "Smart Study Planner",
+    subtitle: "Organizza automaticamente compiti, verifiche e interrogazioni",
+    icon: ListChecks,
+    tone: "text-primary bg-surface",
   },
 ] as const;
 
@@ -167,6 +176,7 @@ function Studio() {
               <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
               {tool === "wheel" && <WheelTool />}
               {tool === "flashcards" && <FlashcardsTool />}
+              {tool === "planner" && <StudyPlannerTool />}
               {tool === "absence-calculator" && <AbsenceCalculator />}
               {tool === "school-end" && <SchoolEndDateTool />}
             </>

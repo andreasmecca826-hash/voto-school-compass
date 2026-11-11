@@ -5,12 +5,16 @@ import {
   ExternalLink,
   FileText,
   LoaderCircle,
+  Minus,
   Paperclip,
+  Plus,
   ShieldCheck,
   Sparkles,
   Users,
+  ZoomIn,
   X,
 } from "lucide-react";
+import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
 import {
   Sheet,
   SheetContent,
@@ -25,16 +29,21 @@ import {
   analyzeCircularPdf,
   extractCircularDocxText,
   extractCircularPdfText,
+  renderCircularPdfPageImages,
   type CircularAnalysis,
 } from "@/lib/voto/circular-reader";
-import { askAboutCircular, type CircularAssistantMessage } from "@/lib/voto/circular-assistant";
+import {
+  askAboutCircular,
+  askAboutCircularImages,
+  type CircularAssistantMessage,
+} from "@/lib/voto/circular-assistant";
 import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
 const MAX_AI_DOCUMENT_LENGTH = 60_000;
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
-type CircularAssistantMode = "local" | "api";
+type CircularAssistantMode = "local" | "api" | "api-vision";
 
 function safeAttachmentFilename(value?: string) {
   const cleaned = Array.from(value?.trim() || "allegato", (char) => {
@@ -83,6 +92,173 @@ function mergeAttachments(
   return merged;
 }
 
+function DocxPreview({
+  src,
+  title,
+  initialText,
+  zoom,
+}: {
+  src: string;
+  title: string;
+  initialText?: string | undefined;
+  zoom: number;
+}) {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const panStateRef = useRef<ZoomPanState | null>(null);
+  const horizontalScrollRatioRef = useRef(0.5);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const styleRef = useRef<HTMLStyleElement>(null);
+  const fallbackText = initialText?.trim() ?? "";
+  const [status, setStatus] = useState<"loading" | "rendered" | "text" | "error">(
+    fallbackText ? "text" : "loading",
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus(fallbackText ? "text" : "loading");
+    if (bodyRef.current) bodyRef.current.replaceChildren();
+    if (styleRef.current) styleRef.current.replaceChildren();
+
+    void fetch(src, { credentials: "same-origin" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`docx_download_${response.status}`);
+        return response.blob();
+      })
+      .then(async (blob) => {
+        const { renderAsync } = await import("docx-preview");
+        if (!bodyRef.current || cancelled) return;
+        await renderAsync(blob, bodyRef.current, styleRef.current ?? undefined, {
+          breakPages: true,
+          ignoreWidth: true,
+          ignoreHeight: true,
+          renderHeaders: true,
+          renderFooters: true,
+          useBase64URL: true,
+        });
+        if (cancelled) return;
+        setStatus("rendered");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus(fallbackText ? "text" : "error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackText, src]);
+
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview) return;
+    if (zoom <= 1) {
+      horizontalScrollRatioRef.current = 0.5;
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const maxScrollLeft = Math.max(0, preview.scrollWidth - preview.clientWidth);
+      preview.scrollLeft = Math.round(maxScrollLeft * horizontalScrollRatioRef.current);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [status, zoom]);
+
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
+      <div
+        role="document"
+        aria-label={title}
+        aria-busy={status === "loading"}
+        ref={previewRef}
+        className={`min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border bg-black/10 p-2 ${
+          zoom > 1
+            ? "touch-pan-x touch-pan-y cursor-grab select-none overflow-x-auto active:cursor-grabbing"
+            : "touch-pan-y overflow-x-hidden"
+        }`}
+        style={{ "--docx-zoom": zoom } as React.CSSProperties}
+        onPointerDown={(event) => beginZoomPan(event, zoom, panStateRef)}
+        onPointerMove={(event) => moveZoomPan(event, panStateRef)}
+        onPointerUp={(event) => endZoomPan(event, panStateRef)}
+        onPointerCancel={(event) => endZoomPan(event, panStateRef)}
+        onScroll={(event) => {
+          const { scrollLeft, scrollWidth, clientWidth } = event.currentTarget;
+          const maxScrollLeft = scrollWidth - clientWidth;
+          if (maxScrollLeft > 0) {
+            horizontalScrollRatioRef.current = Math.min(1, Math.max(0, scrollLeft / maxScrollLeft));
+          }
+        }}
+      >
+        {status === "loading" && (
+          <p className="p-8 text-center text-sm text-muted-foreground">
+            Caricamento anteprima DOCX…
+          </p>
+        )}
+        {status === "error" && (
+          <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">
+            Anteprima non disponibile. Usa il pulsante sotto per aprire o scaricare il DOCX.
+          </p>
+        )}
+        {status === "text" && (
+          <div className="rounded-lg bg-card p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Testo estratto
+            </p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {fallbackText}
+            </p>
+          </div>
+        )}
+        <style ref={styleRef} />
+        <div ref={bodyRef} className={status === "rendered" ? "docx-preview-body" : "hidden"} />
+        <style>{`
+        .docx-preview-body,
+        .docx-preview-body .docx-wrapper {
+          min-height: 100% !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: transparent !important;
+        }
+        .docx-preview-body .docx-wrapper {
+          height: max-content !important;
+        }
+        .docx-preview-body section.docx {
+          box-sizing: border-box !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          min-height: auto !important;
+          margin: 0 0 0.75rem !important;
+          padding: 1rem !important;
+          overflow: visible !important;
+          box-shadow: 0 1px 3px rgb(0 0 0 / 12%) !important;
+          zoom: var(--docx-zoom, 1);
+        }
+        .docx-preview-body section.docx:last-child {
+          margin-bottom: 0 !important;
+        }
+        .docx-preview-body table,
+        .docx-preview-body img {
+          max-width: 100% !important;
+        }
+        .docx-preview-body table {
+          table-layout: auto !important;
+        }
+        .docx-preview-body span,
+        .docx-preview-body p,
+        .docx-preview-body td,
+        .docx-preview-body th {
+          overflow-wrap: normal !important;
+          word-break: normal !important;
+          hyphens: none !important;
+        }
+      `}</style>
+      </div>
+    </div>
+  );
+}
+
 export function CircularViewer({
   open,
   onOpenChange,
@@ -91,6 +267,7 @@ export function CircularViewer({
   url,
   path,
   attachments,
+  extractedText,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -99,10 +276,13 @@ export function CircularViewer({
   url: string | undefined;
   path?: string | undefined;
   attachments?: CircularAttachment[] | undefined;
+  extractedText?: string | undefined;
 }) {
   const files = mergeAttachments(attachments, { name: fileName, path, url });
   const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isZoomControlsOpen, setIsZoomControlsOpen] = useState(false);
+  const [attachmentZoom, setAttachmentZoom] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -111,23 +291,25 @@ export function CircularViewer({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiMode, setAiMode] = useState<CircularAssistantMode>("local");
-  const activeAiMode = isOnline ? aiMode : "local";
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<CircularAssistantMessage[]>([]);
   const [aiError, setAiError] = useState<string | undefined>();
   const [isAskingAi, setIsAskingAi] = useState(false);
+  const [aiProgressMessage, setAiProgressMessage] = useState<string | undefined>();
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
+  const activeAiMode = isOnline && (aiMode === "api" || aiMode === "api-vision") ? aiMode : "local";
   const aiRequestId = useRef(0);
 
   useEffect(() => {
     try {
       const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
-      if (!navigator.onLine) {
+      if (!navigator.onLine || savedMode === "device" || savedMode === "vision") {
         setAiMode("local");
         window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
-      } else if (savedMode === "local" || savedMode === "api") {
+      } else if (savedMode === "local" || savedMode === "api" || savedMode === "api-vision") {
         setAiMode(savedMode);
       }
+      window.localStorage.removeItem("voto.circular-ai-models.v1");
     } catch {
       // Se lo storage non è disponibile, resta attiva la modalità locale predefinita.
     }
@@ -147,6 +329,8 @@ export function CircularViewer({
   useEffect(() => {
     if (open) {
       setSelectedIndex(0);
+      setIsZoomControlsOpen(false);
+      setAttachmentZoom(1);
       setAnalysis(null);
       setAnalysisError(undefined);
       setIsAnalysisOpen(false);
@@ -154,6 +338,7 @@ export function CircularViewer({
       setAiQuestion("");
       setAiMessages([]);
       setAiError(undefined);
+      setAiProgressMessage(undefined);
       setAiDocumentTruncated(false);
       setIsAskingAi(false);
       aiRequestId.current += 1;
@@ -164,6 +349,7 @@ export function CircularViewer({
   const activeFile = files[activeIndex];
 
   useEffect(() => {
+    setIsZoomControlsOpen(false);
     setAnalysis(null);
     setAnalysisError(undefined);
     setIsAnalysisOpen(false);
@@ -171,6 +357,7 @@ export function CircularViewer({
     setAiQuestion("");
     setAiMessages([]);
     setAiError(undefined);
+    setAiProgressMessage(undefined);
     setIsAskingAi(false);
     setAiDocumentTruncated(false);
     aiRequestId.current += 1;
@@ -184,15 +371,27 @@ export function CircularViewer({
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
+  const hasTextOnlyContent = !previewUrl && Boolean(extractedText?.trim());
+  const documentLabel = hasTextOnlyContent ? "comunicazione" : "circolare";
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
+  const canAskAi = canAnalyze || hasTextOnlyContent;
+  const effectiveAiMode = !isPdf && activeAiMode === "api-vision" ? "local" : activeAiMode;
+  const availableAiModeCount = 1 + Number(isOnline) + Number(isPdf && isOnline);
+  const aiModeGridClass =
+    availableAiModeCount <= 1
+      ? "grid-cols-1"
+      : availableAiModeCount === 2
+        ? "grid-cols-2"
+        : "grid-cols-3";
 
   function chooseAiMode(mode: CircularAssistantMode) {
-    if (mode === "api" && (!isOnline || !navigator.onLine)) return;
+    if ((mode === "api" || mode === "api-vision") && (!isOnline || !navigator.onLine)) return;
     if (mode === aiMode) return;
     setAiMode(mode);
     setAiQuestion("");
     setAiMessages([]);
     setAiError(undefined);
+    setAiProgressMessage(undefined);
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
     } catch {
@@ -214,7 +413,7 @@ export function CircularViewer({
       setIsAnalysisOpen(true);
     } catch {
       setAnalysisError(
-        "Non sono riuscito a leggere questo PDF. Verifica la connessione o scarica il documento e riprova.",
+        `Non sono riuscito a leggere questo ${isPdf ? "PDF" : "DOCX"}. Verifica la connessione o scarica il documento e riprova.`,
       );
       setIsAnalysisOpen(true);
     } finally {
@@ -225,9 +424,9 @@ export function CircularViewer({
   async function askAiAboutDocument(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = aiQuestion.trim();
-    if (!previewUrl || !question || isAskingAi) return;
-    const responseMode =
-      isOnline && (typeof navigator === "undefined" || navigator.onLine) ? aiMode : "local";
+    if ((!previewUrl && !extractedText?.trim()) || !question || isAskingAi) return;
+    const browserOnline = isOnline && (typeof navigator === "undefined" || navigator.onLine);
+    const responseMode = effectiveAiMode;
 
     const requestId = aiRequestId.current + 1;
     aiRequestId.current = requestId;
@@ -235,28 +434,49 @@ export function CircularViewer({
     setAiError(undefined);
     setAiMessages((current) => [...current, { role: "user", text: question }]);
     setIsAskingAi(true);
+    setAiProgressMessage(
+      responseMode === "api-vision" ? "Preparo le immagini delle pagine…" : undefined,
+    );
 
     try {
-      const document = isPdf
-        ? await extractCircularPdfText(previewUrl)
-        : await extractCircularDocxText(previewUrl);
-      const documentText = document.text.trim();
-      if (!documentText) {
-        throw new Error(
-          "Non trovo testo selezionabile nella circolare. Se è una scansione, serve prima un OCR.",
-        );
-      }
-      const documentTruncated = document.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
-      setAiDocumentTruncated(documentTruncated);
-      const canUseApi =
-        responseMode === "api" && typeof navigator !== "undefined" && navigator.onLine;
-      const answer = canUseApi
-        ? await askAboutCircular({
+      let answer: string;
+      if (responseMode === "api-vision") {
+        if (!isPdf || !previewUrl) throw new Error("L’API visiva è disponibile solo per i PDF.");
+        const visualInput = await renderCircularPdfPageImages(previewUrl);
+        const pagesForApi = visualInput.pages.slice(0, 3);
+        setAiDocumentTruncated(visualInput.truncated || visualInput.pages.length > 3);
+        setAiProgressMessage("Invio le immagini a Groq per l’analisi visiva…");
+        answer = await askAboutCircularImages({ question, pageImages: pagesForApi });
+      } else {
+        const availableText = extractedText?.trim();
+        const extractedDocument = availableText
+          ? { text: availableText, truncated: false }
+          : previewUrl
+            ? isPdf
+              ? await extractCircularPdfText(previewUrl)
+              : await extractCircularDocxText(previewUrl)
+            : { text: "", truncated: false };
+        const documentText = extractedDocument.text.trim();
+        if (!documentText) {
+          throw new Error(
+            "Non trovo testo selezionabile nella circolare. Per analizzare una scansione, usa API visiva.",
+          );
+        }
+        const documentTruncated =
+          extractedDocument.truncated || documentText.length > MAX_AI_DOCUMENT_LENGTH;
+        setAiDocumentTruncated(documentTruncated);
+        const limitedDocumentText = documentText.slice(0, MAX_AI_DOCUMENT_LENGTH);
+        const canUseApi = responseMode === "api" && browserOnline;
+        if (canUseApi) {
+          answer = await askAboutCircular({
             question,
-            documentText: documentText.slice(0, MAX_AI_DOCUMENT_LENGTH),
+            documentText: limitedDocumentText,
             documentTruncated,
-          })
-        : answerCircularQuestionLocally(question, documentText.slice(0, MAX_AI_DOCUMENT_LENGTH));
+          });
+        } else {
+          answer = answerCircularQuestionLocally(question, limitedDocumentText);
+        }
+      }
       if (aiRequestId.current === requestId) {
         setAiMessages((current) => [...current, { role: "assistant", text: answer }]);
       }
@@ -265,7 +485,10 @@ export function CircularViewer({
         setAiError(error instanceof Error ? error.message : "Domanda non riuscita. Riprova.");
       }
     } finally {
-      if (aiRequestId.current === requestId) setIsAskingAi(false);
+      if (aiRequestId.current === requestId) {
+        setIsAskingAi(false);
+        setAiProgressMessage(undefined);
+      }
     }
   }
 
@@ -315,34 +538,44 @@ export function CircularViewer({
             <span className="truncate">{title}</span>
           </SheetTitle>
           <SheetDescription className="truncate">
-            {activeFile?.name ?? "Circolare"}
+            {activeFile?.name ?? (hasTextOnlyContent ? "Comunicazione testuale" : "Circolare")}
           </SheetDescription>
         </SheetHeader>
-        {canAnalyze && (
+        {canAskAi && (
           <div className="mb-3 shrink-0 space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (analysis || analysisError) setIsAnalysisOpen((openNow) => !openNow);
-                  else void analyzeDocument();
-                }}
-                disabled={isAnalyzing}
-                className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-[11px] font-semibold text-primary disabled:opacity-60"
-              >
-                {isAnalyzing ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                {isAnalyzing
-                  ? "Lettura in corso…"
-                  : analysis || analysisError
-                    ? isAnalysisOpen
-                      ? "Nascondi analisi"
-                      : "Mostra analisi"
-                    : "Riassumi sul dispositivo"}
-              </button>
+            <div
+              className={
+                isPdf || isDocx
+                  ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2"
+                  : canAnalyze
+                    ? "grid grid-cols-2 gap-2"
+                    : "grid grid-cols-1 gap-2"
+              }
+            >
+              {canAnalyze && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (analysis || analysisError) setIsAnalysisOpen((openNow) => !openNow);
+                    else void analyzeDocument();
+                  }}
+                  disabled={isAnalyzing}
+                  className="press inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 text-[11px] font-semibold text-primary disabled:opacity-60"
+                >
+                  {isAnalyzing ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {isAnalyzing
+                    ? "Lettura in corso…"
+                    : analysis || analysisError
+                      ? isAnalysisOpen
+                        ? "Nascondi analisi"
+                        : "Mostra analisi"
+                      : "Riassumi sul dispositivo"}
+                </button>
+              )}
               <button
                 type="button"
                 aria-expanded={isAiChatOpen}
@@ -352,7 +585,69 @@ export function CircularViewer({
               >
                 {isAiChatOpen ? "Nascondi chat" : "Fai una domanda"}
               </button>
+              {(isPdf || isDocx) && previewUrl && (
+                <button
+                  type="button"
+                  aria-expanded={isZoomControlsOpen}
+                  aria-label={
+                    isZoomControlsOpen
+                      ? "Nascondi controlli zoom allegato"
+                      : "Mostra controlli zoom allegato"
+                  }
+                  onClick={() => setIsZoomControlsOpen((openNow) => !openNow)}
+                  className="press inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-primary"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </button>
+              )}
             </div>
+            {(isPdf || isDocx) && isZoomControlsOpen && (
+              <div className="flex shrink-0 items-center justify-between rounded-xl border border-border bg-card px-2 py-1.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Zoom preview</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label="Riduci zoom allegato"
+                    onClick={() =>
+                      setAttachmentZoom((current) =>
+                        Math.max(0.7, Math.round((current - 0.1) * 10) / 10),
+                      )
+                    }
+                    className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Reimposta zoom allegato"
+                    onClick={() => setAttachmentZoom(1)}
+                    className="press min-w-[48px] rounded-lg px-1.5 py-1 text-[10px] font-semibold text-primary"
+                  >
+                    {Math.round(attachmentZoom * 100)}%
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Aumenta zoom allegato"
+                    onClick={() =>
+                      setAttachmentZoom((current) =>
+                        Math.min(1.4, Math.round((current + 0.1) * 10) / 10),
+                      )
+                    }
+                    className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Adatta allegato allo schermo"
+                    onClick={() => setAttachmentZoom(0.88)}
+                    className="press rounded-lg px-2 py-1 text-[10px] font-medium text-muted-foreground"
+                  >
+                    Adatta
+                  </button>
+                </div>
+              </div>
+            )}
             {isAnalysisOpen && (analysis || analysisError) && (
               <section
                 aria-label="Analisi locale della circolare"
@@ -472,27 +767,27 @@ export function CircularViewer({
             )}
           </div>
         )}
-        {canAnalyze && isAiChatOpen && (
+        {canAskAi && isAiChatOpen && (
           <section
             id="circular-ai-chat"
             className="mb-3 shrink-0 space-y-2 rounded-xl border border-primary/25 bg-primary-soft/40 p-3"
           >
             <div>
               <h3 className="text-xs font-semibold text-foreground">
-                Fai una domanda alla circolare
+                Fai una domanda alla {documentLabel}
               </h3>
               <div
                 role="group"
                 aria-label="Modalità di risposta"
-                className={`mt-2 grid ${isOnline ? "grid-cols-2" : "grid-cols-1"} gap-1 rounded-lg bg-background/70 p-1`}
+                className={`mt-2 grid ${aiModeGridClass} gap-1 rounded-lg bg-background/70 p-1`}
               >
                 <button
                   type="button"
-                  aria-pressed={activeAiMode === "local"}
+                  aria-pressed={effectiveAiMode === "local"}
                   disabled={isAskingAi}
                   onClick={() => chooseAiMode("local")}
                   className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                    activeAiMode === "local"
+                    effectiveAiMode === "local"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground"
                   }`}
@@ -502,11 +797,11 @@ export function CircularViewer({
                 {isOnline && (
                   <button
                     type="button"
-                    aria-pressed={activeAiMode === "api"}
+                    aria-pressed={effectiveAiMode === "api"}
                     disabled={isAskingAi}
                     onClick={() => chooseAiMode("api")}
                     className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
-                      activeAiMode === "api"
+                      effectiveAiMode === "api"
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground"
                     }`}
@@ -514,29 +809,51 @@ export function CircularViewer({
                     API Groq (Qwen)
                   </button>
                 )}
+                {isPdf && isOnline && (
+                  <button
+                    type="button"
+                    aria-pressed={effectiveAiMode === "api-vision"}
+                    disabled={isAskingAi}
+                    onClick={() => chooseAiMode("api-vision")}
+                    className={`rounded-md px-2 py-1.5 text-[10px] font-medium disabled:opacity-50 ${
+                      effectiveAiMode === "api-vision"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    API visiva (Qwen)
+                  </button>
+                )}
               </div>
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
-                {activeAiMode === "local"
+                {effectiveAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
-                  : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
+                  : effectiveAiMode === "api-vision"
+                    ? "Solo quando premi Chiedi, vengono inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF. Il documento esce dal dispositivo e la chiamata usa la quota API (eventuali limiti/costi dipendono dall’account). Non vengono inviati titolo, cronologia, voti o presenze."
+                    : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
-                    Offline: disponibile solo Locale.{" "}
+                    Offline: disponibili solo le funzioni Locale.{" "}
                   </span>
                 )}
                 Verifica sempre la risposta sul documento originale.
               </p>
             </div>
-            {aiDocumentTruncated && (
+            {aiDocumentTruncated && effectiveAiMode === "api-vision" && (
               <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
-                Circolare lunga: è stato inviato un estratto del testo. La risposta potrebbe non
-                includere informazioni presenti nelle parti omesse.
+                Per l’analisi visiva API sono state inviate solo le prime 3 pagine del PDF.
+              </p>
+            )}
+            {aiDocumentTruncated && effectiveAiMode !== "api-vision" && (
+              <p className="rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] text-warning">
+                Testo lungo: per la domanda è stato considerato un estratto. La risposta potrebbe
+                non includere informazioni presenti nelle parti omesse.
               </p>
             )}
             {aiMessages.length > 0 && (
               <div
                 aria-live="polite"
-                aria-label="Conversazione sulla circolare"
+                aria-label={`Conversazione sulla ${documentLabel}`}
                 className="max-h-36 space-y-2 overflow-y-auto rounded-lg bg-card/80 p-2"
               >
                 {aiMessages.map((message, index) => (
@@ -562,8 +879,12 @@ export function CircularViewer({
                   </div>
                 ))}
                 {isAskingAi && (
-                  <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <LoaderCircle className="h-3 w-3 animate-spin" /> Sto leggendo la circolare…
+                  <p
+                    role="status"
+                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                  >
+                    <LoaderCircle className="h-3 w-3 animate-spin" />
+                    {aiProgressMessage ?? `Sto leggendo la ${documentLabel}…`}
                   </p>
                 )}
               </div>
@@ -574,7 +895,7 @@ export function CircularViewer({
                 value={aiQuestion}
                 onChange={(event) => setAiQuestion(event.target.value)}
                 placeholder="Es. Entro quando va consegnato?"
-                aria-label="Domanda sulla circolare"
+                aria-label={`Domanda sulla ${documentLabel}`}
                 maxLength={1_000}
                 className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
@@ -617,12 +938,39 @@ export function CircularViewer({
             </div>
           </div>
         )}
+        {activeFile?.tableCount && activeFile.tableCount > 0 ? (
+          <p className="mb-3 inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+            Contiene {activeFile.tableCount} {activeFile.tableCount === 1 ? "tabella" : "tabelle"}
+          </p>
+        ) : null}
         {previewUrl && isPdf ? (
-          <PdfCanvasPreview
-            key={activeFile?.path ?? activeFile?.url ?? activeIndex}
-            title={activeFile?.name ?? title}
-            src={previewUrl}
-          />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <PdfCanvasPreview
+              key={activeFile?.path ?? activeFile?.url ?? activeIndex}
+              title={activeFile?.name ?? title}
+              src={previewUrl}
+              zoom={attachmentZoom}
+            />
+          </div>
+        ) : previewUrl && isDocx ? (
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <DocxPreview
+              key={activeFile?.path ?? activeFile?.url ?? activeIndex}
+              title={activeFile?.name ?? title}
+              src={previewUrl}
+              initialText={extractedText}
+              zoom={attachmentZoom}
+            />
+          </div>
+        ) : hasTextOnlyContent ? (
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Testo della comunicazione
+            </p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {extractedText}
+            </p>
+          </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8" />
@@ -645,7 +993,7 @@ export function CircularViewer({
                 Apri PDF
               </button>
             )}
-            {!isPdf && previewUrl && (
+            {isDocx && previewUrl && (
               <button
                 type="button"
                 onClick={openAttachment}
@@ -662,7 +1010,13 @@ export function CircularViewer({
               className="press inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-2 text-[10px] font-semibold text-primary-foreground"
             >
               <Download className="h-3.5 w-3.5 shrink-0" />
-              {isDownloading ? "Download in corso…" : isPdf ? "Scarica PDF" : "Scarica DOCX"}
+              {isDownloading
+                ? "Download in corso…"
+                : isPdf
+                  ? "Scarica PDF"
+                  : isDocx
+                    ? "Scarica DOCX"
+                    : "Scarica allegato"}
             </button>
           </div>
         )}

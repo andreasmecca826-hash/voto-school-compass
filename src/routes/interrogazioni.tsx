@@ -3,6 +3,7 @@ import { CalendarDays, Check, Clock3, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Empty, SectionTitle } from "@/components/voto/ui";
 import { fmtDate } from "@/lib/voto/dates";
+import { presentInterrogazione } from "@/lib/voto/interrogazioni";
 import { useVoto } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
 
@@ -123,13 +124,13 @@ function Interrogazioni() {
       ) : (
         <ul className="space-y-2">
           {items.map((item) => {
-            const reminderDescription = item.reminderId ? item.notes?.trim() : undefined;
-            const subjectLabel = item.subject.trim();
+            const presentation = presentInterrogazione(item);
             const showSubjectLabel =
-              reminderDescription &&
-              subjectLabel &&
-              subjectLabel.toLocaleLowerCase("it-IT") !== "promemoria" &&
-              subjectLabel !== reminderDescription;
+              item.notes &&
+              presentation.subject &&
+              !presentation.isVerification &&
+              presentation.subject.toLocaleLowerCase("it-IT") !== "promemoria" &&
+              presentation.subject !== item.notes;
 
             return (
               <li
@@ -160,16 +161,23 @@ function Interrogazioni() {
                         item.completed && "line-through",
                       )}
                     >
-                      {reminderDescription || item.subject}
+                      {presentation.title}
                     </p>
                     {item.reminderId && (
-                      <span className="shrink-0 rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
-                        Promemoria
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold",
+                          presentation.isVerification
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                            : "bg-primary-soft text-primary",
+                        )}
+                      >
+                        {presentation.isVerification ? "Verifica" : "Promemoria"}
                       </span>
                     )}
                   </div>
                   {showSubjectLabel && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">{subjectLabel}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{presentation.subject}</p>
                   )}
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
@@ -183,32 +191,9 @@ function Interrogazioni() {
                       </span>
                     )}
                   </div>
-                  {item.notes && !item.reminderId && (
-                    <p className="mt-2 text-xs text-muted-foreground">{item.notes}</p>
+                  {presentation.notes && (
+                    <p className="mt-2 text-xs text-muted-foreground">{presentation.notes}</p>
                   )}
-                  <div className="mt-3 border-t border-border pt-2">
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Preparazione
-                    </p>
-                    <div className="grid grid-cols-2 gap-1">
-                      {item.checklist.map((prep) => (
-                        <button
-                          key={prep.id}
-                          type="button"
-                          onClick={() => v.toggleInterrogazionePrep(item.id, prep.id)}
-                          className={cn(
-                            "rounded-lg px-2 py-1.5 text-left text-[10px]",
-                            prep.done
-                              ? "bg-success-soft text-success line-through"
-                              : "bg-surface text-muted-foreground",
-                          )}
-                        >
-                          {prep.done ? "✓ " : "○ "}
-                          {prep.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
                 <button
                   type="button"

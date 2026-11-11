@@ -2,9 +2,14 @@ import { daysBetween } from "./dates";
 import type { AppNotification, Assignment } from "./types";
 import type { Interrogazione } from "./interrogazioni";
 
-export function selectDashboardAssignments(assignments: Assignment[], now: Date) {
+export function selectDashboardAssignments(
+  assignments: Assignment[],
+  now: Date,
+  isDone: (id: string, completed: boolean) => boolean = (_id, completed) => completed,
+) {
   return assignments
     .filter((assignment) => {
+      if (isDone(assignment.id, assignment.completed)) return false;
       if (!assignment.dueDate) return false;
       const distance = daysBetween(now, assignment.dueDate);
       return distance >= 0 && distance <= 1;
@@ -20,6 +25,39 @@ export function selectNotificationsByType(
   limit = 3,
 ) {
   return notifications.filter((notification) => notification.type === type).slice(0, limit);
+}
+
+export function notificationContentLabel(
+  notification: AppNotification,
+): "Circolari" | "Comunicazioni" {
+  const hasAttachment = Boolean(
+    notification.attachments?.length ||
+    notification.attachmentPath ||
+    notification.attachmentUrl ||
+    notification.attachmentName,
+  );
+  return hasAttachment ? "Circolari" : "Comunicazioni";
+}
+
+const GENERIC_NOTICE_TITLES = new Set([
+  "avviso",
+  "bacheca",
+  "circolare",
+  "circolari",
+  "comunicazione",
+  "comunicazioni",
+]);
+
+export function isGenericNoticeTitle(notification: AppNotification) {
+  return (
+    notification.type === "notice" &&
+    GENERIC_NOTICE_TITLES.has(notification.title.trim().toLocaleLowerCase("it-IT"))
+  );
+}
+
+export function notificationDisplayTitle(notification: AppNotification) {
+  if (!isGenericNoticeTitle(notification)) return notification.title;
+  return notificationContentLabel(notification) === "Circolari" ? "Circolare" : "Comunicazione";
 }
 
 function reminderDaysFromNow(notification: AppNotification, now: Date): number | null {

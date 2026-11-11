@@ -25,6 +25,34 @@ export interface Interrogazione {
   checklist: PreparationItem[];
 }
 
+export interface InterrogazionePresentation {
+  title: string;
+  subject: string;
+  notes?: string;
+  isVerification: boolean;
+}
+
+export function presentInterrogazione(item: Interrogazione): InterrogazionePresentation {
+  const subject = item.subject.trim();
+  const notes = item.notes?.trim() ?? "";
+  const lines = notes
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const firstNote = lines[0] ?? "";
+  const isVerification = Boolean(
+    item.reminderId && (/^verifica\b/i.test(subject) || /\bverifica\b/i.test(notes)),
+  );
+  const title = isVerification && /^verifica\b/i.test(firstNote) ? firstNote : subject;
+  const detailNotes = isVerification && firstNote === title ? lines.slice(1).join("\n") : notes;
+  return {
+    title,
+    subject,
+    ...(detailNotes ? { notes: detailNotes } : {}),
+    isVerification,
+  };
+}
+
 export function reminderDateToIso(value?: string): string | null {
   const raw = value?.trim();
   if (!raw) return null;

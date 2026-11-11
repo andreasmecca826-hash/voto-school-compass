@@ -10,6 +10,7 @@ describe("parser allegati circolari multipli", () => {
           id: "notice-1",
           type: "notice",
           title: "Circolare di prova",
+          extractedText: "La classe 2I esce alle 12:30.",
           attachmentPath: `circulars/${"a".repeat(64)}.pdf`,
           attachmentName: "primo.pdf",
           attachments: [
@@ -26,6 +27,7 @@ describe("parser allegati circolari multipli", () => {
     ]);
     expect(parsed.notifications[0]?.attachmentPath).toBe(`circulars/${"a".repeat(64)}.pdf`);
     expect(parsed.notifications[0]?.attachmentName).toBe("primo.pdf");
+    expect(parsed.notifications[0]?.extractedText).toBe("La classe 2I esce alle 12:30.");
   });
 
   it("continua a leggere una circolare nel formato PDF singolo", () => {
@@ -66,5 +68,34 @@ describe("parser allegati circolari multipli", () => {
       { path: `circulars/${"d".repeat(64)}.pdf`, name: "circolare.pdf" },
       { url: "https://didup.example/report.docx", name: "report.docx" },
     ]);
+  });
+
+  it("propaga il rilevamento delle tabelle dagli allegati alla notifica", () => {
+    const parsed = parseVotoData({
+      subjects: [],
+      notifications: [
+        {
+          id: "notice-table",
+          type: "notice",
+          title: "Orario assemblea",
+          hasTables: true,
+          tableCount: 2,
+          attachments: [
+            {
+              path: `circulars/${"e".repeat(64)}.pdf`,
+              name: "orario.pdf",
+              hasTables: true,
+              tableCount: 2,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(parsed.notifications[0]).toMatchObject({ hasTables: true, tableCount: 2 });
+    expect(parsed.notifications[0]?.attachments?.[0]).toMatchObject({
+      hasTables: true,
+      tableCount: 2,
+    });
   });
 });

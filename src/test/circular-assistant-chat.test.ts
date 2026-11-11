@@ -3,6 +3,7 @@ import type { AppNotification } from "@/lib/voto/types";
 import {
   answerCircularChatQuestion,
   isCircularChatQuestion,
+  isCircularFollowUpQuestion,
 } from "@/lib/voto/circular-assistant-chat";
 import { askAboutCircular } from "@/lib/voto/circular-assistant";
 import { extractCircularPdfText } from "@/lib/voto/circular-reader";
@@ -57,6 +58,7 @@ describe("chat locale/API sulle circolari", () => {
     expect(isCircularChatQuestion("Cosa dice l’ultima circolare? ")).toBe(true);
     expect(isCircularChatQuestion("cerca circolare uscita didattica")).toBe(false);
     expect(isCircularChatQuestion("Qual è la media in inglese?")).toBe(false);
+    expect(isCircularFollowUpQuestion("Quando?", "Cosa dice l’ultima circolare?")).toBe(true);
   });
 
   it("risponde localmente sulle circolari recenti senza chiamare Groq", async () => {
@@ -100,5 +102,50 @@ describe("chat locale/API sulle circolari", () => {
     });
     expect(askAboutCircularMock.mock.calls[0]?.[0]).not.toHaveProperty("title");
     expect(askAboutCircularMock.mock.calls[0]?.[0]).not.toHaveProperty("messages");
+  });
+
+  it("usa il testo già estratto dal monitor senza scaricare di nuovo il PDF", async () => {
+    const storedTextNotifications: AppNotification[] = [
+      {
+        ...notifications[1]!,
+        extractedText: "La classe 2I esce alle ore 12:30 per l’assemblea.",
+      },
+    ];
+
+    await answerCircularChatQuestion(
+      "A che ora dice la circolare per la 2I?",
+      storedTextNotifications,
+      "api",
+    );
+
+    expect(extractPdfMock).not.toHaveBeenCalled();
+    expect(askAboutCircularMock).toHaveBeenCalledWith({
+      question: "A che ora dice la circolare per la 2I?",
+      documentText: "La classe 2I esce alle ore 12:30 per l’assemblea.",
+      documentTruncated: false,
+    });
+  });
+
+  it("mantiene il contesto della circolare per una domanda breve successiva", async () => {
+    const answer = await answerCircularChatQuestion(
+      "Quando?",
+      notifications,
+      "local",
+      "Cosa dice l’ultima circolare?",
+    );
+    expect(answer).toContain("12 novembre 2026");
+    expect(extractPdfMock).toHaveBeenCalledOnce();
+  });
+
+  it("confronta localmente le due circolari più recenti", async () => {
+    const answer = await answerCircularChatQuestion(
+      "Confronta le ultime circolari",
+      notifications,
+      "local",
+    );
+    expect(answer).toContain("Confronto locale");
+    expect(answer).toContain("Colloqui scuola-famiglia");
+    expect(answer).toContain("Uscita didattica");
+    expect(extractPdfMock).toHaveBeenCalledTimes(2);
   });
 });

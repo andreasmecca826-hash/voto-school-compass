@@ -4,6 +4,12 @@ import { useMemo, useState } from "react";
 import { CircularViewer } from "@/components/voto/CircularViewer";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, toIso } from "@/lib/voto/dates";
+import { matchesNoticeQuery } from "@/lib/voto/bacheca-search";
+import {
+  isGenericNoticeTitle,
+  notificationContentLabel,
+  notificationDisplayTitle,
+} from "@/lib/voto/selectors";
 import { useVoto } from "@/lib/voto/store";
 import type { AppNotification } from "@/lib/voto/types";
 
@@ -44,6 +50,14 @@ function attachmentCount(item: AppNotification) {
   return item.attachmentPath || item.attachmentUrl ? 1 : 0;
 }
 
+function isRedundantNoticeText(item: AppNotification, text?: string) {
+  if (!text?.trim()) return true;
+  const value = text.trim().toLocaleLowerCase("it-IT");
+  const label = notificationContentLabel(item).toLocaleLowerCase("it-IT");
+  const singular = label === "circolari" ? "circolare" : "comunicazione";
+  return new Set([label, singular, item.title.trim().toLocaleLowerCase("it-IT")]).has(value);
+}
+
 function openNotice(
   item: AppNotification,
   markRead: (ids: string[]) => void,
@@ -82,12 +96,7 @@ function DidupBacheca() {
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLocaleLowerCase("it-IT");
     return notices.filter((item) => {
-      if (
-        query &&
-        ![item.title, item.message, item.teacher, item.subject]
-          .filter(Boolean)
-          .some((field) => field!.toLocaleLowerCase("it-IT").includes(query))
-      ) {
+      if (query && !matchesNoticeQuery(item, query)) {
         return false;
       }
       const date = item.date?.slice(0, 10) ?? "";
@@ -152,10 +161,10 @@ function DidupBacheca() {
           className="flex max-h-[78dvh] w-[min(73vw,350px)] max-w-[350px] flex-col items-stretch gap-0 overflow-y-auto rounded-[11px] border-0 bg-[#292929] px-6 pb-[19px] pt-[40px] text-white shadow-xl sm:rounded-[11px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-9 [&>button]:w-9 [&>button]:opacity-100 [&>button>svg]:h-5 [&>button>svg]:w-5"
         >
           <DialogTitle className="text-left text-[18px] font-normal tracking-wide text-white">
-            FILTRA
+            CERCA IN BACHECA
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Filtra le circolari per testo e intervallo di date.
+            Cerca una o più parole in nome, testo, allegato e intervallo di date.
           </DialogDescription>
 
           <div className="-ml-6 mt-[46px] flex items-center gap-[18px]">
@@ -169,8 +178,8 @@ function DidupBacheca() {
               onChange={(event) =>
                 setDraftFilters((current) => ({ ...current, query: event.target.value }))
               }
-              placeholder="Cerca..."
-              aria-label="Cerca circolari"
+              placeholder="Parole da cercare..."
+              aria-label="Cerca circolari e comunicazioni per nome"
               className="h-[60px] min-w-0 flex-1 rounded-[10px] border border-white bg-[#333638] px-5 text-[18px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
             />
           </div>
@@ -268,6 +277,15 @@ function DidupBacheca() {
         {filtered.length ? (
           filtered.map((item) => {
             const count = attachmentCount(item);
+            const contentLabel = notificationContentLabel(item);
+            const summary =
+              item.message &&
+              item.message !== item.title &&
+              !isRedundantNoticeText(item, item.message)
+                ? item.message
+                : isGenericNoticeTitle(item)
+                  ? ""
+                  : notificationDisplayTitle(item);
             return (
               <article
                 key={item.id}
@@ -298,12 +316,16 @@ function DidupBacheca() {
                     aria-hidden="true"
                     className="h-[29px] w-[32px] shrink-0 object-contain"
                   />
-                  <span className="text-[16px] tracking-[0.08em]">CIRCOLARI</span>
+                  <span className="text-[16px] tracking-[0.08em]">
+                    {contentLabel.toLocaleUpperCase("it-IT")}
+                  </span>
                 </div>
 
-                <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
-                  {item.message || item.title}
-                </p>
+                {summary && (
+                  <p className="mt-6 break-words text-[18px] leading-[1.4] text-white/95">
+                    {summary}
+                  </p>
+                )}
 
                 {count > 0 && (
                   <button
@@ -321,6 +343,16 @@ function DidupBacheca() {
                     <span>{count}</span>
                   </button>
                 )}
+                {count === 0 && (item.message || item.extractedText || item.title) && (
+                  <button
+                    type="button"
+                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    className="press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90"
+                  >
+                    <FileText className="h-[21px] w-[21px] shrink-0" aria-hidden="true" />
+                    <span>Apri comunicazione</span>
+                  </button>
+                )}
               </article>
             );
           })
@@ -334,8 +366,8 @@ function DidupBacheca() {
             />
             <p className="mt-4 text-sm text-white/90">
               {hasActiveFilters
-                ? "Nessuna circolare corrisponde ai filtri scelti."
-                : "Nessuna circolare in bacheca."}
+                ? "Nessuna circolare o comunicazione corrisponde ai filtri scelti."
+                : "Nessuna circolare o comunicazione in bacheca."}
             </p>
           </div>
         )}
@@ -344,7 +376,7 @@ function DidupBacheca() {
       <button
         type="button"
         onClick={openFilter}
-        aria-label="Filtra la bacheca"
+        aria-label="Cerca nella bacheca"
         aria-expanded={filterOpen}
         className="press fixed bottom-[120px] z-30 flex h-[70px] w-[70px] items-center justify-center rounded-[18px] bg-[#0aa0b1] text-white shadow-lg"
         style={{ right: "max(20px, calc((100vw - 480px) / 2 + 20px))" }}
@@ -360,6 +392,7 @@ function DidupBacheca() {
         path={selected?.attachmentPath}
         attachments={selected?.attachments}
         url={selected?.attachmentUrl}
+        extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
       />
     </div>
   );
@@ -368,23 +401,86 @@ function DidupBacheca() {
 function StandardBacheca() {
   const v = useVoto();
   const [selected, setSelected] = useState<AppNotification | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
+  const filteredNotices = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("it-IT");
+    return normalizedQuery
+      ? notices.filter((item) => matchesNoticeQuery(item, normalizedQuery))
+      : notices;
+  }, [notices, query]);
 
   return (
     <div className="space-y-3 pt-3">
-      <h1 className="font-display text-2xl font-semibold">Bacheca</h1>
-      {notices.length ? (
-        notices.map((item) => {
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-semibold">Bacheca</h1>
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Cerca nella bacheca"
+          aria-expanded={searchOpen}
+          className="press rounded-full p-2 text-primary"
+        >
+          <Search className="h-6 w-6" aria-hidden="true" />
+        </button>
+      </div>
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Cerca nella Bacheca</DialogTitle>
+          <DialogDescription>
+            Cerca una o più parole in nome, testo, materia o allegato.
+          </DialogDescription>
+          <div className="mt-4 flex items-center gap-2">
+            <Search className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <input
+              id="didup-bacheca-query"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Parole da cercare..."
+              aria-label="Cerca circolari e comunicazioni per nome"
+              className="h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              autoFocus
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setSearchOpen(false);
+            }}
+            className="mt-4 self-end text-sm font-medium text-primary"
+          >
+            Azzera ricerca
+          </button>
+        </DialogContent>
+      </Dialog>
+      {filteredNotices.length ? (
+        filteredNotices.map((item) => {
           const count = attachmentCount(item);
+          const tableCount = Math.max(
+            item.tableCount ?? 0,
+            ...(item.attachments ?? []).map((attachment) => attachment.tableCount ?? 0),
+          );
+          const contentLabel = notificationContentLabel(item);
+          const title = isGenericNoticeTitle(item) ? "" : notificationDisplayTitle(item);
+          const summary =
+            item.message?.trim() &&
+            item.message.trim() !== title &&
+            !isRedundantNoticeText(item, item.message)
+              ? item.message.trim()
+              : "";
           return (
             <article key={item.id} className="card-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase text-muted-foreground">
-                    {item.subject || "Circolari"}
-                    {item.teacher ? ` · ${item.teacher}` : ""}
-                  </p>
-                  <h2 className="mt-1 text-sm font-semibold">{item.message || item.title}</h2>
+                  {(item.subject || item.teacher) && (
+                    <p className="text-[11px] font-medium uppercase text-muted-foreground">
+                      {[item.subject, item.teacher].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                  {title && <h2 className="mt-1 text-sm font-semibold">{title}</h2>}
+                  {summary && <p className="mt-1 whitespace-pre-line text-sm">{summary}</p>}
                 </div>
                 {item.date && (
                   <time className="shrink-0 text-[11px] text-muted-foreground">
@@ -393,13 +489,30 @@ function StandardBacheca() {
                 )}
               </div>
               {count > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <button
+                    type="button"
+                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    className="press inline-flex items-center gap-2 text-xs font-medium text-primary"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {count} {count === 1 ? "allegato" : "allegati"}
+                  </button>
+                  {tableCount > 0 && (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                      {tableCount} {tableCount === 1 ? "tabella" : "tabelle"}
+                    </span>
+                  )}
+                </div>
+              )}
+              {count === 0 && (item.message || item.extractedText || item.title) && (
                 <button
                   type="button"
                   onClick={() => openNotice(item, v.markRead, setSelected)}
                   className="press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary"
                 >
                   <FileText className="h-4 w-4" />
-                  {count} {count === 1 ? "allegato" : "allegati"}
+                  {contentLabel === "Circolari" ? "Apri circolare" : "Apri comunicazione"}
                 </button>
               )}
             </article>
@@ -407,7 +520,9 @@ function StandardBacheca() {
         })
       ) : (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          Nessuna circolare in bacheca.
+          {query.trim()
+            ? "Nessuna circolare o comunicazione corrisponde alla ricerca."
+            : "Nessuna circolare o comunicazione in bacheca."}
         </p>
       )}
       <CircularViewer
@@ -418,6 +533,7 @@ function StandardBacheca() {
         path={selected?.attachmentPath}
         attachments={selected?.attachments}
         url={selected?.attachmentUrl}
+        extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
       />
     </div>
   );
