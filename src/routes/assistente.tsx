@@ -384,7 +384,7 @@ function Assistant() {
           )}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
-        {apiQuota && (
+        {activeAssistantMode === "api" && apiQuota && (
           <div className="mt-3 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[11px] text-muted-foreground">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <strong className="text-foreground">Ultima quota Groq ricevuta</strong>
