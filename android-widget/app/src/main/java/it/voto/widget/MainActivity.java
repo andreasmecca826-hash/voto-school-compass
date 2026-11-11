@@ -8,7 +8,10 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.util.Base64;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -74,10 +77,15 @@ public class MainActivity extends Activity {
     openVoto.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"))));
     github.setOnClickListener(v -> {
       String state = UUID.randomUUID().toString();
+      String verifier = UUID.randomUUID().toString() + UUID.randomUUID().toString();
+      String challenge = codeChallenge(verifier);
       getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
-          .putString(WidgetData.OAUTH_STATE_KEY, state).apply();
+          .putString(WidgetData.OAUTH_STATE_KEY, state)
+          .putString(WidgetData.OAUTH_VERIFIER_KEY, verifier).apply();
       String redirect = Uri.encode("it.voto.widget://auth-callback");
-      Uri auth = Uri.parse(WidgetData.SUPABASE_URL + "/auth/v1/authorize?provider=github&redirect_to=" + redirect + "&state=" + Uri.encode(state));
+      Uri auth = Uri.parse(WidgetData.SUPABASE_URL + "/auth/v1/authorize?provider=github&redirect_to=" + redirect
+          + "&state=" + Uri.encode(state) + "&code_challenge=" + Uri.encode(challenge)
+          + "&code_challenge_method=S256");
       startActivity(new Intent(Intent.ACTION_VIEW, auth));
       status.setText("Completa l'accesso GitHub nel browser…");
     });
@@ -120,13 +128,21 @@ public class MainActivity extends Activity {
       String returnedState = values.get("state");
       if (expectedState.length() == 0 || !expectedState.equals(returnedState))
         throw new Exception("Callback GitHub non verificato. Avvia di nuovo il login dall'app.");
+      String code = values.get("code");
       String access = values.get("access_token");
       String refresh = values.get("refresh_token");
-      if (access == null || refresh == null) throw new Exception("La sessione GitHub non è stata restituita.");
-      long expires = parseLong(values.get("expires_in"), 3600L);
-      WidgetData.saveOAuthSession(this, access, refresh, expires);
+      if (code != null && code.length() > 0) {
+        String verifier = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE)
+            .getString(WidgetData.OAUTH_VERIFIER_KEY, "");
+        if (verifier.length() == 0) throw new Exception("Verifier PKCE mancante. Avvia di nuovo il login.");
+        WidgetData.exchangeOAuthCode(this, code, verifier);
+      } else {
+        if (access == null || refresh == null) throw new Exception("La sessione GitHub non è stata restituita.");
+        long expires = parseLong(values.get("expires_in"), 3600L);
+        WidgetData.saveOAuthSession(this, access, refresh, expires);
+      }
       getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
-          .remove(WidgetData.OAUTH_STATE_KEY).apply();
+          .remove(WidgetData.OAUTH_STATE_KEY).remove(WidgetData.OAUTH_VERIFIER_KEY).apply();
       savePreferences();
       WidgetData.refresh(this);
       status.setText("Accesso GitHub riuscito. Widget aggiornati.");
@@ -149,5 +165,15 @@ public class MainActivity extends Activity {
 
   private static long parseLong(String value, long fallback) {
     try { return Long.parseLong(value); } catch (Exception ignored) { return fallback; }
+  }
+
+  private static String codeChallenge(String verifier) {
+    try {
+      byte[] digest = MessageDigest.getInstance("SHA-256")
+          .digest(verifier.getBytes(StandardCharsets.US_ASCII));
+      return Base64.encodeToString(digest, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+    } catch (Exception error) {
+      throw new IllegalStateException("Impossibile preparare il login sicuro", error);
+    }
   }
 }
