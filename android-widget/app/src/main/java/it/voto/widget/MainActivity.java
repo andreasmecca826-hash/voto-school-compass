@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class MainActivity extends Activity {
   private TextView status;
@@ -72,8 +73,11 @@ public class MainActivity extends Activity {
     });
     openVoto.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"))));
     github.setOnClickListener(v -> {
+      String state = UUID.randomUUID().toString();
+      getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
+          .putString(WidgetData.OAUTH_STATE_KEY, state).apply();
       String redirect = Uri.encode("it.voto.widget://auth-callback");
-      Uri auth = Uri.parse(WidgetData.SUPABASE_URL + "/auth/v1/authorize?provider=github&redirect_to=" + redirect);
+      Uri auth = Uri.parse(WidgetData.SUPABASE_URL + "/auth/v1/authorize?provider=github&redirect_to=" + redirect + "&state=" + Uri.encode(state));
       startActivity(new Intent(Intent.ACTION_VIEW, auth));
       status.setText("Completa l'accesso GitHub nel browser…");
     });
@@ -105,15 +109,24 @@ public class MainActivity extends Activity {
     Uri data = intent == null ? null : intent.getData();
     if (data == null || !"it.voto.widget".equals(data.getScheme())) return;
     try {
-      Map<String, String> values = parseParams(data.getFragment());
+      String rawParams = data.getFragment();
+      if (rawParams == null || rawParams.length() == 0) rawParams = data.getQuery();
+      Map<String, String> values = parseParams(rawParams);
       String error = values.get("error_description");
       if (error == null) error = values.get("error");
       if (error != null) { status.setText("Login GitHub non riuscito: " + error); return; }
+      String expectedState = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE)
+          .getString(WidgetData.OAUTH_STATE_KEY, "");
+      String returnedState = values.get("state");
+      if (expectedState.length() == 0 || !expectedState.equals(returnedState))
+        throw new Exception("Callback GitHub non verificato. Avvia di nuovo il login dall'app.");
       String access = values.get("access_token");
       String refresh = values.get("refresh_token");
       if (access == null || refresh == null) throw new Exception("La sessione GitHub non è stata restituita.");
       long expires = parseLong(values.get("expires_in"), 3600L);
       WidgetData.saveOAuthSession(this, access, refresh, expires);
+      getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
+          .remove(WidgetData.OAUTH_STATE_KEY).apply();
       savePreferences();
       WidgetData.refresh(this);
       status.setText("Accesso GitHub riuscito. Widget aggiornati.");
