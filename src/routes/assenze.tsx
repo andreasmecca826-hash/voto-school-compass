@@ -3,6 +3,7 @@ import { ArrowLeft, CalendarDays, CalendarX2, ChevronRight } from "lucide-react"
 import { useMemo } from "react";
 import { useVoto } from "@/lib/voto/store";
 import { cn } from "@/lib/utils";
+import { AttendanceCalendar } from "@/components/voto/AttendanceCalendar";
 
 export const Route = createFileRoute("/assenze")({
   head: () => ({
@@ -92,6 +93,8 @@ function Assenze() {
           {Math.round(v.data.attendance.absenceDays)}
         </p>
       </section>
+
+      {!isDidup && <AttendanceCalendar />}
 
       <div className="mt-6 flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Giorni registrati</h2>
