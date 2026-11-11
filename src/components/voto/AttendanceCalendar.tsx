@@ -187,7 +187,7 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
                 />
               </button>
               <div
-                className="flex flex-wrap gap-[5px] px-4 pb-4"
+                className="no-scrollbar flex flex-nowrap gap-[5px] overflow-x-auto px-4 pb-4"
                 aria-label={`Calendario presenze ${month.label}`}
               >
                 {month.days.map((item) => (
