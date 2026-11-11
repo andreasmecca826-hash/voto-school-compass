@@ -7,10 +7,10 @@ import {
   CalendarX2,
   Calculator,
   CircleDot,
-  LayoutGrid,
   Layers,
   ListChecks,
   Sparkles,
+  Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
@@ -90,7 +90,7 @@ const TOOLS = [
     id: "classroom-seating",
     title: "Piantina della classe",
     subtitle: "Disponi i banchi e assegna un posto a ogni nome",
-    icon: LayoutGrid,
+    icon: Table2,
     tone: "text-primary bg-surface",
   },
 ] as const;
