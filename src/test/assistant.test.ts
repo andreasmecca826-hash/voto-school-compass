@@ -922,6 +922,14 @@ describe("Assistente locale", () => {
     ).toContain("Studio Lab > Calcolo media e simulatore voti");
   });
 
+  it("indirizza al planner manuale senza generare sessioni dal registro", () => {
+    const answer = answerQuestion("Organizza lo studio per la settimana", data);
+
+    expect(answer).toContain("Studio Lab > Planner di studio");
+    expect(answer).toContain("scegli tu ogni sessione");
+    expect(answer).toContain("non creo un piano automatico dal registro");
+  });
+
   it("calcola i giorni alla fine delle lezioni usando solo la data locale configurata", () => {
     const now = new Date(2026, 0, 1, 12);
     const configured = answerQuestion("Quando finirà la scuola?", data, emptySchedule(), now, [], {

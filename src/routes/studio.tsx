@@ -27,7 +27,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Flashcard, ruota di ripasso, calcoli di voti e assenze e data fine scuola in un unico spazio.",
+          "Planner di studio manuale, flashcard, ruota di ripasso e strumenti scolastici in un unico spazio.",
       },
       { property: "og:title", content: "Studio Lab — VOTO." },
       {
@@ -79,8 +79,8 @@ const TOOLS = [
   },
   {
     id: "planner",
-    title: "Smart Study Planner",
-    subtitle: "Organizza automaticamente compiti, verifiche e interrogazioni",
+    title: "Planner di studio",
+    subtitle: "Decidi tu cosa studiare, quando e per quanto tempo",
     icon: ListChecks,
     tone: "text-primary bg-surface",
   },

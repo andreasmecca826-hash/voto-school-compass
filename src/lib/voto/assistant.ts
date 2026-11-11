@@ -18,7 +18,6 @@ import {
   searchAssistantData,
 } from "./assistant-search";
 import { answerSchoolRegulation } from "./school-regulations";
-import { buildStudyPlan } from "./study-planner";
 import { parseEventDateTime } from "./dates";
 
 export interface AssistantContext {
@@ -429,26 +428,7 @@ export function answerQuestion(
       normalized.includes("giorni") ||
       normalized.includes("oggi"));
   if (asksStudyPlan) {
-    const plan = buildStudyPlan({
-      assignments: data.assignments,
-      interrogazioni,
-      schedule,
-      now,
-      minutesPerDay: 90,
-      horizonDays: 7,
-    });
-    const daysWithTasks = plan.filter((day) => day.tasks.length > 0);
-    if (!daysWithTasks.length) {
-      return "Non trovo compiti, verifiche o interrogazioni da pianificare nei prossimi sette giorni.";
-    }
-    return `Piano di studio locale per i prossimi sette giorni (90 minuti al giorno):\n${daysWithTasks
-      .map(
-        (day) =>
-          `• ${day.label}: ${day.tasks.map((task) => `${task.title} (${task.minutes} min)`).join(", ")}`,
-      )
-      .join(
-        "\n",
-      )}\n\nPuoi personalizzare il tempo e spuntare o rimandare le attività in Studio Lab > Smart Study Planner.`;
+    return "Per organizzare lo studio scegli tu ogni sessione nel Planner di studio: apri Studio Lab > Planner di studio e indica argomento, materia, metodo, giorno, orario e durata. Le sessioni restano salvate su questo dispositivo; non creo un piano automatico dal registro.";
   }
 
   if (
@@ -459,7 +439,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e usare lo Smart Study Planner locale per organizzare compiti, verifiche e interrogazioni. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e usare il Planner di studio manuale per pianificare sessioni scegliendo materia, argomento, metodo, data, orario e durata. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   if (
@@ -498,7 +478,7 @@ export function answerQuestion(
       ],
       [
         ["pianificatore", "piano di studio", "cosa devo studiare"],
-        "Studio Lab > Smart Study Planner",
+        "Studio Lab > Planner di studio",
       ],
       [["voto", "materia"], "Voti"],
       [["studio lab", "flashcard", "ruota del ripasso"], "Studio Lab"],
