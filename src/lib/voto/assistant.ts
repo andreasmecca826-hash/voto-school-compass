@@ -51,6 +51,17 @@ const normalize = (value: string) =>
 
 const number = (value: number) => fmt(Math.round(value * 100) / 100, 2);
 
+function compareLatestGradeToPrevious(subject: VotoData["subjects"][number]) {
+  const grades = [...subject.grades]
+    .filter((grade) => grade.date)
+    .sort((left, right) => left.date.localeCompare(right.date));
+  if (grades.length < 2) return null;
+  const latest = grades[grades.length - 1];
+  const previousAverage = average(grades.slice(0, -1));
+  if (!latest || previousAverage === null) return null;
+  return { latest, previousAverage, delta: latest.value - previousAverage };
+}
+
 function editDistance(left: string, right: string): number {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
   for (let row = 1; row <= left.length; row += 1) {
@@ -482,7 +493,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e usare il Planner di studio manuale per pianificare sessioni scegliendo materia, argomento, metodo, data, orario e durata. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti. Sui voti posso riepilogare media generale, punto di forza e materia da seguire e confrontare l’ultimo voto con i precedenti per materia; sono confronti indicativi basati sui dati registrati, non giudizi sugli argomenti. Posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard di Studio Lab e usare il Planner di studio manuale per pianificare sessioni scegliendo materia, argomento, metodo, data, orario e durata. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze e i giorni di lezione alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   if (
@@ -516,8 +527,15 @@ export function answerQuestion(
       [["musica", "brano"], "Personalizza > Musica"],
       [["impostazion", "sincronizz", "collegare i dati"], "Impostazioni"],
       [
-        ["simulator", "calcolo media", "voto necessario"],
-        "Studio Lab > Calcolo media e simulatore voti",
+        [
+          "simulator",
+          "calcolo media",
+          "voto necessario",
+          "calcolo assenze",
+          "piantina della classe",
+          "calcolatore universale",
+        ],
+        "Studio Lab > Calcolatore universale (cerca lo strumento nell’elenco)",
       ],
       [
         ["pianificatore", "piano di studio", "cosa devo studiare"],
@@ -1199,6 +1217,148 @@ export function answerQuestion(
   const subject = findSubject(query, data);
   const target = targetFrom(query);
   const projectedGrade = gradeFrom(query);
+  const asksStrength = [
+    "punto di forza",
+    "punti di forza",
+    "materia migliore",
+    "materie migliori",
+    "materia piu forte",
+    "materie piu forti",
+    "vado meglio",
+    "sono piu bravo",
+    "mi riesce meglio",
+  ].some((term) => normalized.includes(term));
+  const asksWeakness = [
+    "punto di debolezza",
+    "punti di debolezza",
+    "e debolezza",
+    "e di debolezza",
+    "punto debole",
+    "punti deboli",
+    "materia peggiore",
+    "materie peggiori",
+    "materia piu debole",
+    "materie piu deboli",
+    "materia da seguire",
+    "vado peggio",
+    "faccio piu fatica",
+    "mi riesce peggio",
+  ].some((term) => normalized.includes(term));
+  const asksStudyPriority = [
+    "cosa devo migliorare",
+    "quale materia devo migliorare",
+    "quali materie devo migliorare",
+    "su cosa devo concentrarmi",
+    "dove vado peggio",
+    "in cosa sono debole",
+    "come posso migliorare",
+  ].some((term) => normalized.includes(term));
+  if (asksStrength || asksWeakness || asksStudyPriority) {
+    if (subject) {
+      const subjectAverage = average(subject.grades);
+      if (subjectAverage === null)
+        return `Non risultano voti sufficienti in ${subject.name} per individuare un andamento. Il registro non contiene dati sugli argomenti specifici da migliorare.`;
+      const comparison = compareLatestGradeToPrevious(subject);
+      const latestInfo = comparison
+        ? ` L’ultimo voto (${comparison.latest.label}) è ${comparison.delta > 0 ? "sopra" : comparison.delta < 0 ? "sotto" : "in linea con"} la media dei voti precedenti (${number(comparison.previousAverage)}).`
+        : " Per confrontare l’andamento servono almeno due voti datati.";
+      return `In ${subject.name} la media registrata è ${number(subjectAverage)} su 10.${latestInfo} Dai soli voti non posso dedurre quali argomenti specifici siano più difficili.`;
+    }
+
+    const ranked = data.subjects
+      .map((item) => ({ item, avg: average(item.grades) }))
+      .filter(
+        (entry): entry is { item: (typeof data.subjects)[number]; avg: number } =>
+          entry.avg !== null,
+      )
+      .sort((a, b) => b.avg - a.avg);
+    const overall = overallAverage(data.subjects);
+    if (!ranked.length || overall === null)
+      return "Non ci sono ancora voti sufficienti per individuare punti di forza o materie da seguire.";
+
+    const lines = [`Media generale: ${number(overall)} su 10.`];
+    const showStrength = asksStrength;
+    const showWeakness = asksWeakness || asksStudyPriority;
+    if (showStrength) {
+      const strongest = ranked.filter((entry) => entry.avg === ranked[0]!.avg);
+      lines.push(
+        `Punto di forza: ${strongest.map(({ item, avg }) => `${item.name} (${number(avg)})`).join(", ")}.`,
+      );
+    }
+    if (showWeakness) {
+      const lowestAverage = ranked[ranked.length - 1]!.avg;
+      const weakest = ranked.filter((entry) => entry.avg === lowestAverage);
+      lines.push(
+        `Punto di debolezza da seguire: ${weakest.map(({ item, avg }) => `${item.name} (${number(avg)})`).join(", ")}.`,
+      );
+    }
+    lines.push(
+      "È un confronto tra le medie dei voti caricati, non una valutazione degli argomenti specifici.",
+    );
+    return lines.join("\n");
+  }
+
+  const asksSubjectAverages = [
+    "media per materia",
+    "medie per materia",
+    "medie delle materie",
+    "media di ogni materia",
+    "media in tutte le materie",
+  ].some((term) => normalized.includes(term));
+  if (asksSubjectAverages) {
+    const rankings = data.subjects
+      .map((item) => ({ item, avg: average(item.grades) }))
+      .filter(
+        (entry): entry is { item: (typeof data.subjects)[number]; avg: number } =>
+          entry.avg !== null,
+      )
+      .sort((a, b) => b.avg - a.avg);
+    return rankings.length
+      ? `Medie per materia, dalla più alta:\n${rankings.map(({ item, avg }) => `• ${item.name}: ${number(avg)} su 10`).join("\n")}\nCalcolo basato sui voti registrati; i pesi dei voti sono considerati.`
+      : "Non ci sono ancora voti sufficienti per calcolare le medie per materia.";
+  }
+
+  const asksSubjectTrend =
+    normalized.includes("sto migliorando") ||
+    normalized.includes("sto peggiorando") ||
+    normalized.includes("andamento") ||
+    normalized.includes("trend");
+  if (!subject && asksSubjectTrend && normalized.includes("materie")) {
+    const comparisons = data.subjects
+      .map((item) => ({ item, comparison: compareLatestGradeToPrevious(item) }))
+      .filter(
+        (
+          entry,
+        ): entry is {
+          item: (typeof data.subjects)[number];
+          comparison: NonNullable<ReturnType<typeof compareLatestGradeToPrevious>>;
+        } => entry.comparison !== null,
+      );
+    if (!comparisons.length)
+      return "Per confrontare l’andamento per materia servono almeno due voti datati in ciascuna. Al momento non ho dati sufficienti.";
+    const describe = (entry: (typeof comparisons)[number]) =>
+      `${entry.item.name} (${entry.comparison!.delta > 0 ? "+" : ""}${number(entry.comparison!.delta)})`;
+    const improving = comparisons
+      .filter(({ comparison }) => comparison.delta > 0.05)
+      .sort((a, b) => b.comparison!.delta - a.comparison!.delta);
+    const declining = comparisons
+      .filter(({ comparison }) => comparison.delta < -0.05)
+      .sort((a, b) => a.comparison!.delta - b.comparison!.delta);
+    const stable = comparisons.filter(({ comparison }) => Math.abs(comparison.delta) <= 0.05);
+    return [
+      "Confronto tra l’ultimo voto e la media dei voti precedenti per materia:",
+      improving.length
+        ? `In crescita: ${improving.map(describe).join(", ")}.`
+        : "Nessuna materia in crescita nei dati confrontabili.",
+      declining.length
+        ? `In calo: ${declining.map(describe).join(", ")}.`
+        : "Nessuna materia in calo nei dati confrontabili.",
+      stable.length ? `Stabili: ${stable.map(describe).join(", ")}.` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
   const asksGradeList =
     (normalized.includes("voto") ||
       normalized.includes("voti") ||
@@ -1490,11 +1650,24 @@ export function answerQuestion(
       : "Non risultano materie sotto la sufficienza nei voti caricati.";
   }
 
-  if (
-    normalized.includes("sto migliorando") ||
-    normalized.includes("andamento") ||
-    normalized.includes("trend")
-  ) {
+  if (asksSubjectTrend) {
+    if (subject) {
+      const comparison = compareLatestGradeToPrevious(subject);
+      if (!comparison)
+        return `In ${subject.name} non ho abbastanza voti datati per confrontare l’ultimo risultato con i precedenti.`;
+      const date = displayDate(comparison.latest.date);
+      const direction =
+        Math.abs(comparison.delta) <= 0.05
+          ? "in linea con"
+          : comparison.delta > 0
+            ? "sopra"
+            : "sotto";
+      const deltaText =
+        Math.abs(comparison.delta) <= 0.05
+          ? ""
+          : ` (differenza ${comparison.delta > 0 ? "+" : ""}${number(comparison.delta)})`;
+      return `L’ultimo voto in ${subject.name} è ${comparison.latest.label}${date ? ` del ${date}` : ""}: è ${direction} la media dei voti precedenti (${number(comparison.previousAverage)})${deltaText}. È un confronto descrittivo, non una previsione.`;
+    }
     const current = overallAverage(data.subjects);
     if (current === null || data.previousAverage === undefined)
       return "Non ho abbastanza dati per confrontare la media attuale con quella precedente.";

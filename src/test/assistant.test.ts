@@ -657,7 +657,55 @@ describe("Assistente locale", () => {
     );
   });
 
-  it("spiega materie sotto la sufficienza, andamento e ore residue di assenza", () => {
+  it("riepiloga punti di forza, debolezza e andamento recente per materia", () => {
+    const performanceData: VotoData = {
+      ...data,
+      subjects: [
+        {
+          ...data.subjects[0]!,
+          grades: [
+            ...data.subjects[0]!.grades,
+            { id: "g3", value: 8, label: "8", date: "2026-10-20", type: "orale", weight: 1 },
+          ],
+        },
+        {
+          id: "matematica",
+          name: "Matematica",
+          grades: [
+            { id: "m1", value: 9, label: "9", date: "2026-10-15", type: "scritto", weight: 1 },
+          ],
+        },
+        {
+          id: "italiano",
+          name: "Italiano",
+          grades: [
+            { id: "i1", value: 4, label: "4", date: "2026-10-12", type: "orale", weight: 1 },
+          ],
+        },
+      ],
+    };
+
+    const overview = answerQuestion(
+      "Quali sono i miei punti di forza e di debolezza?",
+      performanceData,
+    );
+    expect(overview).toContain("Media generale:");
+    expect(overview).toContain("Punto di forza: Matematica (9,00)");
+    expect(overview).toContain("Punto di debolezza da seguire: Italiano (4,00)");
+    expect(answerQuestion("Su cosa devo concentrarmi?", performanceData)).toContain("Italiano");
+    expect(answerQuestion("Quali sono le medie per materia?", performanceData)).toContain(
+      "Matematica: 9,00 su 10",
+    );
+
+    const subjectTrend = answerQuestion("Sto migliorando in Inglese?", performanceData);
+    expect(subjectTrend).toContain("ultimo voto in Inglese è 8");
+    expect(subjectTrend).toContain("sopra la media dei voti precedenti");
+    expect(answerQuestion("In quali materie sto migliorando?", performanceData)).toContain(
+      "In crescita: Inglese (+1,00)",
+    );
+  });
+
+  it("spiega materie sotto la sufficienza, andamento generale e ore residue di assenza", () => {
     const lowSubjectData: VotoData = {
       ...data,
       subjects: [
@@ -775,7 +823,10 @@ describe("Assistente locale", () => {
   });
 
   it("spiega cosa sa consultare e chiarisce che non invia giustificazioni", () => {
-    expect(answerQuestion("Cosa sai fare?", data)).toContain("note");
+    const capabilities = answerQuestion("Cosa sai fare?", data);
+    expect(capabilities).toContain("note");
+    expect(capabilities).toContain("punto di forza");
+    expect(capabilities).toContain("confrontare l’ultimo voto");
     const justification = answerQuestion("Come giustifico un'assenza?", data);
     expect(justification).toContain("non inviare una giustificazione");
     expect(justification).toContain("DidUP Famiglia");
@@ -932,7 +983,10 @@ describe("Assistente locale", () => {
     ).toContain("Apple");
     expect(
       answerQuestion("Dove trovo il simulatore per calcolare il voto necessario?", data),
-    ).toContain("Studio Lab > Calcolo media e simulatore voti");
+    ).toContain("Studio Lab > Calcolatore universale");
+    expect(answerQuestion("Dove trovo il calcolo assenze?", data)).toContain(
+      "Calcolatore universale",
+    );
   });
 
   it("indirizza al planner manuale senza generare sessioni dal registro", () => {
