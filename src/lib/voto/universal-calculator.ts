@@ -10,7 +10,8 @@ export type UniversalToolId =
   | "qr"
   | "documents"
   | "tables"
-  | "share";
+  | "share"
+  | "classroom";
 
 export type ConversionCategory =
   "length" | "mass" | "volume" | "area" | "speed" | "temperature" | "currency";
