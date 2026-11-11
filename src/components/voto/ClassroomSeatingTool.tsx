@@ -109,12 +109,13 @@ export function ClassroomSeatingTool() {
   const freeCount = visibleSeatKeys.length - assignedCount;
   const hasAisle = plan.centralAisle && plan.desksPerRow > 1;
   const aisleAfter = Math.ceil(plan.desksPerRow / 2);
-  const aisleWidth = Math.max(20, Math.round(plan.spacing * 1.5));
+  const aisleWidth = 34;
   const deskMinWidth = plan.seatsPerDesk === 2 ? 120 : 72;
   const gridColumns = Array.from({ length: plan.desksPerRow + (hasAisle ? 1 : 0) }, (_, index) =>
     hasAisle && index === aisleAfter ? `${aisleWidth}px` : `minmax(${deskMinWidth}px, 1fr)`,
   ).join(" ");
-  const gridMinWidth = `${plan.desksPerRow * deskMinWidth + (hasAisle ? aisleWidth : 0)}px`;
+  const trackCount = plan.desksPerRow + (hasAisle ? 1 : 0);
+  const gridMinWidth = `${plan.desksPerRow * deskMinWidth + (hasAisle ? aisleWidth : 0) + (trackCount - 1) * plan.spacing}px`;
 
   function updateSeat(key: string, value: string) {
     setPlan((current) => {
@@ -354,6 +355,11 @@ export function ClassroomSeatingTool() {
           <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
             Cattedra / lavagna
           </div>
+          {hasAisle && (
+            <p className="mb-3 text-center text-[10px] font-semibold text-muted-foreground">
+              Corsia libera tra i due gruppi di banchi
+            </p>
+          )}
           <div className="grid overflow-x-auto pb-1" style={{ rowGap: `${plan.spacing}px` }}>
             {Array.from({ length: plan.rows }, (_, row) => (
               <div key={row} className="flex min-w-0 items-stretch gap-2">
@@ -372,54 +378,66 @@ export function ClassroomSeatingTool() {
                     const deskNumber = row * plan.desksPerRow + column + 1;
                     const gridColumn = hasAisle && column >= aisleAfter ? column + 2 : column + 1;
                     return (
-                      <div
-                        key={deskNumber}
-                        className="grid min-h-[84px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm"
-                        style={{ gridColumn }}
-                      >
-                        <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-                          Banco {deskNumber}
-                        </span>
-                        <div
-                          className={
-                            plan.seatsPerDesk === 2 ? "grid grid-cols-2 gap-1" : "grid grid-cols-1"
-                          }
-                        >
-                          {Array.from({ length: plan.seatsPerDesk }, (_, seat) => {
-                            const key = seatKey(row, column, seat);
-                            const seatNumber =
-                              (row * plan.desksPerRow + column) * plan.seatsPerDesk + seat + 1;
-                            const seatLabel =
+                      <div key={deskNumber} style={{ gridColumn }}>
+                        <div className="grid min-h-[84px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm">
+                          <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                            Banco {deskNumber}
+                          </span>
+                          <div
+                            className={
                               plan.seatsPerDesk === 2
-                                ? seat === 0
-                                  ? "A"
-                                  : "B"
-                                : String(seatNumber);
-                            return (
-                              <label key={key} className="min-w-0">
-                                {plan.seatsPerDesk === 2 && (
-                                  <span className="mb-0.5 block text-[8px] font-semibold text-muted-foreground">
-                                    Posto {seatLabel}
-                                  </span>
-                                )}
-                                <input
-                                  value={plan.assignments[key] ?? ""}
-                                  onChange={(event) => updateSeat(key, event.target.value)}
-                                  maxLength={48}
-                                  placeholder={
-                                    plan.seatsPerDesk === 2 ? `Nome ${seatLabel}` : "Nome"
-                                  }
-                                  autoComplete="off"
-                                  aria-label={`Nome alunno, fila ${row + 1}, banco ${deskNumber}, posto ${seatLabel}`}
-                                  className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary"
-                                />
-                              </label>
-                            );
-                          })}
+                                ? "grid grid-cols-2 gap-1"
+                                : "grid grid-cols-1"
+                            }
+                          >
+                            {Array.from({ length: plan.seatsPerDesk }, (_, seat) => {
+                              const key = seatKey(row, column, seat);
+                              const seatNumber =
+                                (row * plan.desksPerRow + column) * plan.seatsPerDesk + seat + 1;
+                              const seatLabel =
+                                plan.seatsPerDesk === 2
+                                  ? seat === 0
+                                    ? "A"
+                                    : "B"
+                                  : String(seatNumber);
+                              return (
+                                <label key={key} className="min-w-0">
+                                  {plan.seatsPerDesk === 2 && (
+                                    <span className="mb-0.5 block text-[8px] font-semibold text-muted-foreground">
+                                      Posto {seatLabel}
+                                    </span>
+                                  )}
+                                  <input
+                                    value={plan.assignments[key] ?? ""}
+                                    onChange={(event) => updateSeat(key, event.target.value)}
+                                    maxLength={48}
+                                    placeholder={
+                                      plan.seatsPerDesk === 2 ? `Nome ${seatLabel}` : "Nome"
+                                    }
+                                    autoComplete="off"
+                                    aria-label={`Nome alunno, fila ${row + 1}, banco ${deskNumber}, posto ${seatLabel}`}
+                                    className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary"
+                                  />
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
+                  {hasAisle && (
+                    <div
+                      role="img"
+                      aria-label={`Corridoio centrale, fila ${row + 1}`}
+                      className="flex min-h-[84px] items-center justify-center rounded-md border-x-2 border-dashed border-primary/45 bg-primary/10"
+                      style={{ gridColumn: aisleAfter + 1 }}
+                    >
+                      <span className="text-[8px] font-bold text-primary [writing-mode:vertical-rl]">
+                        PASSAGGIO
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

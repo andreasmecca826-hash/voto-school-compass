@@ -64,6 +64,8 @@ describe("Piantina della classe", () => {
       screen.getByRole("textbox", { name: "Nome alunno, fila 1, banco 1, posto 1" }),
     ).toHaveValue("Marta Neri");
     expect(screen.getByRole("checkbox", { name: "Corridoio centrale" })).toBeChecked();
+    expect(screen.getByRole("img", { name: "Corridoio centrale, fila 1" })).toBeInTheDocument();
+    expect(screen.getByText("Corsia libera tra i due gruppi di banchi")).toBeInTheDocument();
     expect(
       screen.queryByRole("textbox", { name: "Nome alunno, fila 4, banco 7, posto 7" }),
     ).toBeNull();
