@@ -367,7 +367,7 @@ export function DidupDashboard() {
         })}
       </DidupScroller>
 
-      <DidupSectionTitle title="Bacheca" href="/bacheca" compact />
+      <DidupSectionTitle title="Bacheca" href="/bacheca" compact linkLabel="Vedi tutte" />
       <DidupScroller>
         {notices.length > 0 ? (
           notices.slice(0, 5).map((item) => {
@@ -537,16 +537,18 @@ function DidupSectionTitle({
   title,
   href,
   compact = false,
+  linkLabel = "Vedi tutti",
 }: {
   title: string;
   href: string;
   compact?: boolean;
+  linkLabel?: string;
 }) {
   return (
     <div className={`${compact ? "mt-6" : "mt-9"} flex items-center justify-between px-3.5`}>
       <h2 className="text-[22px] font-extrabold">{title}</h2>
       <Link to={href} className="text-[13px] text-white/90">
-        Vedi tutti ›
+        {linkLabel} ›
       </Link>
     </div>
   );
