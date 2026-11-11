@@ -32,6 +32,7 @@ final class WidgetData {
   static final String ACCESS_TOKEN_KEY = "supabase_access_token";
   static final String REFRESH_TOKEN_KEY = "supabase_refresh_token";
   static final String EXPIRES_AT_KEY = "supabase_expires_at";
+  private static final String DATA_CACHE_KEY = "school_data_cache";
   static final String SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
   static final String SUPABASE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
   static final String SCHOOL_DATA_URL = SUPABASE_URL + "/functions/v1/school-data";
@@ -63,7 +64,8 @@ final class WidgetData {
 
   static void logout(Context context) {
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-        .remove(ACCESS_TOKEN_KEY).remove(REFRESH_TOKEN_KEY).remove(EXPIRES_AT_KEY).apply();
+        .remove(ACCESS_TOKEN_KEY).remove(REFRESH_TOKEN_KEY).remove(EXPIRES_AT_KEY)
+        .remove(DATA_CACHE_KEY).apply();
   }
 
   static void saveOAuthSession(Context context, String accessToken, String refreshToken, long expiresIn) throws Exception {
@@ -169,10 +171,25 @@ final class WidgetData {
         accessToken = refreshAccessToken(context);
         root = requestJson(SCHOOL_DATA_URL, "GET", null, accessToken);
       }
+      saveDataCache(context, root);
       return summarize(root);
     } catch (Exception e) {
-      return new String[]{"Dati non disponibili", messageFor(e), "", "", "", "", "", "", "", "", ""};
+      String cached = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+          .getString(DATA_CACHE_KEY, "");
+      if (cached.length() > 0) {
+        try {
+          return summarize(new JSONObject(cached));
+        } catch (Exception ignored) {
+          // La cache è corrotta: mostriamo l'errore reale sotto.
+        }
+      }
+      return new String[]{"Dati non disponibili", messageFor(e), "", "", "", "", "", "", "", "", "", ""};
     }
+  }
+
+  private static void saveDataCache(Context context, JSONObject root) {
+    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+        .putString(DATA_CACHE_KEY, root.toString()).apply();
   }
 
   private static String validAccessToken(Context context) throws Exception {
