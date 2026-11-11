@@ -1,0 +1,380 @@
+import { useEffect, useMemo, useState } from "react";
+import { Minus, Plus, Printer, Trash2, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const STORAGE_KEY = "voto.studio.classroom-seating.v1";
+const MIN_SIZE = 1;
+const MAX_SIZE = 8;
+
+type ClassroomPlan = {
+  className: string;
+  rows: number;
+  desksPerRow: number;
+  centralAisle: boolean;
+  assignments: Record<string, string>;
+};
+
+const DEFAULT_PLAN: ClassroomPlan = {
+  className: "La mia classe",
+  rows: 5,
+  desksPerRow: 4,
+  centralAisle: false,
+  assignments: {},
+};
+
+function clampSize(value: unknown, fallback: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.max(MIN_SIZE, Math.min(MAX_SIZE, Math.round(value)));
+}
+
+function loadPlan(): ClassroomPlan {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_PLAN;
+    const value = JSON.parse(raw) as Record<string, unknown>;
+    const savedAssignments = value["assignments"];
+    const assignments: Record<string, string> = {};
+    if (savedAssignments && typeof savedAssignments === "object") {
+      for (const [key, name] of Object.entries(savedAssignments)) {
+        if (typeof name === "string" && name.trim()) assignments[key] = name.slice(0, 48);
+      }
+    }
+    return {
+      className:
+        typeof value["className"] === "string"
+          ? value["className"].slice(0, 32)
+          : DEFAULT_PLAN.className,
+      rows: clampSize(value["rows"], DEFAULT_PLAN.rows),
+      desksPerRow: clampSize(value["desksPerRow"], DEFAULT_PLAN.desksPerRow),
+      centralAisle: value["centralAisle"] === true,
+      assignments,
+    };
+  } catch {
+    return DEFAULT_PLAN;
+  }
+}
+
+function seatKey(row: number, column: number): string {
+  return `${row}-${column}`;
+}
+
+export function ClassroomSeatingTool() {
+  const [plan, setPlan] = useState<ClassroomPlan>(DEFAULT_PLAN);
+  const [storageReady, setStorageReady] = useState(false);
+  const [roster, setRoster] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    setPlan(loadPlan());
+    setStorageReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+    } catch {
+      // La piantina resta modificabile anche se lo spazio locale non è disponibile.
+    }
+  }, [plan, storageReady]);
+
+  const visibleSeatKeys = useMemo(
+    () =>
+      Array.from({ length: plan.rows }, (_, row) =>
+        Array.from({ length: plan.desksPerRow }, (_, column) => seatKey(row, column)),
+      ).flat(),
+    [plan.rows, plan.desksPerRow],
+  );
+  const assignedCount = visibleSeatKeys.filter((key) => plan.assignments[key]?.trim()).length;
+  const hasSavedNames = Object.values(plan.assignments).some((name) => name.trim());
+  const freeCount = visibleSeatKeys.length - assignedCount;
+  const hasAisle = plan.centralAisle && plan.desksPerRow > 1;
+  const aisleAfter = Math.ceil(plan.desksPerRow / 2);
+  const gridColumns = Array.from({ length: plan.desksPerRow + (hasAisle ? 1 : 0) }, (_, index) =>
+    hasAisle && index === aisleAfter ? "18px" : "minmax(58px, 1fr)",
+  ).join(" ");
+  const gridMinWidth = `${plan.desksPerRow * 64 + (hasAisle ? 18 : 0)}px`;
+
+  function updateSeat(key: string, value: string) {
+    setPlan((current) => {
+      const assignments = { ...current.assignments };
+      if (value.trim()) assignments[key] = value.slice(0, 48);
+      else delete assignments[key];
+      return { ...current, assignments };
+    });
+  }
+
+  function updateSize(field: "rows" | "desksPerRow", amount: number) {
+    setPlan((current) => ({
+      ...current,
+      [field]: Math.max(MIN_SIZE, Math.min(MAX_SIZE, current[field] + amount)),
+    }));
+  }
+
+  function assignRoster() {
+    const names = roster
+      .split(/[\n,;]+/)
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const freeKeys = visibleSeatKeys.filter((key) => !plan.assignments[key]?.trim());
+    if (!names.length) {
+      setNotice("Scrivi almeno un nome per assegnare i posti.");
+      return;
+    }
+    if (!freeKeys.length) {
+      setNotice("Non ci sono posti liberi: aumenta file o banchi per fila.");
+      return;
+    }
+    const count = Math.min(names.length, freeKeys.length);
+    setPlan((current) => {
+      const assignments = { ...current.assignments };
+      for (let index = 0; index < count; index += 1) {
+        assignments[freeKeys[index]] = names[index].slice(0, 48);
+      }
+      return { ...current, assignments };
+    });
+    setRoster(names.slice(count).join("\n"));
+    setNotice(
+      count === names.length
+        ? `${count} ${count === 1 ? "nome assegnato" : "nomi assegnati"} ai posti liberi.`
+        : `${count} nomi assegnati; ${names.length - count} restano nell’elenco. Aggiungi posti e riprova.`,
+    );
+  }
+
+  function clearNames() {
+    if (!hasSavedNames) return;
+    if (!window.confirm("Vuoi rimuovere tutti i nomi dalla piantina?")) return;
+    setPlan((current) => ({ ...current, assignments: {} }));
+    setNotice("Nomi rimossi dalla piantina.");
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-soft/70 via-card to-card p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+              Strumento aula
+            </p>
+            <h3 className="mt-1 font-display text-2xl font-semibold">Piantina della classe</h3>
+            <p className="mt-2 max-w-xl text-xs leading-5 text-muted-foreground">
+              Organizza file e banchi, poi scrivi i nomi direttamente nei posti o assegnali da un
+              elenco.
+            </p>
+          </div>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+            <Users className="h-5 w-5" />
+          </span>
+        </div>
+      </section>
+
+      <section className="card-surface space-y-4 p-4" aria-label="Impostazioni della piantina">
+        <label className="block text-xs font-semibold">
+          Nome della classe
+          <input
+            value={plan.className}
+            onChange={(event) =>
+              setPlan((current) => ({ ...current, className: event.target.value.slice(0, 32) }))
+            }
+            placeholder="Es. 2ª A"
+            maxLength={32}
+            className="mt-1 h-11 w-full rounded-lg border border-input bg-card px-3 text-sm font-normal"
+            aria-label="Nome della classe"
+          />
+        </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <NumberControl
+            label="File"
+            value={plan.rows}
+            decrement={() => updateSize("rows", -1)}
+            increment={() => updateSize("rows", 1)}
+          />
+          <NumberControl
+            label="Banchi per fila"
+            value={plan.desksPerRow}
+            decrement={() => updateSize("desksPerRow", -1)}
+            increment={() => updateSize("desksPerRow", 1)}
+          />
+        </div>
+
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-3 text-sm">
+          <input
+            type="checkbox"
+            checked={plan.centralAisle}
+            onChange={(event) =>
+              setPlan((current) => ({ ...current, centralAisle: event.target.checked }))
+            }
+            className="h-4 w-4 accent-primary"
+          />
+          <span>Corridoio centrale</span>
+        </label>
+        <p className="text-[11px] leading-5 text-muted-foreground">
+          Se riduci la disposizione, i nomi dei banchi fuori vista restano salvati e riappaiono se
+          aggiungi di nuovo file o posti.
+        </p>
+      </section>
+
+      <section className="card-surface space-y-3 p-4" aria-labelledby="class-roster-title">
+        <div>
+          <h4 id="class-roster-title" className="font-display text-base font-semibold">
+            Assegna i nomi in ordine
+          </h4>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Incolla un elenco: un nome per riga, oppure separato da virgole. I nomi vanno nei posti
+            liberi da sinistra a destra.
+          </p>
+        </div>
+        <textarea
+          value={roster}
+          onChange={(event) => setRoster(event.target.value)}
+          placeholder={"Es.\nGiulia Rossi\nLuca Bianchi\nSara Verdi"}
+          rows={4}
+          className="w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          aria-label="Elenco dei nomi da assegnare ai posti"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={assignRoster}
+            disabled={!roster.trim() || freeCount === 0}
+          >
+            <Users className="mr-2 h-4 w-4" /> Assegna ai posti liberi
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {freeCount} {freeCount === 1 ? "posto libero" : "posti liberi"}
+          </span>
+        </div>
+        {notice && (
+          <p role="status" aria-live="polite" className="text-xs font-medium text-primary">
+            {notice}
+          </p>
+        )}
+      </section>
+
+      <section className="card-surface space-y-4 p-4" aria-labelledby="class-layout-title">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 id="class-layout-title" className="font-display text-base font-semibold">
+              {plan.className.trim() || "La mia classe"}
+            </h4>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {plan.rows} {plan.rows === 1 ? "fila" : "file"} · {assignedCount} su{" "}
+              {visibleSeatKeys.length} posti assegnati
+            </p>
+          </div>
+          <div className="flex items-center gap-2 print:hidden">
+            <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Stampa
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={clearNames}
+              disabled={!hasSavedNames}
+              aria-label="Rimuovi tutti i nomi dalla piantina"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-dashed border-primary/30 bg-muted/30 p-3 sm:p-4">
+          <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+            Cattedra / lavagna
+          </div>
+          <div className="space-y-3 overflow-x-auto pb-1">
+            {Array.from({ length: plan.rows }, (_, row) => (
+              <div key={row} className="flex min-w-0 items-stretch gap-2">
+                <div className="flex w-12 shrink-0 items-center text-[10px] font-semibold text-muted-foreground">
+                  Fila {row + 1}
+                </div>
+                <div
+                  className="grid flex-1 gap-2"
+                  style={{ gridTemplateColumns: gridColumns, minWidth: gridMinWidth }}
+                >
+                  {Array.from({ length: plan.desksPerRow }, (_, column) => {
+                    const key = seatKey(row, column);
+                    const seatNumber = row * plan.desksPerRow + column + 1;
+                    const gridColumn = hasAisle && column >= aisleAfter ? column + 2 : column + 1;
+                    return (
+                      <label
+                        key={key}
+                        className="grid min-h-[76px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15"
+                        style={{ gridColumn }}
+                      >
+                        <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                          Posto {seatNumber}
+                        </span>
+                        <input
+                          value={plan.assignments[key] ?? ""}
+                          onChange={(event) => updateSeat(key, event.target.value)}
+                          maxLength={48}
+                          placeholder="Nome"
+                          autoComplete="off"
+                          aria-label={`Nome alunno, fila ${row + 1}, posto ${seatNumber}`}
+                          className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-[11px] leading-5 text-muted-foreground">
+          La piantina e i nomi sono salvati solo su questo dispositivo, non vengono caricati online.
+          Usa “Stampa” per salvarla o stamparla.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function NumberControl({
+  label,
+  value,
+  decrement,
+  increment,
+}: {
+  label: string;
+  value: number;
+  decrement: () => void;
+  increment: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-3">
+      <p className="mb-2 text-xs font-semibold">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-9 w-9 p-0"
+          onClick={decrement}
+          disabled={value <= MIN_SIZE}
+          aria-label={`Riduci ${label.toLocaleLowerCase("it-IT")}`}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span className="min-w-8 text-center text-base font-semibold" aria-live="polite">
+          {value}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-9 w-9 p-0"
+          onClick={increment}
+          disabled={value >= MAX_SIZE}
+          aria-label={`Aumenta ${label.toLocaleLowerCase("it-IT")}`}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}

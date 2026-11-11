@@ -7,12 +7,14 @@ import {
   CalendarX2,
   Calculator,
   CircleDot,
+  LayoutGrid,
   Layers,
   ListChecks,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
+import { ClassroomSeatingTool } from "@/components/voto/ClassroomSeatingTool";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
 import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
@@ -82,6 +84,13 @@ const TOOLS = [
     title: "Planner di studio",
     subtitle: "Decidi tu cosa studiare, quando e per quanto tempo",
     icon: ListChecks,
+    tone: "text-primary bg-surface",
+  },
+  {
+    id: "classroom-seating",
+    title: "Piantina della classe",
+    subtitle: "Disponi i banchi e assegna un posto a ogni nome",
+    icon: LayoutGrid,
     tone: "text-primary bg-surface",
   },
 ] as const;
@@ -179,6 +188,7 @@ function Studio() {
               {tool === "planner" && <StudyPlannerTool />}
               {tool === "absence-calculator" && <AbsenceCalculator />}
               {tool === "school-end" && <SchoolEndDateTool />}
+              {tool === "classroom-seating" && <ClassroomSeatingTool />}
             </>
           )}
         </>
