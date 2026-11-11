@@ -354,6 +354,9 @@ final class WidgetData {
       case 27: return Color.rgb(8, 77, 114);
       case 28: return Color.rgb(103, 48, 24);
       case 29: return Color.rgb(24, 55, 91);
+      case 30: return Color.rgb(18, 42, 68);
+      case 31: return Color.rgb(72, 42, 78);
+      case 32: return Color.rgb(74, 15, 30);
       default: return Color.rgb(23, 32, 51);
     }
   }
