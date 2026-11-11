@@ -15,6 +15,7 @@ type ClassroomPlan = {
   seatsPerDesk: number;
   spacing: number;
   centralAisle: boolean;
+  removedDesks: string[];
   assignments: Record<string, string>;
 };
 
@@ -25,6 +26,7 @@ const DEFAULT_PLAN: ClassroomPlan = {
   seatsPerDesk: 1,
   spacing: 12,
   centralAisle: false,
+  removedDesks: [],
   assignments: {},
 };
 
@@ -45,6 +47,7 @@ function loadPlan(): ClassroomPlan {
     if (!raw) return DEFAULT_PLAN;
     const value = JSON.parse(raw) as Record<string, unknown>;
     const savedAssignments = value["assignments"];
+    const savedRemovedDesks = value["removedDesks"];
     const assignments: Record<string, string> = {};
     if (savedAssignments && typeof savedAssignments === "object") {
       for (const [key, name] of Object.entries(savedAssignments)) {
@@ -54,6 +57,11 @@ function loadPlan(): ClassroomPlan {
         }
       }
     }
+    const removedDesks = Array.isArray(savedRemovedDesks)
+      ? savedRemovedDesks.filter(
+          (key): key is string => typeof key === "string" && /^\d+-\d+$/.test(key),
+        )
+      : [];
     return {
       className:
         typeof value["className"] === "string"
@@ -64,6 +72,7 @@ function loadPlan(): ClassroomPlan {
       seatsPerDesk: clampSize(value["seatsPerDesk"], DEFAULT_PLAN.seatsPerDesk) === 2 ? 2 : 1,
       spacing: clampSpacing(value["spacing"]),
       centralAisle: value["centralAisle"] === true,
+      removedDesks: [...new Set(removedDesks)],
       assignments,
     };
   } catch {
@@ -73,6 +82,10 @@ function loadPlan(): ClassroomPlan {
 
 function seatKey(row: number, column: number, seat: number): string {
   return `${row}-${column}-${seat}`;
+}
+
+function deskKey(row: number, column: number): string {
+  return `${row}-${column}`;
 }
 
 export function ClassroomSeatingTool() {
@@ -101,8 +114,10 @@ export function ClassroomSeatingTool() {
         Array.from({ length: plan.desksPerRow }, (_, column) =>
           Array.from({ length: plan.seatsPerDesk }, (_, seat) => seatKey(row, column, seat)),
         ).flat(),
-      ).flat(),
-    [plan.rows, plan.desksPerRow, plan.seatsPerDesk],
+      )
+        .flat()
+        .filter((key) => !plan.removedDesks.includes(key.split("-").slice(0, 2).join("-"))),
+    [plan.rows, plan.desksPerRow, plan.seatsPerDesk, plan.removedDesks],
   );
   const assignedCount = visibleSeatKeys.filter((key) => plan.assignments[key]?.trim()).length;
   const hasSavedNames = Object.values(plan.assignments).some((name) => name.trim());
@@ -134,6 +149,21 @@ export function ClassroomSeatingTool() {
       ...current,
       [field]: Math.max(MIN_SIZE, Math.min(MAX_SIZE, current[field] + amount)),
     }));
+  }
+
+  function setDeskRemoved(row: number, column: number, removed: boolean) {
+    const key = deskKey(row, column);
+    setPlan((current) => ({
+      ...current,
+      removedDesks: removed
+        ? [...new Set([...current.removedDesks, key])]
+        : current.removedDesks.filter((item) => item !== key),
+    }));
+    setNotice(
+      removed
+        ? "Banco rimosso dalla piantina. Gli eventuali nomi restano salvati: riappariranno se ripristini il banco."
+        : "Banco ripristinato nella piantina.",
+    );
   }
 
   function assignRoster() {
@@ -387,47 +417,89 @@ export function ClassroomSeatingTool() {
               {Array.from({ length: plan.rows }, (_, row) =>
                 Array.from({ length: plan.desksPerRow }, (_, column) => {
                   const deskNumber = row * plan.desksPerRow + column + 1;
+                  const isRemoved = plan.removedDesks.includes(deskKey(row, column));
                   const gridColumn = 2 + column + (hasAisle && column >= aisleAfter ? 1 : 0);
                   return (
                     <div
                       key={`desk-${row}-${column}`}
                       style={{ gridColumn, gridRow: row + 1 }}
-                      className="grid min-h-[84px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm"
+                      className={
+                        isRemoved
+                          ? "flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-2 text-center"
+                          : "grid min-h-[84px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm"
+                      }
                     >
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-                        Banco {deskNumber}
-                      </span>
-                      <div
-                        className={
-                          plan.seatsPerDesk === 2 ? "grid grid-cols-2 gap-1" : "grid grid-cols-1"
-                        }
-                      >
-                        {Array.from({ length: plan.seatsPerDesk }, (_, seat) => {
-                          const key = seatKey(row, column, seat);
-                          const seatNumber =
-                            (row * plan.desksPerRow + column) * plan.seatsPerDesk + seat + 1;
-                          const seatLabel =
-                            plan.seatsPerDesk === 2 ? (seat === 0 ? "A" : "B") : String(seatNumber);
-                          return (
-                            <label key={key} className="min-w-0">
-                              {plan.seatsPerDesk === 2 && (
-                                <span className="mb-0.5 block text-[8px] font-semibold text-muted-foreground">
-                                  Posto {seatLabel}
-                                </span>
-                              )}
-                              <input
-                                value={plan.assignments[key] ?? ""}
-                                onChange={(event) => updateSeat(key, event.target.value)}
-                                maxLength={48}
-                                placeholder={plan.seatsPerDesk === 2 ? `Nome ${seatLabel}` : "Nome"}
-                                autoComplete="off"
-                                aria-label={`Nome alunno, fila ${row + 1}, banco ${deskNumber}, posto ${seatLabel}`}
-                                className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary"
-                              />
-                            </label>
-                          );
-                        })}
-                      </div>
+                      {isRemoved ? (
+                        <>
+                          <span className="text-[9px] font-semibold text-muted-foreground">
+                            Banco {deskNumber} rimosso
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={`Ripristina banco ${deskNumber}`}
+                            onClick={() => setDeskRemoved(row, column, false)}
+                            className="press print:hidden inline-flex min-h-8 items-center gap-1 rounded-md border border-border bg-card px-2 text-[10px] font-semibold text-primary"
+                          >
+                            <Plus className="h-3 w-3" /> Ripristina
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                              Banco {deskNumber}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Rimuovi banco ${deskNumber}`}
+                              title="Rimuovi questo banco"
+                              onClick={() => setDeskRemoved(row, column, true)}
+                              className="press print:hidden inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-danger-soft hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <div
+                            className={
+                              plan.seatsPerDesk === 2
+                                ? "grid grid-cols-2 gap-1"
+                                : "grid grid-cols-1"
+                            }
+                          >
+                            {Array.from({ length: plan.seatsPerDesk }, (_, seat) => {
+                              const key = seatKey(row, column, seat);
+                              const seatNumber =
+                                (row * plan.desksPerRow + column) * plan.seatsPerDesk + seat + 1;
+                              const seatLabel =
+                                plan.seatsPerDesk === 2
+                                  ? seat === 0
+                                    ? "A"
+                                    : "B"
+                                  : String(seatNumber);
+                              return (
+                                <label key={key} className="min-w-0">
+                                  {plan.seatsPerDesk === 2 && (
+                                    <span className="mb-0.5 block text-[8px] font-semibold text-muted-foreground">
+                                      Posto {seatLabel}
+                                    </span>
+                                  )}
+                                  <input
+                                    value={plan.assignments[key] ?? ""}
+                                    onChange={(event) => updateSeat(key, event.target.value)}
+                                    maxLength={48}
+                                    placeholder={
+                                      plan.seatsPerDesk === 2 ? `Nome ${seatLabel}` : "Nome"
+                                    }
+                                    autoComplete="off"
+                                    aria-label={`Nome alunno, fila ${row + 1}, banco ${deskNumber}, posto ${seatLabel}`}
+                                    className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary"
+                                  />
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 }),

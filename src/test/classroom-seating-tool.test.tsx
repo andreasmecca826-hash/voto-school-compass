@@ -76,6 +76,35 @@ describe("Piantina della classe", () => {
     ).toBeNull();
   });
 
+  it("rimuove e ripristina un singolo banco conservando i nomi assegnati", () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        rows: 1,
+        desksPerRow: 2,
+        assignments: { "0-1-0": "Ada Neri" },
+      }),
+    );
+
+    render(<ClassroomSeatingTool />);
+    fireEvent.click(screen.getByRole("button", { name: "Rimuovi banco 2" }));
+
+    expect(
+      screen.queryByRole("textbox", { name: "Nome alunno, fila 1, banco 2, posto 2" }),
+    ).toBeNull();
+    expect(screen.getByText(/0 su 1 posti assegnati/)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}")).toMatchObject({
+      removedDesks: ["0-1"],
+      assignments: { "0-1-0": "Ada Neri" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ripristina banco 2" }));
+    expect(
+      screen.getByRole("textbox", { name: "Nome alunno, fila 1, banco 2, posto 2" }),
+    ).toHaveValue("Ada Neri");
+    expect(screen.getByText(/1 su 2 posti assegnati/)).toBeInTheDocument();
+  });
+
   it("attiva due posti per banco e applica la distanza scelta", () => {
     render(<ClassroomSeatingTool />);
 
