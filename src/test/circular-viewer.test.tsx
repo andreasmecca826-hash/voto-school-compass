@@ -72,7 +72,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     const zoomToggle = screen.getByRole("button", { name: "Mostra controlli zoom allegato" });
     expect(zoomToggle.querySelector("svg")).toHaveClass("lucide-zoom-in");
     fireEvent.click(zoomToggle);
-    expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Riduci zoom allegato" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
@@ -237,15 +237,14 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(docxPreview).toHaveClass("overflow-x-hidden", "overflow-y-auto", "touch-pan-y");
     expect(docxPreview).not.toHaveClass("touch-pan-x");
     fireEvent.click(screen.getByRole("button", { name: "Mostra controlli zoom allegato" }));
-    expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Riduci zoom allegato" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Adatta allegato allo schermo" }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Riduci zoom allegato" }));
-    expect(docxPreview.style.getPropertyValue("--docx-zoom")).toBe("0.9");
+    fireEvent.click(screen.getByRole("button", { name: "Adatta allegato allo schermo" }));
     expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
-      "90%",
+      "100%",
     );
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
