@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { UniversalCalculationPanel } from "@/components/voto/UniversalCalculationPanel";
 import { UniversalCreationPanel } from "@/components/voto/UniversalCreationPanel";
+import { ClassroomSeatingTool } from "@/components/voto/ClassroomSeatingTool";
 import type { UniversalToolId } from "@/lib/voto/universal-calculator";
 
 const HISTORY_KEY = "voto.studio.universal-calculator.history.v1";
@@ -155,6 +156,15 @@ const TOOLS: {
     icon: Share2,
     tone: "text-primary",
   },
+  {
+    id: "classroom",
+    title: "Piantina della classe",
+    description: "Disponi i banchi e assegna un posto a ogni nome",
+    category: "Documenti e creazione",
+    keywords: "classe banchi posti studenti piantina aula",
+    icon: Table2,
+    tone: "text-primary",
+  },
 ];
 
 const CATEGORIES: Category[] = ["Tutti", "Calcoli", "Conversioni", "Documenti e creazione"];
@@ -236,7 +246,9 @@ export function UniversalCalculator() {
           <Button variant="ghost" size="sm" onClick={() => setTool(null)} className="pl-0">
             <ArrowLeft /> Tutti gli strumenti
           </Button>
-          {tool === "scientific" ||
+          {tool === "classroom" ? (
+            <ClassroomSeatingTool />
+          ) : tool === "scientific" ||
           tool === "converter" ||
           tool === "interval" ||
           tool === "fractions" ||

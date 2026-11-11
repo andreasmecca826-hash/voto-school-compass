@@ -5,19 +5,14 @@ import {
   ArrowRight,
   Camera,
   CalendarDays,
-  CalendarX2,
   Calculator,
   CircleDot,
   Layers,
   ListChecks,
   Sparkles,
-  Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
-import { ClassroomSeatingTool } from "@/components/voto/ClassroomSeatingTool";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
-import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
 import { UniversalCalculator } from "@/components/voto/UniversalCalculator";
 import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
 import { SimulatorTool } from "@/components/voto/SimulatorTool";
@@ -56,17 +51,10 @@ const TOOLS = [
   },
   {
     id: "grade-tools",
-    title: "Calcolo media e simulatore voti",
-    subtitle: "Due strumenti per capire e pianificare i tuoi voti",
+    title: "Simulatore voti",
+    subtitle: "Pianifica i voti futuri nelle tue materie",
     icon: Calculator,
     tone: "text-success bg-surface",
-  },
-  {
-    id: "absence-calculator",
-    title: "Calcolo assenze",
-    subtitle: "Controlla le ore residue e simula nuove assenze",
-    icon: CalendarX2,
-    tone: "text-warning bg-surface",
   },
   {
     id: "school-end",
@@ -110,20 +98,10 @@ const TOOLS = [
     icon: Camera,
     tone: "text-success bg-surface",
   },
-  {
-    id: "classroom-seating",
-    title: "Piantina della classe",
-    subtitle: "Disponi i banchi e assegna un posto a ogni nome",
-    icon: Table2,
-    tone: "text-primary bg-surface",
-  },
 ] as const;
-
-type GradeToolTab = "average" | "simulator";
 
 function Studio() {
   const [tool, setTool] = useState<string | null>(null);
-  const [gradeToolTab, setGradeToolTab] = useState<GradeToolTab>("average");
   const selected = TOOLS.find((item) => item.id === tool);
 
   return (
@@ -149,62 +127,9 @@ function Studio() {
             <UniversalCalculator />
           ) : tool === "grade-tools" ? (
             <>
-              <h2 className="mb-4 font-display text-xl font-semibold">
-                Calcolo media e simulatore voti
-              </h2>
-              <div
-                role="tablist"
-                aria-label="Strumenti per i voti"
-                className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface p-1"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  id="tab-average"
-                  aria-selected={gradeToolTab === "average"}
-                  aria-controls="panel-average"
-                  onClick={() => setGradeToolTab("average")}
-                  className={`press min-h-10 rounded-lg px-2 text-xs font-semibold ${
-                    gradeToolTab === "average"
-                      ? "bg-primary-soft text-primary"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  Calcolo media
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  id="tab-simulator"
-                  aria-selected={gradeToolTab === "simulator"}
-                  aria-controls="panel-simulator"
-                  onClick={() => setGradeToolTab("simulator")}
-                  className={`press min-h-10 rounded-lg px-2 text-xs font-semibold ${
-                    gradeToolTab === "simulator"
-                      ? "bg-primary-soft text-primary"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  Simulatore voti
-                </button>
-              </div>
-              <section
-                id="panel-average"
-                role="tabpanel"
-                aria-labelledby="tab-average"
-                hidden={gradeToolTab !== "average"}
-              >
-                <GenericAverageCalculator />
-              </section>
-              <section
-                id="panel-simulator"
-                role="tabpanel"
-                aria-labelledby="tab-simulator"
-                hidden={gradeToolTab !== "simulator"}
-              >
-                <PeriodPicker />
-                <SimulatorTool />
-              </section>
+              <h2 className="mb-4 font-display text-xl font-semibold">Simulatore voti</h2>
+              <PeriodPicker />
+              <SimulatorTool />
             </>
           ) : (
             <>
@@ -212,9 +137,7 @@ function Studio() {
               {tool === "wheel" && <WheelTool />}
               {tool === "flashcards" && <FlashcardsTool />}
               {tool === "planner" && <StudyPlannerTool />}
-              {tool === "absence-calculator" && <AbsenceCalculator />}
               {tool === "school-end" && <SchoolEndDateTool />}
-              {tool === "classroom-seating" && <ClassroomSeatingTool />}
               {tool === "interrogation-prep" && <InterrogationPrepTool />}
               {tool === "photo-import" && <PhotoImportTool />}
             </>
