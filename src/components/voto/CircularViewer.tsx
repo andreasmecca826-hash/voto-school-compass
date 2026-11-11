@@ -627,7 +627,7 @@ export function CircularViewer({
                   <button
                     type="button"
                     aria-label="Adatta allegato allo schermo"
-                    onClick={() => setAttachmentZoom(0.88)}
+                    onClick={() => setAttachmentZoom(1)}
                     className="press rounded-lg px-2 py-1 text-[10px] font-medium text-muted-foreground"
                   >
                     Adatta

@@ -242,6 +242,10 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(
       screen.getByRole("button", { name: "Adatta allegato allo schermo" }),
     ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Adatta allegato allo schermo" }));
+    expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
+      "100%",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     expect(docxPreview).toHaveClass(
