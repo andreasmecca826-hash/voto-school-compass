@@ -29,12 +29,12 @@ export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
 
 export function normalizeHomeScale(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 100;
-  const bounded = Math.min(120, Math.max(80, value));
+  const bounded = Math.min(100, Math.max(80, value));
   return Math.round(bounded / 5) * 5;
 }
 
 export function resolveHomeModuleScale(globalScale: number, moduleScale: number): number {
-  return Math.min(120, Math.max(80, (globalScale * moduleScale) / 100));
+  return Math.min(100, Math.max(80, (globalScale * moduleScale) / 100));
 }
 
 export function normalizeHomeModules(value: unknown): HomeModuleConfig[] {

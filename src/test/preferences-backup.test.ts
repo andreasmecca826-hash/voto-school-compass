@@ -25,7 +25,7 @@ const preferences = {
   homeModules: DEFAULT_HOME_MODULES.map((module, index) => ({
     ...module,
     enabled: index !== 2,
-    scale: index === 0 ? 115 : 100,
+    scale: 100,
   })),
   homeScale: 90,
 };
@@ -101,7 +101,7 @@ describe("preferences backup", () => {
       settings: { target: number; homeScale: number; interfaceScale: number };
     };
     expect(file.settings.target).toBe(10);
-    expect(file.settings.homeScale).toBe(120);
+    expect(file.settings.homeScale).toBe(100);
     expect(file.settings.interfaceScale).toBe(140);
     expect(parsePreferencesBackup(JSON.stringify(file)).interfaceScale).toBe(140);
   });

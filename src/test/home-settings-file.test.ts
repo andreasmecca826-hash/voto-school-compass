@@ -11,8 +11,8 @@ describe("home settings JSON file", () => {
     const file = createHomeSettingsFile({ homeScale: 110, homeModules });
     const imported = parseHomeSettingsFile(file);
 
-    expect(imported.homeScale).toBe(110);
-    expect(imported.homeModules[0]).toEqual({ id: "simulatore", enabled: false, scale: 115 });
+    expect(imported.homeScale).toBe(100);
+    expect(imported.homeModules[0]).toEqual({ id: "simulatore", enabled: false, scale: 100 });
     expect(imported.homeModules).toHaveLength(DEFAULT_HOME_MODULES.length);
   });
 
@@ -35,6 +35,6 @@ describe("home settings JSON file", () => {
 
   it("normalizza i valori di scala nel range supportato", () => {
     const file = createHomeSettingsFile({ homeScale: 150, homeModules: DEFAULT_HOME_MODULES });
-    expect(parseHomeSettingsFile(file).homeScale).toBe(120);
+    expect(parseHomeSettingsFile(file).homeScale).toBe(100);
   });
 });

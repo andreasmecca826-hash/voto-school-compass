@@ -589,12 +589,12 @@ export function PersonalizationPanel() {
         <SectionTitle>Moduli Home</SectionTitle>
         <section className="card-surface overflow-hidden p-2">
           <p className="px-2 pb-2 pt-1 text-[11px] text-muted-foreground">
-            Attiva i moduli, ridimensionali con i cursori e usa le frecce per riordinarli.
+            Attiva i moduli, riducine la dimensione con i cursori e usa le frecce per riordinarli.
           </p>
           <div className="mb-3 rounded-xl border border-border bg-surface/40 p-3">
             <div className="flex items-center justify-between gap-3">
               <label htmlFor="home-scale" className="text-xs font-semibold">
-                Dimensione generale Home
+                Zoom generale Home
               </label>
               <output className="tabular text-xs font-semibold text-primary" htmlFor="home-scale">
                 {v.homeScale}%
@@ -604,7 +604,7 @@ export function PersonalizationPanel() {
               id="home-scale"
               type="range"
               min={80}
-              max={120}
+              max={100}
               step={5}
               value={v.homeScale}
               onChange={(event) => v.setHomeScale(Number(event.target.value))}
@@ -613,7 +613,7 @@ export function PersonalizationPanel() {
             />
             <div className="flex justify-between text-[10px] text-muted-foreground">
               <span>80%</span>
-              <span>120%</span>
+              <span>100%</span>
             </div>
             <button
               type="button"
@@ -678,7 +678,7 @@ export function PersonalizationPanel() {
                       id={`home-module-scale-${module.id}`}
                       type="range"
                       min={80}
-                      max={120}
+                      max={100}
                       step={5}
                       value={module.scale}
                       onChange={(event) =>
