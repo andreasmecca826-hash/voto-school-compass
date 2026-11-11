@@ -371,6 +371,44 @@ final class WidgetData {
     }
   }
 
+  private static int themeBackgroundResource(int theme) {
+    switch (theme) {
+      case 1: return R.drawable.theme_soccer;
+      case 2: return R.drawable.theme_lavender;
+      case 3: return R.drawable.theme_terminal;
+      case 4: return R.drawable.theme_academia;
+      case 5: return R.drawable.theme_autumn;
+      case 6: return R.drawable.theme_diamond;
+      case 7: return R.drawable.theme_blood;
+      case 8: return R.drawable.theme_academia;
+      case 9: return R.drawable.theme_glassmorphism;
+      case 10: return R.drawable.theme_gold;
+      case 11: return R.drawable.theme_diamond;
+      case 12: return R.drawable.theme_autumn;
+      case 13: return R.drawable.theme_lavender;
+      case 14: return R.drawable.theme_cyber;
+      case 15: return R.drawable.theme_brutalist;
+      case 16: return R.drawable.theme_windows98;
+      case 17: return R.drawable.theme_windows98;
+      case 18: return R.drawable.theme_windows7;
+      case 19: return R.drawable.theme_academia;
+      case 20: return R.drawable.theme_glassmorphism;
+      case 21: return R.drawable.theme_casino;
+      case 22: return R.drawable.theme_soccer;
+      case 23: return R.drawable.theme_terminal;
+      case 24: return R.drawable.theme_pixel;
+      case 25: return R.drawable.theme_y2k;
+      case 26: return R.drawable.theme_spring;
+      case 27: return R.drawable.theme_summer;
+      case 28: return R.drawable.theme_autumn;
+      case 29: return R.drawable.theme_winter;
+      case 30: return R.drawable.theme_glassmorphism;
+      case 31: return R.drawable.theme_summer;
+      case 32: return R.drawable.theme_blood;
+      default: return R.drawable.theme_winter;
+    }
+  }
+
   private static double grade(String value) { try { String s = value.trim().replace(',', '.').replace("½", ".5"); double delta = 0; if (s.endsWith("+")) { delta = .15; s = s.substring(0, s.length() - 1).trim(); } else if (s.endsWith("-")) { delta = -.15; s = s.substring(0, s.length() - 1).trim(); } if (s.contains("/")) { String[] parts = s.split("/"); return (Double.parseDouble(parts[0].trim()) + Double.parseDouble(parts[1].trim())) / 2 + delta; } return Double.parseDouble(s) + delta; } catch (Exception e) { return -1; } }
 
   private static RemoteViews views(Context context, String[] values, boolean large, boolean compact, int id) {
@@ -396,7 +434,7 @@ final class WidgetData {
     int muted = lightInterface ? Color.rgb(103, 111, 121) : Color.rgb(154, 170, 194);
     if (glassBackground) views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_glass);
     else if (transparentBackground) views.setInt(R.id.widget_root, "setBackgroundColor", Color.TRANSPARENT);
-    else views.setInt(R.id.widget_root, "setBackgroundColor", background);
+    else views.setInt(R.id.widget_root, "setBackgroundResource", themeBackgroundResource(theme));
     views.setTextColor(R.id.title, foreground);
     views.setTextColor(R.id.summary, secondary);
     views.setTextColor(R.id.updated, muted);
