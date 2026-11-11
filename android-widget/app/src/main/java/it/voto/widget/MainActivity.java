@@ -8,10 +8,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.util.Base64;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -77,15 +73,11 @@ public class MainActivity extends Activity {
     openVoto.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"))));
     github.setOnClickListener(v -> {
       String state = UUID.randomUUID().toString();
-      String verifier = UUID.randomUUID().toString() + UUID.randomUUID().toString();
-      String challenge = codeChallenge(verifier);
       getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
-          .putString(WidgetData.OAUTH_STATE_KEY, state)
-          .putString(WidgetData.OAUTH_VERIFIER_KEY, verifier).apply();
+          .putString(WidgetData.OAUTH_STATE_KEY, state).apply();
       String redirect = Uri.encode("it.voto.widget://auth-callback");
       Uri auth = Uri.parse(WidgetData.SUPABASE_URL + "/auth/v1/authorize?provider=github&redirect_to=" + redirect
-          + "&state=" + Uri.encode(state) + "&code_challenge=" + Uri.encode(challenge)
-          + "&code_challenge_method=S256");
+          + "&state=" + Uri.encode(state));
       startActivity(new Intent(Intent.ACTION_VIEW, auth));
       status.setText("Completa l'accesso GitHub nel browser…");
     });
@@ -186,13 +178,4 @@ public class MainActivity extends Activity {
     status.setText("Accesso GitHub riuscito. Widget aggiornati.");
   }
 
-  private static String codeChallenge(String verifier) {
-    try {
-      byte[] digest = MessageDigest.getInstance("SHA-256")
-          .digest(verifier.getBytes(StandardCharsets.US_ASCII));
-      return Base64.encodeToString(digest, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-    } catch (Exception error) {
-      throw new IllegalStateException("Impossibile preparare il login sicuro", error);
-    }
-  }
 }
