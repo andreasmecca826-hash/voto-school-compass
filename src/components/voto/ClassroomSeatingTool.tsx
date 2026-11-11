@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 const STORAGE_KEY = "voto.studio.classroom-seating.v1";
 const MIN_SIZE = 1;
 const MAX_SIZE = 8;
+const MIN_SPACING = 6;
+const MAX_SPACING = 32;
 
 type ClassroomPlan = {
   className: string;
   rows: number;
   desksPerRow: number;
+  seatsPerDesk: number;
+  spacing: number;
   centralAisle: boolean;
   assignments: Record<string, string>;
 };
@@ -18,6 +22,8 @@ const DEFAULT_PLAN: ClassroomPlan = {
   className: "La mia classe",
   rows: 5,
   desksPerRow: 4,
+  seatsPerDesk: 1,
+  spacing: 12,
   centralAisle: false,
   assignments: {},
 };
@@ -25,6 +31,12 @@ const DEFAULT_PLAN: ClassroomPlan = {
 function clampSize(value: unknown, fallback: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.max(MIN_SIZE, Math.min(MAX_SIZE, Math.round(value)));
+}
+
+function clampSpacing(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return DEFAULT_PLAN.spacing;
+  const clamped = Math.max(MIN_SPACING, Math.min(MAX_SPACING, Math.round(value)));
+  return Math.round(clamped / 2) * 2;
 }
 
 function loadPlan(): ClassroomPlan {
@@ -36,7 +48,10 @@ function loadPlan(): ClassroomPlan {
     const assignments: Record<string, string> = {};
     if (savedAssignments && typeof savedAssignments === "object") {
       for (const [key, name] of Object.entries(savedAssignments)) {
-        if (typeof name === "string" && name.trim()) assignments[key] = name.slice(0, 48);
+        const migratedKey = /^\d+-\d+$/.test(key) ? `${key}-0` : key;
+        if (/^\d+-\d+-\d+$/.test(migratedKey) && typeof name === "string" && name.trim()) {
+          assignments[migratedKey] = name.slice(0, 48);
+        }
       }
     }
     return {
@@ -46,6 +61,8 @@ function loadPlan(): ClassroomPlan {
           : DEFAULT_PLAN.className,
       rows: clampSize(value["rows"], DEFAULT_PLAN.rows),
       desksPerRow: clampSize(value["desksPerRow"], DEFAULT_PLAN.desksPerRow),
+      seatsPerDesk: clampSize(value["seatsPerDesk"], DEFAULT_PLAN.seatsPerDesk) === 2 ? 2 : 1,
+      spacing: clampSpacing(value["spacing"]),
       centralAisle: value["centralAisle"] === true,
       assignments,
     };
@@ -54,8 +71,8 @@ function loadPlan(): ClassroomPlan {
   }
 }
 
-function seatKey(row: number, column: number): string {
-  return `${row}-${column}`;
+function seatKey(row: number, column: number, seat: number): string {
+  return `${row}-${column}-${seat}`;
 }
 
 export function ClassroomSeatingTool() {
@@ -81,19 +98,23 @@ export function ClassroomSeatingTool() {
   const visibleSeatKeys = useMemo(
     () =>
       Array.from({ length: plan.rows }, (_, row) =>
-        Array.from({ length: plan.desksPerRow }, (_, column) => seatKey(row, column)),
+        Array.from({ length: plan.desksPerRow }, (_, column) =>
+          Array.from({ length: plan.seatsPerDesk }, (_, seat) => seatKey(row, column, seat)),
+        ).flat(),
       ).flat(),
-    [plan.rows, plan.desksPerRow],
+    [plan.rows, plan.desksPerRow, plan.seatsPerDesk],
   );
   const assignedCount = visibleSeatKeys.filter((key) => plan.assignments[key]?.trim()).length;
   const hasSavedNames = Object.values(plan.assignments).some((name) => name.trim());
   const freeCount = visibleSeatKeys.length - assignedCount;
   const hasAisle = plan.centralAisle && plan.desksPerRow > 1;
   const aisleAfter = Math.ceil(plan.desksPerRow / 2);
+  const aisleWidth = Math.max(20, Math.round(plan.spacing * 1.5));
+  const deskMinWidth = plan.seatsPerDesk === 2 ? 120 : 72;
   const gridColumns = Array.from({ length: plan.desksPerRow + (hasAisle ? 1 : 0) }, (_, index) =>
-    hasAisle && index === aisleAfter ? "18px" : "minmax(58px, 1fr)",
+    hasAisle && index === aisleAfter ? `${aisleWidth}px` : `minmax(${deskMinWidth}px, 1fr)`,
   ).join(" ");
-  const gridMinWidth = `${plan.desksPerRow * 64 + (hasAisle ? 18 : 0)}px`;
+  const gridMinWidth = `${plan.desksPerRow * deskMinWidth + (hasAisle ? aisleWidth : 0)}px`;
 
   function updateSeat(key: string, value: string) {
     setPlan((current) => {
@@ -122,7 +143,9 @@ export function ClassroomSeatingTool() {
       return;
     }
     if (!freeKeys.length) {
-      setNotice("Non ci sono posti liberi: aumenta file o banchi per fila.");
+      setNotice(
+        "Non ci sono posti liberi: aumenta file o banchi per fila, oppure scegli il banco a 2 posti.",
+      );
       return;
     }
     const count = Math.min(names.length, freeKeys.length);
@@ -197,6 +220,52 @@ export function ClassroomSeatingTool() {
             increment={() => updateSize("desksPerRow", 1)}
           />
         </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-semibold">Posti per banco</p>
+          <div role="group" aria-label="Posti per banco" className="grid grid-cols-2 gap-2">
+            {[1, 2].map((seats) => (
+              <button
+                key={seats}
+                type="button"
+                aria-pressed={plan.seatsPerDesk === seats}
+                onClick={() => setPlan((current) => ({ ...current, seatsPerDesk: seats }))}
+                className={`min-h-11 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+                  plan.seatsPerDesk === seats
+                    ? "border-primary bg-primary-soft text-primary"
+                    : "border-border bg-card text-muted-foreground"
+                }`}
+              >
+                {seats === 1 ? "Banco singolo" : "Banco a 2 posti"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="block text-xs font-semibold">
+          <span className="flex items-center justify-between gap-3">
+            <span>Spazio tra i banchi</span>
+            <span className="rounded-md bg-primary-soft px-2 py-1 text-primary">
+              {plan.spacing} px
+            </span>
+          </span>
+          <input
+            type="range"
+            min={MIN_SPACING}
+            max={MAX_SPACING}
+            step={2}
+            value={plan.spacing}
+            onChange={(event) =>
+              setPlan((current) => ({ ...current, spacing: Number(event.target.value) }))
+            }
+            aria-label="Spazio tra i banchi"
+            className="mt-3 w-full accent-primary"
+          />
+          <span className="mt-1 flex justify-between text-[10px] font-normal text-muted-foreground">
+            <span>Più vicini</span>
+            <span>Più distanti</span>
+          </span>
+        </label>
 
         <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-3 text-sm">
           <input
@@ -285,39 +354,70 @@ export function ClassroomSeatingTool() {
           <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
             Cattedra / lavagna
           </div>
-          <div className="space-y-3 overflow-x-auto pb-1">
+          <div className="grid overflow-x-auto pb-1" style={{ rowGap: `${plan.spacing}px` }}>
             {Array.from({ length: plan.rows }, (_, row) => (
               <div key={row} className="flex min-w-0 items-stretch gap-2">
                 <div className="flex w-12 shrink-0 items-center text-[10px] font-semibold text-muted-foreground">
                   Fila {row + 1}
                 </div>
                 <div
-                  className="grid flex-1 gap-2"
-                  style={{ gridTemplateColumns: gridColumns, minWidth: gridMinWidth }}
+                  className="grid flex-1"
+                  style={{
+                    gridTemplateColumns: gridColumns,
+                    minWidth: gridMinWidth,
+                    gap: `${plan.spacing}px`,
+                  }}
                 >
                   {Array.from({ length: plan.desksPerRow }, (_, column) => {
-                    const key = seatKey(row, column);
-                    const seatNumber = row * plan.desksPerRow + column + 1;
+                    const deskNumber = row * plan.desksPerRow + column + 1;
                     const gridColumn = hasAisle && column >= aisleAfter ? column + 2 : column + 1;
                     return (
-                      <label
-                        key={key}
-                        className="grid min-h-[76px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15"
+                      <div
+                        key={deskNumber}
+                        className="grid min-h-[84px] content-center gap-1 rounded-lg border border-border bg-card p-2 text-center shadow-sm"
                         style={{ gridColumn }}
                       >
                         <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-                          Posto {seatNumber}
+                          Banco {deskNumber}
                         </span>
-                        <input
-                          value={plan.assignments[key] ?? ""}
-                          onChange={(event) => updateSeat(key, event.target.value)}
-                          maxLength={48}
-                          placeholder="Nome"
-                          autoComplete="off"
-                          aria-label={`Nome alunno, fila ${row + 1}, posto ${seatNumber}`}
-                          className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
-                        />
-                      </label>
+                        <div
+                          className={
+                            plan.seatsPerDesk === 2 ? "grid grid-cols-2 gap-1" : "grid grid-cols-1"
+                          }
+                        >
+                          {Array.from({ length: plan.seatsPerDesk }, (_, seat) => {
+                            const key = seatKey(row, column, seat);
+                            const seatNumber =
+                              (row * plan.desksPerRow + column) * plan.seatsPerDesk + seat + 1;
+                            const seatLabel =
+                              plan.seatsPerDesk === 2
+                                ? seat === 0
+                                  ? "A"
+                                  : "B"
+                                : String(seatNumber);
+                            return (
+                              <label key={key} className="min-w-0">
+                                {plan.seatsPerDesk === 2 && (
+                                  <span className="mb-0.5 block text-[8px] font-semibold text-muted-foreground">
+                                    Posto {seatLabel}
+                                  </span>
+                                )}
+                                <input
+                                  value={plan.assignments[key] ?? ""}
+                                  onChange={(event) => updateSeat(key, event.target.value)}
+                                  maxLength={48}
+                                  placeholder={
+                                    plan.seatsPerDesk === 2 ? `Nome ${seatLabel}` : "Nome"
+                                  }
+                                  autoComplete="off"
+                                  aria-label={`Nome alunno, fila ${row + 1}, banco ${deskNumber}, posto ${seatLabel}`}
+                                  className="min-w-0 w-full rounded bg-transparent px-0 text-center text-[11px] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary"
+                                />
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
