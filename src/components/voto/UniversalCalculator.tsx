@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { UniversalCalculationPanel } from "@/components/voto/UniversalCalculationPanel";
 import { UniversalCreationPanel } from "@/components/voto/UniversalCreationPanel";
 import { ClassroomSeatingTool } from "@/components/voto/ClassroomSeatingTool";
+import { PeriodPicker } from "@/components/voto/PeriodPicker";
+import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import type { UniversalToolId } from "@/lib/voto/universal-calculator";
 
 const HISTORY_KEY = "voto.studio.universal-calculator.history.v1";
@@ -100,6 +102,15 @@ const TOOLS: {
     keywords: "assenze ore limite giornate scuola",
     icon: CalendarX2,
     tone: "text-warning",
+  },
+  {
+    id: "simulator",
+    title: "Simulatore voti",
+    description: "Pianifica i voti futuri nelle tue materie",
+    category: "Calcoli",
+    keywords: "simulatore voto media materie voti futuri obiettivo",
+    icon: Calculator,
+    tone: "text-success",
   },
   {
     id: "interval",
@@ -248,6 +259,12 @@ export function UniversalCalculator() {
           </Button>
           {tool === "classroom" ? (
             <ClassroomSeatingTool />
+          ) : tool === "simulator" ? (
+            <div className="space-y-4">
+              <h4 className="font-display text-xl font-semibold">Simulatore voti</h4>
+              <PeriodPicker />
+              <SimulatorTool />
+            </div>
           ) : tool === "scientific" ||
           tool === "converter" ||
           tool === "interval" ||

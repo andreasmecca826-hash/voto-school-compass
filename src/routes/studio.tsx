@@ -12,10 +12,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { UniversalCalculator } from "@/components/voto/UniversalCalculator";
 import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
-import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
 import { StudyPlannerTool } from "@/components/voto/StudyPlannerTool";
 import { InterrogationPrepTool, PhotoImportTool } from "@/components/voto/StudyLabFeatures";
@@ -45,16 +43,9 @@ const TOOLS = [
   {
     id: "universal-calculator",
     title: "Calcolatore universale",
-    subtitle: "Calcoli, conversioni, QR, documenti e tabelle",
+    subtitle: "Calcoli, media, assenze, simulatore voti, piantina e altro",
     icon: Calculator,
     tone: "text-primary bg-surface",
-  },
-  {
-    id: "grade-tools",
-    title: "Simulatore voti",
-    subtitle: "Pianifica i voti futuri nelle tue materie",
-    icon: Calculator,
-    tone: "text-success bg-surface",
   },
   {
     id: "school-end",
@@ -125,12 +116,6 @@ function Studio() {
           </Button>
           {tool === "universal-calculator" ? (
             <UniversalCalculator />
-          ) : tool === "grade-tools" ? (
-            <>
-              <h2 className="mb-4 font-display text-xl font-semibold">Simulatore voti</h2>
-              <PeriodPicker />
-              <SimulatorTool />
-            </>
           ) : (
             <>
               <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
