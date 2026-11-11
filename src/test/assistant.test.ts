@@ -220,6 +220,19 @@ describe("Assistente locale", () => {
     expect(answerQuestion("Mostrami tutti gli eventi", eventsData)).toContain(
       "Altro > Assenze > Tutti gli eventi",
     );
+    const justificationAnswer = answerQuestion("Quali assenze risultano giustificate?", eventsData);
+    expect(justificationAnswer).toContain("18/10/2026: Giustificata");
+    expect(justificationAnswer).toContain(
+      "26/10/2026: stato non disponibile nei dati sincronizzati",
+    );
+    expect(justificationAnswer).toContain("non deduco");
+    expect(answerQuestion("Le assenze sono state giustificate?", eventsData)).toContain(
+      "18/10/2026: Giustificata",
+    );
+    expect(answerQuestion("Quante assenze ho?", eventsData)).toContain("2 giorni");
+    expect(answerQuestion("Quali assenze sono giustificate?", data)).toContain(
+      "non ci sono date dettagliate delle assenze",
+    );
   });
 
   it("calcola la previsione dopo un voto ipotetico e riconosce un'azione", () => {

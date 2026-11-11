@@ -170,6 +170,45 @@ function displayDate(dateValue: string | undefined): string | null {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : null;
 }
 
+function isAbsenceJustificationStatusQuery(normalizedQuery: string): boolean {
+  const mentionsAbsence =
+    normalizedQuery.includes("assenza") || normalizedQuery.includes("assenze");
+  const asksForStatus = [
+    "e giustificat",
+    "sono giustificat",
+    "state giustificat",
+    "stata giustificat",
+    "stato giustificat",
+    "risulta giustificat",
+    "risultano giustificat",
+    "ho giustificat",
+    "stato della giustificazione",
+    "stato di giustificazione",
+  ].some((term) => normalizedQuery.includes(term));
+  return mentionsAbsence && asksForStatus;
+}
+
+function answerAbsenceJustificationStatus(data: VotoData): string {
+  const absenceEvents = (data.attendanceEvents ?? [])
+    .filter((event) => event.type === "absence")
+    .sort((left, right) => right.date.localeCompare(left.date));
+  if (absenceEvents.length === 0) {
+    return "Nei dati sincronizzati non ci sono date dettagliate delle assenze, quindi non posso controllarne lo stato di giustificazione. Puoi vedere il totale in Altro > Assenze; non invio né modifico giustificazioni.";
+  }
+
+  const shown = absenceEvents.slice(0, 5).map((event) => {
+    const date = displayDate(event.date) ?? event.date;
+    const status =
+      event.justificationStatus?.trim() || "stato non disponibile nei dati sincronizzati";
+    return `• ${date}: ${status}`;
+  });
+  const remainder =
+    absenceEvents.length > shown.length
+      ? `\n• altre ${absenceEvents.length - shown.length} assenze non mostrate`
+      : "";
+  return `Stato delle assenze nei dati sincronizzati:\n${shown.join("\n")}${remainder}\nRiporto il campo ricevuto dal registro; se manca, non deduco che l’assenza sia giustificata o da giustificare. Non invio né modifico giustificazioni.`;
+}
+
 function relativeDayOffset(normalizedQuery: string): number | null {
   if (normalizedQuery.includes("dopodomani")) return 2;
   if (normalizedQuery.includes("altro ieri") || normalizedQuery.includes("ieri l altro")) return -2;
@@ -396,6 +435,10 @@ export function answerQuestion(
 
   if (isAssistantSearchQuery(query)) {
     return formatAssistantSearchResults(searchAssistantData(query, data, interrogazioni));
+  }
+
+  if (isAbsenceJustificationStatusQuery(normalized)) {
+    return answerAbsenceJustificationStatus(data);
   }
 
   const schoolRegulationAnswer = answerSchoolRegulation(normalized);
