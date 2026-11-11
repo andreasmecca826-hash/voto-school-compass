@@ -75,6 +75,10 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.queryByRole("button", { name: "Riduci zoom allegato" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumenta zoom allegato" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
+    expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Riduci zoom allegato" }));
+    expect(screen.queryByRole("button", { name: "Riduci zoom allegato" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     expect(screen.getByRole("button", { name: "Reimposta zoom allegato" })).toHaveTextContent(
       "110%",
     );
@@ -248,6 +252,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
     fireEvent.click(screen.getByRole("button", { name: "Aumenta zoom allegato" }));
+    expect(screen.getByRole("button", { name: "Riduci zoom allegato" })).toBeInTheDocument();
     expect(docxPreview).toHaveClass(
       "overflow-x-auto",
       "overflow-y-auto",

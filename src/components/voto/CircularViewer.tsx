@@ -5,6 +5,7 @@ import {
   ExternalLink,
   FileText,
   LoaderCircle,
+  Minus,
   Paperclip,
   Plus,
   ShieldCheck,
@@ -617,13 +618,27 @@ export function CircularViewer({
                     aria-label="Aumenta zoom allegato"
                     onClick={() =>
                       setAttachmentZoom((current) =>
-                        Math.min(1.4, Math.round((current + 0.1) * 10) / 10),
+                        Math.min(2.5, Math.round((current + 0.1) * 10) / 10),
                       )
                     }
                     className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
+                  {attachmentZoom > 1 && (
+                    <button
+                      type="button"
+                      aria-label="Riduci zoom allegato"
+                      onClick={() =>
+                        setAttachmentZoom((current) =>
+                          Math.max(1, Math.round((current - 0.1) * 10) / 10),
+                        )
+                      }
+                      className="press inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-foreground"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     aria-label="Adatta allegato allo schermo"
