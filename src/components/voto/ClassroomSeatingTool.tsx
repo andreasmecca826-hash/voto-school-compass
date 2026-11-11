@@ -440,7 +440,7 @@ export function ClassroomSeatingTool() {
                   style={{ gridColumn: aisleAfter + 2, gridRow: `1 / span ${plan.rows}` }}
                 >
                   <span className="text-[8px] font-bold text-primary [writing-mode:vertical-rl]">
-                    PASSAGGIO · TUTTE LE FILE
+                    PASSAGGIO
                   </span>
                 </div>
               )}

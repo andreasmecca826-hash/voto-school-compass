@@ -68,6 +68,8 @@ describe("Piantina della classe", () => {
       name: "Corridoio centrale continuo per tutte le 3 file",
     });
     expect(aisle).toHaveStyle({ gridRow: "1 / span 3" });
+    expect(screen.getByText("PASSAGGIO")).toBeInTheDocument();
+    expect(screen.queryByText("PASSAGGIO · TUTTE LE FILE")).toBeNull();
     expect(screen.getByText("Corsia libera tra i due gruppi di banchi")).toBeInTheDocument();
     expect(
       screen.queryByRole("textbox", { name: "Nome alunno, fila 4, banco 7, posto 7" }),
