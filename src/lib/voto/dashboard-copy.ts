@@ -1,4 +1,5 @@
 import type { AppNotification, Assignment } from "./types";
+import { parseEventDateTime } from "./dates";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RECENT_ASSIGNMENT_DAYS = 3;
@@ -59,14 +60,6 @@ const recentEventPhrases: Record<DashboardEventKind, string[]> = {
   ],
 };
 
-function eventTime(value: string | undefined): number | null {
-  if (!value?.trim()) return null;
-  const raw = value.trim();
-  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00`) : new Date(raw);
-  const time = parsed.getTime();
-  return Number.isFinite(time) ? time : null;
-}
-
 export function selectLatestDashboardEvent(
   notifications: AppNotification[],
   assignments: Assignment[],
@@ -77,7 +70,7 @@ export function selectLatestDashboardEvent(
   const candidates: DashboardEvent[] = [];
 
   notifications.forEach((notification) => {
-    const occurredAt = eventTime(notification.date);
+    const occurredAt = parseEventDateTime(notification.date);
     if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
     candidates.push({
       kind: notification.type === "grade" ? "grade" : "other",
@@ -86,7 +79,7 @@ export function selectLatestDashboardEvent(
   });
 
   assignments.forEach((assignment) => {
-    const occurredAt = eventTime(assignment.assignedDate);
+    const occurredAt = parseEventDateTime(assignment.assignedDate);
     if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
     candidates.push({ kind: "assignment", occurredAt });
   });

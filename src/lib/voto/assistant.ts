@@ -19,6 +19,7 @@ import {
 } from "./assistant-search";
 import { answerSchoolRegulation } from "./school-regulations";
 import { buildStudyPlan } from "./study-planner";
+import { parseEventDateTime } from "./dates";
 
 export interface AssistantContext {
   previousQuestion?: string;
@@ -221,14 +222,6 @@ type RecentDashboardUpdate = {
   text: string;
 };
 
-function localDateTime(value: string | undefined): number | null {
-  if (!value?.trim()) return null;
-  const raw = value.trim();
-  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00`) : new Date(raw);
-  const time = parsed.getTime();
-  return Number.isFinite(time) ? time : null;
-}
-
 function recentDashboardUpdates(data: VotoData, now: Date): RecentDashboardUpdate[] {
   const lowerBound = now.getTime() - 24 * 60 * 60 * 1000;
   const upperBound = now.getTime();
@@ -236,7 +229,7 @@ function recentDashboardUpdates(data: VotoData, now: Date): RecentDashboardUpdat
 
   data.subjects.forEach((subject) => {
     subject.grades.forEach((grade) => {
-      const occurredAt = localDateTime(grade.date);
+      const occurredAt = parseEventDateTime(grade.date);
       if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
       updates.push({
         date: grade.date,
@@ -247,7 +240,7 @@ function recentDashboardUpdates(data: VotoData, now: Date): RecentDashboardUpdat
   });
 
   data.assignments.forEach((assignment) => {
-    const occurredAt = localDateTime(assignment.assignedDate);
+    const occurredAt = parseEventDateTime(assignment.assignedDate);
     if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
     updates.push({
       date: assignment.assignedDate!,
@@ -257,7 +250,7 @@ function recentDashboardUpdates(data: VotoData, now: Date): RecentDashboardUpdat
   });
 
   data.notifications.forEach((notification) => {
-    const occurredAt = localDateTime(notification.date);
+    const occurredAt = parseEventDateTime(notification.date);
     if (occurredAt === null || occurredAt < lowerBound || occurredAt > upperBound) return;
     const kind =
       notification.type === "grade"

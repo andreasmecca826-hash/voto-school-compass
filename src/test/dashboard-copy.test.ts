@@ -56,6 +56,26 @@ describe("frase della Media generale", () => {
     expect(dashboardMicrocopy(context(latest), 0)).toMatch(/compito/i);
   });
 
+  it("include un evento con sola data anche prima di mezzogiorno", () => {
+    const latest = selectLatestDashboardEvent(
+      [notification("oggi", "notice", "2026-11-10")],
+      [],
+      new Date(2026, 10, 10, 9),
+    );
+
+    expect(latest?.kind).toBe("other");
+  });
+
+  it("ignora date calendariali impossibili", () => {
+    const latest = selectLatestDashboardEvent(
+      [notification("data-non-valida", "notice", "2026-02-31")],
+      [],
+      new Date(2026, 2, 3, 18),
+    );
+
+    expect(latest).toBeNull();
+  });
+
   it("usa una frase generica sulla media quando non accade nulla da oltre un giorno", () => {
     const latest = selectLatestDashboardEvent(
       [notification("voto-vecchio", "grade", "2026-11-08")],

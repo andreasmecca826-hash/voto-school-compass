@@ -385,7 +385,7 @@ describe("Assistente locale", () => {
   });
 
   it("offre un briefing locale della dashboard con l’evento più recente", () => {
-    const now = new Date(2026, 9, 27, 18);
+    const now = new Date(2026, 9, 27, 9);
     const dashboardData: VotoData = {
       ...data,
       assignments: [
