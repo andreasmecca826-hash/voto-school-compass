@@ -5,6 +5,8 @@ export type UniversalToolId =
   | "fractions"
   | "vat"
   | "discount"
+  | "average"
+  | "absence"
   | "qr"
   | "documents"
   | "tables"

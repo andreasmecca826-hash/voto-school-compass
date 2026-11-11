@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   Download,
+  CalendarX2,
+  Calculator,
   FileText,
   ImagePlus,
   LoaderCircle,
@@ -16,8 +18,13 @@ import {
   renderCircularPdfPageImages,
 } from "@/lib/voto/circular-reader";
 import { createCsv, type UniversalToolId } from "@/lib/voto/universal-calculator";
+import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
+import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
 
-type CreationToolId = Extract<UniversalToolId, "qr" | "documents" | "tables" | "share">;
+type CreationToolId = Extract<
+  UniversalToolId,
+  "qr" | "documents" | "tables" | "share" | "average" | "absence"
+>;
 
 const TOOL_INFO: Record<
   CreationToolId,
@@ -42,6 +49,16 @@ const TOOL_INFO: Record<
     title: "Condivisione sicura compiti",
     description: "Prepara un messaggio con il solo compito che vuoi condividere.",
     icon: Share2,
+  },
+  average: {
+    title: "Calcolo media",
+    description: "Calcola la media semplice senza modificare i voti del registro.",
+    icon: Calculator,
+  },
+  absence: {
+    title: "Calcolo assenze",
+    description: "Controlla il limite delle assenze e simula una situazione futura.",
+    icon: CalendarX2,
   },
 };
 
@@ -583,6 +600,8 @@ export function UniversalCreationPanel({ tool }: { tool: CreationToolId }) {
       {tool === "documents" && <DocumentReaderTool />}
       {tool === "tables" && <TableGeneratorTool />}
       {tool === "share" && <SecureShareTool />}
+      {tool === "average" && <GenericAverageCalculator />}
+      {tool === "absence" && <AbsenceCalculator />}
     </div>
   );
 }
