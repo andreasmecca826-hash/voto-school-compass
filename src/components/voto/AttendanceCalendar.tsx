@@ -90,7 +90,12 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
   return (
     <section
       aria-labelledby="attendance-calendar-title"
-      className={cn("mt-6 space-y-3", isDidup ? "text-white" : "text-foreground")}
+      className={cn(
+        "mt-6 space-y-3 rounded-2xl border p-4",
+        isDidup
+          ? "border-white/10 bg-[#202020] text-white"
+          : "border-border bg-card text-foreground",
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
