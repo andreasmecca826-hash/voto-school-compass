@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssenzeRouteImport } from './routes/assenze'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as BachecaRouteImport } from './routes/bacheca'
+import { Route as CalendarioAssenzeRouteImport } from './routes/calendario-assenze'
 import { Route as CompitiRouteImport } from './routes/compiti'
 import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as EventiAppelloRouteImport } from './routes/eventi-appello'
@@ -46,6 +47,11 @@ const AssistenteRoute = AssistenteRouteImport.update({
 const BachecaRoute = BachecaRouteImport.update({
   id: '/bacheca',
   path: '/bacheca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarioAssenzeRoute = CalendarioAssenzeRouteImport.update({
+  id: '/calendario-assenze',
+  path: '/calendario-assenze',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompitiRoute = CompitiRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/assenze': typeof AssenzeRoute
   '/assistente': typeof AssistenteRoute
   '/bacheca': typeof BachecaRoute
+  '/calendario-assenze': typeof CalendarioAssenzeRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/eventi-appello': typeof EventiAppelloRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/assenze': typeof AssenzeRoute
   '/assistente': typeof AssistenteRoute
   '/bacheca': typeof BachecaRoute
+  '/calendario-assenze': typeof CalendarioAssenzeRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/eventi-appello': typeof EventiAppelloRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/assenze': typeof AssenzeRoute
   '/assistente': typeof AssistenteRoute
   '/bacheca': typeof BachecaRoute
+  '/calendario-assenze': typeof CalendarioAssenzeRoute
   '/compiti': typeof CompitiRoute
   '/diario': typeof DiarioRoute
   '/eventi-appello': typeof EventiAppelloRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/assenze'
     | '/assistente'
     | '/bacheca'
+    | '/calendario-assenze'
     | '/compiti'
     | '/diario'
     | '/eventi-appello'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/assenze'
     | '/assistente'
     | '/bacheca'
+    | '/calendario-assenze'
     | '/compiti'
     | '/diario'
     | '/eventi-appello'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/assenze'
     | '/assistente'
     | '/bacheca'
+    | '/calendario-assenze'
     | '/compiti'
     | '/diario'
     | '/eventi-appello'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   AssenzeRoute: typeof AssenzeRoute
   AssistenteRoute: typeof AssistenteRoute
   BachecaRoute: typeof BachecaRoute
+  CalendarioAssenzeRoute: typeof CalendarioAssenzeRoute
   CompitiRoute: typeof CompitiRoute
   DiarioRoute: typeof DiarioRoute
   EventiAppelloRoute: typeof EventiAppelloRoute
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       path: '/bacheca'
       fullPath: '/bacheca'
       preLoaderRoute: typeof BachecaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendario-assenze': {
+      id: '/calendario-assenze'
+      path: '/calendario-assenze'
+      fullPath: '/calendario-assenze'
+      preLoaderRoute: typeof CalendarioAssenzeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compiti': {
@@ -400,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssenzeRoute: AssenzeRoute,
   AssistenteRoute: AssistenteRoute,
   BachecaRoute: BachecaRoute,
+  CalendarioAssenzeRoute: CalendarioAssenzeRoute,
   CompitiRoute: CompitiRoute,
   DiarioRoute: DiarioRoute,
   EventiAppelloRoute: EventiAppelloRoute,
