@@ -7,6 +7,7 @@ export type UniversalToolId =
   | "discount"
   | "average"
   | "absence"
+  | "simulator"
   | "qr"
   | "documents"
   | "tables"
