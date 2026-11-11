@@ -215,13 +215,13 @@ export function AttendanceCalendar({ isDidup = false }: { isDidup?: boolean }) {
           );
         })}
       </div>
-      <p
-        className={cn("text-[10px] leading-4", isDidup ? "text-white/40" : "text-muted-foreground")}
-      >
-        {knownExceptions
-          ? `${knownExceptions} ritardi o uscite anticipate rilevati.`
-          : "I colori vengono aggiornati quando arrivano eventi dal registro."}
-      </p>
+      {knownExceptions > 0 && (
+        <p
+          className={cn("text-[10px] leading-4", isDidup ? "text-white/40" : "text-muted-foreground")}
+        >
+          {knownExceptions} ritardi o uscite anticipate rilevati.
+        </p>
+      )}
     </section>
   );
 }
