@@ -533,7 +533,15 @@ function Dashboard() {
 
         {isHomeModuleVisible("bacheca") && (
           <div style={{ order: homeOrder("bacheca"), zoom: homeModuleScale("bacheca") }}>
-            <SectionTitle>Bacheca</SectionTitle>
+            <SectionTitle
+              action={
+                <Link to="/bacheca" className="text-xs font-medium text-primary">
+                  Vedi tutte
+                </Link>
+              }
+            >
+              Bacheca
+            </SectionTitle>
             <CircularCheckControl />
             {bulletin.length === 0 ? (
               <Empty icon={<Megaphone className="h-6 w-6" />} title="Nessuna comunicazione" />
