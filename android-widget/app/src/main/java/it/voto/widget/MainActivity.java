@@ -135,7 +135,20 @@ public class MainActivity extends Activity {
         String verifier = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE)
             .getString(WidgetData.OAUTH_VERIFIER_KEY, "");
         if (verifier.length() == 0) throw new Exception("Verifier PKCE mancante. Avvia di nuovo il login.");
-        WidgetData.exchangeOAuthCode(this, code, verifier);
+        status.setText("Verifica del login GitHub in corso…");
+        final String exchangeCode = code;
+        final String exchangeVerifier = verifier;
+        new Thread(() -> {
+          try {
+            WidgetData.exchangeOAuthCode(this, exchangeCode, exchangeVerifier);
+            getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE).edit()
+                .remove(WidgetData.OAUTH_STATE_KEY).remove(WidgetData.OAUTH_VERIFIER_KEY).apply();
+            runOnUiThread(this::completeLogin);
+          } catch (Exception exchangeError) {
+            runOnUiThread(() -> status.setText("Login GitHub non riuscito: " + exchangeError.getMessage()));
+          }
+        }).start();
+        return;
       } else {
         if (access == null || refresh == null) throw new Exception("La sessione GitHub non è stata restituita.");
         long expires = parseLong(values.get("expires_in"), 3600L);
@@ -165,6 +178,12 @@ public class MainActivity extends Activity {
 
   private static long parseLong(String value, long fallback) {
     try { return Long.parseLong(value); } catch (Exception ignored) { return fallback; }
+  }
+
+  private void completeLogin() {
+    savePreferences();
+    WidgetData.refresh(this);
+    status.setText("Accesso GitHub riuscito. Widget aggiornati.");
   }
 
   private static String codeChallenge(String verifier) {
