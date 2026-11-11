@@ -42,6 +42,7 @@ final class WidgetData {
   private static final Object SESSION_LOCK = new Object();
   private static final Object REFRESH_LOCK = new Object();
   private static boolean refreshInFlight = false;
+  private static boolean refreshQueued = false;
 
   interface LoginCallback { void done(String error); }
 
@@ -93,6 +94,7 @@ final class WidgetData {
   static void refresh(Context context, android.content.BroadcastReceiver.PendingResult pendingResult) {
     synchronized (REFRESH_LOCK) {
       if (refreshInFlight) {
+        refreshQueued = true;
         if (pendingResult != null) pendingResult.finish();
         return;
       }
@@ -107,8 +109,14 @@ final class WidgetData {
         renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
         renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
       } finally {
-        synchronized (REFRESH_LOCK) { refreshInFlight = false; }
+        boolean runQueued;
+        synchronized (REFRESH_LOCK) {
+          refreshInFlight = false;
+          runQueued = refreshQueued;
+          refreshQueued = false;
+        }
         if (pendingResult != null) pendingResult.finish();
+        if (runQueued) refresh(context);
       }
     }).start();
   }
