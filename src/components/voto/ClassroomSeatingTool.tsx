@@ -156,7 +156,9 @@ export function ClassroomSeatingTool() {
     setPlan((current) => {
       const assignments = { ...current.assignments };
       for (let index = 0; index < count; index += 1) {
-        assignments[freeKeys[index]] = names[index].slice(0, 48);
+        const seatKey = freeKeys[index];
+        const name = names[index];
+        if (seatKey && name) assignments[seatKey] = name.slice(0, 48);
       }
       return { ...current, assignments };
     });

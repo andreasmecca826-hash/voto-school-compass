@@ -17,6 +17,7 @@ import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
 import { ClassroomSeatingTool } from "@/components/voto/ClassroomSeatingTool";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
 import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
+import { UniversalCalculator } from "@/components/voto/UniversalCalculator";
 import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
 import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Planner di studio manuale, flashcard, ruota di ripasso e strumenti scolastici in un unico spazio.",
+          "Calcolatrice scientifica, conversioni, strumenti per documenti e planner di studio in un unico spazio.",
       },
       { property: "og:title", content: "Studio Lab — VOTO." },
       {
@@ -44,6 +45,13 @@ export const Route = createFileRoute("/studio")({
 });
 
 const TOOLS = [
+  {
+    id: "universal-calculator",
+    title: "Calcolatore universale",
+    subtitle: "Calcoli, conversioni, QR, documenti e tabelle",
+    icon: Calculator,
+    tone: "text-primary bg-surface",
+  },
   {
     id: "grade-tools",
     title: "Calcolo media e simulatore voti",
@@ -121,7 +129,9 @@ function Studio() {
           <Button variant="ghost" size="sm" onClick={() => setTool(null)} className="mb-4 pl-0">
             <ArrowLeft /> Tutti gli strumenti
           </Button>
-          {tool === "grade-tools" ? (
+          {tool === "universal-calculator" ? (
+            <UniversalCalculator />
+          ) : tool === "grade-tools" ? (
             <>
               <h2 className="mb-4 font-display text-xl font-semibold">
                 Calcolo media e simulatore voti
