@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, LoaderCircle, Send, Sparkles, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  Bot,
+  FileText,
+  LoaderCircle,
+  Paperclip,
+  ScanText,
+  Send,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
   getAssignmentActionIntent,
   type AssignmentConfirmation,
@@ -12,7 +22,17 @@ import {
   isCircularFollowUpQuestion,
   type CircularAssistantMode,
 } from "@/lib/voto/circular-assistant-chat";
-import { askGeneralQuestion, getLastApiQuota, type ApiQuota } from "@/lib/voto/circular-assistant";
+import {
+  askGeneralQuestion,
+  askWithDocument,
+  getLastApiQuota,
+  type ApiQuota,
+} from "@/lib/voto/circular-assistant";
+import {
+  extractCircularDocxText,
+  extractCircularPdfText,
+  renderCircularPdfPageImages,
+} from "@/lib/voto/circular-reader";
 import { isAssistantSearchQuery } from "@/lib/voto/assistant-search";
 import { AssistantMarkdown } from "@/components/voto/AssistantMarkdown";
 import {
@@ -48,6 +68,15 @@ type AssistantChatMessage = {
   sources?: SchoolDocumentSource[];
 };
 
+type ChatAttachment = {
+  file: File;
+  text: string;
+  truncated?: boolean;
+};
+
+const MAX_CHAT_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+const MAX_CHAT_ATTACHMENT_TEXT = 120_000;
+
 const AI_MODE_STORAGE_KEY = "voto.circular-assistant-mode.v1";
 const ASSISTANT_MESSAGES_KEY = "voto.assistant-messages.v1";
 
@@ -75,6 +104,10 @@ function Assistant() {
   const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
   const activeAssistantMode = canUseApi && assistantMode === "api" ? "api" : "local";
   const [isReplying, setIsReplying] = useState(false);
+  const [isReadingAttachment, setIsReadingAttachment] = useState(false);
+  const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
+  const [attachmentError, setAttachmentError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<AssistantChatMessage[]>(() => {
     if (typeof window === "undefined") {
@@ -144,9 +177,107 @@ function Assistant() {
     }
   };
 
+  const readImageWithOcr = async (file: File) => {
+    const { createWorker } = await import("tesseract.js");
+    const worker = await createWorker("ita", 1);
+    try {
+      const result = await worker.recognize(file);
+      return result.data.text.trim();
+    } finally {
+      await worker.terminate();
+    }
+  };
+
+  const readAttachment = async () => {
+    if (!attachment || isReadingAttachment) return;
+    setIsReadingAttachment(true);
+    setAttachmentError("");
+    const objectUrl = URL.createObjectURL(attachment.file);
+    try {
+      let text = "";
+      let truncated = false;
+      if (attachment.file.type === "application/pdf") {
+        const extracted = await extractCircularPdfText(objectUrl);
+        text = extracted.text.trim();
+        truncated = extracted.truncated;
+        if (!text) {
+          const visual = await renderCircularPdfPageImages(objectUrl);
+          const { createWorker } = await import("tesseract.js");
+          const worker = await createWorker("ita", 1);
+          try {
+            const pages: string[] = [];
+            for (const page of visual.pages) {
+              const result = await worker.recognize(page.dataUrl);
+              pages.push(`[Pagina ${page.pageNumber}]\n${result.data.text.trim()}`);
+            }
+            text = pages.filter(Boolean).join("\n\n");
+            truncated = visual.truncated;
+          } finally {
+            await worker.terminate();
+          }
+        }
+      } else if (
+        attachment.file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        const extracted = await extractCircularDocxText(objectUrl);
+        text = extracted.text.trim();
+        truncated = extracted.truncated;
+      } else if (attachment.file.type.startsWith("image/")) {
+        text = await readImageWithOcr(attachment.file);
+      } else {
+        throw new Error("Formato non supportato. Scegli un’immagine, un PDF o un DOCX.");
+      }
+      if (!text) throw new Error("Non ho trovato testo leggibile nell’allegato.");
+      setAttachment((current) =>
+        current
+          ? {
+              ...current,
+              text: text.slice(0, MAX_CHAT_ATTACHMENT_TEXT),
+              truncated: truncated || text.length > MAX_CHAT_ATTACHMENT_TEXT,
+            }
+          : current,
+      );
+    } catch (error) {
+      setAttachmentError(
+        error instanceof Error ? error.message : "Lettura dell’allegato non riuscita.",
+      );
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setIsReadingAttachment(false);
+    }
+  };
+
+  const selectAttachment = (file: File | undefined) => {
+    if (!file) return;
+    setAttachmentError("");
+    if (file.size > MAX_CHAT_ATTACHMENT_BYTES) {
+      setAttachment(null);
+      setAttachmentError("L’allegato supera il limite di 15 MB.");
+      return;
+    }
+    const supported =
+      file.type.startsWith("image/") ||
+      [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ].includes(file.type);
+    if (!supported) {
+      setAttachment(null);
+      setAttachmentError("Formato non supportato. Scegli un’immagine, un PDF o un DOCX.");
+      return;
+    }
+    setAttachment({ file, text: "" });
+  };
+
   const ask = async (text = question) => {
     const clean = text.trim();
-    if (!clean || isReplying) return;
+    if ((!clean && !attachment?.text) || isReplying || isReadingAttachment) return;
+    const attachmentText = attachment?.text.trim() ?? "";
+    const attachmentLabel = attachment?.file.name;
+    const userMessage = attachmentText
+      ? `${clean || "Leggi questo allegato."}\n\n📎 ${attachmentLabel}\n${attachmentText}${attachment?.truncated ? "\n\n[Testo abbreviato]" : ""}`
+      : clean;
     const requestMode = assistantMode === "api" && canUseApi ? "api" : "local";
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
@@ -195,6 +326,7 @@ function Assistant() {
       !useSchoolPolicyAssistant &&
       requestMode === "api" &&
       !isAssistantSearchQuery(clean);
+    const useAttachmentApi = Boolean(attachmentText) && requestMode === "api";
     const localAnswer = () =>
       answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
         ...(previousQuestion ? { previousQuestion } : {}),
@@ -231,13 +363,23 @@ function Assistant() {
               : localAnswer();
     setPendingAction(nextPendingAction);
     setQuestion("");
-    setMessages((current) => [...current, { role: "user", text: clean }]);
+    setMessages((current) => [...current, { role: "user", text: userMessage }]);
+    setAttachment(null);
 
-    if (useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi) {
+    if (useAttachmentApi || useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi) {
       setIsReplying(true);
       try {
         let assistantMessage: AssistantChatMessage;
-        if (useCircularAssistant) {
+        if (useAttachmentApi) {
+          assistantMessage = {
+            role: "assistant",
+            text: await askWithDocument({
+              question: clean || "Riassumi il contenuto dell’allegato.",
+              documentText: attachmentText,
+              documentTruncated: Boolean(attachment?.truncated),
+            }),
+          };
+        } else if (useCircularAssistant) {
           const assistantResponse = await answerCircularChatQuestion(
             clean,
             assistantData.notifications,
@@ -273,7 +415,15 @@ function Assistant() {
       return;
     }
 
-    setMessages((current) => [...current, { role: "assistant", text: response }]);
+    setMessages((current) => [
+      ...current,
+      {
+        role: "assistant",
+        text: attachmentText
+          ? `Ho estratto il testo da “${attachmentLabel}”.\n\n${attachmentText}${attachment?.truncated ? "\n\n[Testo abbreviato]" : ""}`
+          : response,
+      },
+    ]);
   };
 
   const confirmPendingAction = () => {
@@ -530,6 +680,45 @@ function Assistant() {
         </div>
       )}
 
+      {attachment && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-surface/60 px-3 py-2 text-xs">
+          <FileText className="h-4 w-4 shrink-0 text-primary" />
+          <span className="min-w-0 flex-1 truncate" title={attachment.file.name}>
+            {attachment.file.name}
+            {attachment.text ? " · testo pronto" : " · premi OCR per leggerlo"}
+          </span>
+          <button
+            type="button"
+            onClick={readAttachment}
+            disabled={isReadingAttachment}
+            className="press inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary-soft px-2 py-1.5 font-semibold text-primary disabled:opacity-50"
+            aria-label="Tessera allegato"
+            title="Tessera allegato"
+          >
+            {isReadingAttachment ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : (
+              <ScanText className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">OCR</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAttachment(null)}
+            className="press rounded-lg p-1.5 text-muted-foreground hover:bg-background"
+            aria-label="Rimuovi allegato"
+            title="Rimuovi allegato"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      {attachmentError && (
+        <p role="alert" className="mt-2 text-xs text-danger">
+          {attachmentError}
+        </p>
+      )}
+
       <div className="mt-5 flex flex-wrap gap-2">
         {suggestions.slice(0, 2).map((suggestion) => (
           <button
@@ -552,6 +741,27 @@ function Assistant() {
         className="sticky bottom-20 mt-5 flex gap-2 rounded-2xl border border-border bg-background/95 p-2 backdrop-blur md:bottom-8"
       >
         <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="hidden"
+          aria-label="Allega file alla chat"
+          onChange={(event) => {
+            selectAttachment(event.target.files?.[0]);
+            event.currentTarget.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isReplying || isReadingAttachment}
+          className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground disabled:opacity-40"
+          aria-label="Allega file alla chat"
+          title="Allega file alla chat"
+        >
+          <Paperclip className="h-4 w-4" />
+        </button>
+        <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Chiedi sui tuoi dati o sulle circolari…"
@@ -560,7 +770,7 @@ function Assistant() {
         />
         <button
           type="submit"
-          disabled={!question.trim() || isReplying}
+          disabled={(!question.trim() && !attachment?.text) || isReplying || isReadingAttachment}
           className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
           aria-label="Invia domanda"
         >
