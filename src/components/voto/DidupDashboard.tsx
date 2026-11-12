@@ -1,7 +1,14 @@
 import { CalendarX2, FileText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { CircularViewer } from "@/components/voto/CircularViewer";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useSchoolPeriods } from "@/lib/voto/periods-context";
 import {
   notificationContentLabel,
@@ -14,6 +21,12 @@ import type { AppNotification } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { fmt, overallAverage } from "@/lib/voto/calc";
 import { KEYS, load, save } from "@/lib/voto/storage";
+
+const LazyCircularViewer = lazy(() =>
+  import("@/components/voto/CircularViewer").then(({ CircularViewer: Viewer }) => ({
+    default: Viewer,
+  })),
+);
 
 function updatedLabel(value: string | null | undefined, now: Date) {
   const parsed = value ? new Date(value) : now;
@@ -72,6 +85,7 @@ export function DidupDashboard() {
   const { subjects, assignments, notifications, attendance } = v.data;
   const { subjects: periodSubjects, label: periodLabel } = useSchoolPeriods();
   const [selectedCircular, setSelectedCircular] = useState<AppNotification | null>(null);
+  const [viewerRequested, setViewerRequested] = useState(false);
   const today = toIso(now);
   const isDone = v.isDone;
   const avg = useMemo(() => overallAverage(periodSubjects), [periodSubjects]);
@@ -402,6 +416,7 @@ export function DidupDashboard() {
                   <button
                     type="button"
                     onClick={() => {
+                      setViewerRequested(true);
                       setSelectedCircular(item);
                       v.markRead([item.id]);
                     }}
@@ -416,6 +431,7 @@ export function DidupDashboard() {
                   <button
                     type="button"
                     onClick={() => {
+                      setViewerRequested(true);
                       setSelectedCircular(item);
                       v.markRead([item.id]);
                     }}
@@ -461,20 +477,35 @@ export function DidupDashboard() {
           );
         })}
       </DidupScroller>
-      <CircularViewer
-        open={selectedCircular !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelectedCircular(null);
-        }}
-        title={selectedCircular?.message ?? selectedCircular?.title ?? "Circolare"}
-        fileName={selectedCircular?.attachmentName}
-        path={selectedCircular?.attachmentPath}
-        attachments={selectedCircular?.attachments}
-        url={selectedCircular?.attachmentPath ? selectedCircular.attachmentUrl : undefined}
-        extractedText={
-          selectedCircular?.extractedText ?? selectedCircular?.message ?? selectedCircular?.title
-        }
-      />
+      {viewerRequested && (
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              className="fixed inset-0 z-[100] grid place-items-center bg-background/70 text-sm"
+            >
+              Caricamento del contenuto…
+            </div>
+          }
+        >
+          <LazyCircularViewer
+            open={selectedCircular !== null}
+            onOpenChange={(open) => {
+              if (!open) setSelectedCircular(null);
+            }}
+            title={selectedCircular?.message ?? selectedCircular?.title ?? "Circolare"}
+            fileName={selectedCircular?.attachmentName}
+            path={selectedCircular?.attachmentPath}
+            attachments={selectedCircular?.attachments}
+            url={selectedCircular?.attachmentPath ? selectedCircular.attachmentUrl : undefined}
+            extractedText={
+              selectedCircular?.extractedText ??
+              selectedCircular?.message ??
+              selectedCircular?.title
+            }
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
