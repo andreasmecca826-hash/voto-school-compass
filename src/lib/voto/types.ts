@@ -7,6 +7,8 @@ export interface Grade {
   /** Valore originale (es. "7+") per la visualizzazione */
   label: string;
   date: string; // YYYY-MM-DD
+  /** Momento in cui il monitor ha rilevato il voto, in formato ISO. */
+  createdAt?: string | undefined;
   type: GradeType;
   weight: number; // default 1
   comment?: string | undefined;

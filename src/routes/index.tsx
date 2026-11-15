@@ -88,7 +88,11 @@ function Dashboard() {
       subjects
         .flatMap((subject) => subject.grades.map((grade) => ({ subject, grade })))
         .filter(({ grade }) => grade.date)
-        .sort((a, b) => b.grade.date.localeCompare(a.grade.date)),
+        .sort((a, b) => {
+          const left = a.grade.createdAt || a.grade.date;
+          const right = b.grade.createdAt || b.grade.date;
+          return right.localeCompare(left);
+        }),
     [subjects],
   );
   const history = useMemo(() => averageHistory(subjects), [subjects]);
