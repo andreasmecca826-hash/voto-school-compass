@@ -12,7 +12,12 @@ describe("home settings JSON file", () => {
     const imported = parseHomeSettingsFile(file);
 
     expect(imported.homeScale).toBe(100);
-    expect(imported.homeModules[0]).toEqual({ id: "ultimi-voti", enabled: false, scale: 100 });
+    expect(imported.homeModules[0]).toEqual({
+      id: "ultimi-voti",
+      enabled: false,
+      scale: 100,
+      limit: 5,
+    });
     expect(imported.homeModules).toHaveLength(DEFAULT_HOME_MODULES.length);
   });
 

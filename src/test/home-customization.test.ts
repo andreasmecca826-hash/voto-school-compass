@@ -42,6 +42,7 @@ describe("Home customization sizing", () => {
       id: "ultimi-voti",
       enabled: true,
       scale: 100,
+      limit: 5,
     });
 
     expect(

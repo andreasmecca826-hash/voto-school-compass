@@ -86,7 +86,9 @@ export function parseHomeSettingsFile(text: string): HomeCustomizationSettings {
       seen.has(module["id"]) ||
       typeof module["enabled"] !== "boolean" ||
       typeof module["scale"] !== "number" ||
-      !Number.isFinite(module["scale"])
+      !Number.isFinite(module["scale"]) ||
+      (module["limit"] !== undefined &&
+        (typeof module["limit"] !== "number" || !Number.isFinite(module["limit"])))
     ) {
       throw new Error("Il file contiene una configurazione di modulo Home non valida.");
     }
