@@ -12,7 +12,6 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SchoolDataAuthGate } from "@/components/voto/SchoolDataAuthGate";
 import { VotoProvider } from "@/lib/voto/store";
 import { SchoolPeriodsProvider } from "@/lib/voto/periods-context";
@@ -54,7 +53,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
         return;
       }
     }
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    console.error("Errore nell'applicazione VOTO:", error);
   }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

@@ -1544,12 +1544,6 @@
   backdrop-filter: none;
 }
 
-/* Badge dell’editor Lovable: non fa parte dell’interfaccia di VOTO. */
-#lovable-badge,
-.lovable-badge,
-[id*="lovable-badge"] {
-  display: none !important;
-}
 
 :root[data-density="compact"] main .card-surface {
   padding: 0.75rem;
