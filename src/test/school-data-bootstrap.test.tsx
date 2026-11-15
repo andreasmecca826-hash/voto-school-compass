@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@supabase/supabase-js";
 import { SchoolDataAuthGate } from "@/components/voto/SchoolDataAuthGate";
 import { PRIVATE_SCHOOL_DATA_URL, supabase } from "@/lib/supabase-auth";
+import { DEMO_ACCESS_CODE } from "@/lib/demo-access";
 import { useVoto, VotoProvider } from "@/lib/voto/store";
 import { KEYS } from "@/lib/voto/storage";
 
@@ -78,6 +79,15 @@ function renderProtectedApp() {
   );
 }
 
+async function enterDeveloperDemo() {
+  vi.spyOn(supabase.auth, "signOut").mockResolvedValue({ error: null } as never);
+  fireEvent.change(await screen.findByLabelText("Codice modalità demo"), {
+    target: { value: DEMO_ACCESS_CODE },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Entra in modalità demo" }));
+  await waitFor(() => expect(localStorage.getItem(KEYS.demoMode)).toBe("true"));
+}
+
 function mockAuthSession() {
   vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
     data: { session },
@@ -89,7 +99,7 @@ function mockAuthSession() {
 }
 
 describe("bootstrap dati scolastici", () => {
-  it("entra in modalità demo senza una sessione Supabase", async () => {
+  it("mostra il login all’avvio anche se in precedenza era stata usata la demo", async () => {
     vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
       data: { session: null },
       error: null,
@@ -101,7 +111,40 @@ describe("bootstrap dati scolastici", () => {
 
     renderProtectedApp();
 
-    expect(await screen.findByText(/^true:demo:/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Accedi a VOTO" })).toBeInTheDocument();
+    expect(screen.queryByText(/^true:demo:/)).not.toBeInTheDocument();
+    await waitFor(() => expect(localStorage.getItem(KEYS.demoMode)).toBe("false"));
+  });
+
+  it("invia un link email senza chiedere un codice OTP manuale", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as never);
+    const signInWithOtp = vi.spyOn(supabase.auth, "signInWithOtp").mockResolvedValue({
+      data: { user: null, session: null },
+      error: null,
+    } as never);
+
+    renderProtectedApp();
+    fireEvent.change(await screen.findByLabelText("Email"), {
+      target: { value: "studente@example.test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Invia link di accesso" }));
+
+    expect(await screen.findByText(/Abbiamo inviato un link di accesso/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Codice email/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Usa il codice email" })).not.toBeInTheDocument();
+    expect(signInWithOtp).toHaveBeenCalledWith({
+      email: "studente@example.test",
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: "https://voto-school-compass.lovable.app",
+      },
+    });
   });
 
   it("ripristina la modalità prestazioni salvata e la applica alla root", async () => {
@@ -112,12 +155,12 @@ describe("bootstrap dati scolastici", () => {
     vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
     } as never);
-    localStorage.setItem(KEYS.demoMode, "true");
     localStorage.setItem(KEYS.performanceMode, "true");
 
     renderProtectedApp();
+    await enterDeveloperDemo();
 
-    expect(await screen.findByTestId("performance-mode")).toHaveTextContent("true");
+    await waitFor(() => expect(screen.getByTestId("performance-mode")).toHaveTextContent("true"));
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute("data-performance", "on");
       expect(document.documentElement).toHaveAttribute("data-performance-blur", "on");
@@ -142,7 +185,6 @@ describe("bootstrap dati scolastici", () => {
     vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
     } as never);
-    localStorage.setItem(KEYS.demoMode, "true");
     localStorage.setItem(KEYS.performanceMode, "true");
     localStorage.setItem(
       KEYS.performanceOptions,
@@ -150,9 +192,12 @@ describe("bootstrap dati scolastici", () => {
     );
 
     renderProtectedApp();
+    await enterDeveloperDemo();
 
-    expect(await screen.findByTestId("performance-options")).toHaveTextContent(
-      JSON.stringify({ blur: true, animations: false, shadows: true, wallpapers: false }),
+    await waitFor(() =>
+      expect(screen.getByTestId("performance-options")).toHaveTextContent(
+        JSON.stringify({ blur: true, animations: false, shadows: true, wallpapers: false }),
+      ),
     );
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute("data-performance-blur", "on");
