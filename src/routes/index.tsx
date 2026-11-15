@@ -3,6 +3,7 @@ import {
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
+  Award,
   BookOpen,
   Calculator,
   CalendarCheck,
@@ -82,6 +83,18 @@ function Dashboard() {
   const { subjects, config } = useSchoolPeriods();
   const { assignments, notifications, previousAverage } = v.data;
   const avg = useMemo(() => overallAverage(subjects), [subjects]);
+  const latestGrades = useMemo(
+    () =>
+      subjects
+        .flatMap((subject) => subject.grades.map((grade) => ({ subject, grade })))
+        .filter(({ grade }) => grade.date)
+        .sort((a, b) => {
+          const left = a.grade.createdAt || a.grade.date;
+          const right = b.grade.createdAt || b.grade.date;
+          return right.localeCompare(left);
+        }),
+    [subjects],
+  );
   const history = useMemo(() => averageHistory(subjects), [subjects]);
   const delta =
     config.selection === "all" && avg !== null && previousAverage !== undefined
@@ -103,17 +116,20 @@ function Dashboard() {
   const absenceLimitDays = attendance.absenceLimitHours / 6;
   const remainingDays = Math.max(0, absenceLimitDays - attendance.absenceDays);
   const showingDays = attendanceView === "days";
-  const notes = useMemo(() => selectNotificationsByType(notifications, "note"), [notifications]);
+  const notes = useMemo(
+    () => selectNotificationsByType(notifications, "note", 10),
+    [notifications],
+  );
   const reminders = useMemo(
-    () => selectUpcomingReminders(notifications, now).slice(0, 3),
+    () => selectUpcomingReminders(notifications, now),
     [notifications, now],
   );
   const bulletin = useMemo(
-    () => selectNotificationsByType(notifications, "notice"),
+    () => selectNotificationsByType(notifications, "notice", 10),
     [notifications],
   );
   const interrogazioni = useMemo(
-    () => selectOpenInterrogazioni(v.interrogazioni),
+    () => selectOpenInterrogazioni(v.interrogazioni, 10),
     [v.interrogazioni],
   );
   useEffect(() => {
@@ -146,6 +162,8 @@ function Dashboard() {
       v.homeScale,
       v.homeModules.find((module) => module.id === id)?.scale ?? 100,
     ) / v.homeScale;
+  const homeModuleLimit = (id: string) =>
+    v.homeModules.find((module) => module.id === id)?.limit ?? 5;
 
   const latestEvent = selectLatestDashboardEvent(notifications, assignments, now);
   const micro = dashboardMicrocopy({ average: avg, delta, latestEvent }, microSeed);
@@ -406,6 +424,54 @@ function Dashboard() {
           </div>
         )}
 
+        {isHomeModuleVisible("ultimi-voti") && (
+          <div style={{ order: homeOrder("ultimi-voti"), zoom: homeModuleScale("ultimi-voti") }}>
+            <SectionTitle
+              action={
+                <Link to="/voti" className="text-xs font-medium text-primary">
+                  Vedi tutti
+                </Link>
+              }
+            >
+              Ultimi voti
+            </SectionTitle>
+            {latestGrades.length === 0 ? (
+              <Empty icon={<Award className="h-6 w-6" />} title="Nessun voto recente" />
+            ) : (
+              <ul className="space-y-2">
+                {latestGrades.slice(0, homeModuleLimit("ultimi-voti")).map(({ subject, grade }) => (
+                  <li key={grade.id} className="card-surface flex items-center gap-3 p-3.5">
+                    <span
+                      className={cn(
+                        "tabular flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
+                        grade.value >= 6
+                          ? "bg-success-soft text-success"
+                          : grade.value >= 5
+                            ? "bg-warning-soft text-warning"
+                            : "bg-danger-soft text-danger",
+                      )}
+                    >
+                      {grade.label}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{subject.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {fmtDate(grade.date)}
+                        {grade.type !== "altro" ? ` · ${grade.type}` : ""}
+                      </p>
+                      {grade.comment && (
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {grade.comment}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {isHomeModuleVisible("compiti") && (
           <div style={{ order: homeOrder("compiti"), zoom: homeModuleScale("compiti") }}>
             <SectionTitle
@@ -455,7 +521,7 @@ function Dashboard() {
             ) : (
               <>
                 <ul className="space-y-2">
-                  {interrogazioni.map((item) => {
+                  {interrogazioni.slice(0, homeModuleLimit("interrogazioni")).map((item) => {
                     const presentation = presentInterrogazione(item);
                     return (
                       <li key={item.id} className="card-surface flex items-center gap-3 p-3.5">
@@ -495,7 +561,7 @@ function Dashboard() {
             ) : (
               <>
                 <ul className="space-y-2">
-                  {notes.map((n) => (
+                  {notes.slice(0, homeModuleLimit("note")).map((n) => (
                     <NotifItem key={n.id} id={n.id} />
                   ))}
                 </ul>
@@ -523,7 +589,7 @@ function Dashboard() {
               />
             ) : (
               <ul className="space-y-2">
-                {reminders.map((reminder) => (
+                {reminders.slice(0, homeModuleLimit("promemoria")).map((reminder) => (
                   <NotifItem key={reminder.id} id={reminder.id} />
                 ))}
               </ul>
@@ -548,7 +614,7 @@ function Dashboard() {
             ) : (
               <>
                 <ul className="space-y-2">
-                  {bulletin.map((n) => (
+                  {bulletin.slice(0, homeModuleLimit("bacheca")).map((n) => (
                     <NotifItem key={n.id} id={n.id} />
                   ))}
                 </ul>

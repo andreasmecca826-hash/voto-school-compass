@@ -5,14 +5,19 @@ import { createHomeSettingsFile, parseHomeSettingsFile } from "@/lib/voto/home-s
 describe("home settings JSON file", () => {
   it("esporta e reimporta scala, ordine, visibilità e dimensione dei moduli", () => {
     const homeModules = [
-      { id: "simulatore" as const, enabled: false, scale: 115 },
-      ...DEFAULT_HOME_MODULES.filter((item) => item.id !== "simulatore"),
+      { id: "ultimi-voti" as const, enabled: false, scale: 115 },
+      ...DEFAULT_HOME_MODULES.filter((item) => item.id !== "ultimi-voti"),
     ];
     const file = createHomeSettingsFile({ homeScale: 110, homeModules });
     const imported = parseHomeSettingsFile(file);
 
     expect(imported.homeScale).toBe(100);
-    expect(imported.homeModules[0]).toEqual({ id: "simulatore", enabled: false, scale: 100 });
+    expect(imported.homeModules[0]).toEqual({
+      id: "ultimi-voti",
+      enabled: false,
+      scale: 100,
+      limit: 5,
+    });
     expect(imported.homeModules).toHaveLength(DEFAULT_HOME_MODULES.length);
   });
 
