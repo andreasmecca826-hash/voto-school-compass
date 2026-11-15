@@ -39,7 +39,7 @@ export type NotificationType = "note" | "grade" | "reminder" | "notice";
 
 export interface CircularAttachment {
   name?: string | undefined;
-  /** Percorso dell’allegato PDF nel bucket privato, ad esempio circulars/<sha256>.pdf. */
+  /** Percorso dell’allegato PDF o DOCX nel bucket privato, ad esempio circulars/<sha256>.pdf. */
   path?: string | undefined;
   /** URL sorgente per allegati non PDF ancora ospitati da DidUP. */
   url?: string | undefined;
@@ -57,7 +57,7 @@ export interface AppNotification {
   date?: string | undefined;
   subject?: string | undefined;
   teacher?: string | undefined;
-  /** Percorso del PDF nel bucket Supabase Storage interno. */
+  /** Percorso del PDF o DOCX nel bucket Supabase Storage interno. */
   attachmentPath?: string | undefined;
   /** URL sorgente legacy usato solo dal backend per il mirroring. */
   attachmentUrl?: string | undefined;

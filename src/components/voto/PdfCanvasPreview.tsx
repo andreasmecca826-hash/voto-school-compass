@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getPdfRenderProfile } from "@/lib/voto/pdf-render-profile";
+import { isSameOriginDocumentUrl } from "@/lib/voto/circular-reader";
 import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
 
 type PdfCanvasPreviewProps = {
@@ -57,7 +58,7 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
         ).toString();
         const loadingTask = pdfjs.getDocument({
           url: src,
-          withCredentials: true,
+          withCredentials: isSameOriginDocumentUrl(src),
           disableStream: true,
           disableAutoFetch: true,
         });
