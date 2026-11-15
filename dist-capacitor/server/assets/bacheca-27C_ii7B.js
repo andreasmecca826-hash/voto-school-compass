@@ -1,0 +1,568 @@
+import { r as useVoto } from "./store-EhdD6Ug3.js";
+import { n as fmtDate, s as toIso } from "./dates-CdBXaUB1.js";
+import { n as notificationContentLabel, r as notificationDisplayTitle, t as isGenericNoticeTitle } from "./selectors-CnCjHj35.js";
+import { n as DialogContent, o as DialogTitle, r as DialogDescription, t as Dialog } from "./dialog-CwLzEEob.js";
+import { Suspense, lazy, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { jsx, jsxs } from "react/jsx-runtime";
+import { ArrowLeft, FileText, Search } from "lucide-react";
+//#region src/lib/voto/bacheca-search.ts
+function normalizeSearchText(value) {
+	return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("it-IT").replace(/\s+/g, " ").trim();
+}
+function noticeSearchText(item) {
+	return [
+		item.title,
+		item.message,
+		item.extractedText,
+		item.teacher,
+		item.subject,
+		item.attachmentName,
+		...(item.attachments ?? []).flatMap((attachment) => [attachment.name, attachment.path])
+	].filter((value) => Boolean(value)).map(normalizeSearchText).join(" ");
+}
+function matchesNoticeQuery(item, query) {
+	const terms = normalizeSearchText(query).split(" ").filter(Boolean);
+	const searchableText = noticeSearchText(item);
+	return terms.every((term) => searchableText.includes(term));
+}
+//#endregion
+//#region src/routes/bacheca.tsx?tsr-split=component
+var LazyCircularViewer = lazy(() => import("./CircularViewer-Bbrp2Uts.js").then(({ CircularViewer: Viewer }) => ({ default: Viewer })));
+function Bacheca() {
+	return useVoto().registryStyle === "didup" ? /* @__PURE__ */ jsx(DidupBacheca, {}) : /* @__PURE__ */ jsx(StandardBacheca, {});
+}
+function getNotices(notifications) {
+	return notifications.filter((item) => item.type === "notice").sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+}
+function shortDate(value) {
+	if (!value) return "DATA NON DISPONIBILE";
+	const date = /* @__PURE__ */ new Date(`${value.slice(0, 10)}T12:00:00`);
+	if (Number.isNaN(date.getTime())) return "DATA NON DISPONIBILE";
+	return fmtDate(value, {
+		day: "2-digit",
+		month: "short",
+		year: "2-digit"
+	}).replace(/[.]/g, "").toLocaleUpperCase("it-IT");
+}
+function attachmentCount(item) {
+	if (item.attachments?.length) return item.attachments.length;
+	return item.attachmentPath || item.attachmentUrl ? 1 : 0;
+}
+function isRedundantNoticeText(item, text) {
+	if (!text?.trim()) return true;
+	const value = text.trim().toLocaleLowerCase("it-IT");
+	const label = notificationContentLabel(item).toLocaleLowerCase("it-IT");
+	return (/* @__PURE__ */ new Set([
+		label,
+		label === "circolari" ? "circolare" : "comunicazione",
+		item.title.trim().toLocaleLowerCase("it-IT")
+	])).has(value);
+}
+function openNotice(item, markRead, setSelected, setViewerRequested) {
+	setViewerRequested(true);
+	setSelected(item);
+	markRead([item.id]);
+}
+function schoolYearStart(date) {
+	return `${date.getMonth() >= 8 ? date.getFullYear() : date.getFullYear() - 1}-09-01`;
+}
+function displayFilterDate(value) {
+	const [year, month, day] = value.split("-");
+	return year && month && day ? `${day}-${month}-${year}` : "";
+}
+function DidupBacheca() {
+	const v = useVoto();
+	const today = /* @__PURE__ */ new Date();
+	const defaultFilters = {
+		query: "",
+		from: schoolYearStart(today),
+		to: toIso(today)
+	};
+	const [filters, setFilters] = useState(defaultFilters);
+	const [draftFilters, setDraftFilters] = useState(defaultFilters);
+	const [filterOpen, setFilterOpen] = useState(false);
+	const [filterError, setFilterError] = useState("");
+	const [selected, setSelected] = useState(null);
+	const [viewerRequested, setViewerRequested] = useState(false);
+	const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
+	const filtered = useMemo(() => {
+		const query = filters.query.trim().toLocaleLowerCase("it-IT");
+		return notices.filter((item) => {
+			if (query && !matchesNoticeQuery(item, query)) return false;
+			const date = item.date?.slice(0, 10) ?? "";
+			if (filters.from && (!date || date < filters.from)) return false;
+			if (filters.to && (!date || date > filters.to)) return false;
+			return true;
+		});
+	}, [notices, filters]);
+	const hasActiveFilters = Boolean(filters.query || filters.from || filters.to);
+	const openFilter = () => {
+		setDraftFilters(filters);
+		setFilterError("");
+		setFilterOpen(true);
+	};
+	const applyFilters = () => {
+		if (draftFilters.from && draftFilters.to && draftFilters.from > draftFilters.to) {
+			setFilterError("La data iniziale deve precedere quella finale.");
+			return;
+		}
+		setFilters(draftFilters);
+		setFilterOpen(false);
+	};
+	const clearFilters = () => {
+		const cleared = {
+			query: "",
+			from: "",
+			to: ""
+		};
+		setFilters(cleared);
+		setDraftFilters(cleared);
+		setFilterError("");
+		setFilterOpen(false);
+	};
+	const studentName = (v.data.student.name || "STUDENTE").toLocaleUpperCase("it-IT");
+	return /* @__PURE__ */ jsxs("div", {
+		className: "didup-page min-h-dvh bg-black pb-[112px] text-white",
+		children: [
+			/* @__PURE__ */ jsxs("header", {
+				className: "flex items-center gap-[42px] pl-4 pr-[17px] pb-[44px] pt-[21px]",
+				children: [
+					/* @__PURE__ */ jsx(Link, {
+						to: "/",
+						"aria-label": "Torna alla home",
+						className: "press flex h-10 w-8 shrink-0 items-center justify-start text-white",
+						children: /* @__PURE__ */ jsx(ArrowLeft, {
+							className: "h-7 w-7",
+							strokeWidth: 1.7
+						})
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "min-w-0 flex-1",
+						children: [/* @__PURE__ */ jsx("h1", {
+							className: "text-[24px] font-normal leading-none tracking-tight",
+							children: "BACHECA"
+						}), /* @__PURE__ */ jsx("p", {
+							className: "mt-[2px] truncate text-[14px] leading-none text-white/85",
+							children: studentName
+						})]
+					}),
+					/* @__PURE__ */ jsx("img", {
+						src: "/didup-profile.jpg",
+						alt: "",
+						"aria-hidden": "true",
+						className: "-translate-y-[4px] h-[62px] w-[62px] shrink-0 object-cover"
+					})
+				]
+			}),
+			/* @__PURE__ */ jsx(Dialog, {
+				open: filterOpen,
+				onOpenChange: setFilterOpen,
+				children: /* @__PURE__ */ jsxs(DialogContent, {
+					style: {
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "stretch",
+						top: "calc(50% + 5px)"
+					},
+					className: "flex max-h-[78dvh] w-[min(73vw,350px)] max-w-[350px] flex-col items-stretch gap-0 overflow-y-auto rounded-[11px] border-0 bg-[#292929] px-6 pb-[19px] pt-[40px] text-white shadow-xl sm:rounded-[11px] [&>button]:right-4 [&>button]:top-4 [&>button]:h-9 [&>button]:w-9 [&>button]:opacity-100 [&>button>svg]:h-5 [&>button>svg]:w-5",
+					children: [
+						/* @__PURE__ */ jsx(DialogTitle, {
+							className: "text-left text-[18px] font-normal tracking-wide text-white",
+							children: "CERCA IN BACHECA"
+						}),
+						/* @__PURE__ */ jsx(DialogDescription, {
+							className: "sr-only",
+							children: "Cerca una o più parole in nome, testo, allegato e intervallo di date."
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "-ml-6 mt-[46px] flex items-center gap-[18px]",
+							children: [/* @__PURE__ */ jsx(Search, {
+								className: "-ml-[3px] h-[68px] w-[68px] shrink-0 text-white",
+								strokeWidth: 2.5,
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ jsx("input", {
+								value: draftFilters.query,
+								onChange: (event) => setDraftFilters((current) => ({
+									...current,
+									query: event.target.value
+								})),
+								placeholder: "Parole da cercare...",
+								"aria-label": "Cerca circolari e comunicazioni per nome",
+								className: "h-[60px] min-w-0 flex-1 rounded-[10px] border border-white bg-[#333638] px-5 text-[18px] text-white outline-none placeholder:text-white/65 focus:border-[#0aa0b1]"
+							})]
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "-ml-[9px] mt-[48px] grid grid-cols-[26px_minmax(0,1fr)] items-center gap-x-[41px] gap-y-[52px]",
+							children: [
+								/* @__PURE__ */ jsx("label", {
+									htmlFor: "bacheca-date-from",
+									className: "text-right text-[18px] text-white",
+									children: "Dal:"
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "relative mr-[1px] h-[60px] min-w-0 rounded-[10px] border border-white bg-[#333638] focus-within:border-[#0aa0b1]",
+									children: [
+										/* @__PURE__ */ jsx("input", {
+											id: "bacheca-date-from",
+											type: "date",
+											value: draftFilters.from,
+											onChange: (event) => {
+												setDraftFilters((current) => ({
+													...current,
+													from: event.target.value
+												}));
+												setFilterError("");
+											},
+											"aria-label": "Data iniziale",
+											className: "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+										}),
+										/* @__PURE__ */ jsx("span", {
+											"aria-hidden": "true",
+											className: "pointer-events-none absolute left-5 right-12 top-1/2 -translate-y-1/2 truncate text-[19px] text-white",
+											children: displayFilterDate(draftFilters.from)
+										}),
+										/* @__PURE__ */ jsx("span", {
+											className: "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2",
+											children: /* @__PURE__ */ jsx("img", {
+												src: "/didup-icons/calendar.png",
+												alt: "",
+												"aria-hidden": "true",
+												className: "h-[38px] w-[40px] object-contain"
+											})
+										})
+									]
+								}),
+								/* @__PURE__ */ jsx("label", {
+									htmlFor: "bacheca-date-to",
+									className: "text-right text-[18px] text-white",
+									children: "Al:"
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "relative mr-[1px] h-[60px] min-w-0 rounded-[10px] border border-white bg-[#333638] focus-within:border-[#0aa0b1]",
+									children: [
+										/* @__PURE__ */ jsx("input", {
+											id: "bacheca-date-to",
+											type: "date",
+											value: draftFilters.to,
+											onChange: (event) => {
+												setDraftFilters((current) => ({
+													...current,
+													to: event.target.value
+												}));
+												setFilterError("");
+											},
+											"aria-label": "Data finale",
+											className: "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+										}),
+										/* @__PURE__ */ jsx("span", {
+											"aria-hidden": "true",
+											className: "pointer-events-none absolute left-5 right-12 top-1/2 -translate-y-1/2 truncate text-[19px] text-white",
+											children: displayFilterDate(draftFilters.to)
+										}),
+										/* @__PURE__ */ jsx("span", {
+											className: "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2",
+											children: /* @__PURE__ */ jsx("img", {
+												src: "/didup-icons/calendar.png",
+												alt: "",
+												"aria-hidden": "true",
+												className: "h-[38px] w-[40px] object-contain"
+											})
+										})
+									]
+								})
+							]
+						}),
+						filterError && /* @__PURE__ */ jsx("p", {
+							className: "mt-3 text-center text-xs text-red-300",
+							children: filterError
+						}),
+						/* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: applyFilters,
+							className: "press mt-[38px] h-[50px] self-center rounded-[13px] bg-[#00a6b7] text-[16px] font-medium tracking-wide text-white",
+							style: {
+								width: "min(238px, 100%)",
+								height: "50px",
+								alignSelf: "center",
+								flexShrink: 0
+							},
+							children: "APPLICA"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: clearFilters,
+							className: "press mt-[27px] min-h-10 w-full whitespace-nowrap text-[17px] tracking-wide text-white/85",
+							style: {
+								width: "100%",
+								textAlign: "center",
+								alignSelf: "stretch"
+							},
+							children: "AZZERA FILTRO"
+						})
+					]
+				})
+			}),
+			/* @__PURE__ */ jsx("main", {
+				className: "px-[19px]",
+				children: filtered.length ? filtered.map((item) => {
+					const count = attachmentCount(item);
+					const contentLabel = notificationContentLabel(item);
+					const summary = item.message && item.message !== item.title && !isRedundantNoticeText(item, item.message) ? item.message : isGenericNoticeTitle(item) ? "" : notificationDisplayTitle(item);
+					return /* @__PURE__ */ jsxs("article", {
+						className: "didup-tile mb-[19px] flex min-h-[278px] flex-col rounded-[10px] px-[19px] pb-5 pt-[27px]",
+						children: [
+							/* @__PURE__ */ jsxs("div", {
+								className: "relative h-[42px]",
+								children: [
+									/* @__PURE__ */ jsx("img", {
+										src: "/didup-icons/person.png",
+										alt: "",
+										"aria-hidden": "true",
+										className: "absolute -left-[2px] top-[2px] h-[20px] w-[21px] object-contain"
+									}),
+									/* @__PURE__ */ jsx("p", {
+										className: "absolute left-[28px] right-0 top-[1px] truncate text-[18px] font-semibold leading-5 uppercase",
+										children: item.teacher || "SCUOLA"
+									}),
+									/* @__PURE__ */ jsx("time", {
+										dateTime: item.date,
+										className: "absolute -left-[1px] top-[28px] whitespace-nowrap text-[16px] font-medium leading-4 text-[#0aa0b1]",
+										children: shortDate(item.date)
+									})
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "-ml-[2px] mt-[30px] flex items-center gap-[12px]",
+								children: [/* @__PURE__ */ jsx("img", {
+									src: "/didup-icons/folder.png",
+									alt: "",
+									"aria-hidden": "true",
+									className: "h-[29px] w-[32px] shrink-0 object-contain"
+								}), /* @__PURE__ */ jsx("span", {
+									className: "text-[16px] tracking-[0.08em]",
+									children: contentLabel.toLocaleUpperCase("it-IT")
+								})]
+							}),
+							summary && /* @__PURE__ */ jsx("p", {
+								className: "mt-6 break-words text-[18px] leading-[1.4] text-white/95",
+								children: summary
+							}),
+							count > 0 && /* @__PURE__ */ jsxs("button", {
+								type: "button",
+								onClick: () => openNotice(item, v.markRead, setSelected, setViewerRequested),
+								"aria-label": `Apri circolare con ${count} ${count === 1 ? "allegato" : "allegati"}`,
+								className: "press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90",
+								children: [/* @__PURE__ */ jsx("img", {
+									src: "/didup-icons/file.png",
+									alt: "",
+									"aria-hidden": "true",
+									className: "h-[26px] w-[21px] shrink-0 object-contain"
+								}), /* @__PURE__ */ jsx("span", { children: count })]
+							}),
+							count === 0 && (item.message || item.extractedText || item.title) && /* @__PURE__ */ jsxs("button", {
+								type: "button",
+								onClick: () => openNotice(item, v.markRead, setSelected, setViewerRequested),
+								className: "press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90",
+								children: [/* @__PURE__ */ jsx(FileText, {
+									className: "h-[21px] w-[21px] shrink-0",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ jsx("span", { children: "Apri comunicazione" })]
+							})
+						]
+					}, item.id);
+				}) : /* @__PURE__ */ jsxs("div", {
+					className: "mx-1 mt-6 rounded-[14px] bg-[#292929] px-5 py-10 text-center",
+					children: [/* @__PURE__ */ jsx("img", {
+						src: "/didup-icons/folder.png",
+						alt: "",
+						"aria-hidden": "true",
+						className: "mx-auto h-8 w-8 object-contain"
+					}), /* @__PURE__ */ jsx("p", {
+						className: "mt-4 text-sm text-white/90",
+						children: hasActiveFilters ? "Nessuna circolare o comunicazione corrisponde ai filtri scelti." : "Nessuna circolare o comunicazione in bacheca."
+					})]
+				})
+			}),
+			/* @__PURE__ */ jsx("button", {
+				type: "button",
+				onClick: openFilter,
+				"aria-label": "Cerca nella bacheca",
+				"aria-expanded": filterOpen,
+				className: "press fixed bottom-[120px] z-30 flex h-[70px] w-[70px] items-center justify-center rounded-[18px] bg-[#0aa0b1] text-white shadow-lg",
+				style: { right: "max(20px, calc((100vw - 480px) / 2 + 20px))" },
+				children: /* @__PURE__ */ jsx(Search, { className: "h-7 w-7" })
+			}),
+			viewerRequested && /* @__PURE__ */ jsx(Suspense, {
+				fallback: /* @__PURE__ */ jsx("div", {
+					role: "status",
+					className: "fixed inset-0 z-[100] grid place-items-center bg-background/70 text-sm",
+					children: "Caricamento del contenuto…"
+				}),
+				children: /* @__PURE__ */ jsx(LazyCircularViewer, {
+					open: selected !== null,
+					onOpenChange: (open) => !open && setSelected(null),
+					title: selected?.message ?? selected?.title ?? "Circolare",
+					fileName: selected?.attachmentName,
+					path: selected?.attachmentPath,
+					attachments: selected?.attachments,
+					url: selected?.attachmentUrl,
+					extractedText: selected?.extractedText ?? selected?.message ?? selected?.title
+				})
+			})
+		]
+	});
+}
+function StandardBacheca() {
+	const v = useVoto();
+	const [selected, setSelected] = useState(null);
+	const [viewerRequested, setViewerRequested] = useState(false);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
+	const filteredNotices = useMemo(() => {
+		const normalizedQuery = query.trim().toLocaleLowerCase("it-IT");
+		return normalizedQuery ? notices.filter((item) => matchesNoticeQuery(item, normalizedQuery)) : notices;
+	}, [notices, query]);
+	return /* @__PURE__ */ jsxs("div", {
+		className: "space-y-3 pt-3",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "flex items-center justify-between gap-3",
+				children: [/* @__PURE__ */ jsx("h1", {
+					className: "font-display text-2xl font-semibold",
+					children: "Bacheca"
+				}), /* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => setSearchOpen(true),
+					"aria-label": "Cerca nella bacheca",
+					"aria-expanded": searchOpen,
+					className: "press rounded-full p-2 text-primary",
+					children: /* @__PURE__ */ jsx(Search, {
+						className: "h-6 w-6",
+						"aria-hidden": "true"
+					})
+				})]
+			}),
+			/* @__PURE__ */ jsx(Dialog, {
+				open: searchOpen,
+				onOpenChange: setSearchOpen,
+				children: /* @__PURE__ */ jsxs(DialogContent, {
+					className: "max-w-md",
+					children: [
+						/* @__PURE__ */ jsx(DialogTitle, { children: "Cerca nella Bacheca" }),
+						/* @__PURE__ */ jsx(DialogDescription, { children: "Cerca una o più parole in nome, testo, materia o allegato." }),
+						/* @__PURE__ */ jsxs("div", {
+							className: "mt-4 flex items-center gap-2",
+							children: [/* @__PURE__ */ jsx(Search, {
+								className: "h-5 w-5 shrink-0 text-muted-foreground",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ jsx("input", {
+								id: "didup-bacheca-query",
+								value: query,
+								onChange: (event) => setQuery(event.target.value),
+								placeholder: "Parole da cercare...",
+								"aria-label": "Cerca circolari e comunicazioni per nome",
+								className: "h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary",
+								autoFocus: true
+							})]
+						}),
+						/* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => {
+								setQuery("");
+								setSearchOpen(false);
+							},
+							className: "mt-4 self-end text-sm font-medium text-primary",
+							children: "Azzera ricerca"
+						})
+					]
+				})
+			}),
+			filteredNotices.length ? filteredNotices.map((item) => {
+				const count = attachmentCount(item);
+				const tableCount = Math.max(item.tableCount ?? 0, ...(item.attachments ?? []).map((attachment) => attachment.tableCount ?? 0));
+				const contentLabel = notificationContentLabel(item);
+				const title = isGenericNoticeTitle(item) ? "" : notificationDisplayTitle(item);
+				const summary = item.message?.trim() && item.message.trim() !== title && !isRedundantNoticeText(item, item.message) ? item.message.trim() : "";
+				return /* @__PURE__ */ jsxs("article", {
+					className: "card-surface p-4",
+					children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "flex items-start justify-between gap-3",
+							children: [/* @__PURE__ */ jsxs("div", {
+								className: "min-w-0",
+								children: [
+									(item.subject || item.teacher) && /* @__PURE__ */ jsx("p", {
+										className: "text-[11px] font-medium uppercase text-muted-foreground",
+										children: [item.subject, item.teacher].filter(Boolean).join(" · ")
+									}),
+									title && /* @__PURE__ */ jsx("h2", {
+										className: "mt-1 text-sm font-semibold",
+										children: title
+									}),
+									summary && /* @__PURE__ */ jsx("p", {
+										className: "mt-1 whitespace-pre-line text-sm",
+										children: summary
+									})
+								]
+							}), item.date && /* @__PURE__ */ jsx("time", {
+								className: "shrink-0 text-[11px] text-muted-foreground",
+								children: shortDate(item.date)
+							})]
+						}),
+						count > 0 && /* @__PURE__ */ jsxs("div", {
+							className: "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1",
+							children: [/* @__PURE__ */ jsxs("button", {
+								type: "button",
+								onClick: () => openNotice(item, v.markRead, setSelected, setViewerRequested),
+								className: "press inline-flex items-center gap-2 text-xs font-medium text-primary",
+								children: [
+									/* @__PURE__ */ jsx(FileText, { className: "h-4 w-4" }),
+									count,
+									" ",
+									count === 1 ? "allegato" : "allegati"
+								]
+							}), tableCount > 0 && /* @__PURE__ */ jsxs("span", {
+								className: "rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary",
+								children: [
+									tableCount,
+									" ",
+									tableCount === 1 ? "tabella" : "tabelle"
+								]
+							})]
+						}),
+						count === 0 && (item.message || item.extractedText || item.title) && /* @__PURE__ */ jsxs("button", {
+							type: "button",
+							onClick: () => openNotice(item, v.markRead, setSelected, setViewerRequested),
+							className: "press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary",
+							children: [/* @__PURE__ */ jsx(FileText, { className: "h-4 w-4" }), contentLabel === "Circolari" ? "Apri circolare" : "Apri comunicazione"]
+						})
+					]
+				}, item.id);
+			}) : /* @__PURE__ */ jsx("p", {
+				className: "py-10 text-center text-sm text-muted-foreground",
+				children: query.trim() ? "Nessuna circolare o comunicazione corrisponde alla ricerca." : "Nessuna circolare o comunicazione in bacheca."
+			}),
+			viewerRequested && /* @__PURE__ */ jsx(Suspense, {
+				fallback: /* @__PURE__ */ jsx("div", {
+					role: "status",
+					className: "fixed inset-0 z-[100] grid place-items-center bg-background/70 text-sm",
+					children: "Caricamento del contenuto…"
+				}),
+				children: /* @__PURE__ */ jsx(LazyCircularViewer, {
+					open: selected !== null,
+					onOpenChange: (open) => !open && setSelected(null),
+					title: selected?.message ?? selected?.title ?? "Circolare",
+					fileName: selected?.attachmentName,
+					path: selected?.attachmentPath,
+					attachments: selected?.attachments,
+					url: selected?.attachmentUrl,
+					extractedText: selected?.extractedText ?? selected?.message ?? selected?.title
+				})
+			})
+		]
+	});
+}
+//#endregion
+export { Bacheca as component };

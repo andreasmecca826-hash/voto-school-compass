@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import { claimSchoolDataAccess, PRIVATE_SCHOOL_DATA_URL, supabase } from "@/lib/supabase-auth";
 import { SchoolAuthContext, type PrefetchedSchoolData } from "@/lib/school-auth-context";
 import { fetchVotoData } from "@/lib/voto/parse";
@@ -77,10 +79,50 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let appUrlListener: { remove: () => Promise<void> } | null = null;
+
+    const handleAppUrl = async (url: string) => {
+      if (!url.startsWith("it.voto.school://login-callback")) return;
+
+      setStep("checking");
+      setError("");
+
+      try {
+        const code = new URL(url).searchParams.get("code");
+        if (!code) throw new Error("Codice PKCE mancante nel link di accesso.");
+
+        const { error: authError } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (authError && mounted) {
+          setError("Non riesco a completare l'accesso. Richiedi un nuovo link email.");
+          setStep("email");
+        }
+      } catch {
+        if (mounted) {
+          setError("Non riesco a completare l'accesso. Richiedi un nuovo link email.");
+          setStep("email");
+        }
+      }
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      void App.addListener("appUrlOpen", ({ url }) => {
+        void handleAppUrl(url);
+      }).then((listener) => {
+        appUrlListener = listener;
+        if (!mounted) void listener.remove();
+      });
+
+      void App.getLaunchUrl().then((launch) => {
+        if (launch?.url) void handleAppUrl(launch.url);
+      });
+    }
+
     const savedDemoMode = load<boolean>(KEYS.demoMode, false) === true;
     if (savedDemoMode) {
       setStep("ready");
     }
+
     void supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!mounted) return;
       if (savedDemoMode) return;
@@ -90,6 +132,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       }
       void activate(data.session);
     });
+
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (savedDemoMode) return;
       if (event === "SIGNED_OUT" && mounted) {
@@ -106,9 +149,11 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         }, 0);
       }
     });
+
     return () => {
       mounted = false;
       data.subscription.unsubscribe();
+      if (appUrlListener) void appUrlListener.remove();
     };
   }, []);
 
@@ -122,7 +167,9 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         email: normalizedEmail,
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: "https://voto-school-compass.lovable.app",
+          emailRedirectTo: Capacitor.isNativePlatform()
+            ? "it.voto.school://login-callback"
+            : "https://voto-school-compass.lovable.app",
         },
       });
       if (otpError) throw otpError;

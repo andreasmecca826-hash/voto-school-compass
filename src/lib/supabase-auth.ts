@@ -8,6 +8,7 @@ export const supabase = createClient(supabaseProjectUrl(), supabasePublishableKe
     autoRefreshToken: isBrowser,
     detectSessionInUrl: isBrowser,
     persistSession: isBrowser,
+    flowType: "pkce",
   },
 });
 

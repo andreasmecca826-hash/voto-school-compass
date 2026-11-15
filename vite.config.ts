@@ -16,9 +16,18 @@ export default defineConfig({
       server: {
         entry: "server",
       },
+      spa: {
+        enabled: true,
+        prerender: {
+          outputPath: "/index.html",
+        },
+      },
     }),
     nitro({
       preset: "cloudflare_module",
+      commands: {
+        preview: "node ./node_modules/wrangler/bin/wrangler.js --cwd ./ dev --ip ::1",
+      },
     }),
     viteReact(),
   ],

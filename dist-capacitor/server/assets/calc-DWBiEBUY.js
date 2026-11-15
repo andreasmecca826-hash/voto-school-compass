@@ -1,0 +1,88 @@
+//#region src/lib/voto/calc.ts
+var fmt = (n, d = 2) => n.toLocaleString("it-IT", {
+	minimumFractionDigits: d,
+	maximumFractionDigits: d
+});
+function arithmeticMean(values) {
+	const valid = values.filter(Number.isFinite);
+	if (!valid.length) return null;
+	return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+}
+var normalizedWeight = (weight) => Number.isFinite(weight) && weight > 0 ? weight : 1;
+function average(grades, weighted = true) {
+	const valid = grades.filter((g) => Number.isFinite(g.value));
+	if (!valid.length) return null;
+	if (!weighted) return valid.reduce((s, g) => s + g.value, 0) / valid.length;
+	const tw = valid.reduce((s, g) => s + normalizedWeight(g.weight), 0);
+	return valid.reduce((s, g) => s + g.value * normalizedWeight(g.weight), 0) / tw;
+}
+/** Media generale = media delle medie (ponderate) delle materie con almeno un voto. */
+function overallAverage(subjects) {
+	const avgs = subjects.map((s) => average(s.grades)).filter((a) => a !== null);
+	if (!avgs.length) return null;
+	return avgs.reduce((a, b) => a + b, 0) / avgs.length;
+}
+function subjectStats(s) {
+	const vals = s.grades.map((g) => g.value);
+	const sorted = [...s.grades].sort((a, b) => a.date.localeCompare(b.date));
+	const avg = average(s.grades);
+	let trend = null;
+	if (sorted.length >= 2) {
+		const prev = average(sorted.slice(0, -1));
+		if (prev !== null && avg !== null) trend = avg - prev;
+	}
+	return {
+		avg,
+		max: vals.length ? Math.max(...vals) : null,
+		min: vals.length ? Math.min(...vals) : null,
+		count: vals.length,
+		trend
+	};
+}
+/**
+* Voto necessario alla prossima verifica.
+* Non pesata: needed = target*(n+1) - somma
+* Pesata: needed = (target*(W+w) - somma(v*p)) / w
+*/
+function neededGrade(grades, target, newWeight = 1, weighted = true) {
+	const valid = grades.filter((g) => Number.isFinite(g.value));
+	const w = normalizedWeight(newWeight);
+	let needed;
+	if (weighted) {
+		const W = valid.reduce((s, g) => s + normalizedWeight(g.weight), 0);
+		const ws = valid.reduce((s, g) => s + g.value * normalizedWeight(g.weight), 0);
+		needed = (target * (W + w) - ws) / w;
+	} else {
+		const n = valid.length;
+		const sum = valid.reduce((s, g) => s + g.value, 0);
+		needed = target * (n + 1) - sum;
+	}
+	if (needed <= 0) return {
+		status: "reached",
+		needed
+	};
+	if (needed > 10) return {
+		status: "impossible",
+		needed
+	};
+	return {
+		status: "ok",
+		needed
+	};
+}
+/** Andamento cronologico della media generale (per sparkline). */
+function averageHistory(subjects) {
+	const dates = [...new Set(subjects.flatMap((s) => s.grades.map((g) => g.date)).filter(Boolean))].sort();
+	const out = [];
+	for (const d of dates) {
+		const a = overallAverage(subjects.map((s) => ({
+			...s,
+			grades: s.grades.filter((g) => g.date <= d)
+		})));
+		if (a !== null) out.push(a);
+	}
+	return out;
+}
+var gradeTone = (v) => v === null ? "muted" : v >= 6 ? "good" : v >= 5 ? "ok" : "bad";
+//#endregion
+export { gradeTone as a, subjectStats as c, fmt as i, average as n, neededGrade as o, averageHistory as r, overallAverage as s, arithmeticMean as t };
