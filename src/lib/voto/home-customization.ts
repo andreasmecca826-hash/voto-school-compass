@@ -9,22 +9,21 @@ export type HomeModuleId =
   | "bacheca"
   | "obiettivo"
   | "prossima-lezione"
-  | "domani-a-scuola";
+  | "domani-a-scuola"
+  | "ultimi-voti";
 
 export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean; scale: number };
 
 export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
   { id: "media", enabled: true, scale: 100 },
-  { id: "simulatore", enabled: true, scale: 100 },
   { id: "prossima-lezione", enabled: true, scale: 100 },
-  { id: "domani-a-scuola", enabled: true, scale: 100 },
   { id: "presenze", enabled: true, scale: 100 },
+  { id: "ultimi-voti", enabled: true, scale: 100 },
   { id: "compiti", enabled: true, scale: 100 },
   { id: "interrogazioni", enabled: true, scale: 100 },
   { id: "note", enabled: true, scale: 100 },
   { id: "promemoria", enabled: true, scale: 100 },
   { id: "bacheca", enabled: true, scale: 100 },
-  { id: "obiettivo", enabled: true, scale: 100 },
 ];
 
 export function normalizeHomeScale(value: unknown): number {

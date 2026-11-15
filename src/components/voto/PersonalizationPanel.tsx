@@ -258,16 +258,14 @@ const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
-  { id: "simulatore", label: "Studio Lab" },
   { id: "prossima-lezione", label: "Prossima lezione" },
-  { id: "domani-a-scuola", label: "Domani a scuola" },
   { id: "presenze", label: "Presenze" },
+  { id: "ultimi-voti", label: "Ultimi voti" },
   { id: "compiti", label: "Compiti di oggi" },
   { id: "interrogazioni", label: "Interrogazioni" },
   { id: "note", label: "Note" },
   { id: "promemoria", label: "Promemoria DidUP" },
   { id: "bacheca", label: "Bacheca" },
-  { id: "obiettivo", label: "Obiettivo media" },
 ];
 const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
   { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
