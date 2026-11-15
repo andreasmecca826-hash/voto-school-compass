@@ -495,8 +495,8 @@ export async function fetchVotoData(
         throw new Error("Tempo scaduto: il server non risponde.");
       throw new Error(
         typeof navigator !== "undefined" && !navigator.onLine
-          ? "Sei offline. Mostro gli ultimi dati salvati."
-          : "Impossibile raggiungere l'URL (rete o CORS).",
+          ? "Connessione Internet assente. Collega il dispositivo alla rete e riprova."
+          : "Impossibile raggiungere l'URL dei dati (server non raggiungibile o errore CORS).",
       );
     } finally {
       clearTimeout(t);

@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  CircleAlert,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -20,6 +21,7 @@ import {
   UsersRound,
   X,
   Sparkles,
+  WifiOff,
 } from "lucide-react";
 import {
   createContext,
@@ -35,6 +37,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useClock, useVoto } from "@/lib/voto/store";
+import { getConnectionIssue } from "@/lib/voto/connection-status";
+import { useOnlineStatus } from "@/lib/voto/use-online-status";
+import { fmtTime } from "@/lib/voto/dates";
 import { Windows7Orb, Windows7Taskbar } from "./Windows7Chrome";
 
 const NotificationsSheet = lazy(() =>
@@ -159,6 +164,9 @@ type SeasonalTheme = (typeof SEASONAL_THEMES)[number];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const v = useVoto();
+  const { refresh, loading, url } = v;
+  const isOnline = useOnlineStatus();
+  const connectionIssue = getConnectionIssue({ url: v.url, isOnline, error: v.error });
   const now = useClock();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isNavigating = useRouterState({ select: (s) => s.status === "pending" });
@@ -194,6 +202,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pullIndicator = useRef<HTMLDivElement>(null);
   const pullIcon = useRef<SVGSVGElement>(null);
   const pullLabel = useRef<HTMLSpanElement>(null);
+  const wasOffline = useRef(false);
+
+  useEffect(() => {
+    if (!url) {
+      wasOffline.current = false;
+      return;
+    }
+    if (!isOnline) {
+      wasOffline.current = true;
+      return;
+    }
+    if (wasOffline.current && !loading) {
+      wasOffline.current = false;
+      void refresh({ silent: true });
+    }
+  }, [isOnline, loading, refresh, url]);
 
   const applyPullDistance = (distance: number) => {
     const boundedDistance = Math.max(0, Math.min(84, distance));
@@ -419,6 +443,49 @@ export function AppShell({ children }: { children: ReactNode }) {
           onTouchEnd={handlePullEnd}
           onTouchCancel={handlePullCancel}
         >
+          {connectionIssue && (
+            <section
+              role="status"
+              aria-live="polite"
+              className={cn(
+                "mx-0 mt-3 flex items-start gap-3 rounded-xl border p-3",
+                connectionIssue.tone === "warning"
+                  ? "border-warning/40 bg-warning/10 text-warning"
+                  : "border-danger/40 bg-danger/10 text-danger",
+                v.registryStyle === "didup" && "mx-3",
+              )}
+            >
+              {connectionIssue.kind === "offline" ? (
+                <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              ) : (
+                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold">{connectionIssue.title}</p>
+                <p className="mt-1 text-[11px] leading-relaxed">{connectionIssue.description}</p>
+                {v.lastSync ? (
+                  <p className="mt-1 text-[10px] opacity-80">
+                    Ultimi dati sincronizzati: {fmtTime(v.lastSync)}. VOTO conserva i dati salvati.
+                  </p>
+                ) : v.source === "demo" ? (
+                  <p className="mt-1 text-[10px] opacity-80">
+                    Non ci sono dati reali sincronizzati su questo dispositivo; quelli mostrati sono
+                    demo.
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => void v.refresh({ silent: true })}
+                disabled={v.loading || !isOnline}
+                className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-current/25 px-2 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Riprova la connessione ai dati"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", v.loading && "animate-spin")} />
+                Riprova
+              </button>
+            </section>
+          )}
           <div
             ref={pullIndicator}
             className="pointer-events-none flex items-center justify-center overflow-hidden text-xs font-medium text-primary opacity-0 transition-[height,opacity] duration-150"
