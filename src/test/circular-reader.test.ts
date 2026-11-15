@@ -2,11 +2,21 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeCircularText,
   extractCircularTableRows,
+  isSameOriginDocumentUrl,
   normalizeOcrText,
   reconstructPositionedText,
 } from "@/lib/voto/circular-reader";
 
 describe("lettore locale delle circolari", () => {
+  it("usa credenziali solo per documenti serviti dalla stessa origine", () => {
+    expect(isSameOriginDocumentUrl("/api/circulars/mirror?path=circulars/example.pdf")).toBe(true);
+    expect(
+      isSameOriginDocumentUrl(
+        "https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/circulars/example.pdf?token=test",
+      ),
+    ).toBe(false);
+  });
+
   it("estrae date, destinatari, riepilogo e allegati senza modificare il testo originale", () => {
     const text = [
       "Destinatari: Ai genitori delle classi terze",

@@ -28,7 +28,7 @@ Solo in modalità API, dopo l'invio esplicito, Groq riceve la domanda corrente e
 
 ## PDF delle circolari
 
-Il monitor DidUP acquisisce i PDF tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. Quando l'app apre una circolare con path interno, la Edge Function `mirror-circular` crea un URL firmato valido un'ora; la funzione accetta solo path PDF già presenti nel bucket e non scarica link esterni. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.
+Il monitor DidUP acquisisce i PDF e i DOCX tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. La Edge Function `mirror-circular` accetta solo path interni PDF/DOCX e restituisce un URL firmato valido un'ora; usa il service role solo lato server e richiede una sessione Supabase valida al client. La Web App usa il proxy server `/api/circulars/mirror`; l'APK Capacitor contiene invece un bundle statico senza route server TanStack e ottiene l'URL firmato invocando direttamente `mirror-circular`. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.
 
 ## Controllo manuale delle circolari
 

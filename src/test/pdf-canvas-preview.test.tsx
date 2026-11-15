@@ -108,6 +108,7 @@ describe("anteprima PDF progressiva", () => {
       expect(getDocumentMock).toHaveBeenCalledWith(
         expect.objectContaining({
           url: "/example.pdf",
+          withCredentials: true,
           disableStream: true,
           disableAutoFetch: true,
         }),
@@ -129,6 +130,18 @@ describe("anteprima PDF progressiva", () => {
 
     await waitFor(() => expect(pages[1]!.render).toHaveBeenCalledOnce());
     expect(pages[2]!.render).not.toHaveBeenCalled();
+  });
+
+  it("non invia credenziali per l’URL firmato cross-origin di Supabase Storage", async () => {
+    const src =
+      "https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/circulars/example.pdf?token=test";
+    render(<PdfCanvasPreview src={src} title="PDF firmato" />);
+
+    await waitFor(() =>
+      expect(getDocumentMock).toHaveBeenCalledWith(
+        expect.objectContaining({ url: src, withCredentials: false }),
+      ),
+    );
   });
 
   it("applica lo zoom a tutte le pagine man mano che diventano visibili", async () => {

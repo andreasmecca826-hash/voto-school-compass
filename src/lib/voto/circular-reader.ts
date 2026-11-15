@@ -62,6 +62,15 @@ const DIRECT_RECIPIENT =
 const MAX_PAGES = 80;
 const MAX_TEXT_LENGTH = 300_000;
 
+export function isSameOriginDocumentUrl(src: string) {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URL(src, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 function clean(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -264,7 +273,10 @@ async function readCircularPdfPages(src: string) {
     "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
     import.meta.url,
   ).toString();
-  const loadingTask = pdfjs.getDocument({ url: src, withCredentials: true });
+  const loadingTask = pdfjs.getDocument({
+    url: src,
+    withCredentials: isSameOriginDocumentUrl(src),
+  });
   try {
     const pdf = await loadingTask.promise;
     const pagesToRead = Math.min(pdf.numPages, MAX_PAGES);
@@ -329,7 +341,10 @@ export async function renderCircularPdfPageImages(src: string): Promise<Circular
     "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
     import.meta.url,
   ).toString();
-  const loadingTask = pdfjs.getDocument({ url: src, withCredentials: true });
+  const loadingTask = pdfjs.getDocument({
+    url: src,
+    withCredentials: isSameOriginDocumentUrl(src),
+  });
   try {
     const pdf = await loadingTask.promise;
     const pages: CircularPdfPageImage[] = [];

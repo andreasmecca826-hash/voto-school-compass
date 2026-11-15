@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
+import { supabase } from "@/lib/supabase-auth";
 
 const { renderPageImages, askCircularText, askCircularImages } = vi.hoisted(() => ({
   renderPageImages: vi.fn(),
@@ -27,9 +28,25 @@ vi.mock("@/lib/voto/circular-reader", async (importOriginal) => ({
   renderCircularPdfPageImages: renderPageImages,
 }));
 
+vi.mock("@/components/voto/PdfCanvasPreview", () => ({
+  PdfCanvasPreview: ({ src, title }: { src: string; title: string }) => (
+    <div role="document" aria-label={title} data-preview-src={src} />
+  ),
+}));
+
+const originalCreateObjectUrl = Object.getOwnPropertyDescriptor(URL, "createObjectURL");
+const originalRevokeObjectUrl = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  if (originalCreateObjectUrl)
+    Object.defineProperty(URL, "createObjectURL", originalCreateObjectUrl);
+  else Reflect.deleteProperty(URL, "createObjectURL");
+  if (originalRevokeObjectUrl)
+    Object.defineProperty(URL, "revokeObjectURL", originalRevokeObjectUrl);
+  else Reflect.deleteProperty(URL, "revokeObjectURL");
 });
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", TestPointerEvent);
@@ -46,6 +63,94 @@ beforeEach(() => {
 });
 
 describe("visualizzatore PDF delle circolari interne", () => {
+  it.each([
+    { extension: "pdf", openButton: "Apri PDF", downloadButton: "Scarica PDF" },
+    { extension: "docx", openButton: "Apri DOCX", downloadButton: "Scarica DOCX" },
+  ])(
+    "usa mirror-circular autenticata per preview e download Android .$extension",
+    async ({ extension, openButton, downloadButton }) => {
+      const path = `circulars/${"a".repeat(64)}.${extension}`;
+      const signedUrl = `https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/${path}?token=test`;
+      vi.stubGlobal("Capacitor", {
+        isNativePlatform: () => true,
+        getPlatform: () => "android",
+      });
+      vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+        data: { session: { access_token: "test-user-token" } as never },
+        error: null,
+      } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        if (String(input).includes("/functions/v1/mirror-circular")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ path, signedUrl }), {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }),
+          );
+        }
+        return Promise.resolve(new Response(new Uint8Array([1, 2, 3]), { status: 200 }));
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      Object.defineProperty(URL, "createObjectURL", {
+        configurable: true,
+        value: vi.fn(() => "blob:download-test"),
+      });
+      Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+      const anchorClick = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => undefined);
+      const openWindow = vi.spyOn(window, "open").mockReturnValue(null);
+
+      render(
+        <CircularViewer
+          open
+          onOpenChange={() => {}}
+          title="Circolare Android"
+          fileName={`allegato.${extension}`}
+          path={path}
+          url={undefined}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          "https://jmvxuhgjejzpezvawzfw.supabase.co/functions/v1/mirror-circular",
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ path }),
+            headers: expect.objectContaining({ Authorization: "Bearer test-user-token" }),
+          }),
+        );
+        expect(screen.getByRole("button", { name: openButton })).toBeInTheDocument();
+      });
+      if (extension === "pdf") {
+        expect(screen.getByRole("document", { name: `allegato.${extension}` })).toHaveAttribute(
+          "data-preview-src",
+          signedUrl,
+        );
+      } else {
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(signedUrl, expect.any(Object)));
+      }
+
+      fireEvent.click(screen.getByRole("button", { name: openButton }));
+      expect(openWindow).toHaveBeenCalledWith(signedUrl, "_blank", "noopener,noreferrer");
+      fireEvent.click(screen.getByRole("button", { name: downloadButton }));
+
+      await waitFor(() => {
+        expect(
+          fetchMock.mock.calls.filter(([input]) =>
+            String(input).includes("/functions/v1/mirror-circular"),
+          ),
+        ).toHaveLength(2);
+        expect(fetchMock).toHaveBeenCalledWith(
+          signedUrl,
+          expect.objectContaining({ credentials: "omit" }),
+        );
+        expect(anchorClick).toHaveBeenCalled();
+      });
+    },
+  );
+
   it("mantiene anteprima locale e download anche senza URL firmata anticipata", () => {
     const path = `circulars/${"a".repeat(64)}.pdf`;
     render(
