@@ -27,6 +27,7 @@ import { SectionTitle } from "@/components/voto/ui";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
 import { processCustomThemeBackground } from "@/lib/voto/custom-theme-background";
+import { HOME_LIMIT_OPTIONS } from "@/lib/voto/home-customization";
 import {
   DEFAULT_EMOJI_THEME_EMOJIS,
   MAX_EMOJI_THEME_EMOJIS,
@@ -258,14 +259,20 @@ const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
-  { id: "prossima-lezione", label: "Prossima lezione" },
   { id: "presenze", label: "Presenze" },
   { id: "ultimi-voti", label: "Ultimi voti" },
   { id: "compiti", label: "Compiti di oggi" },
-  { id: "interrogazioni", label: "Interrogazioni" },
+  { id: "interrogazioni", label: "Verifiche e interrogazioni" },
   { id: "note", label: "Note" },
   { id: "promemoria", label: "Promemoria DidUP" },
   { id: "bacheca", label: "Bacheca" },
+];
+const HOME_MODULES_WITH_LIMIT: HomeModuleId[] = [
+  "ultimi-voti",
+  "interrogazioni",
+  "note",
+  "promemoria",
+  "bacheca",
 ];
 const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
   { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
@@ -689,6 +696,31 @@ export function PersonalizationPanel() {
                       {module.scale}%
                     </output>
                   </div>
+                  {HOME_MODULES_WITH_LIMIT.includes(module.id) && (
+                    <div className="mt-2 flex items-center gap-2 pl-11">
+                      <label
+                        htmlFor={`home-module-limit-${module.id}`}
+                        className="w-16 shrink-0 text-[10px] text-muted-foreground"
+                      >
+                        Elementi
+                      </label>
+                      <select
+                        id={`home-module-limit-${module.id}`}
+                        value={module.limit ?? 5}
+                        onChange={(event) =>
+                          v.setHomeModuleLimit(module.id, Number(event.target.value))
+                        }
+                        aria-label={`Numero di elementi del modulo ${meta.label}`}
+                        className="h-8 flex-1 rounded-lg border border-input bg-card px-2 text-xs"
+                      >
+                        {HOME_LIMIT_OPTIONS.map((limit) => (
+                          <option key={limit} value={limit}>
+                            {limit} {limit === 1 ? "elemento" : "elementi"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               );
             })}

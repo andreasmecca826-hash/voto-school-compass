@@ -12,18 +12,40 @@ export type HomeModuleId =
   | "domani-a-scuola"
   | "ultimi-voti";
 
-export type HomeModuleConfig = { id: HomeModuleId; enabled: boolean; scale: number };
+export type HomeModuleConfig = {
+  id: HomeModuleId;
+  enabled: boolean;
+  scale: number;
+  limit?: number;
+};
+
+export const HOME_LIMIT_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+const DEFAULT_HOME_LIMITS: Partial<Record<HomeModuleId, number>> = {
+  "ultimi-voti": 5,
+  interrogazioni: 3,
+  note: 3,
+  promemoria: 3,
+  bacheca: 5,
+};
+
+export function defaultHomeModuleLimit(id: HomeModuleId): number | undefined {
+  return DEFAULT_HOME_LIMITS[id];
+}
+
+export function normalizeHomeLimit(value: unknown, fallback = 5): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(10, Math.max(1, Math.round(value)));
+}
 
 export const DEFAULT_HOME_MODULES: HomeModuleConfig[] = [
   { id: "media", enabled: true, scale: 100 },
-  { id: "prossima-lezione", enabled: true, scale: 100 },
   { id: "presenze", enabled: true, scale: 100 },
-  { id: "ultimi-voti", enabled: true, scale: 100 },
+  { id: "ultimi-voti", enabled: true, scale: 100, limit: 5 },
   { id: "compiti", enabled: true, scale: 100 },
-  { id: "interrogazioni", enabled: true, scale: 100 },
-  { id: "note", enabled: true, scale: 100 },
-  { id: "promemoria", enabled: true, scale: 100 },
-  { id: "bacheca", enabled: true, scale: 100 },
+  { id: "interrogazioni", enabled: true, scale: 100, limit: 3 },
+  { id: "note", enabled: true, scale: 100, limit: 3 },
+  { id: "promemoria", enabled: true, scale: 100, limit: 3 },
+  { id: "bacheca", enabled: true, scale: 100, limit: 5 },
 ];
 
 export function normalizeHomeScale(value: unknown): number {
@@ -55,6 +77,11 @@ export function normalizeHomeModules(value: unknown): HomeModuleConfig[] {
         id: id as HomeModuleId,
         enabled: config?.enabled !== false,
         scale: normalizeHomeScale(config?.scale),
+        ...(defaultHomeModuleLimit(id as HomeModuleId) !== undefined
+          ? {
+              limit: normalizeHomeLimit(config?.limit, defaultHomeModuleLimit(id as HomeModuleId)),
+            }
+          : {}),
       });
     }
   });
