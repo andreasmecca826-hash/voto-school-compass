@@ -1,4 +1,4 @@
-import { CalendarX2, FileText, StickyNote } from "lucide-react";
+import { CalendarX2, FileText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   lazy,
@@ -159,14 +159,6 @@ export function DidupDashboard() {
     () =>
       [...(v.data.attendanceEvents ?? [])].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3),
     [v.data.attendanceEvents],
-  );
-  const disciplinaryNotes = useMemo(
-    () =>
-      notifications
-        .filter((item) => item.type === "note")
-        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
-        .slice(0, 3),
-    [notifications],
   );
 
   return (
@@ -353,36 +345,6 @@ export function DidupDashboard() {
             </p>
           )}
         </div>
-      </section>
-
-      <DidupSectionTitle title="Note disciplinari" href="/note" />
-      <section className="didup-card overflow-hidden px-5 py-2">
-        {disciplinaryNotes.length > 0 ? (
-          <ul>
-            {disciplinaryNotes.map((note, index) => (
-              <li
-                key={note.id}
-                className={`flex items-start gap-3 py-3 ${index < disciplinaryNotes.length - 1 ? "border-b border-white/15" : ""}`}
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#45282b] text-[#e56b6f]">
-                  <StickyNote className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium">{note.title}</p>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-white/75">
-                    {note.message || "Dettagli della nota non disponibili."}
-                  </p>
-                  <p className="mt-1 text-[10px] uppercase text-[#08a5b5]">
-                    {shortDate(note.date)}
-                    {note.teacher ? ` · ${note.teacher}` : ""}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="py-5 text-center text-[13px] text-white/70">Nessuna nota disciplinare.</p>
-        )}
       </section>
 
       <DidupSectionTitle title="Ultimi voti" href="/voti" compact />
