@@ -610,7 +610,7 @@ function Settings() {
         className="card-surface cursor-pointer p-4 text-xs text-muted-foreground"
       >
         <p>
-          <span className="font-display font-semibold text-foreground">VOTO.</span> versione 3.0.0 ·
+          <span className="font-display font-semibold text-foreground">VOTO.</span> versione beta ·
           made by Andrew Smecca
         </p>
       </section>
