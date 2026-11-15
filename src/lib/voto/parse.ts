@@ -250,6 +250,7 @@ export function parseVotoData(raw: unknown): VotoData {
         value,
         label: gradeLabel,
         date: str(gr["date"]) ?? "",
+        createdAt: str(gr["createdAt"]) ?? str(gr["created_at"]),
         type: gradeType(gr["type"]),
         weight: Number.isFinite(w) && w > 0 ? w : 1,
         comment: gradeCommentOrUndefined(str(gr["comment"]), gradeLabel, value),
