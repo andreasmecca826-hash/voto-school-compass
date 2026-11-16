@@ -3,20 +3,18 @@ import { useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  Camera,
   CalendarDays,
+  CalendarX2,
   Calculator,
-  CircleDot,
-  Layers,
-  ListChecks,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AbsenceCalculator } from "@/components/voto/AbsenceCalculator";
+import { GenericAverageCalculator } from "@/components/voto/GenericAverageCalculator";
+import { PeriodPicker } from "@/components/voto/PeriodPicker";
+import { SimulatorTool } from "@/components/voto/SimulatorTool";
 import { UniversalCalculator } from "@/components/voto/UniversalCalculator";
 import { SchoolEndDateTool } from "@/components/voto/SchoolEndDateTool";
-import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
-import { StudyPlannerTool } from "@/components/voto/StudyPlannerTool";
-import { InterrogationPrepTool, PhotoImportTool } from "@/components/voto/StudyLabFeatures";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -43,7 +41,7 @@ const TOOLS = [
   {
     id: "universal-calculator",
     title: "Calcolatore universale",
-    subtitle: "Calcoli, media, assenze, simulatore voti, piantina e altro",
+    subtitle: "Calcoli, conversioni, documenti e strumenti di studio",
     icon: Calculator,
     tone: "text-primary bg-surface",
   },
@@ -55,43 +53,29 @@ const TOOLS = [
     tone: "text-primary bg-surface",
   },
   {
-    id: "wheel",
-    title: "Ruota del ripasso",
-    subtitle: "Lascia decidere al caso",
-    icon: CircleDot,
-    tone: "text-warning bg-surface",
-  },
-  {
-    id: "flashcards",
-    title: "Flashcard",
-    subtitle: "Domanda. Risposta. Ripeti.",
-    icon: Layers,
+    id: "average",
+    title: "Calcolo media",
+    subtitle: "Calcola una media semplice senza cambiare i voti del registro",
+    icon: Calculator,
     tone: "text-success bg-surface",
   },
   {
-    id: "planner",
-    title: "Planner di studio",
-    subtitle: "Decidi tu cosa studiare, quando e per quanto tempo",
-    icon: ListChecks,
-    tone: "text-primary bg-surface",
-  },
-  {
-    id: "interrogation-prep",
-    title: "Prima dell’interrogazione",
-    subtitle: "Checklist, argomenti, conto alla rovescia e domande di ripasso",
-    icon: ListChecks,
+    id: "absence",
+    title: "Calcolo assenze",
+    subtitle: "Controlla le ore residue e simula nuove assenze",
+    icon: CalendarX2,
     tone: "text-warning bg-surface",
   },
   {
-    id: "photo-import",
-    title: "Importa da foto",
-    subtitle: "Leggi appunti, lavagna o diario con OCR locale",
-    icon: Camera,
+    id: "simulator",
+    title: "Simulatore voti",
+    subtitle: "Prova i voti futuri nelle tue materie",
+    icon: Calculator,
     tone: "text-success bg-surface",
   },
 ] as const;
 
-function Studio() {
+export function Studio() {
   const [tool, setTool] = useState<string | null>(null);
   const selected = TOOLS.find((item) => item.id === tool);
 
@@ -119,12 +103,15 @@ function Studio() {
           ) : (
             <>
               <h2 className="mb-5 font-display text-xl font-semibold">{selected.title}</h2>
-              {tool === "wheel" && <WheelTool />}
-              {tool === "flashcards" && <FlashcardsTool />}
-              {tool === "planner" && <StudyPlannerTool />}
+              {tool === "average" && <GenericAverageCalculator />}
+              {tool === "absence" && <AbsenceCalculator />}
+              {tool === "simulator" && (
+                <div className="space-y-4">
+                  <PeriodPicker />
+                  <SimulatorTool />
+                </div>
+              )}
               {tool === "school-end" && <SchoolEndDateTool />}
-              {tool === "interrogation-prep" && <InterrogationPrepTool />}
-              {tool === "photo-import" && <PhotoImportTool />}
             </>
           )}
         </>

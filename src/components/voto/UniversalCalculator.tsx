@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Camera,
   Calculator,
   CalendarClock,
   CalendarX2,
+  CircleDot,
   Clock3,
   FileText,
   History,
+  Layers,
+  ListChecks,
   Percent,
   QrCode,
   Ruler,
@@ -21,19 +25,22 @@ import { Button } from "@/components/ui/button";
 import { UniversalCalculationPanel } from "@/components/voto/UniversalCalculationPanel";
 import { UniversalCreationPanel } from "@/components/voto/UniversalCreationPanel";
 import { ClassroomSeatingTool } from "@/components/voto/ClassroomSeatingTool";
-import { PeriodPicker } from "@/components/voto/PeriodPicker";
-import { SimulatorTool } from "@/components/voto/SimulatorTool";
+import { PhotoImportTool, InterrogationPrepTool } from "@/components/voto/StudyLabFeatures";
+import { FlashcardsTool, WheelTool } from "@/components/voto/StudyTools";
+import { StudyPlannerTool } from "@/components/voto/StudyPlannerTool";
 import type { UniversalToolId } from "@/lib/voto/universal-calculator";
 
 const HISTORY_KEY = "voto.studio.universal-calculator.history.v1";
 const HISTORY_LIMIT = 12;
 
-type ToolId = UniversalToolId;
-type Category = "Tutti" | "Calcoli" | "Conversioni" | "Documenti e creazione";
+type StudyToolId = "photo-import" | "flashcards" | "planner" | "interrogation-prep" | "wheel";
+type ToolId = Exclude<UniversalToolId, "average" | "absence" | "simulator"> | StudyToolId;
+type HistoryToolId = UniversalToolId | StudyToolId;
+type Category = "Tutti" | "Calcoli" | "Conversioni" | "Documenti e creazione" | "Studio";
 
 type HistoryEntry = {
   id: string;
-  toolId: ToolId;
+  toolId: HistoryToolId;
   toolTitle: string;
   calculation: string;
   result: string;
@@ -84,33 +91,6 @@ const TOOLS: {
     keywords: "saldi percentuale prezzo",
     icon: Percent,
     tone: "text-danger",
-  },
-  {
-    id: "average",
-    title: "Calcolo media",
-    description: "Calcola rapidamente la media semplice di più numeri",
-    category: "Calcoli",
-    keywords: "media voti numeri average scuola",
-    icon: Calculator,
-    tone: "text-success",
-  },
-  {
-    id: "absence",
-    title: "Calcolo assenze",
-    description: "Controlla ore residue e simula nuove assenze",
-    category: "Calcoli",
-    keywords: "assenze ore limite giornate scuola",
-    icon: CalendarX2,
-    tone: "text-warning",
-  },
-  {
-    id: "simulator",
-    title: "Simulatore voti",
-    description: "Pianifica i voti futuri nelle tue materie",
-    category: "Calcoli",
-    keywords: "simulatore voto media materie voti futuri obiettivo",
-    icon: Calculator,
-    tone: "text-success",
   },
   {
     id: "interval",
@@ -176,10 +156,66 @@ const TOOLS: {
     icon: Table2,
     tone: "text-primary",
   },
+  {
+    id: "photo-import",
+    title: "Importa da foto",
+    description: "Estrai testo da una foto o uno screenshot con OCR locale",
+    category: "Studio",
+    keywords: "foto immagine screenshot appunti lavagna OCR",
+    icon: Camera,
+    tone: "text-success",
+  },
+  {
+    id: "flashcards",
+    title: "Flashcard",
+    description: "Crea, importa e ripassa le tue carte",
+    category: "Studio",
+    keywords: "flashcard flash cards domanda risposta carte ripasso",
+    icon: Layers,
+    tone: "text-success",
+  },
+  {
+    id: "planner",
+    title: "Planner di studio",
+    description: "Pianifica cosa studiare, quando e per quanto tempo",
+    category: "Studio",
+    keywords: "piano pianificazione sessioni studio materia argomento",
+    icon: ListChecks,
+    tone: "text-primary",
+  },
+  {
+    id: "interrogation-prep",
+    title: "Prima dell’interrogazione",
+    description: "Checklist, argomenti, conto alla rovescia e domande di ripasso",
+    category: "Studio",
+    keywords: "interrogazione preparazione checklist domande ripasso",
+    icon: ListChecks,
+    tone: "text-warning",
+  },
+  {
+    id: "wheel",
+    title: "Ruota del ripasso",
+    description: "Lascia decidere al caso cosa ripassare",
+    category: "Studio",
+    keywords: "ruota casuale argomenti ripasso",
+    icon: CircleDot,
+    tone: "text-warning",
+  },
 ];
 
-const CATEGORIES: Category[] = ["Tutti", "Calcoli", "Conversioni", "Documenti e creazione"];
-const VALID_TOOL_IDS = new Set<ToolId>(TOOLS.map(({ id }) => id));
+const CATEGORIES: Category[] = [
+  "Tutti",
+  "Calcoli",
+  "Conversioni",
+  "Documenti e creazione",
+  "Studio",
+];
+const VALID_TOOL_IDS = new Set<string>([
+  ...TOOLS.map(({ id }) => id),
+  "average",
+  "absence",
+  "simulator",
+]);
 
 function loadHistory(): HistoryEntry[] {
   try {
@@ -233,7 +269,7 @@ export function UniversalCalculator() {
     });
   }, [category, search]);
 
-  function recordCalculation(toolId: ToolId, calculation: string, result: string) {
+  function recordCalculation(toolId: UniversalToolId, calculation: string, result: string) {
     const toolTitle = TOOLS.find((item) => item.id === toolId)?.title ?? "Calcolo";
     setHistory((current) =>
       [
@@ -259,18 +295,22 @@ export function UniversalCalculator() {
           </Button>
           {tool === "classroom" ? (
             <ClassroomSeatingTool />
-          ) : tool === "simulator" ? (
-            <div className="space-y-4">
-              <h4 className="font-display text-xl font-semibold">Simulatore voti</h4>
-              <PeriodPicker />
-              <SimulatorTool />
-            </div>
+          ) : tool === "photo-import" ? (
+            <PhotoImportTool />
+          ) : tool === "flashcards" ? (
+            <FlashcardsTool />
+          ) : tool === "planner" ? (
+            <StudyPlannerTool />
+          ) : tool === "interrogation-prep" ? (
+            <InterrogationPrepTool />
+          ) : tool === "wheel" ? (
+            <WheelTool />
           ) : tool === "scientific" ||
-          tool === "converter" ||
-          tool === "interval" ||
-          tool === "fractions" ||
-          tool === "vat" ||
-          tool === "discount" ? (
+            tool === "converter" ||
+            tool === "interval" ||
+            tool === "fractions" ||
+            tool === "vat" ||
+            tool === "discount" ? (
             <UniversalCalculationPanel tool={tool} onCalculation={recordCalculation} />
           ) : (
             <UniversalCreationPanel tool={tool} />

@@ -893,7 +893,7 @@ export function CircularViewer({
                 {effectiveAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
                   : effectiveAiMode === "api-vision"
-                    ? "Solo quando premi Chiedi, vengono inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF. Il documento esce dal dispositivo e la chiamata usa la quota API (eventuali limiti/costi dipendono dall’account). Non vengono inviati titolo, cronologia, voti o presenze."
+                    ? "Solo quando premi Chiedi, Groq riceve la domanda e le immagini JPEG delle prime 3 pagine PDF, che escono dal dispositivo. Titolo, cronologia, voti e presenze non vengono inviati."
                     : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
