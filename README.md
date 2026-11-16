@@ -34,14 +34,6 @@ Il monitor DidUP acquisisce i PDF e i DOCX tramite la sessione autenticata e li 
 
 L’accesso ai voti e agli altri dati scolastici privati richiede il login descritto sopra; la modalità demo è separata e non concede accesso a quei dati. Il pulsante **Controlla nuove circolari** avvia invece il workflow GitHub `check.yml`: è un’azione distinta dall’autorizzazione a leggere il registro e viene limitata se esiste già un controllo in corso o se il workflow è stato avviato negli ultimi 3 minuti. Per abilitarlo, configura nel repository `voto-school-compass` il secret Actions `VOTO_CIRCULAR_TRIGGER_TOKEN`, usando un fine-grained token limitato al repository `didup-monitor` con permesso `Actions: Read and write`. Il token GitHub resta nel secret runtime della Edge Function Supabase: non inserirlo nel codice o in variabili `VITE_` e non condividerlo. L’esecuzione è ulteriormente controllata dal workflow e dal cooldown lato server.
 
-## Google Calendar (Orario)
-
-Il pulsante **Collega Google Calendar** nella sezione Orario invia le lezioni compilate al calendario Google principale come serie settimanali, nel fuso `Europe/Rome` e fino alla data scelta. A ogni invio VOTO crea le serie mancanti, aggiorna quelle già create ed elimina soltanto le serie marcate come create da VOTO che non sono più presenti nell’orario; gli altri eventi del calendario non vengono toccati. Google chiede il consenso; l’email della sessione VOTO è usata solo come suggerimento per selezionare l’account. VOTO non salva password o client secret; l’access token resta solo in memoria per la sincronizzazione e non viene persistito.
-
-Per la Web App, abilita **Google Calendar API**, configura la schermata di consenso OAuth e crea un client OAuth di tipo **Web application** con origine JavaScript autorizzata `https://voto-school-compass.lovable.app`. Il Client ID pubblico di produzione è già configurato nel frontend; `VITE_GOOGLE_CALENDAR_CLIENT_ID` resta disponibile come override facoltativo per lo sviluppo locale. VOTO richiede soltanto lo scope `https://www.googleapis.com/auth/calendar.events.owned`; in modalità di test aggiungi l’account Google interessato tra i test user della schermata di consenso. Non inserire mai il client secret nel frontend.
-
-Google non consente OAuth dentro la WebView incorporata dell’APK. Questa repository non contiene il progetto nativo Android: il pulsante nell’APK indica di usare temporaneamente VOTO in Chrome. Per abilitare il collegamento nell’APK serve un aggiornamento nativo con browser esterno/Custom Tabs, callback verso l’app e client OAuth Android registrato per `it.voto.app` con l’impronta SHA-1 del certificato di firma.
-
 ## APK Android (Capacitor)
 
 ```

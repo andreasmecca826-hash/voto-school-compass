@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarClock, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 import { useState } from "react";
-import { ScheduleCalendarExport } from "@/components/voto/ScheduleCalendarExport";
 import { SectionTitle } from "@/components/voto/ui";
 import { useVoto } from "@/lib/voto/store";
 import { DAYS, loadSchedule, saveSchedule, type DayId, type Schedule } from "@/lib/voto/orario";
@@ -179,9 +178,6 @@ function Orario() {
             Nessuna lezione prevista nel fine settimana.
           </p>
         )}
-        <div className="mx-1.5 mt-4">
-          <ScheduleCalendarExport schedule={schedule} isDidup />
-        </div>
       </div>
     );
   }
@@ -241,9 +237,6 @@ function Orario() {
       <p className="mt-4 text-center text-[11px] text-muted-foreground">
         Le modifiche vengono salvate automaticamente sul dispositivo.
       </p>
-      <div className="mt-4">
-        <ScheduleCalendarExport schedule={schedule} />
-      </div>
     </div>
   );
 }
