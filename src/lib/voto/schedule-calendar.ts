@@ -196,6 +196,105 @@ export function createScheduleCalendarIcs(
   return { content: `${lines.map(foldLine).join("\r\n")}\r\n`, eventCount: events.length };
 }
 
+export interface GoogleScheduleEventDraft {
+  id: string;
+  summary: string;
+  description: string;
+  start: { dateTime: string; timeZone: string };
+  end: { dateTime: string; timeZone: string };
+  recurrence: string[];
+  extendedProperties: { private: { votoSource: string } };
+}
+
+function formatGoogleTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}:00`;
+}
+
+function weeklyOccurrenceCount(firstDate: string, untilDate: string): number {
+  const first = Date.parse(`${firstDate}T00:00:00.000Z`);
+  const last = Date.parse(`${untilDate}T00:00:00.000Z`);
+  return Math.floor((last - first) / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
+
+export function createScheduleCalendarGoogleEvents(
+  schedule: Schedule,
+  options: ScheduleCalendarOptions,
+): GoogleScheduleEventDraft[] {
+  if (
+    !isValidDate(options.fromDate) ||
+    !isValidDate(options.untilDate) ||
+    options.fromDate > options.untilDate
+  ) {
+    throw new RangeError("Seleziona un intervallo di date valido.");
+  }
+  if (!TIME_ONLY.test(options.firstLessonTime)) {
+    throw new RangeError("Inserisci un orario di inizio valido.");
+  }
+  if (
+    !Number.isInteger(options.lessonMinutes) ||
+    options.lessonMinutes < 1 ||
+    options.lessonMinutes > 360
+  ) {
+    throw new RangeError("La durata della lezione deve essere compresa tra 1 e 360 minuti.");
+  }
+  if (
+    !Number.isInteger(options.breakMinutes) ||
+    options.breakMinutes < 0 ||
+    options.breakMinutes > 120
+  ) {
+    throw new RangeError("L’intervallo tra le lezioni deve essere compreso tra 0 e 120 minuti.");
+  }
+
+  const firstStart =
+    Number(options.firstLessonTime.slice(0, 2)) * 60 + Number(options.firstLessonTime.slice(3, 5));
+  const step = options.lessonMinutes + options.breakMinutes;
+  const events: GoogleScheduleEventDraft[] = [];
+
+  DAYS.forEach(({ id }, weekdayIndex) => {
+    const lessons = schedule[id] ?? [];
+    const firstDate = nextWeekday(options.fromDate, weekdayIndex + 1);
+    if (firstDate > options.untilDate) return;
+
+    lessons.forEach((rawSubject, lessonIndex) => {
+      const subject = rawSubject.trim();
+      if (!subject) return;
+
+      const startMinutes = firstStart + lessonIndex * step;
+      const endMinutes = startMinutes + options.lessonMinutes;
+      if (startMinutes >= 24 * 60 || endMinutes > 24 * 60) {
+        throw new RangeError(
+          "Gli orari delle lezioni superano la mezzanotte; controlla durata e intervallo.",
+        );
+      }
+
+      const endsAtMidnight = endMinutes === 24 * 60;
+      const endDate = endsAtMidnight ? addDays(firstDate, 1) : firstDate;
+      const googleId = `votoorario${id}${lessonIndex + 1}`;
+      events.push({
+        id: googleId,
+        summary: `${subject} · ${lessonIndex + 1}ª ora`,
+        description: "Lezione ricorrente dell’orario scolastico VOTO.",
+        start: {
+          dateTime: `${firstDate}T${formatGoogleTime(startMinutes)}`,
+          timeZone: "Europe/Rome",
+        },
+        end: {
+          dateTime: `${endDate}T${formatGoogleTime(endsAtMidnight ? 0 : endMinutes)}`,
+          timeZone: "Europe/Rome",
+        },
+        recurrence: [
+          `RRULE:FREQ=WEEKLY;BYDAY=${BY_DAY[id]};COUNT=${weeklyOccurrenceCount(firstDate, options.untilDate)}`,
+        ],
+        extendedProperties: { private: { votoSource: "orario" } },
+      });
+    });
+  });
+
+  return events;
+}
+
 export function localDateString(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

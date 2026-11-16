@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { emptySchedule } from "@/lib/voto/orario";
-import { createScheduleCalendarIcs, getDefaultSchoolYearEnd } from "@/lib/voto/schedule-calendar";
+import {
+  createScheduleCalendarGoogleEvents,
+  createScheduleCalendarIcs,
+  getDefaultSchoolYearEnd,
+} from "@/lib/voto/schedule-calendar";
 
 const baseOptions = {
   fromDate: "2026-11-09",
@@ -70,5 +74,46 @@ describe("createScheduleCalendarIcs", () => {
   it("calcola la fine predefinita dell’anno scolastico", () => {
     expect(getDefaultSchoolYearEnd(new Date(2026, 10, 7))).toBe("2027-06-30");
     expect(getDefaultSchoolYearEnd(new Date(2027, 2, 1))).toBe("2027-06-30");
+  });
+});
+
+describe("createScheduleCalendarGoogleEvents", () => {
+  it("genera una serie settimanale per ogni materia con ora italiana e ID ripetibile", () => {
+    const schedule = emptySchedule();
+    schedule.lunedi[0] = "Matematica, algebra";
+    schedule.lunedi[2] = "Scienze";
+    schedule.martedi[0] = "Inglese";
+
+    const events = createScheduleCalendarGoogleEvents(schedule, baseOptions);
+
+    expect(events).toHaveLength(3);
+    expect(events[0]).toMatchObject({
+      id: "votoorariolunedi1",
+      summary: "Matematica, algebra · 1ª ora",
+      start: { dateTime: "2026-11-09T08:00:00", timeZone: "Europe/Rome" },
+      end: { dateTime: "2026-11-09T08:50:00", timeZone: "Europe/Rome" },
+      recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO;COUNT=34"],
+      extendedProperties: { private: { votoSource: "orario" } },
+    });
+    expect(events[1].start.dateTime).toBe("2026-11-09T10:00:00");
+    expect(events[2].start.dateTime).toBe("2026-11-10T08:00:00");
+    expect(events[2].recurrence).toEqual(["RRULE:FREQ=WEEKLY;BYDAY=TU;COUNT=34"]);
+  });
+
+  it("esclude le lezioni che iniziano dopo la data finale e rifiuta parametri non validi", () => {
+    const schedule = emptySchedule();
+    schedule.lunedi[0] = "Matematica";
+    schedule.venerdi[1] = "Storia";
+
+    expect(
+      createScheduleCalendarGoogleEvents(schedule, {
+        ...baseOptions,
+        fromDate: "2026-11-10",
+        untilDate: "2026-11-12",
+      }),
+    ).toHaveLength(0);
+    expect(() =>
+      createScheduleCalendarGoogleEvents(schedule, { ...baseOptions, firstLessonTime: "25:00" }),
+    ).toThrow(RangeError);
   });
 });
