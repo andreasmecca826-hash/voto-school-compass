@@ -441,7 +441,62 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(secondAttachmentTab);
 
     expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("document", { name: "secondo.pdf" })).toBeInTheDocument();
+    const secondPreview = screen.getByRole("document", { name: "secondo.pdf" });
+    expect(secondPreview).toBeInTheDocument();
+    expect(secondPreview.getAttribute("data-preview-src")).toContain(
+      encodeURIComponent(`circulars/${"e".repeat(64)}.pdf`),
+    );
+  });
+
+  it("reimposta la selezione quando cambia circolare anche se il titolo non cambia", async () => {
+    const firstCircularAttachments = [
+      { name: "precedente-1.pdf", path: `circulars/${"a".repeat(64)}.pdf` },
+      { name: "precedente-2.pdf", path: `circulars/${"b".repeat(64)}.pdf` },
+    ];
+    const { rerender } = render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare della scuola"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        attachments={firstCircularAttachments}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "precedente-2.pdf" }));
+    expect(screen.getByRole("tab", { name: "precedente-2.pdf" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    const nextCircularAttachments = [
+      { name: "nuovo-1.pdf", path: `circulars/${"c".repeat(64)}.pdf` },
+      { name: "nuovo-2.pdf", path: `circulars/${"d".repeat(64)}.pdf` },
+    ];
+    rerender(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare della scuola"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        attachments={nextCircularAttachments}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "nuovo-1.pdf" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    const newPreview = screen.getByRole("document", { name: "nuovo-1.pdf" });
+    expect(newPreview.getAttribute("data-preview-src")).toContain(
+      encodeURIComponent(`circulars/${"c".repeat(64)}.pdf`),
+    );
   });
 
   it("mostra il numero di tabelle dell'allegato attivo", () => {

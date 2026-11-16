@@ -280,6 +280,9 @@ export function CircularViewer({
   extractedText?: string | undefined;
 }) {
   const files = mergeAttachments(attachments, { name: fileName, path, url });
+  const attachmentIdentity = JSON.stringify(
+    files.map((file) => [file.path ?? "", file.url ?? "", file.name ?? ""]),
+  );
   const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomControlsOpen, setIsZoomControlsOpen] = useState(false);
@@ -351,7 +354,7 @@ export function CircularViewer({
       setIsAskingAi(false);
       aiRequestId.current += 1;
     }
-  }, [open, title]);
+  }, [attachmentIdentity, open, title]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
