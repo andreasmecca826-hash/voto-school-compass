@@ -300,8 +300,12 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
     fireEvent.click(await screen.findByRole("button", { name: "API visiva (Qwen)" }));
     expect(
-      screen.getByText(/inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF/i),
+      screen.getByText(/Groq riceve la domanda e le immagini JPEG delle prime 3 pagine PDF/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Verifica sempre la risposta sul documento originale/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/quota API|crediti|limiti|costi|account/i)).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
       target: { value: "Quando scade?" },
     });
