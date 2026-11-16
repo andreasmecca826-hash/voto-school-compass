@@ -18,11 +18,6 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -32,6 +27,148 @@
             </intent-filter>
 
         </activity>
+
+        <activity-alias
+            android:name=".MainActivityIconVoto"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_voto"
+            android:icon="@mipmap/ic_launcher"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconFamiglia"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_voto"
+            android:icon="@drawable/voto_family"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconClasseviva"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_voto"
+            android:icon="@drawable/voto_classeviva"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconVotoDidupFamiglia"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_didup_famiglia"
+            android:icon="@mipmap/ic_launcher"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconVotoClasseviva"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_classeviva_studenti"
+            android:icon="@mipmap/ic_launcher"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconFamigliaDidupFamiglia"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_didup_famiglia"
+            android:icon="@drawable/voto_family"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconFamigliaClasseviva"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_classeviva_studenti"
+            android:icon="@drawable/voto_family"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconClassevivaDidupFamiglia"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_didup_famiglia"
+            android:icon="@drawable/voto_classeviva"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconClassevivaClasseviva"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_label_classeviva_studenti"
+            android:icon="@drawable/voto_classeviva"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconLibro"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_name"
+            android:icon="@drawable/voto_family"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconStella"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_name"
+            android:icon="@drawable/voto_classeviva"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

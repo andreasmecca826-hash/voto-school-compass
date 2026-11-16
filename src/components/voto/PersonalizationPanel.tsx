@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  AppWindow,
   BadgeCheck,
   ChevronDown,
   ChevronUp,
@@ -24,6 +25,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SectionTitle } from "@/components/voto/ui";
+import { AppIconPanel } from "@/components/voto/AppIconPanel";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
 import { processCustomThemeBackground } from "@/lib/voto/custom-theme-background";
@@ -44,7 +46,7 @@ import {
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience" | "typography" | "registry";
+type View = "menu" | "themes" | "home" | "experience" | "typography" | "registry" | "app-icon";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -360,21 +362,6 @@ export function PersonalizationPanel() {
               Scegli l’aspetto VOTO o DidUP
             </span>
           </button>
-          {v.theme === "original" && v.registryStyle === "voto" && (
-            <button
-              type="button"
-              onClick={() => setView("typography")}
-              className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-                <Type className="h-7 w-7" />
-              </span>
-              <span className="font-semibold">Tipografia</span>
-              <span className="text-center text-[11px] text-muted-foreground">
-                Font e dimensione dell’interfaccia
-              </span>
-            </button>
-          )}
           <button
             type="button"
             onClick={openMusic}
@@ -388,14 +375,29 @@ export function PersonalizationPanel() {
               Brani dal dispositivo o da URL
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setView("app-icon")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <AppWindow className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Icona app</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Scegli l’icona della schermata Home
+            </span>
+          </button>
         </div>
       </div>
     );
 
+  if (view === "app-icon") return <AppIconPanel onBack={() => setView("menu")} />;
+
   if (view === "typography")
     return (
       <div className={pageClassName}>
-        <BackButton onClick={() => setView("menu")} title="Tipografia" />
+        <BackButton onClick={() => setView("themes")} title="Tipografia" />
         <SectionTitle>Font dell’app</SectionTitle>
         <p className="mb-3 text-[11px] text-muted-foreground">
           Il font scelto si applica a tutti i temi. “Come il tema” ripristina lo stile tipografico
@@ -778,6 +780,26 @@ export function PersonalizationPanel() {
           tinta del desktop e delle cornici; il menu Start raccoglie tutte le sezioni di VOTO.
           {v.registryStyle === "didup" && " Per visualizzarlo, scegli lo stile del registro VOTO."}
         </p>
+      )}
+      {v.theme === "original" && v.registryStyle === "voto" && (
+        <>
+          <SectionTitle>Tipografia</SectionTitle>
+          <button
+            type="button"
+            onClick={() => setView("typography")}
+            className="press card-surface flex w-full items-center gap-3 p-4 text-left"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Type className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Font e dimensione</span>
+              <span className="mt-1 block text-[11px] text-muted-foreground">
+                Personalizza il testo e l’interfaccia
+              </span>
+            </span>
+          </button>
+        </>
       )}
       {v.theme === "emoji" && (
         <section className="card-surface mt-3 p-4">

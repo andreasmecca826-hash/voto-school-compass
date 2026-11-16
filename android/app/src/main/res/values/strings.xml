@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">VOTO.</string>
     <string name="title_activity_main">VOTO.</string>
+    <string name="app_label_voto">VOTO</string>
+    <string name="app_label_didup_famiglia">didUP Famiglia</string>
+    <string name="app_label_classeviva_studenti">ClasseViva Studenti e Famiglie</string>
     <string name="package_name">it.voto.school</string>
     <string name="custom_url_scheme">it.voto.school</string>
 </resources>

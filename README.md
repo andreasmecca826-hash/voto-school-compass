@@ -44,13 +44,11 @@ Google non consente OAuth dentro la WebView incorporata dell’APK. Questa repos
 
 ## APK Android (Capacitor)
 
+Da **Personalizza → Icona app** nell’app Android puoi scegliere l’icona VOTO o una delle due icone incluse e applicare una delle etichette **VOTO**, **didUP Famiglia** o **ClasseViva Studenti e Famiglie**. Per un’immagine dalla galleria puoi creare un collegamento personale alla schermata Home, con nome personalizzato e conferma del launcher, e nasconderne il testo. Il launcher può sovrapporre un badge all’icona del collegamento; Android non offre all’app un comando per disabilitarlo. Nel browser la funzione non è disponibile. Per preparare l’APK aggiornata, crea prima il bundle e sincronizzalo con il progetto Android:
+
 ```
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init VOTO it.voto.app
 npm run build
-npx cap add android
 npx cap sync android
-npx cap open android
 ```
 
-Usa sempre un URL HTTPS per il JSON.
+Poi genera e firma l’APK dal progetto `android`. Usa sempre un URL HTTPS per il JSON.
