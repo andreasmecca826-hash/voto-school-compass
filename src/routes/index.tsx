@@ -283,7 +283,7 @@ function Dashboard() {
               <span className="flex-1">
                 <span className="block text-sm font-semibold">Studio Lab</span>
                 <span className="block text-xs text-muted-foreground">
-                  Calcolo media e simulatore voti
+                  Calcolo media, assenze e strumenti di studio
                 </span>
               </span>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
