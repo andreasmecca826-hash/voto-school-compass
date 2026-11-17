@@ -7,15 +7,53 @@ import json
 import re
 import secrets
 import string
+import time
 import urllib.parse
 import urllib.request
 import zipfile
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import PurePosixPath
 from typing import Any
 
 from didup_auth import AuthError, USER_AGENT, _opener, _request, oauth_login
 
 API_BASE = "https://www.portaleargo.it/appfamiglia/api/rest/"
+
+# Errori transitori (429/5xx): l'app ritenta da sola, come fa il monitor,
+# invece di mostrare subito un errore per un singolo picco del server.
+TRANSIENT_RETRY_DELAYS = (2.0, 8.0)
+MAX_TRANSIENT_ATTEMPTS = len(TRANSIENT_RETRY_DELAYS) + 1
+MAX_RETRY_AFTER_SECONDS = 30.0
+
+
+def _header(headers: Any, name: str) -> str:
+    """Legge un header senza dipendere dalla maiuscolatura o dal tipo."""
+    getter = getattr(headers, "get", None)
+    if not callable(getter):
+        return ""
+    value = getter(name)
+    if value is None:
+        value = getter(name.lower())
+    return str(value or "").strip()
+
+
+def _retry_after_seconds(headers: Any) -> float | None:
+    """Secondi indicati da ``Retry-After`` (numero o data HTTP), entro un tetto."""
+    raw = _header(headers, "Retry-After")
+    if not raw:
+        return None
+    try:
+        seconds = float(raw)
+    except ValueError:
+        try:
+            moment = parsedate_to_datetime(raw)
+        except (TypeError, ValueError):
+            return None
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=timezone.utc)
+        seconds = (moment - datetime.now(timezone.utc)).total_seconds()
+    return max(0.0, min(seconds, MAX_RETRY_AFTER_SECONDS))
 
 
 class DidupError(Exception):
@@ -117,18 +155,30 @@ class DidupClient:
                 headers["x-cod-min"] = str(cod_min)
         data = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8") if payload is not None else None
         url = urllib.parse.urljoin(API_BASE, path)
-        try:
-            status, _, body = _request(self.opener, method, url, data=data, headers=headers, timeout=60)
-        except Exception:
-            raise DidupError("didup_network", retryable=True)
-        if status in (401, 403):
-            raise DidupError("didup_credentials_rejected", http_status=status, endpoint=path)
-        if status == 429 or status >= 500:
-            raise DidupError(
-                "didup_temporarily_unavailable", retryable=True, http_status=status, endpoint=path
-            )
-        if status < 200 or status >= 300:
-            raise DidupError("didup_api_error", http_status=status, endpoint=path)
+        for attempt in range(1, MAX_TRANSIENT_ATTEMPTS + 1):
+            try:
+                status, response_headers, body = _request(
+                    self.opener, method, url, data=data, headers=headers, timeout=60
+                )
+            except Exception:
+                raise DidupError("didup_network", retryable=True)
+            if status in (401, 403):
+                raise DidupError("didup_credentials_rejected", http_status=status, endpoint=path)
+            if status == 429 or status >= 500:
+                if attempt < MAX_TRANSIENT_ATTEMPTS:
+                    delay = _retry_after_seconds(response_headers)
+                    if delay is None:
+                        delay = TRANSIENT_RETRY_DELAYS[
+                            min(attempt - 1, len(TRANSIENT_RETRY_DELAYS) - 1)
+                        ]
+                    time.sleep(delay)
+                    continue
+                raise DidupError(
+                    "didup_temporarily_unavailable", retryable=True, http_status=status, endpoint=path
+                )
+            if status < 200 or status >= 300:
+                raise DidupError("didup_api_error", http_status=status, endpoint=path)
+            break
         try:
             result = json.loads(body.decode("utf-8")) if body else {}
         except (UnicodeDecodeError, json.JSONDecodeError):
@@ -141,7 +191,7 @@ class DidupClient:
         return result
 
     def login(self) -> tuple[dict[str, Any], dict[str, Any]]:
-        token_data = oauth_login(self.school_code, self.username, self.password)
+        token_data = self._oauth_login()
         self.access_token = token_data["access_token"]
         self.api_version = token_data.get("version") or "1.29.2"
         response = self._api(
@@ -179,6 +229,22 @@ class DidupClient:
         dashboard = _extract_dashboard(dashboard_response)
         profile = self._profile()
         return dashboard, profile
+
+    def _oauth_login(self) -> dict[str, Any]:
+        """Login OAuth con un breve backoff sui soli errori transitori del server."""
+        for attempt in range(1, MAX_TRANSIENT_ATTEMPTS + 1):
+            try:
+                return oauth_login(self.school_code, self.username, self.password)
+            except AuthError as error:
+                transient = error.status == 429 or (
+                    error.status is not None and error.status >= 500
+                )
+                if not transient or attempt >= MAX_TRANSIENT_ATTEMPTS:
+                    raise
+                time.sleep(
+                    TRANSIENT_RETRY_DELAYS[min(attempt - 1, len(TRANSIENT_RETRY_DELAYS) - 1)]
+                )
+        raise AssertionError("unreachable")
 
     def _profile(self) -> dict[str, Any]:
         try:
