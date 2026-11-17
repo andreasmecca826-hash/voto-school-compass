@@ -39,6 +39,14 @@ function formatDate(value: string) {
     : new Intl.DateTimeFormat("it-IT", { dateStyle: "short", timeStyle: "short" }).format(date);
 }
 
+function intervalLabel(minutes: number) {
+  return (
+    SYNC_INTERVAL_OPTIONS.find((option) => option.minutes === minutes)?.label.toLocaleLowerCase(
+      "it-IT",
+    ) ?? `ogni ${minutes} minuti`
+  );
+}
+
 function statusLabel(status: DidupSyncStatus) {
   if (status.status === "success") return "Sincronizzazione riuscita";
   if (status.status === "queued") return "Sincronizzazione in coda";
@@ -153,14 +161,19 @@ export function DidupSyncSettings() {
   }
 
   async function handleEnabledChange(enabled: boolean) {
+    const previousEnabled = status.enabled;
     setBusy(true);
+    setStatus((current) => ({ ...current, enabled }));
     try {
       await setNativeDidupSyncEnabled(enabled, intervalMinutes);
       await refreshStatus();
+      // Mantieni lo stato richiesto anche se il bridge restituisce per un istante il valore cache.
+      setStatus((current) => ({ ...current, enabled }));
       toast.success(
         enabled ? "Sincronizzazione periodica attivata." : "Sincronizzazione periodica sospesa.",
       );
     } catch {
+      setStatus((current) => ({ ...current, enabled: previousEnabled }));
       toast.error("Non è stato possibile aggiornare la pianificazione.");
     } finally {
       setBusy(false);
@@ -228,6 +241,11 @@ export function DidupSyncSettings() {
             >
               {statusLabel(status)}
             </p>
+            <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+              {status.hasCredentials
+                ? `Controllo periodico ${status.enabled ? "attivo" : "sospeso"} · ${intervalLabel(status.intervalMinutes)}`
+                : "Salva le credenziali DidUP per attivare il controllo periodico."}
+            </p>
           </div>
           {status.hasCredentials && (
             <button
@@ -237,19 +255,31 @@ export function DidupSyncSettings() {
               disabled={busy}
               onClick={() => void handleEnabledChange(!status.enabled)}
               className={cn(
-                "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60",
-                status.enabled ? "bg-primary" : "bg-muted",
+                "press inline-flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                status.enabled
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-border bg-background text-muted-foreground",
               )}
-              aria-label={
+              aria-label="Sincronizzazione periodica DidUP"
+              title={
                 status.enabled ? "Sospendi sincronizzazione DidUP" : "Attiva sincronizzazione DidUP"
               }
             >
               <span
+                aria-hidden="true"
                 className={cn(
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-                  status.enabled ? "translate-x-[22px]" : "translate-x-0.5",
+                  "relative block h-6 w-11 shrink-0 rounded-full transition-colors",
+                  status.enabled ? "bg-success" : "bg-muted",
                 )}
-              />
+              >
+                <span
+                  className={cn(
+                    "absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                    status.enabled ? "translate-x-5" : "translate-x-0",
+                  )}
+                />
+              </span>
+              <span>{status.enabled ? "Attiva" : "Sospesa"}</span>
             </button>
           )}
         </div>
