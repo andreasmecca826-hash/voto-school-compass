@@ -88,6 +88,21 @@ public class DidupSyncPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setQuietHours(PluginCall call) {
+        boolean enabled = call.getBoolean("enabled", true);
+        String startTime = call.getString("startTime", DidupSyncVault.DEFAULT_QUIET_HOURS_START);
+        String endTime = call.getString("endTime", DidupSyncVault.DEFAULT_QUIET_HOURS_END);
+        try {
+            DidupSyncVault.setQuietHours(getContext(), enabled, startTime, endTime);
+            call.resolve();
+        } catch (IllegalArgumentException error) {
+            call.reject(error.getMessage());
+        } catch (Exception error) {
+            call.reject("Impossibile salvare la fascia senza controlli.");
+        }
+    }
+
+    @PluginMethod
     public void setEnabled(PluginCall call) {
         boolean enabled = call.getBoolean("enabled", false);
         int intervalMinutes = call.getInt("intervalMinutes", DidupSyncVault.intervalMinutes(getContext()));

@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -34,6 +35,11 @@ final class DidupSyncVault {
     private static final String KEY_EXPIRES = "supabase_expires_at";
     private static final String KEY_INTERVAL_MINUTES = "interval_minutes";
     private static final String LEGACY_INTERVAL_HOURS = "interval_hours";
+    private static final String KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled";
+    private static final String KEY_QUIET_HOURS_START = "quiet_hours_start";
+    private static final String KEY_QUIET_HOURS_END = "quiet_hours_end";
+    static final String DEFAULT_QUIET_HOURS_START = "00:00";
+    static final String DEFAULT_QUIET_HOURS_END = "06:00";
 
     private DidupSyncVault() {}
 
@@ -176,6 +182,54 @@ final class DidupSyncVault {
         prefs(context).edit().putBoolean("enabled", enabled).apply();
     }
 
+    static synchronized void setQuietHours(Context context, boolean enabled, String startTime,
+                                           String endTime) {
+        if (!isValidClockTime(startTime) || !isValidClockTime(endTime)) {
+            throw new IllegalArgumentException("Inserisci due orari validi nel formato HH:mm.");
+        }
+        if (enabled && startTime.equals(endTime)) {
+            throw new IllegalArgumentException("L’orario di inizio e quello di fine devono essere diversi.");
+        }
+        prefs(context).edit()
+                .putBoolean(KEY_QUIET_HOURS_ENABLED, enabled)
+                .putString(KEY_QUIET_HOURS_START, startTime)
+                .putString(KEY_QUIET_HOURS_END, endTime)
+                .apply();
+    }
+
+    static synchronized boolean isQuietHoursNow(Context context) {
+        Calendar localTime = Calendar.getInstance();
+        int minuteOfDay = localTime.get(Calendar.HOUR_OF_DAY) * 60 + localTime.get(Calendar.MINUTE);
+        SharedPreferences p = prefs(context);
+        return isWithinQuietHours(
+                p.getBoolean(KEY_QUIET_HOURS_ENABLED, true),
+                p.getString(KEY_QUIET_HOURS_START, DEFAULT_QUIET_HOURS_START),
+                p.getString(KEY_QUIET_HOURS_END, DEFAULT_QUIET_HOURS_END),
+                minuteOfDay
+        );
+    }
+
+    static boolean isWithinQuietHours(boolean enabled, String startTime, String endTime,
+                                      int minuteOfDay) {
+        if (!enabled || minuteOfDay < 0 || minuteOfDay >= 24 * 60
+                || !isValidClockTime(startTime) || !isValidClockTime(endTime)) return false;
+        int start = toMinutes(startTime);
+        int end = toMinutes(endTime);
+        if (start == end) return false;
+        if (start < end) return minuteOfDay >= start && minuteOfDay < end;
+        return minuteOfDay >= start || minuteOfDay < end;
+    }
+
+    private static boolean isValidClockTime(String value) {
+        if (value == null || !value.matches("(?:[01]\\d|2[0-3]):[0-5]\\d")) return false;
+        return true;
+    }
+
+    private static int toMinutes(String value) {
+        return Integer.parseInt(value.substring(0, 2)) * 60
+                + Integer.parseInt(value.substring(3, 5));
+    }
+
     static synchronized void setIntervalMinutes(Context context, int intervalMinutes) {
         prefs(context).edit()
                 .putInt(KEY_INTERVAL_MINUTES, Math.max(15, Math.min(1440, intervalMinutes)))
@@ -212,6 +266,9 @@ final class DidupSyncVault {
         result.put("hasCredentials", hasCredentials(context));
         result.put("hasSession", hasSession(context));
         result.put("intervalMinutes", intervalMinutes(context));
+        result.put("quietHoursEnabled", p.getBoolean(KEY_QUIET_HOURS_ENABLED, true));
+        result.put("quietHoursStart", p.getString(KEY_QUIET_HOURS_START, DEFAULT_QUIET_HOURS_START));
+        result.put("quietHoursEnd", p.getString(KEY_QUIET_HOURS_END, DEFAULT_QUIET_HOURS_END));
         result.put("status", p.getString("status", "idle"));
         result.put("message", p.getString("message", ""));
         result.put("lastSyncAt", p.getString("last_sync_at", ""));

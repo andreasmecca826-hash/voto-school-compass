@@ -8,6 +8,9 @@ export type DidupSyncStatus = {
   hasCredentials: boolean;
   hasSession: boolean;
   intervalMinutes: number;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
   status: string;
   message: string;
   lastSyncAt: string;
@@ -31,6 +34,7 @@ type NativeDidupSyncPlugin = {
   getStatus(): Promise<DidupSyncStatus>;
   syncNow(): Promise<{ queued: boolean }>;
   setEnabled(options: { enabled: boolean; intervalMinutes: number }): Promise<void>;
+  setQuietHours(options: { enabled: boolean; startTime: string; endTime: string }): Promise<void>;
   clear(): Promise<void>;
 };
 
@@ -82,6 +86,16 @@ export async function setNativeDidupSyncEnabled(enabled: boolean, intervalMinute
   if (!isAndroidDidupSyncAvailable())
     throw new Error("Funzione disponibile solo nell’app Android.");
   await NativeDidupSync.setEnabled({ enabled, intervalMinutes });
+}
+
+export async function setNativeDidupQuietHours(
+  enabled: boolean,
+  startTime: string,
+  endTime: string,
+) {
+  if (!isAndroidDidupSyncAvailable())
+    throw new Error("Funzione disponibile solo nell’app Android.");
+  await NativeDidupSync.setQuietHours({ enabled, startTime, endTime });
 }
 
 export async function clearNativeDidupSync() {

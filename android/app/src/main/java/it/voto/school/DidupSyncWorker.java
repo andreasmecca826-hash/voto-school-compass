@@ -37,6 +37,8 @@ public final class DidupSyncWorker extends Worker {
         Context context = getApplicationContext();
         boolean manual = getInputData().getBoolean("manual", false);
         if (!manual && !DidupSyncVault.isEnabled(context)) return Result.success();
+        // La pausa vale solo per i job periodici; il comando manuale resta disponibile.
+        if (!manual && DidupSyncVault.isQuietHoursNow(context)) return Result.success();
         if (!DidupSyncVault.hasCredentials(context)) {
             recordLocalError(context, "credentials_required", "Inserisci le credenziali DidUP per attivare la sincronizzazione.");
             return Result.failure();

@@ -6,6 +6,7 @@ import {
   getNativeDidupSyncStatus,
   requestNativeDidupSync,
   saveNativeDidupCredentials,
+  setNativeDidupQuietHours,
   setNativeDidupSyncEnabled,
   type DidupSyncStatus,
 } from "@/lib/native-didup-sync";
@@ -16,6 +17,9 @@ const DEFAULT_STATUS: DidupSyncStatus = {
   hasCredentials: false,
   hasSession: false,
   intervalMinutes: 360,
+  quietHoursEnabled: true,
+  quietHoursStart: "00:00",
+  quietHoursEnd: "06:00",
   status: "idle",
   message: "",
   lastSyncAt: "",
@@ -68,6 +72,9 @@ export function DidupSyncSettings() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState(360);
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(true);
+  const [quietHoursStart, setQuietHoursStart] = useState("00:00");
+  const [quietHoursEnd, setQuietHoursEnd] = useState("06:00");
   const [busy, setBusy] = useState(false);
   const pollTimer = useRef<number | null>(null);
 
@@ -77,6 +84,9 @@ export function DidupSyncSettings() {
       const next = await getNativeDidupSyncStatus();
       setStatus(next);
       setIntervalMinutes(next.intervalMinutes || 360);
+      setQuietHoursEnabled(next.quietHoursEnabled ?? true);
+      setQuietHoursStart(next.quietHoursStart || "00:00");
+      setQuietHoursEnd(next.quietHoursEnd || "06:00");
     } catch {
       // Native bridge availability is reflected by the platform check and build version.
     }
@@ -193,6 +203,35 @@ export function DidupSyncSettings() {
     }
   }
 
+  async function handleQuietHoursSave() {
+    if (quietHoursEnabled && quietHoursStart === quietHoursEnd) {
+      toast.error("Scegli due orari diversi per la pausa.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await setNativeDidupQuietHours(quietHoursEnabled, quietHoursStart, quietHoursEnd);
+      await refreshStatus();
+      setStatus((current) => ({
+        ...current,
+        quietHoursEnabled,
+        quietHoursStart,
+        quietHoursEnd,
+      }));
+      toast.success(
+        quietHoursEnabled
+          ? `Pausa automatica impostata dalle ${quietHoursStart} alle ${quietHoursEnd}.`
+          : "Pausa automatica disattivata.",
+      );
+    } catch (error) {
+      toast.error("Non è stato possibile salvare la fascia senza controlli.", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleClear() {
     setBusy(true);
     try {
@@ -243,7 +282,7 @@ export function DidupSyncSettings() {
             </p>
             <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
               {status.hasCredentials
-                ? `Controllo periodico ${status.enabled ? "attivo" : "sospeso"} · ${intervalLabel(status.intervalMinutes)}`
+                ? `Controllo periodico ${status.enabled ? "attivo" : "sospeso"} · ${intervalLabel(status.intervalMinutes)} · pausa ${status.quietHoursEnabled ? `${status.quietHoursStart}–${status.quietHoursEnd}` : "disattivata"}`
                 : "Salva le credenziali DidUP per attivare il controllo periodico."}
             </p>
           </div>
@@ -361,6 +400,63 @@ export function DidupSyncSettings() {
           </select>
         </div>
 
+        <fieldset className="space-y-3 rounded-xl border border-border bg-surface/40 p-3">
+          <legend className="px-1 text-xs font-semibold">Fascia senza controlli</legend>
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 text-[10px] leading-relaxed text-muted-foreground">
+              Ora locale del telefono; vale solo per i controlli automatici.
+            </p>
+            <label
+              htmlFor="didup-quiet-hours-enabled"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 text-xs font-semibold"
+            >
+              <input
+                id="didup-quiet-hours-enabled"
+                type="checkbox"
+                checked={quietHoursEnabled}
+                onChange={(event) => setQuietHoursEnabled(event.target.checked)}
+                disabled={busy}
+                className="h-4 w-4 accent-primary"
+              />
+              Pausa attiva
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label htmlFor="didup-quiet-hours-start" className="text-[11px] font-medium">
+              Non controllare dalle
+              <input
+                id="didup-quiet-hours-start"
+                type="time"
+                step="60"
+                value={quietHoursStart}
+                onChange={(event) => setQuietHoursStart(event.target.value)}
+                disabled={!quietHoursEnabled || busy}
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-2 text-sm disabled:opacity-50"
+              />
+            </label>
+            <label htmlFor="didup-quiet-hours-end" className="text-[11px] font-medium">
+              Fino alle
+              <input
+                id="didup-quiet-hours-end"
+                type="time"
+                step="60"
+                value={quietHoursEnd}
+                onChange={(event) => setQuietHoursEnd(event.target.value)}
+                disabled={!quietHoursEnabled || busy}
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-2 text-sm disabled:opacity-50"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleQuietHoursSave()}
+            className="press h-10 w-full rounded-xl border border-border text-xs font-semibold disabled:opacity-60"
+          >
+            Applica fascia oraria
+          </button>
+        </fieldset>
+
         <button
           type="submit"
           disabled={busy}
@@ -394,7 +490,8 @@ export function DidupSyncSettings() {
         Android esegue il controllo in background quando il sistema lo consente, con rete
         disponibile. L’intervallo è indicativo: modalità risparmio energetico, rete e criteri
         Android possono ritardare l’esecuzione. Il servizio non è garantito a orario fisso; dopo
-        aver forzato l’arresto dell’app, apri nuovamente VOTO per riattivare i job. La
+        aver forzato l’arresto dell’app, apri nuovamente VOTO per riattivare i job. La pausa
+        selezionata vale solo per i controlli automatici; “Controlla adesso” resta disponibile. La
         sincronizzazione si sospende al logout VOTO e puoi rimuovere in ogni momento le credenziali
         locali.
       </p>
