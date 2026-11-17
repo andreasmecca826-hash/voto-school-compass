@@ -10,7 +10,6 @@ import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
-import androidx.work.PeriodicWorkRequestBuilder;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -86,7 +85,9 @@ public final class DidupSyncWorker extends Worker {
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
         long interval = Math.max(1, Math.min(24, DidupSyncVault.intervalHours(app)));
-        PeriodicWorkRequest request = new PeriodicWorkRequestBuilder<DidupSyncWorker>(interval, TimeUnit.HOURS)
+        PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
+                DidupSyncWorker.class, interval, TimeUnit.HOURS
+        )
                 .setConstraints(constraints)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
                 .build();
