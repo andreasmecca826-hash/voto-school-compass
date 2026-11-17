@@ -19,6 +19,8 @@ from typing import Any
 from didup_auth import AuthError, USER_AGENT, _opener, _request, oauth_login
 
 API_BASE = "https://www.portaleargo.it/appfamiglia/api/rest/"
+WEB_API_BASE = "https://didattica.portaleargo.it/famiglia/api/"
+WEB_API_VERSION = "4.3.0"
 
 # Errori transitori (429/5xx): l'app ritenta da sola, come fa il monitor,
 # invece di mostrare subito un errore per un singolo picco del server.
@@ -146,6 +148,8 @@ class DidupClient:
         self.access_token = ""
         self.access_token_expires_at = 0
         self.api_version = "1.29.2"
+        self.api_base = API_BASE
+        self.api_mode = "legacy"
         self.profile_login: dict[str, Any] = {}
 
     def _api(self, method: str, path: str, *, payload: dict[str, Any] | None = None,
@@ -156,9 +160,11 @@ class DidupClient:
             "User-Agent": USER_AGENT,
             "argo-client-version": self.api_version,
         }
+        if self.api_mode == "web":
+            headers["os-type"] = "WEB"
         if self.access_token:
             headers["Authorization"] = "Bearer " + self.access_token
-            if self.access_token_expires_at:
+            if self.access_token_expires_at and self.api_mode != "web":
                 expires = datetime.fromtimestamp(self.access_token_expires_at)
                 headers["x-date-exp-auth"] = (
                     expires.strftime("%Y-%m-%d %H:%M:%S.")
@@ -172,7 +178,7 @@ class DidupClient:
             if cod_min:
                 headers["x-cod-min"] = str(cod_min)
         data = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8") if payload is not None else None
-        url = urllib.parse.urljoin(API_BASE, path)
+        url = urllib.parse.urljoin(self.api_base, path)
         for attempt in range(1, MAX_TRANSIENT_ATTEMPTS + 1):
             try:
                 status, response_headers, body = _request(
@@ -197,12 +203,15 @@ class DidupClient:
                 request_id = _safe_header_value(
                     response_headers, "X-Request-Id", "Request-Id", "X-Correlation-Id"
                 )
-                details = [f"client {self.api_version}"]
-                details.append(
-                    "header scadenza OAuth presente"
-                    if "x-date-exp-auth" in {key.lower() for key in headers}
-                    else "header scadenza OAuth assente"
-                )
+                details = [f"client {self.api_version}", f"api {self.api_mode}"]
+                if self.api_mode == "web":
+                    details.append("os-type WEB")
+                else:
+                    details.append(
+                        "header scadenza OAuth presente"
+                        if "x-date-exp-auth" in {key.lower() for key in headers}
+                        else "header scadenza OAuth assente"
+                    )
                 if server:
                     details.append(f"server {server}")
                 if request_id:
@@ -233,16 +242,38 @@ class DidupClient:
         self.access_token = token_data["access_token"]
         self.access_token_expires_at = int(token_data.get("expires_at") or 0)
         self.api_version = token_data.get("version") or "1.29.2"
-        response = self._api(
-            "POST",
-            "login",
-            payload={
-                "lista-opzioni-notifiche": "{}",
-                "lista-x-auth-token": "[]",
-                "clientID": _random_client_id(),
-            },
-            include_profile=False,
-        )
+        legacy_version = self.api_version
+        self.api_base = WEB_API_BASE
+        self.api_mode = "web"
+        self.api_version = WEB_API_VERSION
+        try:
+            # La Famiglia WEB attuale usa questo host, POST /login vuoto,
+            # os-type=WEB e la propria versione client.
+            response = self._api("POST", "login", payload={}, include_profile=False)
+        except DidupError as web_error:
+            # Mantieni compatibilità con il vecchio servizio mobile se il token
+            # OAuth non è accettato dal backend web o la rotta non è disponibile.
+            self.api_base = API_BASE
+            self.api_mode = "legacy"
+            self.api_version = legacy_version
+            try:
+                response = self._api(
+                    "POST",
+                    "login",
+                    payload={
+                        "lista-opzioni-notifiche": "{}",
+                        "lista-x-auth-token": "[]",
+                        "clientID": _random_client_id(),
+                    },
+                    include_profile=False,
+                )
+            except DidupError as legacy_error:
+                if web_error.http_status is not None:
+                    extra = f"tentativo API web HTTP {web_error.http_status}"
+                    legacy_error.diagnostic_details = "; ".join(
+                        part for part in (legacy_error.diagnostic_details, extra) if part
+                    )
+                raise
         profiles = response.get("data") if isinstance(response, dict) else None
         if not isinstance(profiles, list) or not profiles:
             raise DidupError("didup_profile_missing")
@@ -262,7 +293,11 @@ class DidupClient:
             "dashboard/dashboard",
             payload={
                 "dataultimoaggiornamento": "2000-01-01 00:00:00.000",
-                "opzioni": json.dumps(option_map, ensure_ascii=False, separators=(",", ":")),
+                "opzioni": (
+                    None
+                    if self.api_mode == "web"
+                    else json.dumps(option_map, ensure_ascii=False, separators=(",", ":"))
+                ),
             },
         )
         dashboard = _extract_dashboard(dashboard_response)
@@ -306,7 +341,7 @@ class DidupClient:
                 raw_url = raw_data.get("url")
         if not isinstance(raw_url, str) or not raw_url.strip():
             raise DidupError("didup_attachment_unavailable", retryable=True)
-        url = urllib.parse.urljoin(API_BASE, raw_url.strip())
+        url = urllib.parse.urljoin(self.api_base, raw_url.strip())
         parsed = urllib.parse.urlparse(url)
         host = (parsed.hostname or "").casefold()
         allowed = (

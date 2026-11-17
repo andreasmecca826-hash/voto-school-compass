@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from datetime import datetime
@@ -8,7 +9,7 @@ PYTHON_DIR = Path(__file__).resolve().parents[1] / "app" / "src" / "main" / "pyt
 sys.path.insert(0, str(PYTHON_DIR))
 
 from didup_auth import AuthError
-from didup_client import DidupClient, DidupError
+from didup_client import DidupClient, DidupError, WEB_API_BASE
 
 PROFILES = {"data": [{"token": "profile-token", "codMin": "cod-min", "opzioni": []}]}
 
@@ -111,6 +112,7 @@ class DidupClientRetryTests(unittest.TestCase):
     def test_login_retries_the_app_login_without_repeating_oauth(self):
         client = self.client()
         responses = [
+            (403, {}, b'{"message":"Access Denied"}'),
             (503, {}, b""),
             (200, {}, b'{"data": [{"token": "profile-token", "codMin": "cod-min", "opzioni": []}]}'),
             (200, {}, b'{"data": {}}'),
@@ -127,7 +129,33 @@ class DidupClientRetryTests(unittest.TestCase):
         self.assertEqual(dashboard, {})
         self.assertEqual(profile, {"nome": "Mario"})
         self.assertEqual(oauth.call_count, 1)
-        self.assertEqual(request.call_count, 4)
+        self.assertEqual(request.call_count, 5)
+        self.assertTrue(request.call_args_list[0].args[2].startswith(WEB_API_BASE))
+        self.assertEqual(request.call_args_list[0].kwargs["headers"]["os-type"], "WEB")
+        self.assertTrue(request.call_args_list[1].args[2].startswith("https://www.portaleargo.it/appfamiglia/api/rest/"))
+
+    def test_login_uses_current_web_backend_and_empty_login_payload(self):
+        client = self.client()
+        responses = [
+            (200, {}, b'{"data": [{"token": "profile-token", "codMin": "cod-min", "opzioni": []}]}'),
+            (200, {}, b'{"data": {}}'),
+            (200, {}, b'{"data": {"alunno": {"nome": "Mario"}}}'),
+        ]
+        with patch(
+            "didup_client.oauth_login",
+            return_value={"access_token": "token", "expires_at": 1_800_000_000, "version": "1.30.3"},
+        ), patch("didup_client._request", side_effect=responses) as request:
+            client.login()
+
+        first_call = request.call_args_list[0]
+        self.assertEqual(first_call.args[2], WEB_API_BASE + "login")
+        self.assertEqual(first_call.kwargs["data"], b"{}")
+        self.assertEqual(first_call.kwargs["headers"]["argo-client-version"], "4.3.0")
+        self.assertEqual(first_call.kwargs["headers"]["os-type"], "WEB")
+        self.assertNotIn("x-date-exp-auth", first_call.kwargs["headers"])
+        self.assertTrue(request.call_args_list[1].args[2].startswith(WEB_API_BASE))
+        dashboard_payload = json.loads(request.call_args_list[1].kwargs["data"])
+        self.assertIsNone(dashboard_payload["opzioni"])
 
     def test_oauth_transient_error_is_retried(self):
         client = self.client()
