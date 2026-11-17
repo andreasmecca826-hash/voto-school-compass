@@ -369,8 +369,13 @@ class DidupClient:
         if not allowed:
             raise DidupError("didup_attachment_unavailable", retryable=True)
 
-        # Do not forward DidUP bearer/profile headers to the returned storage URL.
-        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,*/*"})
+        # Il sito apre l'URL temporaneo dal contesto Famiglia; alcuni storage
+        # Argo rifiutano il download se manca questo Referer. Non inoltrare token.
+        request = urllib.request.Request(url, headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,*/*",
+            "Referer": "https://www.portaleargo.it/famiglia/",
+        })
         try:
             opener = urllib.request.build_opener(_SafeAttachmentRedirect())
             with opener.open(request, timeout=45) as downloaded:

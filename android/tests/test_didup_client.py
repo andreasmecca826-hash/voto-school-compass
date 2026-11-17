@@ -222,6 +222,8 @@ class DidupClientCircularAttachmentTests(unittest.TestCase):
             "famiglia/downloadallegatobacheca",
             payload={"uid": "attachment-uid-1", "pkScheda": "profile-scheda-123"},
         )
+        request = build_opener.return_value.open.call_args.args[0]
+        self.assertEqual(request.get_header("Referer"), "https://www.portaleargo.it/famiglia/")
         self.assertEqual(result["extension"], "pdf")
         self.assertEqual(result["content"], b"%PDF-1.7\nexample")
 
