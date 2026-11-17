@@ -7,7 +7,7 @@ export type DidupSyncStatus = {
   enabled: boolean;
   hasCredentials: boolean;
   hasSession: boolean;
-  intervalHours: number;
+  intervalMinutes: number;
   status: string;
   message: string;
   lastSyncAt: string;
@@ -19,7 +19,7 @@ type NativeDidupSyncPlugin = {
     schoolCode: string;
     username: string;
     password: string;
-    intervalHours: number;
+    intervalMinutes: number;
     supabaseUrl: string;
     publishableKey: string;
   }): Promise<void>;
@@ -30,7 +30,7 @@ type NativeDidupSyncPlugin = {
   }): Promise<void>;
   getStatus(): Promise<DidupSyncStatus>;
   syncNow(): Promise<{ queued: boolean }>;
-  setEnabled(options: { enabled: boolean; intervalHours: number }): Promise<void>;
+  setEnabled(options: { enabled: boolean; intervalMinutes: number }): Promise<void>;
   clear(): Promise<void>;
 };
 
@@ -53,7 +53,7 @@ export async function saveNativeDidupCredentials(input: {
   schoolCode: string;
   username: string;
   password: string;
-  intervalHours: number;
+  intervalMinutes: number;
 }) {
   if (!isAndroidDidupSyncAvailable())
     throw new Error("Funzione disponibile solo nell’app Android.");
@@ -78,10 +78,10 @@ export async function requestNativeDidupSync() {
   return NativeDidupSync.syncNow();
 }
 
-export async function setNativeDidupSyncEnabled(enabled: boolean, intervalHours: number) {
+export async function setNativeDidupSyncEnabled(enabled: boolean, intervalMinutes: number) {
   if (!isAndroidDidupSyncAvailable())
     throw new Error("Funzione disponibile solo nell’app Android.");
-  await NativeDidupSync.setEnabled({ enabled, intervalHours });
+  await NativeDidupSync.setEnabled({ enabled, intervalMinutes });
 }
 
 export async function clearNativeDidupSync() {

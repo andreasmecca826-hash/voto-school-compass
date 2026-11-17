@@ -32,6 +32,8 @@ final class DidupSyncVault {
     private static final String KEY_ACCESS = "enc_supabase_access";
     private static final String KEY_REFRESH = "enc_supabase_refresh";
     private static final String KEY_EXPIRES = "supabase_expires_at";
+    private static final String KEY_INTERVAL_MINUTES = "interval_minutes";
+    private static final String LEGACY_INTERVAL_HOURS = "interval_hours";
 
     private DidupSyncVault() {}
 
@@ -95,14 +97,15 @@ final class DidupSyncVault {
 
     static synchronized void saveCredentials(Context context, String schoolCode, String username,
                                              String password, String supabaseUrl, String publishableKey,
-                                             int intervalHours) throws Exception {
+                                             int intervalMinutes) throws Exception {
         SharedPreferences.Editor editor = prefs(context).edit();
         editor.putString(KEY_SCHOOL, encrypt(schoolCode.trim()));
         editor.putString(KEY_USERNAME, encrypt(username.trim()));
         editor.putString(KEY_PASSWORD, encrypt(password));
         editor.putString("supabase_url", supabaseUrl.trim());
         editor.putString("publishable_key", publishableKey.trim());
-        editor.putInt("interval_hours", Math.max(1, Math.min(24, intervalHours)));
+        editor.putInt(KEY_INTERVAL_MINUTES, Math.max(15, Math.min(1440, intervalMinutes)));
+        editor.remove(LEGACY_INTERVAL_HOURS);
         editor.putBoolean("enabled", true);
         editor.apply();
     }
@@ -173,16 +176,26 @@ final class DidupSyncVault {
         prefs(context).edit().putBoolean("enabled", enabled).apply();
     }
 
-    static synchronized void setIntervalHours(Context context, int intervalHours) {
-        prefs(context).edit().putInt("interval_hours", Math.max(1, Math.min(24, intervalHours))).apply();
+    static synchronized void setIntervalMinutes(Context context, int intervalMinutes) {
+        prefs(context).edit()
+                .putInt(KEY_INTERVAL_MINUTES, Math.max(15, Math.min(1440, intervalMinutes)))
+                .remove(LEGACY_INTERVAL_HOURS)
+                .apply();
     }
 
     static synchronized boolean isEnabled(Context context) {
         return prefs(context).getBoolean("enabled", false);
     }
 
-    static synchronized int intervalHours(Context context) {
-        return prefs(context).getInt("interval_hours", 6);
+    static synchronized int intervalMinutes(Context context) {
+        SharedPreferences p = prefs(context);
+        if (p.contains(KEY_INTERVAL_MINUTES)) {
+            return Math.max(15, Math.min(1440, p.getInt(KEY_INTERVAL_MINUTES, 360)));
+        }
+        int legacyHours = Math.max(1, Math.min(24, p.getInt(LEGACY_INTERVAL_HOURS, 6)));
+        int migratedMinutes = legacyHours * 60;
+        p.edit().putInt(KEY_INTERVAL_MINUTES, migratedMinutes).remove(LEGACY_INTERVAL_HOURS).apply();
+        return migratedMinutes;
     }
 
     static synchronized void setQueued(Context context) {
@@ -198,7 +211,7 @@ final class DidupSyncVault {
         result.put("enabled", p.getBoolean("enabled", false));
         result.put("hasCredentials", hasCredentials(context));
         result.put("hasSession", hasSession(context));
-        result.put("intervalHours", p.getInt("interval_hours", 6));
+        result.put("intervalMinutes", intervalMinutes(context));
         result.put("status", p.getString("status", "idle"));
         result.put("message", p.getString("message", ""));
         result.put("lastSyncAt", p.getString("last_sync_at", ""));

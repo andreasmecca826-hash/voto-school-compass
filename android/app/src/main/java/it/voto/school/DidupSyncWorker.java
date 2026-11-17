@@ -84,9 +84,9 @@ public final class DidupSyncWorker extends Worker {
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
-        long interval = Math.max(1, Math.min(24, DidupSyncVault.intervalHours(app)));
+        long interval = Math.max(15, Math.min(1440, DidupSyncVault.intervalMinutes(app)));
         PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
-                DidupSyncWorker.class, interval, TimeUnit.HOURS
+                DidupSyncWorker.class, interval, TimeUnit.MINUTES
         )
                 .setConstraints(constraints)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)

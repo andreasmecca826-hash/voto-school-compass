@@ -15,12 +15,21 @@ const DEFAULT_STATUS: DidupSyncStatus = {
   enabled: false,
   hasCredentials: false,
   hasSession: false,
-  intervalHours: 6,
+  intervalMinutes: 360,
   status: "idle",
   message: "",
   lastSyncAt: "",
   lastAttemptAt: "",
 };
+
+const SYNC_INTERVAL_OPTIONS = [
+  { minutes: 15, label: "Ogni 15 minuti" },
+  { minutes: 60, label: "Ogni ora" },
+  { minutes: 180, label: "Ogni 3 ore" },
+  { minutes: 360, label: "Ogni 6 ore" },
+  { minutes: 720, label: "Ogni 12 ore" },
+  { minutes: 1440, label: "Ogni 24 ore" },
+];
 
 function formatDate(value: string) {
   if (!value) return "Mai";
@@ -50,7 +59,7 @@ export function DidupSyncSettings() {
   const [schoolCode, setSchoolCode] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [intervalHours, setIntervalHours] = useState(6);
+  const [intervalMinutes, setIntervalMinutes] = useState(360);
   const [busy, setBusy] = useState(false);
   const pollTimer = useRef<number | null>(null);
 
@@ -59,7 +68,7 @@ export function DidupSyncSettings() {
     try {
       const next = await getNativeDidupSyncStatus();
       setStatus(next);
-      setIntervalHours(next.intervalHours || 6);
+      setIntervalMinutes(next.intervalMinutes || 360);
     } catch {
       // Native bridge availability is reflected by the platform check and build version.
     }
@@ -106,7 +115,7 @@ export function DidupSyncSettings() {
         schoolCode: schoolCode.trim(),
         username: username.trim(),
         password,
-        intervalHours,
+        intervalMinutes,
       });
       setSchoolCode("");
       setUsername("");
@@ -146,7 +155,7 @@ export function DidupSyncSettings() {
   async function handleEnabledChange(enabled: boolean) {
     setBusy(true);
     try {
-      await setNativeDidupSyncEnabled(enabled, intervalHours);
+      await setNativeDidupSyncEnabled(enabled, intervalMinutes);
       await refreshStatus();
       toast.success(
         enabled ? "Sincronizzazione periodica attivata." : "Sincronizzazione periodica sospesa.",
@@ -161,7 +170,7 @@ export function DidupSyncSettings() {
   async function handleIntervalSave() {
     setBusy(true);
     try {
-      await setNativeDidupSyncEnabled(status.enabled, intervalHours);
+      await setNativeDidupSyncEnabled(status.enabled, intervalMinutes);
       await refreshStatus();
       toast.success("Intervallo aggiornato.");
     } catch {
@@ -310,13 +319,13 @@ export function DidupSyncSettings() {
           </label>
           <select
             id="didup-sync-interval"
-            value={intervalHours}
-            onChange={(event) => setIntervalHours(Number(event.target.value))}
+            value={intervalMinutes}
+            onChange={(event) => setIntervalMinutes(Number(event.target.value))}
             className="h-9 rounded-lg border border-input bg-background px-2 text-xs"
           >
-            {[1, 3, 6, 12, 24].map((hours) => (
-              <option key={hours} value={hours}>
-                Ogni {hours} {hours === 1 ? "ora" : "ore"}
+            {SYNC_INTERVAL_OPTIONS.map((option) => (
+              <option key={option.minutes} value={option.minutes}>
+                {option.label}
               </option>
             ))}
           </select>
