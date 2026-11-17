@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="app_icon_light_bg">#F4F4F2</color>
+    <color name="app_icon_ocean_bg">#123E70</color>
+    <color name="app_icon_violet_bg">#402553</color>
+</resources>

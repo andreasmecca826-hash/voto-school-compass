@@ -38,7 +38,7 @@ L’accesso ai voti e agli altri dati scolastici privati richiede il login descr
 
 ```
 npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init VOTO it.voto.app
+npx cap init VOTO it.voto.school
 npm run build
 npx cap add android
 npx cap sync android

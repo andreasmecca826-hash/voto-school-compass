@@ -7,6 +7,7 @@ import { SchoolAuthContext, type PrefetchedSchoolData } from "@/lib/school-auth-
 import { fetchVotoData } from "@/lib/voto/parse";
 import { KEYS, load, save } from "@/lib/voto/storage";
 import { isDemoAccessCode } from "@/lib/demo-access";
+import { clearNativeDidupSync, persistNativeSupabaseSession } from "@/lib/native-didup-sync";
 
 const OWNER_KEY = "voto.privateOwnerId";
 type Step = "checking" | "email" | "link-sent" | "claim" | "retry" | "ready";
@@ -34,6 +35,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   }, []);
 
   async function activate(userSession: Session) {
+    void persistNativeSupabaseSession(userSession).catch(() => undefined);
     save(KEYS.demoMode, false);
     sessionRef.current = userSession;
     setSession(userSession);
@@ -65,6 +67,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         setStep("claim");
         setError("");
       } else if (message.startsWith("PRIVATE_DATA_UNAUTHENTICATED:")) {
+        void clearNativeDidupSync();
         sessionRef.current = null;
         setSession(null);
         setStep("email");
@@ -123,6 +126,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     void supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!mounted) return;
       if (sessionError || !data.session) {
+        void clearNativeDidupSync();
         setStep("email");
         return;
       }
@@ -130,7 +134,9 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (nextSession) void persistNativeSupabaseSession(nextSession).catch(() => undefined);
       if (event === "SIGNED_OUT" && mounted) {
+        void clearNativeDidupSync();
         sessionRef.current = null;
         prefetchedDataRef.current = null;
         setSession(null);
@@ -230,6 +236,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     sessionRef.current = null;
     prefetchedDataRef.current = null;
     save(KEYS.demoMode, false);
+    await clearNativeDidupSync();
     await supabase.auth.signOut();
     setSession(null);
     setStep("email");
@@ -244,6 +251,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       setBusy(false);
       return;
     }
+    await clearNativeDidupSync();
     await supabase.auth.signOut();
     sessionRef.current = null;
     prefetchedDataRef.current = null;

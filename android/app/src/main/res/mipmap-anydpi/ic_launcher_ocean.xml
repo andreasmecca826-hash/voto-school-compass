@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="@color/app_icon_ocean_bg" android:pathData="M27,6h54c12.15,0 22,9.85 22,22v52c0,12.15 -9.85,22 -22,22H27C14.85,102 5,92.15 5,80V28C5,15.85 14.85,6 27,6Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M27,28h13l14,40l14,-40h13L62,82H46Z" />
+    <path android:fillColor="#75D3FF" android:pathData="M82,72a8,8 0,1 1,-16 0a8,8 0,1 1,16 0Z" />
+</vector>

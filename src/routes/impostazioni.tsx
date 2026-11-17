@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
+import { DidupSyncSettings } from "@/components/voto/DidupSyncSettings";
 import { useSchoolAuth } from "@/lib/school-auth-context";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
@@ -483,8 +484,9 @@ function Settings() {
         </div>
         <div className="mt-4 flex gap-2 rounded-xl bg-surface p-3 text-[11px] text-muted-foreground">
           <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />I dati sono letti da uno storage
-          privato e l’Edge Function li consegna solo all’account autorizzato. La sessione resta sul
-          dispositivo; non inserire credenziali DidUP nell’app.
+          privato e l’Edge Function li consegna solo all’account autorizzato. La sincronizzazione
+          DidUP Android è facoltativa: se la attivi, le credenziali DidUP vengono cifrate nel
+          Keystore del telefono e non inviate a Supabase.
         </div>
         <button
           type="button"
@@ -494,6 +496,8 @@ function Settings() {
           Esci dall’account
         </button>
       </section>
+
+      <DidupSyncSettings />
 
       <AppPinLockSettings />
 
