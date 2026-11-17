@@ -63,6 +63,7 @@ class DidupError(Exception):
         retryable: bool = False,
         http_status: int | None = None,
         endpoint: str | None = None,
+        diagnostic_details: str = "",
     ):
         super().__init__(code)
         self.code = code
@@ -70,13 +71,23 @@ class DidupError(Exception):
         self.http_status = http_status
         safe_endpoint = (endpoint or "").split("?", 1)[0]
         self.endpoint = re.sub(r"[^A-Za-z0-9_/-]", "", safe_endpoint)[:80]
+        self.diagnostic_details = diagnostic_details
 
     @property
     def diagnostic(self) -> str:
         if self.http_status is None:
             return ""
         endpoint = f" sull’endpoint /{self.endpoint}" if self.endpoint else " nell’API DidUP"
-        return f"HTTP {self.http_status}{endpoint}"
+        details = f" ({self.diagnostic_details})" if self.diagnostic_details else ""
+        return f"HTTP {self.http_status}{endpoint}{details}"
+
+
+def _safe_header_value(headers: Any, *names: str) -> str:
+    for name in names:
+        value = _header(headers, name)
+        if value:
+            return re.sub(r"[^A-Za-z0-9._:-]", "", value)[:80]
+    return ""
 
 
 class _SafeAttachmentRedirect(urllib.request.HTTPRedirectHandler):
@@ -180,8 +191,28 @@ class DidupClient:
                         ]
                     time.sleep(delay)
                     continue
+                # Diagnostica limitata a metadati non segreti: mai registrare token,
+                # credenziali, body o valori di header di autenticazione.
+                server = _safe_header_value(response_headers, "Server")
+                request_id = _safe_header_value(
+                    response_headers, "X-Request-Id", "Request-Id", "X-Correlation-Id"
+                )
+                details = [f"client {self.api_version}"]
+                details.append(
+                    "header scadenza OAuth presente"
+                    if "x-date-exp-auth" in {key.lower() for key in headers}
+                    else "header scadenza OAuth assente"
+                )
+                if server:
+                    details.append(f"server {server}")
+                if request_id:
+                    details.append(f"id richiesta {request_id}")
                 raise DidupError(
-                    "didup_temporarily_unavailable", retryable=True, http_status=status, endpoint=path
+                    "didup_temporarily_unavailable",
+                    retryable=True,
+                    http_status=status,
+                    endpoint=path,
+                    diagnostic_details="; ".join(details),
                 )
             if status < 200 or status >= 300:
                 raise DidupError("didup_api_error", http_status=status, endpoint=path)

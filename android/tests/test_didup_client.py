@@ -77,6 +77,25 @@ class DidupClientRetryTests(unittest.TestCase):
         self.assertEqual(request.call_count, 3)
         self.assertEqual([call.args[0] for call in sleep.call_args_list], [2.0, 8.0])
 
+    def test_503_diagnostic_contains_safe_response_metadata_only(self):
+        client = self.client()
+        client.access_token = "must-not-leak"
+        client.access_token_expires_at = 1_800_000_000
+        with patch(
+            "didup_client._request",
+            return_value=(503, {"Server": "argo-gateway", "X-Request-Id": "req-123_ab"}, b"secret body"),
+        ), patch("didup_client.time.sleep"):
+            with self.assertRaises(DidupError) as raised:
+                client._api("POST", "login")
+
+        diagnostic = raised.exception.diagnostic
+        self.assertIn("client 1.29.2", diagnostic)
+        self.assertIn("header scadenza OAuth presente", diagnostic)
+        self.assertIn("server argo-gateway", diagnostic)
+        self.assertIn("id richiesta req-123_ab", diagnostic)
+        self.assertNotIn("must-not-leak", diagnostic)
+        self.assertNotIn("secret body", diagnostic)
+
     def test_credentials_failure_is_not_retried(self):
         client = self.client()
         with patch("didup_client._request", return_value=(401, {}, b"")) as request, patch(
