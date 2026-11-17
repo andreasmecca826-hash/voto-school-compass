@@ -1,4 +1,4 @@
-import { Check, Clock } from "lucide-react";
+import { Check, Circle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { daysBetween, relDay } from "@/lib/voto/dates";
 import { useClock, useVoto } from "@/lib/voto/store";
@@ -21,16 +21,28 @@ export function AssignmentRow({ a }: { a: Assignment }) {
     >
       <button
         type="button"
-        role="checkbox"
+        role="switch"
         aria-checked={done}
-        aria-label={`Segna "${a.title}" come ${done ? "da fare" : "completato"}`}
+        aria-label={`Stato del compito: ${a.title}`}
+        title={done ? "Segna da fare" : "Segna completato"}
         onClick={() => v.toggleDone(a.id, a.completed)}
         className={cn(
-          "press mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2",
-          done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40",
+          "press mt-0.5 inline-flex min-h-11 min-w-[6.25rem] shrink-0 items-center justify-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          done
+            ? "border-success/30 bg-success/10 text-success"
+            : "border-border bg-surface text-muted-foreground hover:border-primary/50 hover:text-primary",
         )}
       >
-        {done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+        <span
+          className={cn(
+            "flex h-5 w-5 items-center justify-center rounded-full",
+            done ? "bg-success text-white" : "bg-muted-foreground/10 text-muted-foreground",
+          )}
+          aria-hidden="true"
+        >
+          {done ? <Check className="h-3 w-3" strokeWidth={3} /> : <Circle className="h-3 w-3" />}
+        </span>
+        <span>{done ? "Fatto" : "Da fare"}</span>
       </button>
       <div className="min-w-0 flex-1">
         <p className={cn("text-sm font-medium", done && "line-through")}>{a.title}</p>
