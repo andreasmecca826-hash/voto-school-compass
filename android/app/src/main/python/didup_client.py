@@ -150,6 +150,7 @@ class DidupClient:
         self.api_version = "1.29.2"
         self.api_base = API_BASE
         self.api_mode = "legacy"
+        self.profile_pk = ""
         self.profile_login: dict[str, Any] = {}
 
     def _api(self, method: str, path: str, *, payload: dict[str, Any] | None = None,
@@ -324,7 +325,15 @@ class DidupClient:
         try:
             response = self._api("GET", "profilo")
             data = response.get("data", {}) if isinstance(response, dict) else {}
-            student = data.get("alunno", {}) if isinstance(data, dict) else {}
+            if not isinstance(data, dict):
+                return {}
+            web_profile = data.get("profilo")
+            if self.api_mode == "web" and isinstance(web_profile, dict):
+                scheda = web_profile.get("scheda")
+                self.profile_pk = str(_get(scheda, "pk", default="") or "")
+                student = data.get("alunno") or web_profile
+            else:
+                student = data.get("alunno", {})
             return student if isinstance(student, dict) else {}
         except DidupError:
             return {}
@@ -333,7 +342,14 @@ class DidupClient:
         """Fetch a fresh official attachment URL and validate a PDF or DOCX file."""
         if not uid or len(uid) > 256:
             raise DidupError("didup_attachment_unavailable", retryable=True)
-        response = self._api("POST", "downloadallegatobacheca", payload={"uid": uid})
+        if self.api_mode == "web":
+            # Il frontend Famiglia WEB invia anche la chiave della scheda profilo.
+            path = "famiglia/downloadallegatobacheca"
+            payload = {"uid": uid, "pkScheda": self.profile_pk}
+        else:
+            path = "downloadallegatobacheca"
+            payload = {"uid": uid}
+        response = self._api("POST", path, payload=payload)
         raw_url = response.get("url") if isinstance(response, dict) else None
         if not raw_url and isinstance(response, dict):
             raw_data = response.get("data")

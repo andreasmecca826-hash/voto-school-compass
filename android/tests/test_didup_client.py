@@ -182,5 +182,49 @@ class DidupClientRetryTests(unittest.TestCase):
         sleep.assert_not_called()
 
 
+class DidupClientCircularAttachmentTests(unittest.TestCase):
+    def client(self) -> DidupClient:
+        client = DidupClient("SC12345", "utente", "password")
+        client.api_mode = "web"
+        client.api_base = WEB_API_BASE
+        return client
+
+    def test_web_profile_extracts_pk_scheda(self):
+        client = self.client()
+        response = {
+            "data": {
+                "profilo": {
+                    "scheda": {"pk": "profile-scheda-123"},
+                    "nominativo": "Studente",
+                }
+            }
+        }
+        with patch.object(client, "_api", return_value=response):
+            profile = client._profile()
+
+        self.assertEqual(client.profile_pk, "profile-scheda-123")
+        self.assertEqual(profile["nominativo"], "Studente")
+
+    def test_web_attachment_uses_family_route_and_pk_scheda(self):
+        client = self.client()
+        client.profile_pk = "profile-scheda-123"
+        url = "https://bucket.s3.amazonaws.com/circolare.pdf?sig=temporary"
+        with patch.object(client, "_api", return_value={"data": {"url": url}}) as api, patch(
+            "didup_client.urllib.request.build_opener"
+        ) as build_opener:
+            downloaded = build_opener.return_value.open.return_value.__enter__.return_value
+            downloaded.geturl.return_value = url
+            downloaded.read.return_value = b"%PDF-1.7\nexample"
+            result = client.download_attachment("attachment-uid-1", "circolare.pdf")
+
+        api.assert_called_once_with(
+            "POST",
+            "famiglia/downloadallegatobacheca",
+            payload={"uid": "attachment-uid-1", "pkScheda": "profile-scheda-123"},
+        )
+        self.assertEqual(result["extension"], "pdf")
+        self.assertEqual(result["content"], b"%PDF-1.7\nexample")
+
+
 if __name__ == "__main__":
     unittest.main()
