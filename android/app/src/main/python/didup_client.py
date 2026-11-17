@@ -133,6 +133,7 @@ class DidupClient:
         self.password = password
         self.opener = _opener(redirects=True)
         self.access_token = ""
+        self.access_token_expires_at = 0
         self.api_version = "1.29.2"
         self.profile_login: dict[str, Any] = {}
 
@@ -146,6 +147,12 @@ class DidupClient:
         }
         if self.access_token:
             headers["Authorization"] = "Bearer " + self.access_token
+            if self.access_token_expires_at:
+                expires = datetime.fromtimestamp(self.access_token_expires_at)
+                headers["x-date-exp-auth"] = (
+                    expires.strftime("%Y-%m-%d %H:%M:%S.")
+                    + f"{expires.microsecond // 1000:03d}"
+                )
         if include_profile and self.profile_login:
             token = self.profile_login.get("token")
             cod_min = self.profile_login.get("codMin") or self.profile_login.get("cod_min")
@@ -193,6 +200,7 @@ class DidupClient:
     def login(self) -> tuple[dict[str, Any], dict[str, Any]]:
         token_data = self._oauth_login()
         self.access_token = token_data["access_token"]
+        self.access_token_expires_at = int(token_data.get("expires_at") or 0)
         self.api_version = token_data.get("version") or "1.29.2"
         response = self._api(
             "POST",

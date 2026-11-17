@@ -1,5 +1,6 @@
 import sys
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -47,6 +48,18 @@ class DidupClientRetryTests(unittest.TestCase):
             client._api("POST", "login")
 
         self.assertEqual([call.args[0] for call in sleep.call_args_list], [30.0])
+
+    def test_api_includes_oauth_expiration_header_when_available(self):
+        client = self.client()
+        client.access_token = "access-token"
+        client.access_token_expires_at = 1_800_000_000
+        with patch("didup_client._request", return_value=(200, {}, b'{"data": []}')) as request:
+            client._api("POST", "login")
+
+        sent_headers = request.call_args.kwargs["headers"]
+        expires = datetime.fromtimestamp(client.access_token_expires_at)
+        expected = expires.strftime("%Y-%m-%d %H:%M:%S.") + f"{expires.microsecond // 1000:03d}"
+        self.assertEqual(sent_headers["x-date-exp-auth"], expected)
 
     def test_gives_up_after_three_transient_failures(self):
         client = self.client()
