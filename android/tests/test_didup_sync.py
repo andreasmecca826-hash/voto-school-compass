@@ -9,7 +9,7 @@ sys.path.insert(0, str(PYTHON_DIR))
 
 import didup_sync
 from didup_auth import AuthError, _validate_oauth_state
-from didup_client import DidupError
+from didup_client import DidupClient, DidupError
 
 
 class FakeDidupClient:
@@ -32,6 +32,23 @@ class DidupSyncTests(unittest.TestCase):
         for returned in (None, "", "different"):
             with self.subTest(returned=returned), self.assertRaises(AuthError):
                 _validate_oauth_state(returned, "expected")
+
+    def test_didup_http_503_is_reported_without_response_body_or_credentials(self):
+        client = DidupClient("school-secret", "user-secret", "password-secret")
+        with patch("didup_client._request", return_value=(503, {}, b"private response body")):
+            with self.assertRaises(DidupError) as raised:
+                client._api("POST", "dashboard/dashboard")
+
+        error = raised.exception
+        self.assertEqual(error.code, "didup_temporarily_unavailable")
+        self.assertTrue(error.retryable)
+        self.assertEqual(error.http_status, 503)
+        self.assertEqual(error.endpoint, "dashboard/dashboard")
+        message = json.loads(didup_sync._result(error.code, diagnostic=error.diagnostic))["message"]
+        self.assertIn("HTTP 503", message)
+        self.assertIn("dashboard/dashboard", message)
+        self.assertNotIn("private response body", message)
+        self.assertNotIn("password-secret", message)
 
     def test_refresh_503_is_retryable_but_invalid_refresh_is_terminal(self):
         session = {"refresh_token": "fake-refresh-token"}

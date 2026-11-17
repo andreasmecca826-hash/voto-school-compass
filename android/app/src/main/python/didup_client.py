@@ -19,10 +19,26 @@ API_BASE = "https://www.portaleargo.it/appfamiglia/api/rest/"
 
 
 class DidupError(Exception):
-    def __init__(self, code: str, retryable: bool = False):
+    def __init__(
+        self,
+        code: str,
+        retryable: bool = False,
+        http_status: int | None = None,
+        endpoint: str | None = None,
+    ):
         super().__init__(code)
         self.code = code
         self.retryable = retryable
+        self.http_status = http_status
+        safe_endpoint = (endpoint or "").split("?", 1)[0]
+        self.endpoint = re.sub(r"[^A-Za-z0-9_/-]", "", safe_endpoint)[:80]
+
+    @property
+    def diagnostic(self) -> str:
+        if self.http_status is None:
+            return ""
+        endpoint = f" sull’endpoint /{self.endpoint}" if self.endpoint else " nell’API DidUP"
+        return f"HTTP {self.http_status}{endpoint}"
 
 
 class _SafeAttachmentRedirect(urllib.request.HTTPRedirectHandler):
@@ -106,11 +122,13 @@ class DidupClient:
         except Exception:
             raise DidupError("didup_network", retryable=True)
         if status in (401, 403):
-            raise DidupError("didup_credentials_rejected")
+            raise DidupError("didup_credentials_rejected", http_status=status, endpoint=path)
         if status == 429 or status >= 500:
-            raise DidupError("didup_temporarily_unavailable", retryable=True)
+            raise DidupError(
+                "didup_temporarily_unavailable", retryable=True, http_status=status, endpoint=path
+            )
         if status < 200 or status >= 300:
-            raise DidupError("didup_api_error")
+            raise DidupError("didup_api_error", http_status=status, endpoint=path)
         try:
             result = json.loads(body.decode("utf-8")) if body else {}
         except (UnicodeDecodeError, json.JSONDecodeError):

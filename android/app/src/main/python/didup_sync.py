@@ -21,7 +21,7 @@ _MESSAGES = {
     "didup_credentials_rejected": "Credenziali DidUP non valide. Controlla codice scuola, utente e password.",
     "didup_profile_disabled": "Il profilo DidUP selezionato risulta disabilitato.",
     "didup_profile_missing": "DidUP non ha restituito un profilo studente utilizzabile.",
-    "didup_temporarily_unavailable": "DidUP non è raggiungibile in questo momento; riproverò quando la rete sarà disponibile.",
+    "didup_temporarily_unavailable": "DidUP ha risposto con un errore temporaneo; riproverò automaticamente.",
     "didup_network": "Connessione a DidUP non riuscita; riproverò quando la rete sarà disponibile.",
     "didup_api_error": "DidUP ha rifiutato temporaneamente la richiesta.",
     "didup_response_invalid": "DidUP ha restituito una risposta non leggibile.",
@@ -39,12 +39,21 @@ _MESSAGES = {
 }
 
 
-def _result(code: str, *, retry: bool = False, session: dict[str, Any] | None = None,
-            synced_at: str | None = None) -> str:
+def _result(
+    code: str,
+    *,
+    retry: bool = False,
+    session: dict[str, Any] | None = None,
+    synced_at: str | None = None,
+    diagnostic: str | None = None,
+) -> str:
     body: dict[str, Any] = {
         "ok": code in ("ok", "attachment_retry", "attachment_pending", "attachment_issue"),
         "code": code,
-        "message": _MESSAGES.get(code, _MESSAGES["sync_error"]),
+        "message": (
+            _MESSAGES.get(code, _MESSAGES["sync_error"])
+            + (f" Dettaglio tecnico: {diagnostic}." if diagnostic else "")
+        ),
         "retry": retry,
     }
     if synced_at:
@@ -317,13 +326,40 @@ def sync(input_json: str) -> str:
         try:
             dashboard, profile = client.login()
         except AuthError as error:
-            if error.code == "didup_credentials_rejected":
+            if error.status == 429 or (error.status is not None and error.status >= 500):
+                code = "didup_temporarily_unavailable"
+                diagnostic = f"HTTP {error.status} durante il login OAuth Argo"
+            elif error.code == "didup_credentials_rejected":
                 code = error.code
+                diagnostic = (
+                    f"HTTP {error.status} durante il login Argo"
+                    if error.status and error.status >= 400
+                    else None
+                )
             else:
-                code = "didup_network" if error.code in ("argo_auth_start", "argo_login_challenge") else error.code
-            return _result(code, retry=code == "didup_network", session=session)
+                code = (
+                    "didup_network"
+                    if error.code in ("argo_auth_start", "argo_login_challenge")
+                    else error.code
+                )
+                diagnostic = (
+                    f"HTTP {error.status} durante il login OAuth Argo"
+                    if error.status and error.status >= 400
+                    else None
+                )
+            return _result(
+                code,
+                retry=code in ("didup_network", "didup_temporarily_unavailable"),
+                session=session,
+                diagnostic=diagnostic,
+            )
         except DidupError as error:
-            return _result(error.code, retry=error.retryable, session=session)
+            return _result(
+                error.code,
+                retry=error.retryable,
+                session=session,
+                diagnostic=error.diagnostic or None,
+            )
         try:
             snapshot = build_payload(dashboard, profile, previous)
         except SnapshotError as error:
