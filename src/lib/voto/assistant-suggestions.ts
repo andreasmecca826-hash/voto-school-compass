@@ -1,5 +1,8 @@
 const SUGGESTIONS = [
   "Qual è la mia media generale?",
+  "Quali sono le medie per materia?",
+  "Quali sono i miei punti di forza e di debolezza?",
+  "In quali materie sto migliorando?",
   "Quanto devo prendere in Inglese per arrivare a 8?",
   "Quali materie hanno la media più bassa?",
   "Qual è il mio voto più alto?",
