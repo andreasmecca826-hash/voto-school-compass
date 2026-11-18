@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CircularViewer } from "@/components/voto/CircularViewer";
+import { supabase } from "@/lib/supabase-auth";
 
 const { renderPageImages, askCircularText, askCircularImages } = vi.hoisted(() => ({
   renderPageImages: vi.fn(),
@@ -27,9 +28,25 @@ vi.mock("@/lib/voto/circular-reader", async (importOriginal) => ({
   renderCircularPdfPageImages: renderPageImages,
 }));
 
+vi.mock("@/components/voto/PdfCanvasPreview", () => ({
+  PdfCanvasPreview: ({ src, title }: { src: string; title: string }) => (
+    <div role="document" aria-label={title} data-preview-src={src} />
+  ),
+}));
+
+const originalCreateObjectUrl = Object.getOwnPropertyDescriptor(URL, "createObjectURL");
+const originalRevokeObjectUrl = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  if (originalCreateObjectUrl)
+    Object.defineProperty(URL, "createObjectURL", originalCreateObjectUrl);
+  else Reflect.deleteProperty(URL, "createObjectURL");
+  if (originalRevokeObjectUrl)
+    Object.defineProperty(URL, "revokeObjectURL", originalRevokeObjectUrl);
+  else Reflect.deleteProperty(URL, "revokeObjectURL");
 });
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", TestPointerEvent);
@@ -46,6 +63,94 @@ beforeEach(() => {
 });
 
 describe("visualizzatore PDF delle circolari interne", () => {
+  it.each([
+    { extension: "pdf", openButton: "Apri PDF", downloadButton: "Scarica PDF" },
+    { extension: "docx", openButton: "Apri DOCX", downloadButton: "Scarica DOCX" },
+  ])(
+    "usa mirror-circular autenticata per preview e download Android .$extension",
+    async ({ extension, openButton, downloadButton }) => {
+      const path = `circulars/${"a".repeat(64)}.${extension}`;
+      const signedUrl = `https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/${path}?token=test`;
+      vi.stubGlobal("Capacitor", {
+        isNativePlatform: () => true,
+        getPlatform: () => "android",
+      });
+      vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+        data: { session: { access_token: "test-user-token" } as never },
+        error: null,
+      } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        if (String(input).includes("/functions/v1/mirror-circular")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ path, signedUrl }), {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }),
+          );
+        }
+        return Promise.resolve(new Response(new Uint8Array([1, 2, 3]), { status: 200 }));
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      Object.defineProperty(URL, "createObjectURL", {
+        configurable: true,
+        value: vi.fn(() => "blob:download-test"),
+      });
+      Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+      const anchorClick = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => undefined);
+      const openWindow = vi.spyOn(window, "open").mockReturnValue(null);
+
+      render(
+        <CircularViewer
+          open
+          onOpenChange={() => {}}
+          title="Circolare Android"
+          fileName={`allegato.${extension}`}
+          path={path}
+          url={undefined}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          "https://jmvxuhgjejzpezvawzfw.supabase.co/functions/v1/mirror-circular",
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ path }),
+            headers: expect.objectContaining({ Authorization: "Bearer test-user-token" }),
+          }),
+        );
+        expect(screen.getByRole("button", { name: openButton })).toBeInTheDocument();
+      });
+      if (extension === "pdf") {
+        expect(screen.getByRole("document", { name: `allegato.${extension}` })).toHaveAttribute(
+          "data-preview-src",
+          signedUrl,
+        );
+      } else {
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(signedUrl, expect.any(Object)));
+      }
+
+      fireEvent.click(screen.getByRole("button", { name: openButton }));
+      expect(openWindow).toHaveBeenCalledWith(signedUrl, "_blank", "noopener,noreferrer");
+      fireEvent.click(screen.getByRole("button", { name: downloadButton }));
+
+      await waitFor(() => {
+        expect(
+          fetchMock.mock.calls.filter(([input]) =>
+            String(input).includes("/functions/v1/mirror-circular"),
+          ),
+        ).toHaveLength(2);
+        expect(fetchMock).toHaveBeenCalledWith(
+          signedUrl,
+          expect.objectContaining({ credentials: "omit" }),
+        );
+        expect(anchorClick).toHaveBeenCalled();
+      });
+    },
+  );
+
   it("mantiene anteprima locale e download anche senza URL firmata anticipata", () => {
     const path = `circulars/${"a".repeat(64)}.pdf`;
     render(
@@ -195,8 +300,12 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
     fireEvent.click(await screen.findByRole("button", { name: "API visiva (Qwen)" }));
     expect(
-      screen.getByText(/inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF/i),
+      screen.getByText(/Groq riceve la domanda e le immagini JPEG delle prime 3 pagine PDF/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Verifica sempre la risposta sul documento originale/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/quota API|crediti|limiti|costi|account/i)).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole("textbox", { name: "Domanda sulla circolare" }), {
       target: { value: "Quando scade?" },
     });
@@ -336,7 +445,62 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(secondAttachmentTab);
 
     expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("document", { name: "secondo.pdf" })).toBeInTheDocument();
+    const secondPreview = screen.getByRole("document", { name: "secondo.pdf" });
+    expect(secondPreview).toBeInTheDocument();
+    expect(secondPreview.getAttribute("data-preview-src")).toContain(
+      encodeURIComponent(`circulars/${"e".repeat(64)}.pdf`),
+    );
+  });
+
+  it("reimposta la selezione quando cambia circolare anche se il titolo non cambia", async () => {
+    const firstCircularAttachments = [
+      { name: "precedente-1.pdf", path: `circulars/${"a".repeat(64)}.pdf` },
+      { name: "precedente-2.pdf", path: `circulars/${"b".repeat(64)}.pdf` },
+    ];
+    const { rerender } = render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare della scuola"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        attachments={firstCircularAttachments}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "precedente-2.pdf" }));
+    expect(screen.getByRole("tab", { name: "precedente-2.pdf" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    const nextCircularAttachments = [
+      { name: "nuovo-1.pdf", path: `circulars/${"c".repeat(64)}.pdf` },
+      { name: "nuovo-2.pdf", path: `circulars/${"d".repeat(64)}.pdf` },
+    ];
+    rerender(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare della scuola"
+        fileName={undefined}
+        path={undefined}
+        url={undefined}
+        attachments={nextCircularAttachments}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "nuovo-1.pdf" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    const newPreview = screen.getByRole("document", { name: "nuovo-1.pdf" });
+    expect(newPreview.getAttribute("data-preview-src")).toContain(
+      encodeURIComponent(`circulars/${"c".repeat(64)}.pdf`),
+    );
   });
 
   it("mostra il numero di tabelle dell'allegato attivo", () => {

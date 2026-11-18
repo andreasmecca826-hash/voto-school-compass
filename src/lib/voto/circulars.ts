@@ -2,6 +2,64 @@ import { supabase } from "../supabase-auth";
 import { supabaseProjectUrl, supabasePublishableKey } from "../supabase-config";
 export { supabaseProjectUrl, supabasePublishableKey } from "../supabase-config";
 
+type CapacitorRuntime = {
+  getPlatform?: () => string;
+  isNativePlatform?: () => boolean;
+  platform?: string;
+};
+
+const INTERNAL_CIRCULAR_PATH = /^circulars\/[a-f0-9]{64}\.(pdf|docx)$/;
+
+export function isCapacitorNative() {
+  if (typeof window === "undefined") return false;
+  const runtime = (window as Window & { Capacitor?: CapacitorRuntime }).Capacitor;
+  if (!runtime) return false;
+  try {
+    if (typeof runtime.isNativePlatform === "function") return runtime.isNativePlatform();
+    const platform = runtime.getPlatform?.() ?? runtime.platform;
+    return platform === "android" || platform === "ios";
+  } catch {
+    return false;
+  }
+}
+
+export async function getCircularAttachmentSignedUrl(path: string) {
+  const normalizedPath = path.replace(/^\/+/, "");
+  if (!INTERNAL_CIRCULAR_PATH.test(normalizedPath)) {
+    throw new Error("Percorso allegato non valido.");
+  }
+
+  const response = await fetch(`${supabaseProjectUrl()}/functions/v1/mirror-circular`, {
+    method: "POST",
+    headers: await checkRequestHeaders(),
+    body: JSON.stringify({ path: normalizedPath }),
+  });
+
+  let result: { error?: unknown; path?: unknown; signedUrl?: unknown };
+  try {
+    result = (await response.json()) as typeof result;
+  } catch {
+    throw new Error("Risposta non valida dal servizio degli allegati.");
+  }
+  if (!response.ok) {
+    throw new Error(
+      typeof result.error === "string" ? result.error : "Impossibile preparare l’allegato.",
+    );
+  }
+  if (result.path !== normalizedPath || typeof result.signedUrl !== "string") {
+    throw new Error("Il servizio non ha restituito un URL firmato valido.");
+  }
+
+  const signedUrl = new URL(result.signedUrl);
+  if (
+    signedUrl.protocol !== "https:" ||
+    signedUrl.origin !== new URL(supabaseProjectUrl()).origin
+  ) {
+    throw new Error("L’URL firmato dell’allegato non è valido.");
+  }
+  return signedUrl.toString();
+}
+
 type CheckPayload = {
   ok?: unknown;
   status?: unknown;

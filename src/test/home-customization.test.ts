@@ -36,20 +36,18 @@ describe("Home customization sizing", () => {
     expect(modules.every((module) => module.scale >= 80 && module.scale <= 100)).toBe(true);
   });
 
-  it("adds the Domani a scuola module to existing preferences and allows hiding it", () => {
+  it("adds Ultimi voti to existing preferences and drops retired modules", () => {
     const modules = normalizeHomeModules([{ id: "media", enabled: true }]);
-    expect(modules.find((module) => module.id === "domani-a-scuola")).toEqual({
-      id: "domani-a-scuola",
+    expect(modules.find((module) => module.id === "ultimi-voti")).toEqual({
+      id: "ultimi-voti",
       enabled: true,
       scale: 100,
+      limit: 5,
     });
 
-    const hidden = normalizeHomeModules([{ id: "domani-a-scuola", enabled: false, scale: 90 }]);
-    expect(hidden.find((module) => module.id === "domani-a-scuola")).toEqual({
-      id: "domani-a-scuola",
-      enabled: false,
-      scale: 90,
-    });
+    expect(
+      modules.some((module) => ["simulatore", "obiettivo", "domani-a-scuola"].includes(module.id)),
+    ).toBe(false);
   });
 
   it("normalizes invalid saved module sizes back to 100%", () => {

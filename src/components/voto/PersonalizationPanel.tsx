@@ -10,9 +10,9 @@ import {
   Moon,
   Palette,
   RotateCcw,
+  Smartphone,
   SlidersHorizontal,
   Sun,
-  Type,
   Upload,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -24,9 +24,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SectionTitle } from "@/components/voto/ui";
+import { AppIconSettings } from "@/components/voto/AppIconSettings";
 import { cn } from "@/lib/utils";
 import { useUi } from "@/components/voto/AppShell";
 import { processCustomThemeBackground } from "@/lib/voto/custom-theme-background";
+import { HOME_LIMIT_OPTIONS } from "@/lib/voto/home-customization";
 import {
   DEFAULT_EMOJI_THEME_EMOJIS,
   MAX_EMOJI_THEME_EMOJIS,
@@ -43,7 +45,7 @@ import {
   type Theme,
 } from "@/lib/voto/store";
 
-type View = "menu" | "themes" | "home" | "experience" | "typography" | "registry";
+type View = "menu" | "themes" | "home" | "experience" | "registry" | "app-icon";
 
 const ACCENTS: { id: Accent; label: string; sw: string }[] = [
   { id: "rosso", label: "Rosso", sw: "oklch(0.68 0.17 25)" },
@@ -258,16 +260,20 @@ const FONTS: { id: CustomTheme["font"]; label: string; sample: string }[] = [
 ];
 const HOME_MODULE_META: { id: HomeModuleId; label: string }[] = [
   { id: "media", label: "Media generale" },
-  { id: "simulatore", label: "Studio Lab" },
-  { id: "prossima-lezione", label: "Prossima lezione" },
-  { id: "domani-a-scuola", label: "Domani a scuola" },
   { id: "presenze", label: "Presenze" },
+  { id: "ultimi-voti", label: "Ultimi voti" },
   { id: "compiti", label: "Compiti di oggi" },
-  { id: "interrogazioni", label: "Interrogazioni" },
+  { id: "interrogazioni", label: "Verifiche e interrogazioni" },
   { id: "note", label: "Note" },
   { id: "promemoria", label: "Promemoria DidUP" },
   { id: "bacheca", label: "Bacheca" },
-  { id: "obiettivo", label: "Obiettivo media" },
+];
+const HOME_MODULES_WITH_LIMIT: HomeModuleId[] = [
+  "ultimi-voti",
+  "interrogazioni",
+  "note",
+  "promemoria",
+  "bacheca",
 ];
 const DENSITY_OPTIONS: { id: Density; label: string; description: string }[] = [
   { id: "standard", label: "Standard", description: "Spazi originali dell’app" },
@@ -355,21 +361,6 @@ export function PersonalizationPanel() {
               Scegli l’aspetto VOTO o DidUP
             </span>
           </button>
-          {v.theme === "original" && v.registryStyle === "voto" && (
-            <button
-              type="button"
-              onClick={() => setView("typography")}
-              className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-                <Type className="h-7 w-7" />
-              </span>
-              <span className="font-semibold">Tipografia</span>
-              <span className="text-center text-[11px] text-muted-foreground">
-                Font e dimensione dell’interfaccia
-              </span>
-            </button>
-          )}
           <button
             type="button"
             onClick={openMusic}
@@ -383,96 +374,29 @@ export function PersonalizationPanel() {
               Brani dal dispositivo o da URL
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setView("app-icon")}
+            className="press card-surface flex min-h-36 flex-col items-center justify-center gap-3 p-4"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Smartphone className="h-7 w-7" />
+            </span>
+            <span className="font-semibold">Icona app</span>
+            <span className="text-center text-[11px] text-muted-foreground">
+              Cambia l’icona nella Home del telefono
+            </span>
+          </button>
         </div>
       </div>
     );
 
-  if (view === "typography")
+  if (view === "app-icon")
     return (
       <div className={pageClassName}>
-        <BackButton onClick={() => setView("menu")} title="Tipografia" />
-        <SectionTitle>Font dell’app</SectionTitle>
-        <p className="mb-3 text-[11px] text-muted-foreground">
-          Il font scelto si applica a tutti i temi. “Come il tema” ripristina lo stile tipografico
-          previsto da ciascun tema.
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {FONTS.map((font) => (
-            <button
-              key={font.id}
-              type="button"
-              aria-pressed={v.customTheme.font === font.id}
-              onClick={() => v.setCustomTheme({ font: font.id })}
-              className={cn(
-                "press card-surface flex items-center gap-3 p-3 text-left",
-                v.customTheme.font === font.id && "border-primary",
-              )}
-            >
-              <span
-                className="text-2xl text-primary"
-                style={{
-                  fontFamily:
-                    font.id === "theme"
-                      ? "inherit"
-                      : font.id === "serif"
-                        ? "Georgia, serif"
-                        : font.id === "mono"
-                          ? '"JetBrains Mono", monospace'
-                          : font.id === "display"
-                            ? '"Space Grotesk", sans-serif'
-                            : '"Manrope", sans-serif',
-                }}
-              >
-                {font.sample}
-              </span>
-              <span className="text-xs font-semibold">{font.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <SectionTitle>Dimensione del testo</SectionTitle>
-        <section className="card-surface p-3">
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor="interface-scale" className="text-xs font-semibold">
-              Scala testo e interfaccia
-            </label>
-            <output
-              className="tabular text-xs font-semibold text-primary"
-              htmlFor="interface-scale"
-            >
-              {v.interfaceScale}%
-            </output>
-          </div>
-          <input
-            id="interface-scale"
-            type="range"
-            min={80}
-            max={140}
-            step={5}
-            value={v.interfaceScale}
-            onChange={(event) => v.setInterfaceScale(Number(event.target.value))}
-            aria-label="Dimensione del testo"
-            className="mt-3 w-full accent-primary"
-          />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>80%</span>
-            <span>140%</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              v.setCustomTheme({ font: "theme" });
-              v.setInterfaceScale(100);
-            }}
-            disabled={v.customTheme.font === "theme" && v.interfaceScale === 100}
-            className="mt-3 text-[11px] font-medium text-primary disabled:text-muted-foreground"
-          >
-            Ripristina tipografia
-          </button>
-        </section>
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Le preferenze vengono salvate su questo dispositivo.
-        </p>
+        <BackButton onClick={() => setView("menu")} title="Icona app" />
+        <SectionTitle>Icona app</SectionTitle>
+        <AppIconSettings />
       </div>
     );
 
@@ -691,6 +615,31 @@ export function PersonalizationPanel() {
                       {module.scale}%
                     </output>
                   </div>
+                  {HOME_MODULES_WITH_LIMIT.includes(module.id) && (
+                    <div className="mt-2 flex items-center gap-2 pl-11">
+                      <label
+                        htmlFor={`home-module-limit-${module.id}`}
+                        className="w-16 shrink-0 text-[10px] text-muted-foreground"
+                      >
+                        Elementi
+                      </label>
+                      <select
+                        id={`home-module-limit-${module.id}`}
+                        value={module.limit ?? 5}
+                        onChange={(event) =>
+                          v.setHomeModuleLimit(module.id, Number(event.target.value))
+                        }
+                        aria-label={`Numero di elementi del modulo ${meta.label}`}
+                        className="h-8 flex-1 rounded-lg border border-input bg-card px-2 text-xs"
+                      >
+                        {HOME_LIMIT_OPTIONS.map((limit) => (
+                          <option key={limit} value={limit}>
+                            {limit} {limit === 1 ? "elemento" : "elementi"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -741,6 +690,92 @@ export function PersonalizationPanel() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+      )}
+      {v.theme === "original" && (
+        <>
+          <SectionTitle>Tipografia</SectionTitle>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            Scegli il font e la dimensione dell’interfaccia. “Come il tema” ripristina lo stile
+            tipografico previsto dal tema.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {FONTS.map((font) => (
+              <button
+                key={font.id}
+                type="button"
+                aria-pressed={v.customTheme.font === font.id}
+                onClick={() => v.setCustomTheme({ font: font.id })}
+                className={cn(
+                  "press card-surface flex items-center gap-3 p-3 text-left",
+                  v.customTheme.font === font.id && "border-primary",
+                )}
+              >
+                <span
+                  className="text-2xl text-primary"
+                  style={{
+                    fontFamily:
+                      font.id === "theme"
+                        ? "inherit"
+                        : font.id === "serif"
+                          ? "Georgia, serif"
+                          : font.id === "mono"
+                            ? '"JetBrains Mono", monospace'
+                            : font.id === "display"
+                              ? '"Space Grotesk", sans-serif'
+                              : '"Manrope", sans-serif',
+                  }}
+                >
+                  {font.sample}
+                </span>
+                <span className="text-xs font-semibold">{font.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <SectionTitle>Dimensione del testo</SectionTitle>
+          <section className="card-surface p-3">
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="interface-scale" className="text-xs font-semibold">
+                Scala testo e interfaccia
+              </label>
+              <output
+                className="tabular text-xs font-semibold text-primary"
+                htmlFor="interface-scale"
+              >
+                {v.interfaceScale}%
+              </output>
+            </div>
+            <input
+              id="interface-scale"
+              type="range"
+              min={80}
+              max={140}
+              step={5}
+              value={v.interfaceScale}
+              onChange={(event) => v.setInterfaceScale(Number(event.target.value))}
+              aria-label="Dimensione del testo"
+              className="mt-3 w-full accent-primary"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>80%</span>
+              <span>140%</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                v.setCustomTheme({ font: "theme" });
+                v.setInterfaceScale(100);
+              }}
+              disabled={v.customTheme.font === "theme" && v.interfaceScale === 100}
+              className="mt-3 text-[11px] font-medium text-primary disabled:text-muted-foreground"
+            >
+              Ripristina tipografia
+            </button>
+          </section>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Le preferenze vengono salvate su questo dispositivo.
+          </p>
+        </>
       )}
       {v.theme === "windows-7" && (
         <p className="mt-3 rounded-md border border-border bg-card p-3 text-xs text-muted-foreground">

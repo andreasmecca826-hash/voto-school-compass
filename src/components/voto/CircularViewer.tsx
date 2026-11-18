@@ -38,6 +38,7 @@ import {
   type CircularAssistantMessage,
 } from "@/lib/voto/circular-assistant";
 import { useOnlineStatus } from "@/lib/voto/use-online-status";
+import { getCircularAttachmentSignedUrl, isCapacitorNative } from "@/lib/voto/circulars";
 import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
@@ -279,12 +280,21 @@ export function CircularViewer({
   extractedText?: string | undefined;
 }) {
   const files = mergeAttachments(attachments, { name: fileName, path, url });
+  const attachmentIdentity = JSON.stringify(
+    files.map((file) => [file.path ?? "", file.url ?? "", file.name ?? ""]),
+  );
   const isOnline = useOnlineStatus();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomControlsOpen, setIsZoomControlsOpen] = useState(false);
   const [attachmentZoom, setAttachmentZoom] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | undefined>();
+  const [nativeAttachmentUrl, setNativeAttachmentUrl] = useState<{
+    path: string;
+    url: string;
+  } | null>(null);
+  const [nativeAttachmentErrorPath, setNativeAttachmentErrorPath] = useState<string | null>(null);
+  const [nativeUrlRetry, setNativeUrlRetry] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<CircularAnalysis | null>(null);
   const [analysisError, setAnalysisError] = useState<string | undefined>();
@@ -297,6 +307,7 @@ export function CircularViewer({
   const [isAskingAi, setIsAskingAi] = useState(false);
   const [aiProgressMessage, setAiProgressMessage] = useState<string | undefined>();
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
+  const isNative = isCapacitorNative();
   const activeAiMode = isOnline && (aiMode === "api" || aiMode === "api-vision") ? aiMode : "local";
   const aiRequestId = useRef(0);
 
@@ -343,10 +354,34 @@ export function CircularViewer({
       setIsAskingAi(false);
       aiRequestId.current += 1;
     }
-  }, [open, title]);
+  }, [attachmentIdentity, open, title]);
 
   const activeIndex = Math.min(selectedIndex, Math.max(0, files.length - 1));
   const activeFile = files[activeIndex];
+
+  useEffect(() => {
+    if (!open || !isNative || !activeFile?.path) {
+      setNativeAttachmentUrl(null);
+      setNativeAttachmentErrorPath(null);
+      return;
+    }
+
+    let cancelled = false;
+    const activePath = activeFile.path;
+    setNativeAttachmentUrl(null);
+    setNativeAttachmentErrorPath(null);
+    void getCircularAttachmentSignedUrl(activePath)
+      .then((signedUrl) => {
+        if (!cancelled) setNativeAttachmentUrl({ path: activePath, url: signedUrl });
+      })
+      .catch(() => {
+        if (!cancelled) setNativeAttachmentErrorPath(activePath);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeFile?.path, isNative, nativeUrlRetry, open]);
 
   useEffect(() => {
     setIsZoomControlsOpen(false);
@@ -364,10 +399,30 @@ export function CircularViewer({
   }, [activeFile?.path, activeFile?.url, activeFile?.name]);
 
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
-  const internalPreviewUrl = activeFile?.path ? internalPdfUrl(activeFile.path) : undefined;
+  const nativeSignedUrl =
+    activeFile?.path && nativeAttachmentUrl?.path === activeFile.path
+      ? nativeAttachmentUrl.url
+      : undefined;
+  const isResolvingNativeAttachment = Boolean(
+    open &&
+    isNative &&
+    activeFile?.path &&
+    !nativeSignedUrl &&
+    nativeAttachmentErrorPath !== activeFile.path,
+  );
+  const hasNativeAttachmentError = Boolean(
+    isNative && activeFile?.path && nativeAttachmentErrorPath === activeFile.path,
+  );
+  const internalPreviewUrl = activeFile?.path
+    ? isNative
+      ? nativeSignedUrl
+      : internalPdfUrl(activeFile.path)
+    : undefined;
   const previewUrl = internalPreviewUrl ?? activeFile?.url;
   const downloadUrl = activeFile?.path
-    ? internalPdfUrl(activeFile.path, true, attachmentFilename)
+    ? isNative
+      ? nativeSignedUrl
+      : internalPdfUrl(activeFile.path, true, attachmentFilename)
     : activeFile?.url;
   const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
   const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
@@ -501,7 +556,14 @@ export function CircularViewer({
     setIsDownloading(true);
     setDownloadError(undefined);
     try {
-      const response = await fetch(downloadUrl, { credentials: "same-origin" });
+      const requestUrl =
+        isNative && activeFile?.path
+          ? await getCircularAttachmentSignedUrl(activeFile.path)
+          : downloadUrl;
+      if (!requestUrl) throw new Error("URL allegato non disponibile");
+      const response = await fetch(requestUrl, {
+        credentials: isNative ? "omit" : "same-origin",
+      });
       if (!response.ok) throw new Error(`download_${response.status}`);
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -831,7 +893,7 @@ export function CircularViewer({
                 {effectiveAiMode === "local"
                   ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
                   : effectiveAiMode === "api-vision"
-                    ? "Solo quando premi Chiedi, vengono inviate a Groq la domanda e le immagini JPEG delle prime 3 pagine PDF. Il documento esce dal dispositivo e la chiamata usa la quota API (eventuali limiti/costi dipendono dall’account). Non vengono inviati titolo, cronologia, voti o presenze."
+                    ? "Solo quando premi Chiedi, Groq riceve la domanda e le immagini JPEG delle prime 3 pagine PDF, che escono dal dispositivo. Titolo, cronologia, voti e presenze non vengono inviati."
                     : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}
                 {!isOnline && (
                   <span className="font-medium text-primary">
@@ -945,7 +1007,32 @@ export function CircularViewer({
             Contiene {activeFile.tableCount} {activeFile.tableCount === 1 ? "tabella" : "tabelle"}
           </p>
         ) : null}
-        {previewUrl && isPdf ? (
+        {isResolvingNativeAttachment ? (
+          <div
+            role="status"
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+          >
+            <LoaderCircle className="h-7 w-7 animate-spin" />
+            <p>Preparo l’anteprima sicura della circolare…</p>
+          </div>
+        ) : hasNativeAttachmentError ? (
+          <div
+            role="alert"
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+          >
+            <FileText className="h-8 w-8" />
+            <p>
+              Non riesco a creare il collegamento sicuro. Controlla rete e accesso, poi riprova.
+            </p>
+            <button
+              type="button"
+              onClick={() => setNativeUrlRetry((retry) => retry + 1)}
+              className="press rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+            >
+              Riprova
+            </button>
+          </div>
+        ) : previewUrl && isPdf ? (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <PdfCanvasPreview
               key={activeFile?.path ?? activeFile?.url ?? activeIndex}

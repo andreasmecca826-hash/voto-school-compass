@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import { claimSchoolDataAccess, PRIVATE_SCHOOL_DATA_URL, supabase } from "@/lib/supabase-auth";
 import { SchoolAuthContext, type PrefetchedSchoolData } from "@/lib/school-auth-context";
 import { fetchVotoData } from "@/lib/voto/parse";
 import { KEYS, load, save } from "@/lib/voto/storage";
 import { isDemoAccessCode } from "@/lib/demo-access";
+import { clearNativeDidupSync, persistNativeSupabaseSession } from "@/lib/native-didup-sync";
 
 const OWNER_KEY = "voto.privateOwnerId";
-type Step = "checking" | "email" | "otp" | "claim" | "retry" | "ready";
+type Step = "checking" | "email" | "link-sent" | "claim" | "retry" | "ready";
 
 export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<Step>("checking");
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
   const [claimCode, setClaimCode] = useState("");
   const [demoCode, setDemoCode] = useState("");
   const [error, setError] = useState("");
@@ -33,6 +35,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   }, []);
 
   async function activate(userSession: Session) {
+    void persistNativeSupabaseSession(userSession).catch(() => undefined);
     save(KEYS.demoMode, false);
     sessionRef.current = userSession;
     setSession(userSession);
@@ -64,6 +67,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         setStep("claim");
         setError("");
       } else if (message.startsWith("PRIVATE_DATA_UNAUTHENTICATED:")) {
+        void clearNativeDidupSync();
         sessionRef.current = null;
         setSession(null);
         setStep("email");
@@ -77,22 +81,62 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    const savedDemoMode = load<boolean>(KEYS.demoMode, false) === true;
-    if (savedDemoMode) {
-      setStep("ready");
+    let appUrlListener: { remove: () => Promise<void> } | null = null;
+
+    const handleAppUrl = async (url: string) => {
+      if (!url.startsWith("it.voto.school://login-callback")) return;
+
+      setStep("checking");
+      setError("");
+
+      try {
+        const code = new URL(url).searchParams.get("code");
+        if (!code) throw new Error("Codice PKCE mancante nel link di accesso.");
+
+        const { error: authError } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (authError && mounted) {
+          setError("Non riesco a completare l'accesso. Richiedi un nuovo link email.");
+          setStep("email");
+        }
+      } catch {
+        if (mounted) {
+          setError("Non riesco a completare l'accesso. Richiedi un nuovo link email.");
+          setStep("email");
+        }
+      }
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      void App.addListener("appUrlOpen", ({ url }) => {
+        void handleAppUrl(url);
+      }).then((listener) => {
+        appUrlListener = listener;
+        if (!mounted) void listener.remove();
+      });
+
+      void App.getLaunchUrl().then((launch) => {
+        if (launch?.url) void handleAppUrl(launch.url);
+      });
     }
+
+    // A demo scelta in una sessione precedente non deve sostituire il login al riavvio.
+    save(KEYS.demoMode, false);
+
     void supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!mounted) return;
-      if (savedDemoMode) return;
       if (sessionError || !data.session) {
+        void clearNativeDidupSync();
         setStep("email");
         return;
       }
       void activate(data.session);
     });
+
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (savedDemoMode) return;
+      if (nextSession) void persistNativeSupabaseSession(nextSession).catch(() => undefined);
       if (event === "SIGNED_OUT" && mounted) {
+        void clearNativeDidupSync();
         sessionRef.current = null;
         prefetchedDataRef.current = null;
         setSession(null);
@@ -106,28 +150,32 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         }, 0);
       }
     });
+
     return () => {
       mounted = false;
       data.subscription.unsubscribe();
+      if (appUrlListener) void appUrlListener.remove();
     };
   }, []);
 
-  async function requestOtp(event: React.FormEvent<HTMLFormElement>) {
+  async function requestMagicLink(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      const { error: linkError } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: "https://voto-school-compass.lovable.app",
+          emailRedirectTo: Capacitor.isNativePlatform()
+            ? "it.voto.school://login-callback"
+            : "https://voto-school-compass.lovable.app",
         },
       });
-      if (otpError) throw otpError;
+      if (linkError) throw linkError;
       setEmail(normalizedEmail);
-      setStep("otp");
+      setStep("link-sent");
     } catch (caught) {
       const status =
         typeof caught === "object" && caught !== null && "status" in caught
@@ -144,25 +192,6 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       } else {
         setError("Non riesco a inviare il link. Controlla l’indirizzo email e riprova.");
       }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verifyOtp(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
-        token: otp.trim(),
-        type: "email",
-      });
-      if (verifyError || !data.session) throw verifyError ?? new Error("Sessione non disponibile.");
-      await activate(data.session);
-    } catch {
-      setError("Codice email non valido o scaduto. Richiedine uno nuovo.");
     } finally {
       setBusy(false);
     }
@@ -207,6 +236,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
     sessionRef.current = null;
     prefetchedDataRef.current = null;
     save(KEYS.demoMode, false);
+    await clearNativeDidupSync();
     await supabase.auth.signOut();
     setSession(null);
     setStep("email");
@@ -221,6 +251,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       setBusy(false);
       return;
     }
+    await clearNativeDidupSync();
     await supabase.auth.signOut();
     sessionRef.current = null;
     prefetchedDataRef.current = null;
@@ -246,7 +277,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   const title =
     step === "checking"
       ? "Verifico l’accesso"
-      : step === "otp"
+      : step === "link-sent"
         ? "Controlla la tua email"
         : step === "claim"
           ? "Attiva questo account"
@@ -272,7 +303,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
 
         {step === "email" && (
           <div className="space-y-6">
-            <form onSubmit={requestOtp} className="space-y-4">
+            <form onSubmit={requestMagicLink} className="space-y-4">
               <label className="block text-sm font-medium" htmlFor="school-email">
                 Email
               </label>
@@ -320,23 +351,12 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        {step === "otp" && (
-          <form onSubmit={verifyOtp} className="space-y-4">
+        {step === "link-sent" && (
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Abbiamo inviato un link a {email}. Aprilo per completare l’accesso; ti riporterà a
-              VOTO. Se hai già aperto il link, tocca il pulsante qui sotto.
+              Abbiamo inviato un link di accesso a {email}. Aprilo per completare l’accesso; VOTO
+              proseguirà automaticamente. Se hai già aperto il link, puoi continuare qui sotto.
             </p>
-            <label className="block text-sm font-medium" htmlFor="email-otp">
-              Codice email (se presente)
-            </label>
-            <input
-              id="email-otp"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={otp}
-              onChange={(event) => setOtp(event.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base tracking-[0.2em] outline-none focus:ring-2 focus:ring-primary"
-            />
             <button
               type="button"
               disabled={busy}
@@ -346,20 +366,13 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
               {busy ? "Controllo…" : "Ho aperto il link: continua"}
             </button>
             <button
-              type="submit"
-              disabled={busy || !otp.trim()}
-              className="w-full rounded-xl border border-border px-4 py-3 font-semibold disabled:opacity-60"
-            >
-              {busy ? "Verifica…" : "Usa il codice email"}
-            </button>
-            <button
               type="button"
               onClick={() => setStep("email")}
               className="w-full py-2 text-sm text-muted-foreground"
             >
-              Cambia email
+              Cambia email o richiedi un nuovo link
             </button>
-          </form>
+          </div>
         )}
 
         {step === "claim" && (

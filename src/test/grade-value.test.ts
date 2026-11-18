@@ -23,6 +23,27 @@ describe("Conversione dei voti con segno", () => {
     expect(data.subjects[0]?.grades[0]?.comment).toBeUndefined();
   });
 
+  it("conserva il momento di inserimento del voto", () => {
+    const data = parseVotoData({
+      subjects: [
+        {
+          name: "Matematica",
+          grades: [
+            {
+              id: "g1",
+              value: 8,
+              date: "2026-10-19",
+              createdAt: "2026-11-15T01:30:00.000Z",
+              type: "scritto",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.subjects[0]?.grades[0]?.createdAt).toBe("2026-11-15T01:30:00.000Z");
+  });
+
   it("usa l'etichetta originale 7+ anche se il dato importato contiene il vecchio valore 7,25", () => {
     const data = parseVotoData({
       subjects: [

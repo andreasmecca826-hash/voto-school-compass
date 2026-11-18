@@ -983,16 +983,22 @@ describe("Assistente locale", () => {
     ).toContain("Apple");
     expect(
       answerQuestion("Dove trovo il simulatore per calcolare il voto necessario?", data),
-    ).toContain("Studio Lab > Calcolatore universale");
-    expect(answerQuestion("Dove trovo il calcolo assenze?", data)).toContain(
-      "Calcolatore universale",
+    ).toContain("Studio Lab > Simulatore voti");
+    expect(answerQuestion("Dove trovo il calcolo media?", data)).toContain(
+      "Studio Lab > Calcolo media",
+    );
+    expect(answerQuestion("Dove trovo il calcolo delle assenze?", data)).toContain(
+      "Studio Lab > Calcolo assenze",
+    );
+    expect(answerQuestion("Dove trovo il calcolatore universale?", data)).toContain(
+      "Studio Lab > Calcolatore universale",
     );
   });
 
   it("indirizza al planner manuale senza generare sessioni dal registro", () => {
     const answer = answerQuestion("Organizza lo studio per la settimana", data);
 
-    expect(answer).toContain("Studio Lab > Planner di studio");
+    expect(answer).toContain("Studio Lab > Calcolatore universale > Planner di studio");
     expect(answer).toContain("scegli tu ogni sessione");
     expect(answer).toContain("non creo un piano automatico dal registro");
   });

@@ -12,7 +12,7 @@ npm run build
 
 ## Dati scolastici privati
 
-Il monitor DidUP pubblica `grades.json`, `state.json` e `history.md` nel bucket privato Supabase `school-data`; il workflow li ripristina da lì prima di ogni esecuzione. VOTO accede ai voti tramite l'Edge Function `school-data`, che richiede una sessione Supabase valida e autorizza un solo account. L'accesso usa il link email con redirect esplicito a `https://voto-school-compass.lovable.app` (oppure un codice OTP, se presente nel template) e resta memorizzato sul dispositivo; al primo accesso va inserito anche il codice di attivazione monouso. Il dominio deve essere autorizzato nella configurazione URL di Supabase Auth.
+Il monitor DidUP pubblica `grades.json`, `state.json` e `history.md` nel bucket privato Supabase `school-data`; il workflow li ripristina da lì prima di ogni esecuzione. VOTO accede ai voti tramite l'Edge Function `school-data`, che richiede una sessione Supabase valida e autorizza un solo account. L'accesso avviene tramite link email con redirect esplicito a `https://voto-school-compass.lovable.app`: non viene richiesto di copiare o digitare un codice OTP. Al primo accesso resta necessario il codice di attivazione monouso, separato dal link email, per autorizzare l'account ai dati privati. Il login è la schermata iniziale; un’eventuale modalità demo non viene ripristinata automaticamente al riavvio. Il dominio deve essere autorizzato nella configurazione URL di Supabase Auth.
 
 La chiave `SUPABASE_SERVICE_ROLE_KEY` resta solo nei secret GitHub Actions e nell'ambiente server Supabase: non inserirla mai nell'app o in variabili `VITE_`. Il client usa soltanto la chiave publishable. Gli ultimi dati validi sono mantenuti in cache locale per un'apertura rapida e per l'uso temporaneo offline.
 
@@ -28,7 +28,7 @@ Solo in modalità API, dopo l'invio esplicito, Groq riceve la domanda corrente e
 
 ## PDF delle circolari
 
-Il monitor DidUP acquisisce i PDF tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. Quando l'app apre una circolare con path interno, la Edge Function `mirror-circular` crea un URL firmato valido un'ora; la funzione accetta solo path PDF già presenti nel bucket e non scarica link esterni. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.
+Il monitor DidUP acquisisce i PDF e i DOCX tramite la sessione autenticata e li carica nel bucket privato Supabase Storage. Nel JSON salva `attachmentPath`, non un URL Argo da scaricare nuovamente. La Edge Function `mirror-circular` accetta solo path interni PDF/DOCX e restituisce un URL firmato valido un'ora; usa il service role solo lato server e richiede una sessione Supabase valida al client. La Web App usa il proxy server `/api/circulars/mirror`; l'APK Capacitor contiene invece un bundle statico senza route server TanStack e ottiene l'URL firmato invocando direttamente `mirror-circular`. Nel repository del monitor configura i secrets GitHub `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Non inserire mai una service-role key nelle variabili `VITE_`.
 
 ## Controllo manuale delle circolari
 
@@ -38,7 +38,7 @@ L’accesso ai voti e agli altri dati scolastici privati richiede il login descr
 
 ```
 npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init VOTO it.voto.app
+npx cap init VOTO it.voto.school
 npm run build
 npx cap add android
 npx cap sync android

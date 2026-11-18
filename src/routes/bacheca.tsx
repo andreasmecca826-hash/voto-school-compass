@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileText, Search } from "lucide-react";
-import { useMemo, useState } from "react";
-import { CircularViewer } from "@/components/voto/CircularViewer";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, toIso } from "@/lib/voto/dates";
 import { matchesNoticeQuery } from "@/lib/voto/bacheca-search";
@@ -12,6 +11,12 @@ import {
 } from "@/lib/voto/selectors";
 import { useVoto } from "@/lib/voto/store";
 import type { AppNotification } from "@/lib/voto/types";
+
+const LazyCircularViewer = lazy(() =>
+  import("@/components/voto/CircularViewer").then(({ CircularViewer: Viewer }) => ({
+    default: Viewer,
+  })),
+);
 
 export const Route = createFileRoute("/bacheca")({
   head: () => ({
@@ -62,7 +67,9 @@ function openNotice(
   item: AppNotification,
   markRead: (ids: string[]) => void,
   setSelected: (item: AppNotification) => void,
+  setViewerRequested: (requested: boolean) => void,
 ) {
+  setViewerRequested(true);
   setSelected(item);
   markRead([item.id]);
 }
@@ -92,6 +99,7 @@ function DidupBacheca() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterError, setFilterError] = useState("");
   const [selected, setSelected] = useState<AppNotification | null>(null);
+  const [viewerRequested, setViewerRequested] = useState(false);
   const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLocaleLowerCase("it-IT");
@@ -330,7 +338,7 @@ function DidupBacheca() {
                 {count > 0 && (
                   <button
                     type="button"
-                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    onClick={() => openNotice(item, v.markRead, setSelected, setViewerRequested)}
                     aria-label={`Apri circolare con ${count} ${count === 1 ? "allegato" : "allegati"}`}
                     className="press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90"
                   >
@@ -346,7 +354,7 @@ function DidupBacheca() {
                 {count === 0 && (item.message || item.extractedText || item.title) && (
                   <button
                     type="button"
-                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    onClick={() => openNotice(item, v.markRead, setSelected, setViewerRequested)}
                     className="press mt-auto inline-flex min-h-10 items-center gap-[9px] pt-5 text-left text-[14px] text-white/90"
                   >
                     <FileText className="h-[21px] w-[21px] shrink-0" aria-hidden="true" />
@@ -384,16 +392,29 @@ function DidupBacheca() {
         <Search className="h-7 w-7" />
       </button>
 
-      <CircularViewer
-        open={selected !== null}
-        onOpenChange={(open) => !open && setSelected(null)}
-        title={selected?.message ?? selected?.title ?? "Circolare"}
-        fileName={selected?.attachmentName}
-        path={selected?.attachmentPath}
-        attachments={selected?.attachments}
-        url={selected?.attachmentUrl}
-        extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
-      />
+      {viewerRequested && (
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              className="fixed inset-0 z-[100] grid place-items-center bg-background/70 text-sm"
+            >
+              Caricamento del contenuto…
+            </div>
+          }
+        >
+          <LazyCircularViewer
+            open={selected !== null}
+            onOpenChange={(open) => !open && setSelected(null)}
+            title={selected?.message ?? selected?.title ?? "Circolare"}
+            fileName={selected?.attachmentName}
+            path={selected?.attachmentPath}
+            attachments={selected?.attachments}
+            url={selected?.attachmentUrl}
+            extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -401,6 +422,7 @@ function DidupBacheca() {
 function StandardBacheca() {
   const v = useVoto();
   const [selected, setSelected] = useState<AppNotification | null>(null);
+  const [viewerRequested, setViewerRequested] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const notices = useMemo(() => getNotices(v.data.notifications), [v.data.notifications]);
@@ -492,7 +514,7 @@ function StandardBacheca() {
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <button
                     type="button"
-                    onClick={() => openNotice(item, v.markRead, setSelected)}
+                    onClick={() => openNotice(item, v.markRead, setSelected, setViewerRequested)}
                     className="press inline-flex items-center gap-2 text-xs font-medium text-primary"
                   >
                     <FileText className="h-4 w-4" />
@@ -508,7 +530,7 @@ function StandardBacheca() {
               {count === 0 && (item.message || item.extractedText || item.title) && (
                 <button
                   type="button"
-                  onClick={() => openNotice(item, v.markRead, setSelected)}
+                  onClick={() => openNotice(item, v.markRead, setSelected, setViewerRequested)}
                   className="press mt-3 inline-flex items-center gap-2 text-xs font-medium text-primary"
                 >
                   <FileText className="h-4 w-4" />
@@ -525,16 +547,29 @@ function StandardBacheca() {
             : "Nessuna circolare o comunicazione in bacheca."}
         </p>
       )}
-      <CircularViewer
-        open={selected !== null}
-        onOpenChange={(open) => !open && setSelected(null)}
-        title={selected?.message ?? selected?.title ?? "Circolare"}
-        fileName={selected?.attachmentName}
-        path={selected?.attachmentPath}
-        attachments={selected?.attachments}
-        url={selected?.attachmentUrl}
-        extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
-      />
+      {viewerRequested && (
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              className="fixed inset-0 z-[100] grid place-items-center bg-background/70 text-sm"
+            >
+              Caricamento del contenuto…
+            </div>
+          }
+        >
+          <LazyCircularViewer
+            open={selected !== null}
+            onOpenChange={(open) => !open && setSelected(null)}
+            title={selected?.message ?? selected?.title ?? "Circolare"}
+            fileName={selected?.attachmentName}
+            path={selected?.attachmentPath}
+            attachments={selected?.attachments}
+            url={selected?.attachmentUrl}
+            extractedText={selected?.extractedText ?? selected?.message ?? selected?.title}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

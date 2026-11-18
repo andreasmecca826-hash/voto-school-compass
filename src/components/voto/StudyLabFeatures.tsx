@@ -273,8 +273,8 @@ export function PhotoImportTool() {
         <div>
           <h3 className="font-display text-base font-semibold">Importa da foto</h3>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Fotografa appunti, una lavagna o il diario: l’OCR estrae il testo direttamente nel
-            browser.
+            Scegli una foto dalla galleria oppure scattala al momento, se il dispositivo lo
+            consente. L’OCR estrae il testo direttamente nel browser.
           </p>
         </div>
         <label className="block space-y-1 text-xs font-medium">
@@ -283,7 +283,6 @@ export function PhotoImportTool() {
             className="block min-h-12 w-full rounded-lg border border-input bg-card px-2 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:font-semibold file:text-primary"
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);
               setText("");

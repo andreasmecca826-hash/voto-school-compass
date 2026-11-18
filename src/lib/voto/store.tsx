@@ -32,6 +32,7 @@ import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
 import {
   DEFAULT_HOME_MODULES,
   normalizeHomeModules,
+  normalizeHomeLimit,
   normalizeHomeScale,
   type HomeModuleConfig,
   type HomeModuleId,
@@ -299,6 +300,7 @@ interface Ctx {
   moveHomeModule: (id: HomeModuleId, direction: -1 | 1) => void;
   setHomeScale: (scale: number) => void;
   setHomeModuleScale: (id: HomeModuleId, scale: number) => void;
+  setHomeModuleLimit: (id: HomeModuleId, limit: number) => void;
   setHomeCustomization: (settings: { homeScale: number; homeModules: HomeModuleConfig[] }) => void;
   resetHomeModules: () => void;
   addInterrogazione: (item: Omit<Interrogazione, "id" | "completed" | "checklist">) => void;
@@ -835,6 +837,14 @@ export function VotoProvider({ children }: { children: ReactNode }) {
         setHomeModulesS((current) => {
           const next = current.map((module) =>
             module.id === id ? { ...module, scale: normalizeHomeScale(scale) } : module,
+          );
+          save(KEYS.homeModules, next);
+          return next;
+        }),
+      setHomeModuleLimit: (id, limit) =>
+        setHomeModulesS((current) => {
+          const next = current.map((module) =>
+            module.id === id ? { ...module, limit: normalizeHomeLimit(limit) } : module,
           );
           save(KEYS.homeModules, next);
           return next;
