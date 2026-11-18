@@ -39,6 +39,11 @@ L’accesso ai voti e agli altri dati scolastici privati richiede il login descr
 Da **Personalizza → Icona app** nell’app Android puoi scegliere l’icona VOTO o una delle due icone incluse e applicare una delle etichette **VOTO**, **didUP Famiglia** o **ClasseViva Studenti e Famiglie**. Per un’immagine dalla galleria puoi creare un collegamento personale alla schermata Home, con nome personalizzato e conferma del launcher, e nasconderne il testo. Il launcher può sovrapporre un badge all’icona del collegamento; Android non offre all’app un comando per disabilitarlo. Nel browser la funzione non è disponibile. Per preparare l’APK aggiornata, crea prima il bundle e sincronizzalo con il progetto Android:
 
 ```
+<<<<<<< HEAD
+=======
+npm install @capacitor/core @capacitor/cli @capacitor/android
+npx cap init VOTO it.voto.school
+>>>>>>> e48bbe463b01a481c3470249d2dc18f7ca72f677
 npm run build
 npx cap sync android
 ```
