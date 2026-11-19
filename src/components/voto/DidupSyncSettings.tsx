@@ -584,21 +584,14 @@ export function DidupSyncSettings() {
       </form>
 
       <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
-        Android esegue il controllo in background quando il sistema lo consente, con rete
-        disponibile. L’intervallo è indicativo: modalità risparmio energetico, rete e criteri
-        Android possono ritardare l’esecuzione. Il servizio non è garantito a orario fisso; dopo
-        aver forzato l’arresto dell’app, apri nuovamente VOTO per riattivare i job. La pausa
-        selezionata vale solo per i controlli automatici; “Controlla adesso” resta disponibile. La
-        sincronizzazione si sospende al logout VOTO e puoi rimuovere in ogni momento le credenziali
-        locali.
+        Android può ritardare i controlli DidUP in background: l’intervallo non è garantito. Dopo un
+        arresto forzato, riapri VOTO. Il logout sospende la sincronizzazione.
       </p>
       <div className="mt-3 rounded-xl border border-border bg-surface/40 p-3">
         <p className="text-xs font-semibold">Aiuta VOTO a sincronizzare in background</p>
         <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
-          Su alcuni telefoni, soprattutto con risparmio energetico o restrizioni Samsung, Android
-          può ritardare i controlli. Apri le info app di VOTO e, se disponibile, imposta Batteria su
-          “Senza restrizioni” e abilita l’attività in background. È facoltativo e può aumentare il
-          consumo della batteria; gli orari restano comunque gestiti da Android.
+          Per ridurre i ritardi, imposta VOTO su “Senza restrizioni” nelle impostazioni Batteria. È
+          facoltativo e può aumentare i consumi.
         </p>
         <button
           type="button"
