@@ -11,6 +11,8 @@ export type DidupSyncStatus = {
   quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;
+  updateNotificationsEnabled: boolean;
+  notificationPermissionGranted: boolean;
   status: string;
   message: string;
   lastSyncAt: string;
@@ -41,7 +43,12 @@ type NativeDidupSyncPlugin = {
   syncNow(): Promise<{ queued: boolean }>;
   setEnabled(options: { enabled: boolean; intervalMinutes: number }): Promise<void>;
   setQuietHours(options: { enabled: boolean; startTime: string; endTime: string }): Promise<void>;
+  setUpdateNotificationsEnabled(options: { enabled: boolean }): Promise<{
+    enabled: boolean;
+    permissionGranted: boolean;
+  }>;
   openAppSettings(): Promise<void>;
+  openNotificationSettings(): Promise<void>;
   clear(): Promise<void>;
 };
 
@@ -125,10 +132,22 @@ export async function setNativeDidupQuietHours(
   await NativeDidupSync.setQuietHours({ enabled, startTime, endTime });
 }
 
+export async function setNativeDidupUpdateNotificationsEnabled(enabled: boolean) {
+  if (!isAndroidDidupSyncAvailable())
+    throw new Error("Funzione disponibile solo nell’app Android.");
+  return NativeDidupSync.setUpdateNotificationsEnabled({ enabled });
+}
+
 export async function openNativeDidupAppSettings() {
   if (!isAndroidDidupSyncAvailable())
     throw new Error("Funzione disponibile solo nell’app Android.");
   await NativeDidupSync.openAppSettings();
+}
+
+export async function openNativeDidupNotificationSettings() {
+  if (!isAndroidDidupSyncAvailable())
+    throw new Error("Funzione disponibile solo nell’app Android.");
+  await NativeDidupSync.openNotificationSettings();
 }
 
 export async function clearNativeDidupSync() {

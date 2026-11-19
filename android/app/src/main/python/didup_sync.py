@@ -39,6 +39,50 @@ _MESSAGES = {
 }
 
 
+def _record_ids(items: Any) -> set[str]:
+    if not isinstance(items, list):
+        return set()
+    return {
+        str(item["id"])
+        for item in items
+        if isinstance(item, dict) and item.get("id") not in (None, "")
+    }
+
+
+def _grade_ids(snapshot: dict[str, Any]) -> set[str]:
+    subjects = snapshot.get("subjects")
+    if not isinstance(subjects, list):
+        return set()
+    return {
+        str(grade["id"])
+        for subject in subjects
+        if isinstance(subject, dict) and isinstance(subject.get("grades"), list)
+        for grade in subject["grades"]
+        if isinstance(grade, dict) and grade.get("id") not in (None, "")
+    }
+
+
+def _new_update_count(previous: dict[str, Any], current: dict[str, Any]) -> int:
+    """Count newly appearing records only after a prior snapshot exists."""
+    if not previous.get("updatedAt"):
+        return 0
+    old_student = previous.get("student") if isinstance(previous.get("student"), dict) else {}
+    new_student = current.get("student") if isinstance(current.get("student"), dict) else {}
+    old_year = str(old_student.get("schoolYear") or "")
+    new_year = str(new_student.get("schoolYear") or "")
+    if old_year and new_year and old_year != new_year:
+        return 0
+
+    groups = (
+        (_grade_ids(previous), _grade_ids(current)),
+        (_record_ids(previous.get("assignments")), _record_ids(current.get("assignments"))),
+        (_record_ids(previous.get("notifications")), _record_ids(current.get("notifications"))),
+        (_record_ids(previous.get("attendanceEvents")), _record_ids(current.get("attendanceEvents"))),
+        (_record_ids(previous.get("diary")), _record_ids(current.get("diary"))),
+    )
+    return sum(len(new_ids - old_ids) for old_ids, new_ids in groups)
+
+
 def _result(
     code: str,
     *,
@@ -46,6 +90,7 @@ def _result(
     session: dict[str, Any] | None = None,
     synced_at: str | None = None,
     diagnostic: str | None = None,
+    updates_found: bool = False,
 ) -> str:
     body: dict[str, Any] = {
         "ok": code in ("ok", "attachment_retry", "attachment_pending", "attachment_issue"),
@@ -55,6 +100,7 @@ def _result(
             + (f" Dettaglio tecnico: {diagnostic}." if diagnostic else "")
         ),
         "retry": retry,
+        "updatesFound": updates_found,
     }
     if synced_at:
         body["syncedAt"] = synced_at
@@ -457,6 +503,7 @@ def sync(input_json: str) -> str:
         except SnapshotError as error:
             code = str(error) if str(error) in _MESSAGES else "incomplete_dashboard"
             return _result(code, session=session)
+        updates_found = _new_update_count(previous, snapshot) > 0
         snapshot, session, attachment_issue, attachment_diagnostic = _mirror_attachments(
             client, snapshot, base_url, api_key, session
         )
@@ -489,6 +536,7 @@ def sync(input_json: str) -> str:
             session=session,
             synced_at=synced_at,
             diagnostic=attachment_diagnostic,
+            updates_found=updates_found,
         )
     except Exception:
         return _result("sync_error", retry=True)

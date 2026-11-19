@@ -5,10 +5,12 @@ import {
   clearNativeDidupSync,
   getNativeDidupSyncStatus,
   openNativeDidupAppSettings,
+  openNativeDidupNotificationSettings,
   requestNativeDidupSync,
   saveNativeDidupCredentials,
   setNativeDidupQuietHours,
   setNativeDidupSyncEnabled,
+  setNativeDidupUpdateNotificationsEnabled,
   type DidupSyncStatus,
 } from "@/lib/native-didup-sync";
 import { cn } from "@/lib/utils";
@@ -21,6 +23,8 @@ const DEFAULT_STATUS: DidupSyncStatus = {
   quietHoursEnabled: true,
   quietHoursStart: "00:00",
   quietHoursEnd: "06:00",
+  updateNotificationsEnabled: false,
+  notificationPermissionGranted: false,
   status: "idle",
   message: "",
   lastSyncAt: "",
@@ -192,6 +196,40 @@ export function DidupSyncSettings() {
     }
   }
 
+  async function handleOpenNotificationSettings() {
+    try {
+      await openNativeDidupNotificationSettings();
+    } catch (error) {
+      toast.error("Impossibile aprire le impostazioni notifiche Android", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  }
+
+  async function handleUpdateNotificationsChange(enabled: boolean) {
+    setBusy(true);
+    try {
+      const result = await setNativeDidupUpdateNotificationsEnabled(enabled);
+      await refreshStatus();
+      if (result.enabled) {
+        toast.success("Avvisi locali degli aggiornamenti attivati.");
+      } else if (enabled && !result.permissionGranted) {
+        toast.error("Permesso notifiche non concesso", {
+          description: "Consenti le notifiche di VOTO nelle impostazioni Android.",
+        });
+      } else {
+        toast.success("Avvisi locali degli aggiornamenti disattivati.");
+      }
+    } catch (error) {
+      toast.error("Non è stato possibile aggiornare le notifiche", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+      await refreshStatus();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleEnabledChange(enabled: boolean) {
     const previousEnabled = status.enabled;
     setBusy(true);
@@ -358,6 +396,43 @@ export function DidupSyncSettings() {
           </p>
         </div>
       </div>
+
+      {status.hasCredentials && (
+        <div className="mt-3 rounded-xl border border-border bg-surface/40 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold">Avvisi locali degli aggiornamenti</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                {status.updateNotificationsEnabled
+                  ? "Attivi: VOTO avviserà dopo una sincronizzazione riuscita se trova nuovi dati; la notifica non mostra voti o dettagli scolastici."
+                  : status.notificationPermissionGranted
+                    ? "Permesso disponibile. Attiva gli avvisi per essere avvisato quando una sincronizzazione trova nuovi dati. Per riceverli automaticamente, attiva anche il controllo periodico qui sopra."
+                    : "Per ricevere gli avvisi, consenti a VOTO di inviare notifiche Android. Non serve ntfy."}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                void handleUpdateNotificationsChange(!status.updateNotificationsEnabled)
+              }
+              className="press min-h-10 shrink-0 rounded-xl border border-border px-3 text-[11px] font-semibold disabled:opacity-60"
+            >
+              {status.updateNotificationsEnabled ? "Disattiva" : "Attiva avvisi"}
+            </button>
+          </div>
+          {!status.notificationPermissionGranted && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void handleOpenNotificationSettings()}
+              className="mt-2 text-[10px] font-medium text-primary underline underline-offset-2 disabled:opacity-60"
+            >
+              Apri impostazioni notifiche Android
+            </button>
+          )}
+        </div>
+      )}
 
       <form onSubmit={(event) => void handleSave(event)} className="mt-4 space-y-3">
         <p className="text-xs font-semibold">

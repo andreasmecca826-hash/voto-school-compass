@@ -47,6 +47,42 @@ class FakeDidupClient:
 
 
 class DidupSyncTests(unittest.TestCase):
+    def test_new_update_count_suppresses_initial_sync_and_counts_new_records(self):
+        previous = {
+            "updatedAt": "2026-11-01T08:00:00Z",
+            "student": {"schoolYear": "2026/2027"},
+            "subjects": [{"id": "matematica", "grades": [{"id": "grade-1"}]}],
+            "assignments": [{"id": "task-1"}],
+            "notifications": [{"id": "notice-1"}],
+            "attendanceEvents": [{"id": "event-1"}],
+            "diary": [{"id": "diary-1"}],
+        }
+        current = {
+            "updatedAt": "2026-11-02T08:00:00Z",
+            "student": {"schoolYear": "2026/2027"},
+            "subjects": [{"id": "matematica", "grades": [{"id": "grade-1"}, {"id": "grade-2"}]}],
+            "assignments": [{"id": "task-1"}, {"id": "task-2"}],
+            "notifications": [{"id": "notice-1"}, {"id": "notice-2"}],
+            "attendanceEvents": [{"id": "event-1"}, {"id": "event-2"}],
+            "diary": [{"id": "diary-1"}, {"id": "diary-2"}],
+        }
+
+        self.assertEqual(didup_sync._new_update_count({}, current), 0)
+        self.assertEqual(didup_sync._new_update_count(previous, current), 5)
+        self.assertEqual(didup_sync._new_update_count(current, current), 0)
+        self.assertEqual(
+            didup_sync._new_update_count(
+                previous,
+                {**current, "student": {"schoolYear": "2027/2028"}},
+            ),
+            0,
+        )
+
+    def test_sync_result_exposes_only_a_boolean_update_flag(self):
+        result = json.loads(didup_sync._result("ok", updates_found=True))
+        self.assertTrue(result["updatesFound"])
+        self.assertNotIn("updateCount", result)
+
     def test_oauth_state_must_be_present_and_match(self):
         _validate_oauth_state("expected", "expected")
         for returned in (None, "", "different"):

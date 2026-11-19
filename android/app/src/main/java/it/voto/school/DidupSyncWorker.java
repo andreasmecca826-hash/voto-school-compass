@@ -56,6 +56,9 @@ public final class DidupSyncWorker extends Worker {
             String output = module.callAttr("sync", input.toString()).toString();
             JSONObject result = new JSONObject(output);
             DidupSyncVault.updateFromWorker(context, result);
+            if (result.optBoolean("updatesFound", false)) {
+                DidupUpdateNotifier.notifyUpdates(context);
+            }
             if (result.optBoolean("retry", false)) return Result.retry();
             if ("attachment_pending".equals(result.optString("code"))) {
                 enqueueAttachmentContinuation(context);

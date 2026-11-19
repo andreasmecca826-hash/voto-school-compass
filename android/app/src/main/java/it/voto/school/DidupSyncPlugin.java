@@ -1,18 +1,25 @@
 package it.voto.school;
 
+import android.Manifest;
+import android.os.Build;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import org.json.JSONObject;
 
-@CapacitorPlugin(name = "DidupSync")
+@CapacitorPlugin(name = "DidupSync", permissions = {
+        @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS })
+})
 public class DidupSyncPlugin extends Plugin {
     @PluginMethod
     public void openAppSettings(PluginCall call) {
@@ -24,6 +31,25 @@ public class DidupSyncPlugin extends Plugin {
             call.resolve();
         } catch (Exception error) {
             call.reject("Impossibile aprire le impostazioni Android di VOTO.");
+        }
+    }
+
+    @PluginMethod
+    public void openNotificationSettings(PluginCall call) {
+        try {
+            Intent intent;
+            if (Build.VERSION.SDK_INT >= 26) {
+                intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                intent.putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
+            } else {
+                intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("Impossibile aprire le impostazioni notifiche di VOTO.");
         }
     }
 
@@ -134,6 +160,32 @@ public class DidupSyncPlugin extends Plugin {
         } catch (Exception error) {
             call.reject("Impossibile salvare la fascia senza controlli.");
         }
+    }
+
+    @PluginMethod
+    public void setUpdateNotificationsEnabled(PluginCall call) {
+        boolean enabled = call.getBoolean("enabled", false);
+        if (enabled && Build.VERSION.SDK_INT >= 33
+                && getPermissionState("notifications") != PermissionState.GRANTED) {
+            requestPermissionForAlias("notifications", call, "notificationPermissionResult");
+            return;
+        }
+        resolveUpdateNotificationPreference(call, enabled);
+    }
+
+    @PermissionCallback
+    public void notificationPermissionResult(PluginCall call) {
+        resolveUpdateNotificationPreference(call, call.getBoolean("enabled", false));
+    }
+
+    private void resolveUpdateNotificationPreference(PluginCall call, boolean requested) {
+        boolean permissionGranted = DidupUpdateNotifier.canPost(getContext());
+        boolean enabled = requested && permissionGranted;
+        DidupSyncVault.setUpdateNotificationsEnabled(getContext(), enabled);
+        JSObject result = new JSObject();
+        result.put("enabled", enabled);
+        result.put("permissionGranted", permissionGranted);
+        call.resolve(result);
     }
 
     @PluginMethod

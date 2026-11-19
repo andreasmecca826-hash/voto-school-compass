@@ -262,6 +262,14 @@ final class DidupSyncVault {
         return prefs(context).getBoolean("enabled", false);
     }
 
+    static synchronized void setUpdateNotificationsEnabled(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean("update_notifications_enabled", enabled).apply();
+    }
+
+    static synchronized boolean areUpdateNotificationsEnabled(Context context) {
+        return prefs(context).getBoolean("update_notifications_enabled", false);
+    }
+
     static synchronized int intervalMinutes(Context context) {
         SharedPreferences p = prefs(context);
         if (p.contains(KEY_INTERVAL_MINUTES)) {
@@ -291,6 +299,8 @@ final class DidupSyncVault {
         result.put("quietHoursStart", p.getString(KEY_QUIET_HOURS_START, DEFAULT_QUIET_HOURS_START));
         result.put("quietHoursEnd", p.getString(KEY_QUIET_HOURS_END, DEFAULT_QUIET_HOURS_END));
         result.put("status", p.getString("status", "idle"));
+        result.put("updateNotificationsEnabled", areUpdateNotificationsEnabled(context));
+        result.put("notificationPermissionGranted", DidupUpdateNotifier.canPost(context));
         result.put("message", p.getString("message", ""));
         result.put("lastSyncAt", p.getString("last_sync_at", ""));
         result.put("lastAttemptAt", p.getString("last_attempt_at", ""));

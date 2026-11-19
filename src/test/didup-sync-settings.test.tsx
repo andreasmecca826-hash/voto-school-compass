@@ -11,6 +11,8 @@ const native = vi.hoisted(() => ({
     quietHoursEnabled: true,
     quietHoursStart: "00:00",
     quietHoursEnd: "06:00",
+    updateNotificationsEnabled: false,
+    notificationPermissionGranted: true,
     status: "idle",
     message: "",
     lastSyncAt: "",
@@ -20,6 +22,7 @@ const native = vi.hoisted(() => ({
   openAppSettings: vi.fn(),
   setEnabled: vi.fn(),
   setQuietHours: vi.fn(),
+  setUpdateNotifications: vi.fn(),
   clear: vi.fn(),
   saveCredentials: vi.fn(),
   syncNow: vi.fn(),
@@ -35,6 +38,8 @@ vi.mock("@/lib/native-didup-sync", () => ({
   saveNativeDidupCredentials: native.saveCredentials,
   setNativeDidupQuietHours: native.setQuietHours,
   setNativeDidupSyncEnabled: native.setEnabled,
+  setNativeDidupUpdateNotificationsEnabled: native.setUpdateNotifications,
+  openNativeDidupNotificationSettings: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -50,6 +55,8 @@ beforeEach(() => {
     quietHoursEnabled: true,
     quietHoursStart: "00:00",
     quietHoursEnd: "06:00",
+    updateNotificationsEnabled: false,
+    notificationPermissionGranted: true,
     status: "idle",
     message: "",
     lastSyncAt: "",
@@ -68,6 +75,14 @@ beforeEach(() => {
       quietHoursEnd: endTime,
     };
   });
+  native.setUpdateNotifications.mockReset().mockImplementation(async (enabled) => {
+    native.status = {
+      ...native.status,
+      updateNotificationsEnabled: enabled,
+      notificationPermissionGranted: true,
+    };
+    return { enabled, permissionGranted: true };
+  });
   native.clear.mockReset();
   native.saveCredentials.mockReset();
   native.syncNow.mockReset();
@@ -81,6 +96,14 @@ describe("toggle sincronizzazione DidUP", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Apri impostazioni app Android" }));
 
     await waitFor(() => expect(native.openAppSettings).toHaveBeenCalledOnce());
+  });
+
+  it("attiva gli avvisi locali quando l’utente abilita le notifiche", async () => {
+    render(<DidupSyncSettings />);
+    fireEvent.click(await screen.findByRole("button", { name: "Attiva avvisi" }));
+
+    await waitFor(() => expect(native.setUpdateNotifications).toHaveBeenCalledWith(true));
+    expect(await screen.findByText(/Attivi: VOTO avviserà/)).toBeInTheDocument();
   });
 
   it("mostra se è attiva o sospesa e aggiorna subito lo stato quando si tocca", async () => {
