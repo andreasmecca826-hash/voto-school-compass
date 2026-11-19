@@ -84,9 +84,7 @@ final class DidupUpdateNotifier {
         if (updateCategories != null) {
             for (int index = 0; index < updateCategories.length(); index++) {
                 String category = updateCategories.optString(index, "");
-                if (("voti".equals(category) || "bacheca".equals(category)
-                        || "compiti".equals(category) || "presenze".equals(category)
-                        || "diario".equals(category)) && !categories.contains(category)) {
+                if (isKnownCategory(category) && !categories.contains(category)) {
                     categories.add(category);
                 }
             }
@@ -95,17 +93,36 @@ final class DidupUpdateNotifier {
         if (categories.size() == 1) {
             String category = categories.get(0);
             if ("voti".equals(category)) return "Ci sono nuovi voti. Apri VOTO per consultarli.";
-            if ("bacheca".equals(category)) return "Ci sono nuove comunicazioni in bacheca. Apri VOTO per leggerle.";
+            if ("note".equals(category)) return "Ci sono nuove note. Apri VOTO per consultarle.";
+            if ("promemoria".equals(category)) return "Ci sono nuovi promemoria. Apri VOTO per consultarli.";
+            if ("assenze".equals(category)) return "Ci sono nuove assenze registrate. Apri VOTO per i dettagli.";
+            if ("ritardi".equals(category)) return "Ci sono nuovi ritardi registrati. Apri VOTO per i dettagli.";
+            if ("uscite".equals(category)) return "Ci sono nuove uscite anticipate. Apri VOTO per i dettagli.";
             if ("compiti".equals(category)) return "Ci sono nuovi compiti. Apri VOTO per consultarli.";
-            if ("presenze".equals(category)) return "Ci sono aggiornamenti sulle presenze. Apri VOTO per consultarli.";
+            if ("circolari".equals(category)) return "Ci sono nuove circolari in bacheca. Apri VOTO per leggerle.";
+            if ("comunicazioni".equals(category)) return "Ci sono nuove comunicazioni in bacheca. Apri VOTO per leggerle.";
             return "Ci sono nuovi aggiornamenti nel diario. Apri VOTO per consultarli.";
         }
 
         StringBuilder sectionNames = new StringBuilder();
         for (int index = 0; index < categories.size(); index++) {
             if (index > 0) sectionNames.append(index == categories.size() - 1 ? " e " : ", ");
-            sectionNames.append(categories.get(index));
+            sectionNames.append(categoryLabel(categories.get(index)));
         }
-        return "Ci sono novità in " + sectionNames + ". Apri VOTO per consultarle.";
+        return "Novità: " + sectionNames + ". Apri VOTO per consultarle.";
+    }
+
+    private static boolean isKnownCategory(String category) {
+        return "voti".equals(category) || "note".equals(category) || "promemoria".equals(category)
+                || "assenze".equals(category) || "ritardi".equals(category) || "uscite".equals(category)
+                || "compiti".equals(category) || "circolari".equals(category)
+                || "comunicazioni".equals(category) || "diario".equals(category);
+    }
+
+    private static String categoryLabel(String category) {
+        if ("uscite".equals(category)) return "uscite anticipate";
+        if ("circolari".equals(category)) return "circolari in bacheca";
+        if ("comunicazioni".equals(category)) return "comunicazioni in bacheca";
+        return category;
     }
 }

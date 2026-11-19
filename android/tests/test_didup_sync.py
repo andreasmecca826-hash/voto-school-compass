@@ -53,8 +53,13 @@ class DidupSyncTests(unittest.TestCase):
             "student": {"schoolYear": "2026/2027"},
             "subjects": [{"id": "matematica", "grades": [{"id": "grade-1"}]}],
             "assignments": [{"id": "task-1"}],
-            "notifications": [{"id": "notice-1"}],
-            "attendanceEvents": [{"id": "event-1"}],
+            "notifications": [
+                {"id": "note-1", "type": "note"},
+                {"id": "reminder-1", "type": "reminder"},
+                {"id": "notice-1", "type": "notice", "title": "Avviso", "subject": "Comunicazione"},
+                {"id": "circular-1", "type": "notice", "title": "Circolare precedente"},
+            ],
+            "attendanceEvents": [{"id": "event-a", "type": "absence"}],
             "diary": [{"id": "diary-1"}],
         }
         current = {
@@ -62,15 +67,32 @@ class DidupSyncTests(unittest.TestCase):
             "student": {"schoolYear": "2026/2027"},
             "subjects": [{"id": "matematica", "grades": [{"id": "grade-1"}, {"id": "grade-2"}]}],
             "assignments": [{"id": "task-1"}, {"id": "task-2"}],
-            "notifications": [{"id": "notice-1"}, {"id": "notice-2"}],
-            "attendanceEvents": [{"id": "event-1"}, {"id": "event-2"}],
+            "notifications": [
+                {"id": "note-1", "type": "note"},
+                {"id": "note-2", "type": "note"},
+                {"id": "reminder-1", "type": "reminder"},
+                {"id": "reminder-2", "type": "reminder"},
+                {"id": "notice-1", "type": "notice", "title": "Avviso", "subject": "Comunicazione"},
+                {"id": "notice-2", "type": "notice", "title": "Avviso importante", "subject": "Comunicazione"},
+                {"id": "circular-1", "type": "notice", "title": "Circolare precedente"},
+                {"id": "circular-2", "type": "notice", "title": "Circolare n. 2"},
+            ],
+            "attendanceEvents": [
+                {"id": "event-a", "type": "absence"},
+                {"id": "event-a2", "type": "absence"},
+                {"id": "event-i", "type": "delay"},
+                {"id": "event-u", "type": "earlyExit"},
+            ],
             "diary": [{"id": "diary-1"}, {"id": "diary-2"}],
         }
 
         self.assertEqual(didup_sync._new_update_categories({}, current), [])
         self.assertEqual(
             didup_sync._new_update_categories(previous, current),
-            ["voti", "bacheca", "compiti", "presenze", "diario"],
+            [
+                "voti", "note", "promemoria", "assenze", "ritardi", "uscite",
+                "compiti", "circolari", "comunicazioni", "diario",
+            ],
         )
         self.assertEqual(didup_sync._new_update_categories(current, current), [])
         self.assertEqual(
@@ -85,11 +107,11 @@ class DidupSyncTests(unittest.TestCase):
         result = json.loads(
             didup_sync._result(
                 "ok",
-                update_categories=["voti", "bacheca", "voti", "voto-id-42"],
+                update_categories=["note", "circolari", "note", "voto-id-42"],
             )
         )
         self.assertTrue(result["updatesFound"])
-        self.assertEqual(result["updateCategories"], ["voti", "bacheca"])
+        self.assertEqual(result["updateCategories"], ["note", "circolari"])
         self.assertNotIn("updateCount", result)
 
     def test_oauth_state_must_be_present_and_match(self):

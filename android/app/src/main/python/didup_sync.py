@@ -62,6 +62,36 @@ def _grade_ids(snapshot: dict[str, Any]) -> set[str]:
     }
 
 
+_UPDATE_CATEGORY_ORDER = (
+    "voti", "note", "promemoria", "assenze", "ritardi", "uscite",
+    "compiti", "circolari", "comunicazioni", "diario",
+)
+
+
+def _notification_update_category(item: Any) -> str | None:
+    if not isinstance(item, dict):
+        return None
+    kind = item.get("type")
+    if kind == "note":
+        return "note"
+    if kind == "reminder":
+        return "promemoria"
+    if kind != "notice":
+        return None
+
+    hints = [item.get(field) for field in ("title", "subject", "attachmentName")]
+    attachments = item.get("attachments")
+    if isinstance(attachments, list):
+        hints.extend(
+            attachment.get("name")
+            for attachment in attachments
+            if isinstance(attachment, dict)
+        )
+    if any("circol" in str(value).casefold() for value in hints if value):
+        return "circolari"
+    return "comunicazioni"
+
+
 def _new_update_categories(previous: dict[str, Any], current: dict[str, Any]) -> list[str]:
     """Return safe category labels for newly appearing records after the baseline sync."""
     if not previous.get("updatedAt"):
@@ -73,14 +103,40 @@ def _new_update_categories(previous: dict[str, Any], current: dict[str, Any]) ->
     if old_year and new_year and old_year != new_year:
         return []
 
-    groups = (
-        ("voti", _grade_ids(previous), _grade_ids(current)),
-        ("bacheca", _record_ids(previous.get("notifications")), _record_ids(current.get("notifications"))),
-        ("compiti", _record_ids(previous.get("assignments")), _record_ids(current.get("assignments"))),
-        ("presenze", _record_ids(previous.get("attendanceEvents")), _record_ids(current.get("attendanceEvents"))),
-        ("diario", _record_ids(previous.get("diary")), _record_ids(current.get("diary"))),
-    )
-    return [category for category, old_ids, new_ids in groups if new_ids - old_ids]
+    found: set[str] = set()
+    if _grade_ids(current) - _grade_ids(previous):
+        found.add("voti")
+
+    new_notification_ids = _record_ids(current.get("notifications")) - _record_ids(previous.get("notifications"))
+    current_notifications = current.get("notifications")
+    if isinstance(current_notifications, list):
+        for item in current_notifications:
+            if isinstance(item, dict) and str(item.get("id", "")) in new_notification_ids:
+                category = _notification_update_category(item)
+                if category:
+                    found.add(category)
+
+    if _record_ids(current.get("assignments")) - _record_ids(previous.get("assignments")):
+        found.add("compiti")
+
+    attendance_categories = {
+        "absence": "assenze",
+        "delay": "ritardi",
+        "earlyExit": "uscite",
+    }
+    new_attendance_ids = _record_ids(current.get("attendanceEvents")) - _record_ids(previous.get("attendanceEvents"))
+    current_events = current.get("attendanceEvents")
+    if isinstance(current_events, list):
+        for event in current_events:
+            if isinstance(event, dict) and str(event.get("id", "")) in new_attendance_ids:
+                category = attendance_categories.get(str(event.get("type", "")))
+                if category:
+                    found.add(category)
+
+    if _record_ids(current.get("diary")) - _record_ids(previous.get("diary")):
+        found.add("diario")
+
+    return [category for category in _UPDATE_CATEGORY_ORDER if category in found]
 
 
 def _result(
@@ -92,9 +148,8 @@ def _result(
     diagnostic: str | None = None,
     update_categories: list[str] | None = None,
 ) -> str:
-    allowed_categories = {"voti", "bacheca", "compiti", "presenze", "diario"}
     categories = list(dict.fromkeys(
-        category for category in (update_categories or []) if category in allowed_categories
+        category for category in (update_categories or []) if category in _UPDATE_CATEGORY_ORDER
     ))
     body: dict[str, Any] = {
         "ok": code in ("ok", "attachment_retry", "attachment_pending", "attachment_issue"),
