@@ -1,6 +1,11 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
-android { namespace 'it.voto.widget'; compileSdkVersion 31
-    defaultConfig { applicationId 'it.voto.widget'; minSdkVersion 23; targetSdkVersion 31; versionCode 3; versionName '3.0' }
+android { namespace 'it.voto.widget'; compileSdkVersion 36
+    defaultConfig { minSdkVersion 23 }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
+
+dependencies {
+    implementation 'androidx.work:work-runtime:2.10.1'
+    testImplementation 'junit:junit:4.13.2'
 }

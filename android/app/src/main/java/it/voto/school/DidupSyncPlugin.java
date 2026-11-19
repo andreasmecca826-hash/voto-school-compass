@@ -14,6 +14,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
+import it.voto.widget.WidgetData;
 
 import org.json.JSONObject;
 
@@ -92,6 +93,7 @@ public class DidupSyncPlugin extends Plugin {
         try {
             DidupSyncVault.saveSession(getContext(), accessToken, refreshToken, expiresAt);
             DidupSyncWorker.configurePeriodic(getContext());
+            WidgetData.onSessionChanged(getContext());
             call.resolve();
         } catch (Exception error) {
             call.reject("Impossibile proteggere la sessione VOTO sul dispositivo.");
@@ -102,6 +104,7 @@ public class DidupSyncPlugin extends Plugin {
     public void clearSupabaseSession(PluginCall call) {
         DidupSyncWorker.cancelAll(getContext());
         DidupSyncVault.clearSupabaseSession(getContext());
+        WidgetData.clearForLogout(getContext());
         call.resolve();
     }
 
@@ -145,6 +148,12 @@ public class DidupSyncPlugin extends Plugin {
         JSObject result = new JSObject();
         result.put("queued", true);
         call.resolve(result);
+    }
+
+    @PluginMethod
+    public void refreshWidgets(PluginCall call) {
+        WidgetData.refreshLatest(getContext());
+        call.resolve();
     }
 
     @PluginMethod
@@ -207,6 +216,7 @@ public class DidupSyncPlugin extends Plugin {
     public void clear(PluginCall call) {
         DidupSyncWorker.cancelAll(getContext());
         DidupSyncVault.clearAll(getContext());
+        WidgetData.clearForLogout(getContext());
         call.resolve();
     }
 }

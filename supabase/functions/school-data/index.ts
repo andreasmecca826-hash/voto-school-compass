@@ -1,3 +1,5 @@
+import { schoolSnapshotForUser, type OwnedSchoolSnapshot } from "../_shared/school-data-scope.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -48,14 +50,15 @@ async function authenticatedUserId(request: Request, url: string, key: string) {
   return typeof user?.id === "string" ? user.id : null;
 }
 
-async function isOwner(url: string, key: string, userId: string) {
+async function isLegacyOwner(url: string, key: string, userId: string) {
   const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
     method: "POST",
     headers: adminHeaders(key, "application/json"),
     body: JSON.stringify({ p_user_id: userId }),
   });
-  if (!response.ok) return false;
-  return (await response.json()) === true;
+  if (!response.ok) throw new Error("Impossibile verificare il proprietario legacy.");
+  const result = await response.json();
+  return result === true;
 }
 
 Deno.serve(async (request: Request) => {
@@ -70,25 +73,37 @@ Deno.serve(async (request: Request) => {
   try {
     const userId = await authenticatedUserId(request, url, key);
     if (!userId) return jsonResponse({ error: "Sessione non valida." }, 401);
-    if (!(await isOwner(url, key, userId))) {
-      return jsonResponse({ error: "Account non autorizzato." }, 403);
+    const ownedResponse = await fetch(
+      `${url}/rest/v1/school_data_snapshots?user_id=eq.${encodeURIComponent(userId)}&select=user_id,snapshot&limit=1`,
+      { headers: adminHeaders(key) },
+    );
+    if (!ownedResponse.ok) {
+      console.error("school-data user snapshot read failed", { status: ownedResponse.status });
+      return jsonResponse({ error: "Dati scolastici temporaneamente non disponibili." }, 503);
     }
 
-    const response = await fetch(`${url}/storage/v1/object/school-data/grades.json`, {
-      headers: adminHeaders(key),
-    });
-    if (!response.ok) {
-      console.error("school-data storage read failed", { status: response.status });
-      return jsonResponse({ error: "Dati scolastici non ancora disponibili." }, 503);
+    const rows = await ownedResponse.json();
+    const ownedRow = Array.isArray(rows) ? (rows[0] as OwnedSchoolSnapshot | undefined) ?? null : null;
+    let legacyOwnerId: string | null = null;
+    let legacySnapshot: unknown = null;
+    if (!ownedRow) {
+      if (await isLegacyOwner(url, key, userId)) {
+        legacyOwnerId = userId;
+        const legacyResponse = await fetch(`${url}/storage/v1/object/school-data/grades.json`, {
+          headers: adminHeaders(key),
+        });
+        if (legacyResponse.ok) {
+          legacySnapshot = await legacyResponse.json();
+        } else if (legacyResponse.status !== 404) {
+          console.error("school-data legacy storage read failed", { status: legacyResponse.status });
+          return jsonResponse({ error: "Dati scolastici temporaneamente non disponibili." }, 503);
+        }
+      }
     }
-    const body = await response.arrayBuffer();
-    return new Response(body, {
+    const snapshot = schoolSnapshotForUser(userId, ownedRow, legacyOwnerId, legacySnapshot);
+    return new Response(JSON.stringify(snapshot), {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json; charset=utf-8",
-        "Content-Length": String(body.byteLength),
-      },
+      headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
     });
   } catch (error) {
     console.error("school-data request failed", {

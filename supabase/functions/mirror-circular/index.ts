@@ -1,3 +1,5 @@
+import { perUserAttachmentPath } from "../_shared/school-data-scope.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -53,7 +55,7 @@ async function authenticatedUserId(request: Request, url: string, key: string) {
   return typeof user?.id === "string" ? user.id : null;
 }
 
-async function isOwner(url: string, key: string, userId: string) {
+async function isLegacyOwner(url: string, key: string, userId: string) {
   const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
     method: "POST",
     headers: adminHeaders(key, "application/json"),
@@ -94,10 +96,6 @@ Deno.serve(async (request: Request) => {
     const projectUrl = normalizeProjectUrl(rawUrl);
     const userId = await authenticatedUserId(request, projectUrl, serviceKey);
     if (!userId) return jsonResponse({ error: "Sessione non valida" }, 401);
-    if (!(await isOwner(projectUrl, serviceKey, userId))) {
-      return jsonResponse({ error: "Account non autorizzato" }, 403);
-    }
-
     let body: unknown;
     try {
       body = await request.json();
@@ -110,15 +108,21 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ error: "Bucket non configurato" }, 503);
     }
 
-    const objectPath = path.split("/").map(encodeURIComponent).join("/");
-    const response = await fetch(
-      `${projectUrl}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${objectPath}`,
+    const sign = (objectPath: string) => fetch(
+      `${projectUrl}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${objectPath
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/")}`,
       {
         method: "POST",
         headers: storageHeaders(serviceKey),
         body: JSON.stringify({ expiresIn: 3600 }),
       },
     );
+    let response = await sign(perUserAttachmentPath(userId, path));
+    if (!response.ok && await isLegacyOwner(projectUrl, serviceKey, userId)) {
+      response = await sign(path);
+    }
     if (!response.ok) {
       console.error("mirror-circular signing failed", { status: response.status });
       return jsonResponse({ error: "Allegato non disponibile nello storage interno" }, 502);

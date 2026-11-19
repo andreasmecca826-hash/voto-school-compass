@@ -1,3 +1,5 @@
+import { perUserAttachmentPath } from "../_shared/school-data-scope.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -59,16 +61,6 @@ async function authenticatedUserId(request: Request, url: string, key: string) {
   return typeof user?.id === "string" ? user.id : null;
 }
 
-async function isOwner(url: string, key: string, userId: string) {
-  const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
-    method: "POST",
-    headers: adminHeaders(key, "application/json"),
-    body: JSON.stringify({ p_user_id: userId }),
-  });
-  if (!response.ok) return false;
-  return (await response.json()) === true;
-}
-
 function equalHex(left: string, right: string) {
   if (left.length !== right.length) return false;
   let diff = 0;
@@ -88,8 +80,6 @@ Deno.serve(async (request: Request) => {
   try {
     const userId = await authenticatedUserId(request, url, key);
     if (!userId) return jsonResponse({ error: "Sessione non valida." }, 401);
-    if (!(await isOwner(url, key, userId)))
-      return jsonResponse({ error: "Account non autorizzato." }, 403);
 
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength <= 0 || declaredLength > MAX_BYTES) {
@@ -125,7 +115,10 @@ Deno.serve(async (request: Request) => {
     if (!/^[a-z0-9_-]{1,63}$/i.test(bucket))
       return jsonResponse({ error: "Bucket non configurato." }, 503);
     const path = `circulars/${actualHash}.${extension}`;
-    const objectPath = path.split("/").map(encodeURIComponent).join("/");
+    const objectPath = perUserAttachmentPath(userId, path)
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/");
     const stored = await fetch(
       `${url}/storage/v1/object/${encodeURIComponent(bucket)}/${objectPath}`,
       {

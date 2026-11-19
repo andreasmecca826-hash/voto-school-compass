@@ -30,6 +30,7 @@ import {
   type EmojiThemeBackgroundColors,
 } from "./emoji-theme";
 import { DEFAULT_PREPARATION, type Interrogazione } from "./interrogazioni";
+import { refreshNativeWidgets } from "@/lib/native-didup-sync";
 import {
   DEFAULT_HOME_MODULES,
   normalizeHomeModules,
@@ -405,6 +406,11 @@ export function VotoProvider({ children }: { children: ReactNode }) {
       setError(null);
       save(KEYS.cache, d);
       save(KEYS.lastSync, ts);
+      void refreshNativeWidgets().catch((error: unknown) => {
+        toast.error("Widget non aggiornato", {
+          description: error instanceof Error ? error.message : "Riprova tra poco.",
+        });
+      });
       if (!silent) toast.success("Dati aggiornati");
       return true;
     } catch (e) {

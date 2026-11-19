@@ -7,10 +7,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.net.Uri;
 import android.util.TypedValue;
+import android.util.Base64;
 import android.view.View;
 import android.widget.RemoteViews;
+
+import androidx.work.Constraints;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,100 +31,100 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
-final class WidgetData {
+public final class WidgetData {
   static final String PREFS = "voto_widget";
-  static final String EMAIL_KEY = "supabase_email";
-  static final String ACCESS_TOKEN_KEY = "supabase_access_token";
-  static final String REFRESH_TOKEN_KEY = "supabase_refresh_token";
-  static final String EXPIRES_AT_KEY = "supabase_expires_at";
-  static final String OAUTH_STATE_KEY = "oauth_state";
-  static final String OAUTH_VERIFIER_KEY = "oauth_code_verifier";
-  private static final String DATA_CACHE_KEY = "school_data_cache";
+  private static final String OWNER_KEY = "active_owner_id";
   static final String SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
   static final String SUPABASE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
   static final String SCHOOL_DATA_URL = SUPABASE_URL + "/functions/v1/school-data";
   static final String AUTH_TOKEN_URL = SUPABASE_URL + "/auth/v1/token";
-  private static final Object SESSION_LOCK = new Object();
-  private static final Object REFRESH_LOCK = new Object();
-  private static boolean refreshInFlight = false;
-  private static boolean refreshQueued = false;
-
-  interface LoginCallback { void done(String error); }
-
-  static void login(Context context, String email, String password, LoginCallback callback) {
-    new Thread(() -> {
-      String error;
-      try {
-        JSONObject body = new JSONObject();
-        body.put("email", email);
-        body.put("password", password);
-        JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=password", "POST", body.toString(), null);
-        saveSession(context, result);
-        error = null;
-      } catch (Exception e) {
-        error = messageFor(e);
-      }
-      final String resultError = error;
-      android.os.Handler handler = new android.os.Handler(context.getMainLooper());
-      handler.post(() -> callback.done(resultError));
-    }).start();
-  }
-
-  static void logout(Context context) {
-    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-        .remove(ACCESS_TOKEN_KEY).remove(REFRESH_TOKEN_KEY).remove(EXPIRES_AT_KEY)
-        .remove(OAUTH_STATE_KEY).remove(OAUTH_VERIFIER_KEY).remove(DATA_CACHE_KEY).apply();
-  }
-
-  static void saveOAuthSession(Context context, String accessToken, String refreshToken, long expiresIn) throws Exception {
-    JSONObject result = new JSONObject();
-    result.put("access_token", accessToken);
-    result.put("refresh_token", refreshToken);
-    result.put("expires_in", expiresIn > 0 ? expiresIn : 3600L);
-    saveSession(context, result);
-  }
-
-  static void exchangeOAuthCode(Context context, String code, String verifier) throws Exception {
-    JSONObject body = new JSONObject();
-    body.put("auth_code", code);
-    body.put("code_verifier", verifier);
-    JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=pkce", "POST", body.toString(), null);
-    saveSession(context, result);
-  }
-
-  static void refresh(Context context) {
-    refresh(context, null);
-  }
-
-  static void refresh(Context context, android.content.BroadcastReceiver.PendingResult pendingResult) {
-    synchronized (REFRESH_LOCK) {
-      if (refreshInFlight) {
-        refreshQueued = true;
-        if (pendingResult != null) pendingResult.finish();
-        return;
-      }
-      refreshInFlight = true;
+  public static void refresh(Context context) {
+    Context app = context.getApplicationContext();
+    if (!hasSession(app)) {
+      clearForLogout(app);
+      return;
     }
-    new Thread(() -> {
-      try {
-        String[] values = fetch(context);
-        renderProvider(context, new ComponentName(context, SmallWidgetProvider.class), false, values);
-        renderProvider(context, new ComponentName(context, LargeWidgetProvider.class), true, values);
-        renderProvider(context, new ComponentName(context, MediumWidgetProvider.class), false, values);
-        renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
-        renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
-      } finally {
-        boolean runQueued;
-        synchronized (REFRESH_LOCK) {
-          refreshInFlight = false;
-          runQueued = refreshQueued;
-          refreshQueued = false;
-        }
-        if (pendingResult != null) pendingResult.finish();
-        if (runQueued) refresh(context);
-      }
-    }).start();
+    scheduleRefresh(app, ExistingWorkPolicy.KEEP);
+  }
+
+  public static void refreshLatest(Context context) {
+    Context app = context.getApplicationContext();
+    if (!hasSession(app)) {
+      clearForLogout(app);
+      return;
+    }
+    scheduleRefresh(app, ExistingWorkPolicy.REPLACE);
+  }
+
+  private static void scheduleRefresh(Context app, ExistingWorkPolicy policy) {
+    Constraints constraints = new Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build();
+    OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(WidgetRefreshWorker.class)
+        .setConstraints(constraints)
+        .setBackoffCriteria(androidx.work.BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+        .build();
+    WorkManager.getInstance(app).enqueueUniqueWork(
+        "voto-widget-refresh",
+        policy,
+        request
+    );
+  }
+
+  public static void onSessionChanged(Context context) {
+    Context app = context.getApplicationContext();
+    String nextOwner = ownerId(app);
+    if (nextOwner.isEmpty()) {
+      clearForLogout(app);
+      return;
+    }
+    android.content.SharedPreferences prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    String previousOwner = prefs.getString(OWNER_KEY, "");
+    if (nextOwner.equals(previousOwner)) return;
+    prefs.edit().putString(OWNER_KEY, nextOwner).apply();
+    renderAll(app, statusValues("Caricamento account VOTO…", "loading"));
+    refreshLatest(app);
+  }
+
+  public static void clearForLogout(Context context) {
+    Context app = context.getApplicationContext();
+    app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(OWNER_KEY).apply();
+    WorkManager.getInstance(app).cancelUniqueWork("voto-widget-refresh");
+    renderAll(app, statusValues("Accedi a VOTO", "signed_out"));
+  }
+
+  public static void refreshNow(Context context) throws Exception {
+    String requestedOwner = ownerId(context);
+    if (requestedOwner.isEmpty()) {
+      clearForLogout(context);
+      return;
+    }
+    String[] values = fetch(context);
+    String currentOwner = ownerId(context);
+    if (!canApplyResult(requestedOwner, currentOwner)) {
+      if (currentOwner.isEmpty()) clearForLogout(context);
+      else onSessionChanged(context);
+      return;
+    }
+    renderAll(context, values);
+  }
+
+  static boolean canApplyResult(String requestedOwner, String currentOwner) {
+    return requestedOwner != null && !requestedOwner.isEmpty() && requestedOwner.equals(currentOwner);
+  }
+
+  public static void showUnavailable(Context context) {
+    renderAll(context, statusValues("Dati non disponibili", "error"));
+  }
+
+  private static void renderAll(Context context, String[] values) {
+    renderProvider(context, new ComponentName(context, SmallWidgetProvider.class), false, values);
+    renderProvider(context, new ComponentName(context, LargeWidgetProvider.class), true, values);
+    renderProvider(context, new ComponentName(context, MediumWidgetProvider.class), false, values);
+    renderProvider(context, new ComponentName(context, WideWidgetProvider.class), true, values);
+    renderProvider(context, new ComponentName(context, CompactWidgetProvider.class), false, true, values);
   }
 
   static void update(Context context, ComponentName provider, boolean large) {
@@ -137,7 +143,8 @@ final class WidgetData {
       if (pendingResult != null) pendingResult.finish();
       return;
     }
-    refresh(context, pendingResult);
+    refresh(context);
+    if (pendingResult != null) pendingResult.finish();
   }
 
   private static void renderProvider(Context context, ComponentName provider, boolean large, String[] values) {
@@ -150,8 +157,13 @@ final class WidgetData {
   }
 
   static boolean hasSession(Context context) {
-    android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    return prefs.getString(REFRESH_TOKEN_KEY, "").length() > 0 && prefs.getString(ACCESS_TOKEN_KEY, "").length() > 0;
+    try {
+      JSONObject session = readSession(context);
+      return session.optString("accessToken").length() > 0
+          && session.optString("refreshToken").length() > 0;
+    } catch (Exception error) {
+      return false;
+    }
   }
 
   static void applyDefaultsToAllWidgets(Context context) {
@@ -172,93 +184,99 @@ final class WidgetData {
           .remove(WidgetConfigureActivity.SHOW_UPDATED_KEY + id)
           .remove(WidgetConfigureActivity.GLASS_BACKGROUND_KEY + id)
           .remove(WidgetConfigureActivity.TRANSPARENT_BACKGROUND_KEY + id)
-          .remove(WidgetConfigureActivity.HIDE_TITLE_KEY + id);
+          .remove(WidgetConfigureActivity.HIDE_TITLE_KEY + id)
+          .remove(WidgetConfigureActivity.HIDE_SENSITIVE_KEY + id);
     }
     editor.apply();
   }
 
-  private static String[] fetch(Context context) {
-    try {
-      String accessToken = validAccessToken(context);
-      if (accessToken.length() == 0) return new String[]{"Accedi dall'app", "", "", "", "", "", "", "", "", "", ""};
-      JSONObject root;
-      try {
-        root = requestJson(SCHOOL_DATA_URL, "GET", null, accessToken);
-      } catch (HttpError e) {
-        if (e.status != 401) throw e;
-        accessToken = refreshAccessToken(context);
-        root = requestJson(SCHOOL_DATA_URL, "GET", null, accessToken);
-      }
-      saveDataCache(context, root);
-      return summarize(root);
-    } catch (Exception e) {
-      String cached = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-          .getString(DATA_CACHE_KEY, "");
-      if (cached.length() > 0) {
-        try {
-          return summarize(new JSONObject(cached));
-        } catch (Exception ignored) {
-          // La cache è corrotta: mostriamo l'errore reale sotto.
-        }
-      }
-      return new String[]{"Dati non disponibili", messageFor(e), "", "", "", "", "", "", "", "", "", ""};
+  private static String[] fetch(Context context) throws Exception {
+    JSONObject session = readSession(context);
+    String accessToken = session.optString("accessToken", "");
+    String refreshToken = session.optString("refreshToken", "");
+    if (accessToken.isEmpty() || refreshToken.isEmpty()) return statusValues("Accedi a VOTO", "signed_out");
+    long expiresAt = session.optLong("expiresAt", 0L);
+    if (expiresAt <= System.currentTimeMillis() / 1000L + 60L) {
+      session = refreshSession(context, refreshToken);
+      accessToken = session.optString("accessToken", "");
     }
-  }
-
-  private static void saveDataCache(Context context, JSONObject root) {
-    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-        .putString(DATA_CACHE_KEY, root.toString()).apply();
-  }
-
-  private static String validAccessToken(Context context) throws Exception {
+    String owner = jwtUserId(accessToken);
+    if (owner.isEmpty()) throw new Exception("Sessione VOTO non valida.");
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    String token = prefs.getString(ACCESS_TOKEN_KEY, "");
-    long expiresAt = prefs.getLong(EXPIRES_AT_KEY, 0L);
-    if (token.length() > 0 && expiresAt > System.currentTimeMillis() + 60_000L) return token;
-    String refresh = prefs.getString(REFRESH_TOKEN_KEY, "");
-    return refresh.length() == 0 ? "" : refreshAccessToken(context);
-  }
-
-  private static String refreshAccessToken(Context context) throws Exception {
-    synchronized (SESSION_LOCK) {
-      HttpError lastRotationError = null;
-      for (int attempt = 0; attempt < 3; attempt++) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        String current = prefs.getString(ACCESS_TOKEN_KEY, "");
-        long expiresAt = prefs.getLong(EXPIRES_AT_KEY, 0L);
-        if (current.length() > 0 && expiresAt > System.currentTimeMillis() + 60_000L) return current;
-        String refresh = prefs.getString(REFRESH_TOKEN_KEY, "");
-        if (refresh.length() == 0) throw new Exception("Sessione scaduta: accedi di nuovo");
-        try {
-          JSONObject body = new JSONObject();
-          body.put("refresh_token", refresh);
-          JSONObject result = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
-          saveSession(context, result);
-          return result.optString("access_token", "");
-        } catch (HttpError error) {
-          if (!isRefreshRotationError(error)) throw error;
-          lastRotationError = error;
-          try { Thread.sleep(350L); } catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw interrupted; }
-        }
+    String previousOwner = prefs.getString(OWNER_KEY, "");
+    if (!owner.equals(previousOwner)) {
+      prefs.edit().putString(OWNER_KEY, owner).apply();
+      renderAll(context, statusValues("Caricamento account VOTO…", "loading"));
+    }
+    try {
+      JSONObject root = requestJson(SCHOOL_DATA_URL, "GET", null, accessToken);
+      String[] values = summarize(root);
+      values[11] = "authenticated";
+      return values;
+    } catch (HttpError error) {
+      if (error.status == 401) {
+        JSONObject refreshed = refreshSession(context, refreshToken);
+        String[] values = summarize(requestJson(
+            SCHOOL_DATA_URL, "GET", null, refreshed.optString("accessToken", "")
+        ));
+        values[11] = "authenticated";
+        return values;
       }
-      throw lastRotationError == null ? new Exception("Sessione scaduta: accedi di nuovo") : lastRotationError;
+      throw error;
     }
   }
 
-  private static boolean isRefreshRotationError(HttpError error) {
-    return error.status == 400 && error.getMessage() != null && error.getMessage().contains("refresh_token_already_used");
+  private static JSONObject readSession(Context context) throws Exception {
+    Class<?> bridge = Class.forName("it.voto.school.WidgetSessionBridge");
+    return (JSONObject) bridge.getMethod("getSession", Context.class).invoke(null, context);
   }
 
-  private static void saveSession(Context context, JSONObject result) throws Exception {
-    String access = result.optString("access_token", "");
-    String refresh = result.optString("refresh_token", "");
-    if (access.length() == 0 || refresh.length() == 0) throw new Exception("Risposta Supabase incompleta");
-    long expiresIn = result.optLong("expires_in", 3600L);
-    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-        .putString(ACCESS_TOKEN_KEY, access)
-        .putString(REFRESH_TOKEN_KEY, refresh)
-        .putLong(EXPIRES_AT_KEY, System.currentTimeMillis() + expiresIn * 1000L)
-        .commit();
+  private static JSONObject refreshSession(Context context, String refreshToken) throws Exception {
+    JSONObject body = new JSONObject();
+    body.put("refresh_token", refreshToken);
+    JSONObject response = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
+    long expiresAt = response.optLong("expires_at", 0L);
+    if (expiresAt == 0L) expiresAt = System.currentTimeMillis() / 1000L + response.optLong("expires_in", 3600L);
+    String accessToken = response.optString("access_token", "");
+    String nextRefreshToken = response.optString("refresh_token", refreshToken);
+    Class<?> bridge = Class.forName("it.voto.school.WidgetSessionBridge");
+    bridge.getMethod("saveSession", Context.class, String.class, String.class, long.class)
+        .invoke(null, context, accessToken, nextRefreshToken, expiresAt);
+    JSONObject session = new JSONObject();
+    session.put("accessToken", accessToken);
+    session.put("refreshToken", nextRefreshToken);
+    session.put("expiresAt", expiresAt);
+    return session;
+  }
+
+  private static String ownerId(Context context) {
+    try {
+      JSONObject session = readSession(context);
+      String token = session.optString("accessToken", "");
+      return jwtUserId(token);
+    } catch (Exception error) {
+      return "";
+    }
+  }
+
+  static String jwtUserId(String token) {
+    try {
+      String[] parts = token.split("\\.");
+      if (parts.length != 3) return "";
+      byte[] decoded = Base64.decode(parts[1], Base64.URL_SAFE | Base64.NO_PADDING | Base64.NO_WRAP);
+      return new JSONObject(new String(decoded, StandardCharsets.UTF_8)).optString("sub", "");
+    } catch (Exception error) {
+      return "";
+    }
+  }
+
+  private static String[] statusValues(String message, String state) {
+    String[] values = new String[12];
+    java.util.Arrays.fill(values, "");
+    values[0] = message;
+    values[7] = message;
+    values[11] = state;
+    return values;
   }
 
   private static JSONObject requestJson(String endpoint, String method, String body, String accessToken) throws Exception {
@@ -293,18 +311,6 @@ final class WidgetData {
     return result.toString();
   }
 
-  private static String messageFor(Exception error) {
-    if (error instanceof HttpError) {
-      HttpError http = (HttpError) error;
-      if (http.status == 400 && http.getMessage() != null && http.getMessage().contains("refresh_token_already_used")) return "Sessione in aggiornamento, riprova tra poco";
-      if (http.status == 400) return "Email o password non validi";
-      if (http.status == 401) return "Sessione scaduta: accedi di nuovo";
-      if (http.status == 403) return "Account non autorizzato al registro";
-      if (http.status == 503) return "Dati scolastici non disponibili";
-    }
-    return error.getMessage() == null ? "Controlla connessione" : error.getMessage();
-  }
-
   private static String[] summarize(JSONObject root) {
     JSONArray subjects = root.optJSONArray("subjects");
     double subjectSum = 0; int subjectCount = 0;
@@ -327,10 +333,10 @@ final class WidgetData {
     String attendanceText = attendance == null ? "Assenze non disponibili" : "Assenze: " + attendance.optInt("absenceDays", 0) + " giorni · " + attendance.optInt("absenceHours", 0) + " ore";
     JSONArray notifications = root.optJSONArray("notifications"); int notes = 0, unread = 0; String latestCircular = "Nessuna circolare"; String latestCircularDate = "";
     if (notifications != null) for (int i = 0; i < notifications.length(); i++) { JSONObject n = notifications.optJSONObject(i); if (n == null) continue; if ("note".equals(n.optString("type"))) notes++; if ("notice".equals(n.optString("type"))) { String date = n.optString("date"); if (date.compareTo(latestCircularDate) > 0) { latestCircularDate = date; latestCircular = n.optString("title", ""); if (latestCircular.length() == 0) latestCircular = n.optString("attachmentName", "Circolare"); } } if (!n.optBoolean("read", false)) unread++; }
-    JSONArray assignments = root.optJSONArray("assignments"); int openAssignments = 0; String nextAssignment = "Nessun compito in sospeso"; String nextDate = "9999-99-99"; String today = new SimpleDateFormat("yyyy-MM-dd", Locale.ITALIAN).format(new Date());
+    JSONArray assignments = root.optJSONArray("assignments"); int openAssignments = 0; String nextAssignment = "Nessun compito in scadenza"; String nextDate = "9999-99-99"; String today = new SimpleDateFormat("yyyy-MM-dd", Locale.ITALIAN).format(new Date());
     if (assignments != null) for (int i = 0; i < assignments.length(); i++) { JSONObject a = assignments.optJSONObject(i); if (a == null || a.optBoolean("completed", false)) continue; openAssignments++; String due = a.optString("dueDate", ""); if (due.length() > 0 && due.compareTo(today) >= 0 && due.compareTo(nextDate) < 0) { nextDate = due; nextAssignment = a.optString("title", "Compito") + (a.optString("subject", "").length() > 0 ? " · " + a.optString("subject") : "") + " · " + due; } }
     JSONObject student = root.optJSONObject("student"); String studentText = student == null ? "Studente" : student.optString("name", "Studente") + (student.optString("className", "").length() > 0 ? " · " + student.optString("className") : "");
-    return new String[]{"Media " + average, latest.length() == 0 ? "Nessun voto" : latest + " — " + latestSubject, formatUpdated(root.optString("updatedAt", "")), attendanceText, "Note: " + notes, "Circolare: " + latestCircular, "Compiti aperti: " + openAssignments, nextAssignment, "Non lette: " + unread, studentText, "Materie valutate: " + subjectCount};
+    return new String[]{"Media " + average, latest.length() == 0 ? "Nessun voto" : latest + " — " + latestSubject, formatUpdated(root.optString("updatedAt", "")), attendanceText, "Note: " + notes, "Circolare: " + latestCircular, "Compiti aperti: " + openAssignments, nextAssignment, "Non lette: " + unread, studentText, "Materie valutate: " + subjectCount, "authenticated"};
   }
 
   private static String formatUpdated(String raw) {
@@ -423,7 +429,7 @@ final class WidgetData {
     int layout = compact ? R.layout.widget_compact : (large ? R.layout.widget_large : R.layout.widget_small);
     RemoteViews views = new RemoteViews(context.getPackageName(), layout);
     android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, compact ? prefs.getInt(WidgetConfigureActivity.COMPACT_MODE_KEY, 7) : prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, large ? 5 : 0));
+    int mode = prefs.getInt(WidgetConfigureActivity.MODE_KEY + id, compact ? prefs.getInt(WidgetConfigureActivity.COMPACT_MODE_KEY, 7) : prefs.getInt(large ? WidgetConfigureActivity.LARGE_MODE_KEY : WidgetConfigureActivity.SMALL_MODE_KEY, 7));
     int theme = prefs.getInt(WidgetConfigureActivity.THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_THEME_KEY, 0));
     int interfaceTheme = prefs.getInt(WidgetConfigureActivity.INTERFACE_THEME_KEY + id, prefs.getInt(WidgetConfigureActivity.DEFAULT_INTERFACE_THEME_KEY, 0));
     int textSize = prefs.getInt(WidgetConfigureActivity.TEXT_SIZE_KEY + id, 1);
@@ -431,7 +437,8 @@ final class WidgetData {
     boolean glassBackground = prefs.getBoolean(WidgetConfigureActivity.GLASS_BACKGROUND_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_GLASS_BACKGROUND_KEY, false));
     boolean transparentBackground = prefs.getBoolean(WidgetConfigureActivity.TRANSPARENT_BACKGROUND_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_TRANSPARENT_BACKGROUND_KEY, false));
     boolean hideTitle = prefs.getBoolean(WidgetConfigureActivity.HIDE_TITLE_KEY + id, prefs.getBoolean(WidgetConfigureActivity.DEFAULT_HIDE_TITLE_KEY, true));
-    String text = mode == 0 ? values[0] : mode == 1 ? values[1] : mode == 2 ? values[3] : mode == 3 ? values[4] : mode == 4 ? values[5] : mode == 6 ? values[6] : mode == 7 ? values[7] : mode == 8 ? values[8] : mode == 9 ? values[9] : mode == 10 ? values[10] : values[0] + "\n" + values[6] + "\n" + values[7] + "\n" + values[3] + " · " + values[4] + " · " + values[5];
+    boolean hideSensitive = prefs.getBoolean(WidgetConfigureActivity.HIDE_SENSITIVE_KEY + id, true);
+    String text = WidgetContent.select(mode, values, hideSensitive);
     int background = themeBackground(theme);
     boolean systemDark = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     boolean lightInterface = interfaceTheme == 1 || (interfaceTheme == 0 && !systemDark);
@@ -453,8 +460,9 @@ final class WidgetData {
     views.setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_SP, textSize == 0 ? 9f : 11f);
     if (large) views.setTextViewTextSize(R.id.details, TypedValue.COMPLEX_UNIT_SP, textSize == 0 ? 11f : textSize == 2 ? 16f : 13f);
     views.setViewVisibility(R.id.updated, showUpdated ? View.VISIBLE : View.GONE);
-    views.setTextViewText(R.id.summary, text); views.setTextViewText(R.id.updated, values[2]); if (large) views.setTextViewText(R.id.details, mode == 5 ? values[1] : "");
-    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://voto-school-compass.pages.dev/"));
+    views.setTextViewText(R.id.summary, text); views.setTextViewText(R.id.updated, values[2]); if (large) views.setTextViewText(R.id.details, mode == 5 ? WidgetContent.select(5, values, hideSensitive) : "");
+    Intent intent = new Intent(Intent.ACTION_MAIN);
+    intent.setClassName("it.voto.school", "it.voto.school.MainActivity");
     int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
     views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(context, id, intent, flags));
     return views;

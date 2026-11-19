@@ -41,6 +41,7 @@ type NativeDidupSyncPlugin = {
   }>;
   getStatus(): Promise<DidupSyncStatus>;
   syncNow(): Promise<{ queued: boolean }>;
+  refreshWidgets(): Promise<void>;
   setEnabled(options: { enabled: boolean; intervalMinutes: number }): Promise<void>;
   setQuietHours(options: { enabled: boolean; startTime: string; endTime: string }): Promise<void>;
   setUpdateNotificationsEnabled(options: { enabled: boolean }): Promise<{
@@ -114,6 +115,11 @@ export async function requestNativeDidupSync() {
   if (!isAndroidDidupSyncAvailable())
     throw new Error("Funzione disponibile solo nell’app Android.");
   return NativeDidupSync.syncNow();
+}
+
+export async function refreshNativeWidgets() {
+  if (!isAndroidDidupSyncAvailable()) return;
+  await NativeDidupSync.refreshWidgets();
 }
 
 export async function setNativeDidupSyncEnabled(enabled: boolean, intervalMinutes: number) {

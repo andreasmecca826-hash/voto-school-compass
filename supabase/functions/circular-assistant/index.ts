@@ -43,14 +43,6 @@ function projectUrl() {
   }
 }
 
-function adminHeaders(key: string, contentType?: string) {
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    ...(contentType ? { "Content-Type": contentType } : {}),
-  };
-}
-
 async function authenticatedUserId(request: Request, url: string, key: string) {
   const authorization = request.headers.get("Authorization");
   if (!authorization?.startsWith("Bearer ")) return null;
@@ -60,16 +52,6 @@ async function authenticatedUserId(request: Request, url: string, key: string) {
   if (!response.ok) return null;
   const user = await response.json();
   return typeof user?.id === "string" ? user.id : null;
-}
-
-async function isOwner(url: string, key: string, userId: string) {
-  const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
-    method: "POST",
-    headers: adminHeaders(key, "application/json"),
-    body: JSON.stringify({ p_user_id: userId }),
-  });
-  if (!response.ok) return false;
-  return (await response.json()) === true;
 }
 
 function parseRequest(value: unknown): {
@@ -173,9 +155,6 @@ Deno.serve(async (request: Request) => {
   try {
     const userId = await authenticatedUserId(request, url, serviceKey);
     if (!userId) return jsonResponse({ error: "Sessione non valida. Accedi di nuovo." }, 401);
-    if (!(await isOwner(url, serviceKey, userId))) {
-      return jsonResponse({ error: "Account non autorizzato." }, 403);
-    }
 
     let input: ReturnType<typeof parseRequest>;
     try {

@@ -14,6 +14,7 @@ import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import androidx.work.Data;
+import it.voto.widget.WidgetData;
 
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
@@ -64,7 +65,10 @@ public final class DidupSyncWorker extends Worker {
                 enqueueAttachmentContinuation(context);
                 return Result.success();
             }
-            if (result.optBoolean("ok", false)) return Result.success();
+            if (result.optBoolean("ok", false)) {
+                WidgetData.refreshLatest(context);
+                return Result.success();
+            }
             // Result.failure() termina definitivamente un PeriodicWorkRequest.
             // Conserva lo stato di errore nel vault, ma lascia attivo il ciclo automatico.
             return manual ? Result.failure() : Result.success();

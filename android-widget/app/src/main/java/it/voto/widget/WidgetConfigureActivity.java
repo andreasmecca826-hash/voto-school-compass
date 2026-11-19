@@ -27,6 +27,7 @@ public class WidgetConfigureActivity extends Activity {
   public static final String GLASS_BACKGROUND_KEY = "glass_background_";
   public static final String TRANSPARENT_BACKGROUND_KEY = "transparent_background_";
   public static final String HIDE_TITLE_KEY = "hide_title_";
+  public static final String HIDE_SENSITIVE_KEY = "hide_sensitive_";
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
@@ -43,8 +44,9 @@ public class WidgetConfigureActivity extends Activity {
     final CheckBox glassBackground = (CheckBox) findViewById(R.id.glass_background_check);
     final CheckBox transparentBackground = (CheckBox) findViewById(R.id.transparent_background_check);
     final CheckBox hideTitle = (CheckBox) findViewById(R.id.hide_title_check);
+    final CheckBox hideSensitive = (CheckBox) findViewById(R.id.hide_sensitive_check);
     android.content.SharedPreferences prefs = getSharedPreferences(WidgetData.PREFS, MODE_PRIVATE);
-    mode.setSelection(prefs.getInt(MODE_KEY + id, 0));
+    mode.setSelection(prefs.getInt(MODE_KEY + id, 7));
     theme.setSelection(prefs.getInt(THEME_KEY + id, 0));
     interfaceTheme.setSelection(prefs.getInt(INTERFACE_THEME_KEY + id, 0));
     textSize.setSelection(prefs.getInt(TEXT_SIZE_KEY + id, 1));
@@ -52,6 +54,7 @@ public class WidgetConfigureActivity extends Activity {
     glassBackground.setChecked(prefs.getBoolean(GLASS_BACKGROUND_KEY + id, false));
     transparentBackground.setChecked(prefs.getBoolean(TRANSPARENT_BACKGROUND_KEY + id, false));
     hideTitle.setChecked(prefs.getBoolean(HIDE_TITLE_KEY + id, prefs.getBoolean(DEFAULT_HIDE_TITLE_KEY, true)));
+    hideSensitive.setChecked(prefs.getBoolean(HIDE_SENSITIVE_KEY + id, true));
     glassBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) transparentBackground.setChecked(false); });
     transparentBackground.setOnCheckedChangeListener((button, checked) -> { if (checked) glassBackground.setChecked(false); });
 
@@ -65,6 +68,7 @@ public class WidgetConfigureActivity extends Activity {
           .putBoolean(GLASS_BACKGROUND_KEY + id, glassBackground.isChecked())
           .putBoolean(TRANSPARENT_BACKGROUND_KEY + id, transparentBackground.isChecked())
           .putBoolean(HIDE_TITLE_KEY + id, hideTitle.isChecked())
+          .putBoolean(HIDE_SENSITIVE_KEY + id, hideSensitive.isChecked())
           .apply();
       WidgetData.refresh(this);
       Intent result = new Intent();

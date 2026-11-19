@@ -55,16 +55,6 @@ async function authenticatedUserId(request: Request, url: string, key: string) {
   return typeof user?.id === "string" ? user.id : null;
 }
 
-async function isOwner(url: string, key: string, userId: string) {
-  const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
-    method: "POST",
-    headers: adminHeaders(key, "application/json"),
-    body: JSON.stringify({ p_user_id: userId }),
-  });
-  if (!response.ok) return false;
-  return (await response.json()) === true;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -91,10 +81,6 @@ Deno.serve(async (request: Request) => {
   try {
     const userId = await authenticatedUserId(request, url, key);
     if (!userId) return jsonResponse({ error: "Sessione non valida." }, 401);
-    if (!(await isOwner(url, key, userId))) {
-      return jsonResponse({ error: "Account non autorizzato." }, 403);
-    }
-
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > 2_000_000) return jsonResponse({ error: "Snapshot troppo grande." }, 413);
     const raw = await request.text();
@@ -133,14 +119,18 @@ Deno.serve(async (request: Request) => {
       attendanceEvents: payload.attendanceEvents,
     };
 
-    const response = await fetch(`${url}/storage/v1/object/school-data/grades.json`, {
+    const response = await fetch(`${url}/rest/v1/school_data_snapshots?on_conflict=user_id`, {
       method: "POST",
       headers: {
         ...adminHeaders(key, "application/json; charset=utf-8"),
-        "x-upsert": "true",
+        Prefer: "resolution=merge-duplicates,return=minimal",
         "Cache-Control": "no-store",
       },
-      body: JSON.stringify(snapshot),
+      body: JSON.stringify({
+        user_id: userId,
+        snapshot,
+        updated_at: snapshot.updatedAt,
+      }),
     });
     if (!response.ok) {
       console.error("school-data storage write failed", { status: response.status });
