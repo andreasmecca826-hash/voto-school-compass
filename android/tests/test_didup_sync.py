@@ -151,6 +151,17 @@ class DidupSyncTests(unittest.TestCase):
         self.assertEqual(error, "supabase_invalid_session")
         self.assertEqual(session["_diagnostic"], "refresh sessione: HTTP 400")
 
+    def test_refresh_token_rotation_is_retryable(self):
+        session = {"refresh_token": "old-refresh-token"}
+        body = b'{"error_code":"refresh_token_already_used"}'
+        with patch("didup_sync._request", return_value=(400, {}, body)):
+            refreshed, error = didup_sync._refresh_session(
+                "https://example.supabase.co", "public-key", session
+            )
+        self.assertIsNone(refreshed)
+        self.assertEqual(error, "supabase_unavailable")
+        self.assertEqual(session["_diagnostic"], "refresh sessione: HTTP 400")
+
     def test_snapshot_read_http_error_reports_stage_and_status_without_body(self):
         session = {"access_token": "access-secret"}
         with patch(

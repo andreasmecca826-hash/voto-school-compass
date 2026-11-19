@@ -168,6 +168,7 @@ def _result(
         body["accessToken"] = session.get("access_token", "")
         body["refreshToken"] = session.get("refresh_token", "")
         body["expiresAt"] = int(session.get("expires_at") or 0)
+        body["sessionUpdated"] = bool(session.get("_refreshed"))
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -212,6 +213,12 @@ def _refresh_session(
             _opener(redirects=True), "POST", url, data=payload,
             headers={"apikey": api_key, "Content-Type": "application/json", "Accept": "application/json"}, timeout=20,
         )
+        if status == 400 and _refresh_token_was_rotated(body):
+            # Un altro worker/app può aver ruotato il token nello stesso
+            # istante. Al prossimo tentativo il vault verrà riletto; non è
+            # una prova che l’account abbia perso la sessione.
+            session["_diagnostic"] = _http_diagnostic("refresh sessione", status)
+            return None, "supabase_unavailable"
         if status in (400, 401, 403):
             session["_diagnostic"] = _http_diagnostic("refresh sessione", status)
             return None, "supabase_invalid_session"
@@ -232,10 +239,19 @@ def _refresh_session(
             "access_token": str(data["access_token"]),
             "refresh_token": str(data.get("refresh_token") or refresh_token),
             "expires_at": int(expires_at),
+            "_refreshed": True,
         }, None)
     except Exception as error:
         session["_diagnostic"] = _http_diagnostic("refresh sessione", error=error)
         return None, "supabase_unavailable"
+
+
+def _refresh_token_was_rotated(body: bytes) -> bool:
+    try:
+        data = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return isinstance(data, dict) and data.get("error_code") == "refresh_token_already_used"
 
 
 def _get_previous(base_url: str, api_key: str, session: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:

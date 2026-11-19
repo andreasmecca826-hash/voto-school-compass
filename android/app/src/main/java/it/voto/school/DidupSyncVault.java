@@ -176,13 +176,16 @@ final class DidupSyncVault {
         String access = result.optString("accessToken", "");
         String refresh = result.optString("refreshToken", "");
         long expiresAt = result.optLong("expiresAt", 0L);
-        if (!access.isEmpty() && !refresh.isEmpty()) {
+        String code = result.optString("code", "sync_error");
+        boolean sessionUpdated = result.optBoolean("sessionUpdated", false);
+        if (!access.isEmpty() && !refresh.isEmpty()
+                && (sessionUpdated || (!"supabase_invalid_session".equals(code)
+                && !"supabase_unavailable".equals(code)))) {
             editor.putString(KEY_ACCESS, encrypt(access));
             editor.putString(KEY_REFRESH, encrypt(refresh));
             editor.putLong(KEY_EXPIRES, expiresAt);
         }
         boolean ok = result.optBoolean("ok", false);
-        String code = result.optString("code", "sync_error");
         boolean attachmentWarning = code.startsWith("attachment_");
         editor.putString("status", ok && !attachmentWarning ? "success" : code);
         editor.putString("message", result.optString("message", "Sincronizzazione non riuscita."));

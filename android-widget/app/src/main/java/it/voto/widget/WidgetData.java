@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class WidgetData {
   static final String PREFS = "voto_widget";
+  private static final Object SESSION_LOCK = new Object();
   private static final String OWNER_KEY = "active_owner_id";
   static final String SUPABASE_URL = "https://jmvxuhgjejzpezvawzfw.supabase.co";
   static final String SUPABASE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_lBUdU6v1";
@@ -117,6 +118,19 @@ public final class WidgetData {
 
   public static void showUnavailable(Context context) {
     renderAll(context, statusValues("Dati non disponibili", "error"));
+  }
+
+  static void showSessionRequired(Context context) {
+    renderAll(context, statusValues("Apri VOTO per aggiornare la sessione", "signed_out"));
+  }
+
+  static boolean isPermanentSessionError(Exception error) {
+    if (!(error instanceof HttpError)) return false;
+    HttpError http = (HttpError) error;
+    if (http.status == 401 || http.status == 403) return true;
+    return http.status == 400
+        && (http.getMessage() == null
+        || !http.getMessage().contains("refresh_token_already_used"));
   }
 
   private static void renderAll(Context context, String[] values) {
@@ -232,21 +246,54 @@ public final class WidgetData {
   }
 
   private static JSONObject refreshSession(Context context, String refreshToken) throws Exception {
-    JSONObject body = new JSONObject();
-    body.put("refresh_token", refreshToken);
-    JSONObject response = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
-    long expiresAt = response.optLong("expires_at", 0L);
-    if (expiresAt == 0L) expiresAt = System.currentTimeMillis() / 1000L + response.optLong("expires_in", 3600L);
-    String accessToken = response.optString("access_token", "");
-    String nextRefreshToken = response.optString("refresh_token", refreshToken);
-    Class<?> bridge = Class.forName("it.voto.school.WidgetSessionBridge");
-    bridge.getMethod("saveSession", Context.class, String.class, String.class, long.class)
-        .invoke(null, context, accessToken, nextRefreshToken, expiresAt);
-    JSONObject session = new JSONObject();
-    session.put("accessToken", accessToken);
-    session.put("refreshToken", nextRefreshToken);
-    session.put("expiresAt", expiresAt);
-    return session;
+    synchronized (SESSION_LOCK) {
+      // App, widget e worker condividono il vault. Un altro componente può
+      // aver già ruotato il token passato dal chiamante.
+      JSONObject current = readSession(context);
+      long currentExpiry = current.optLong("expiresAt", 0L);
+      if (currentExpiry > System.currentTimeMillis() / 1000L + 60L) return current;
+      String currentRefreshToken = current.optString("refreshToken", "");
+      if (!currentRefreshToken.isEmpty()) refreshToken = currentRefreshToken;
+      if (refreshToken.isEmpty()) throw new Exception("Sessione scaduta: accedi di nuovo");
+      for (int attempt = 0; attempt < 3; attempt++) {
+        try {
+          JSONObject body = new JSONObject();
+          body.put("refresh_token", refreshToken);
+          JSONObject response = requestJson(AUTH_TOKEN_URL + "?grant_type=refresh_token", "POST", body.toString(), null);
+          long expiresAt = response.optLong("expires_at", 0L);
+          if (expiresAt == 0L) expiresAt = System.currentTimeMillis() / 1000L + response.optLong("expires_in", 3600L);
+          String accessToken = response.optString("access_token", "");
+          String nextRefreshToken = response.optString("refresh_token", refreshToken);
+          Class<?> bridge = Class.forName("it.voto.school.WidgetSessionBridge");
+          bridge.getMethod("saveSession", Context.class, String.class, String.class, long.class)
+              .invoke(null, context, accessToken, nextRefreshToken, expiresAt);
+          JSONObject session = new JSONObject();
+          session.put("accessToken", accessToken);
+          session.put("refreshToken", nextRefreshToken);
+          session.put("expiresAt", expiresAt);
+          return session;
+        } catch (HttpError error) {
+          if (!isRefreshRotationError(error)) throw error;
+          // Il refresh concorrente può aver completato appena prima della
+          // richiesta: rileggere il vault permette di usare il token nuovo.
+          current = readSession(context);
+          currentExpiry = current.optLong("expiresAt", 0L);
+          if (currentExpiry > System.currentTimeMillis() / 1000L + 60L) return current;
+          refreshToken = current.optString("refreshToken", refreshToken);
+          try { Thread.sleep(350L); }
+          catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw interrupted;
+          }
+        }
+      }
+      throw new Exception("Sessione in aggiornamento: riprova tra poco");
+    }
+  }
+
+  private static boolean isRefreshRotationError(HttpError error) {
+    return error.status == 400 && error.getMessage() != null
+        && error.getMessage().contains("refresh_token_already_used");
   }
 
   private static String ownerId(Context context) {

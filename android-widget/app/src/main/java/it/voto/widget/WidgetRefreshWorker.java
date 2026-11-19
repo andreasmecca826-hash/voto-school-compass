@@ -22,6 +22,12 @@ public final class WidgetRefreshWorker extends Worker {
           "VOTO.WidgetRefresh",
           "Widget refresh failed: " + error.getClass().getSimpleName()
       );
+      if (WidgetData.isPermanentSessionError(error)) {
+        // I token presenti nel vault possono essere formalmente presenti ma
+        // non più validi. Non lasciare un OneTimeWorkRequest in retry infinito.
+        WidgetData.showSessionRequired(context);
+        return Result.success();
+      }
       if (WidgetData.hasSession(context)) WidgetData.showUnavailable(context);
       else WidgetData.clearForLogout(context);
       return WidgetData.hasSession(context) ? Result.retry() : Result.success();
