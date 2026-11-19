@@ -1387,6 +1387,19 @@
     display: none;
   }
 }
+
+/* APK Android: nasconde le barre, ma lascia attivi tutti i contenitori scrollabili. */
+:root[data-platform="android"],
+:root[data-platform="android"] * {
+  scrollbar-width: none;
+}
+:root[data-platform="android"]::-webkit-scrollbar,
+:root[data-platform="android"] *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 @utility press {
   transition:
     transform 0.12s ease,
@@ -1583,6 +1596,40 @@
 
 :root[data-performance-wallpapers="on"] body {
   background-attachment: scroll !important;
+}
+
+/* Profilo APK: elimina i layer decorativi costosi solo quando l’utente lo richiede. */
+:root[data-platform="android"][data-performance="on"][data-performance-wallpapers="on"]
+  body,
+:root[data-platform="android"][data-performance="on"][data-performance-wallpapers="on"]
+  body
+  > #root,
+:root[data-platform="android"][data-performance="on"][data-performance-wallpapers="on"]
+  .voto-shell {
+  background-image: none !important;
+  background-attachment: scroll !important;
+}
+:root[data-platform="android"][data-performance="on"][data-performance-wallpapers="on"]
+  :is(.seasonal-atmosphere, .blood-slides-atmosphere) {
+  display: none !important;
+}
+:root[data-platform="android"][data-performance="on"][data-performance-wallpapers="on"]
+  body::before,
+:root[data-platform="android"][data-performance="on"][data-performance-wallpapers="on"]
+  .voto-shell::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* Liste lunghe di notifiche: evita blur e paint fuori schermo nel WebView Android. */
+:root[data-platform="android"] .novita-list > .novita-list-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-image: none !important;
+  background-color: var(--card);
+  box-shadow: none !important;
 }
 
 /* Windows 7: profilo Aero leggero per dispositivi mobili e browser meno potenti. */

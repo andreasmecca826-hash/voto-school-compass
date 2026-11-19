@@ -364,7 +364,8 @@ function Settings() {
               Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
               per rendere l’app più fluida sui telefoni meno recenti. Su smartphone alleggerisce le
               anteprime PDF e aspetta che le pagine si avvicinino allo schermo prima di
-              renderizzarle.
+              renderizzarle. Nell’APK Android applica un profilo PDF ancora più leggero e riduce i
+              layer decorativi animati quando l’opzione sfondi è attiva.
             </span>
           </span>
           <span

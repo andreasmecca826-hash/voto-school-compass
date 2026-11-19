@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { getPdfRenderProfile } from "@/lib/voto/pdf-render-profile";
 import { isSameOriginDocumentUrl } from "@/lib/voto/circular-reader";
 import { beginZoomPan, endZoomPan, moveZoomPan, type ZoomPanState } from "@/lib/voto/zoom-pan";
@@ -79,6 +80,7 @@ export function PdfCanvasPreview({ src, title, zoom = 1, onError }: PdfCanvasPre
           performanceMode,
           smallScreen,
           devicePixelRatio: window.devicePixelRatio || 1,
+          androidApp: Capacitor.getPlatform() === "android",
         });
         const firstPage = await pdf.getPage(1);
         if (cancelled) return;

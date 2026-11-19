@@ -8,6 +8,7 @@ describe("profilo di rendering PDF", () => {
         performanceMode: false,
         smallScreen: true,
         devicePixelRatio: 3,
+        androidApp: false,
       }),
     ).toEqual({ pageScale: 1.25, renderRatio: 3, rootMargin: "900px 0px" });
   });
@@ -18,6 +19,7 @@ describe("profilo di rendering PDF", () => {
         performanceMode: true,
         smallScreen: true,
         devicePixelRatio: 3,
+        androidApp: false,
       }),
     ).toEqual({ pageScale: 1, renderRatio: 1.25, rootMargin: "300px 0px" });
   });
@@ -28,7 +30,19 @@ describe("profilo di rendering PDF", () => {
         performanceMode: true,
         smallScreen: false,
         devicePixelRatio: 2,
+        androidApp: false,
       }),
     ).toEqual({ pageScale: 1.25, renderRatio: 2, rootMargin: "900px 0px" });
+  });
+
+  it("usa un profilo più leggero nell’APK Android anche su schermi grandi", () => {
+    expect(
+      getPdfRenderProfile({
+        performanceMode: true,
+        smallScreen: false,
+        devicePixelRatio: 3,
+        androidApp: true,
+      }),
+    ).toEqual({ pageScale: 0.9, renderRatio: 1, rootMargin: "120px 0px" });
   });
 });

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import { canResetDemoData, makeDemoData } from "./demo";
 import { fetchVotoData, normalizeCachedGradeValues, parseVotoData, SchemaError } from "./parse";
@@ -555,6 +556,7 @@ export function VotoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     const root = document.documentElement;
+    root.dataset["platform"] = Capacitor.getPlatform();
     const didupActive = registryStyle === "didup";
     root.dataset["accent"] = didupActive ? "turchese" : accent;
     root.dataset["bg"] = didupActive ? "nero" : bg;

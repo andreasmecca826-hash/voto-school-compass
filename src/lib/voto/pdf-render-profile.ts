@@ -8,6 +8,7 @@ type PdfRenderProfileInput = {
   performanceMode: boolean;
   smallScreen: boolean;
   devicePixelRatio: number;
+  androidApp: boolean;
 };
 
 const DEFAULT_PAGE_SCALE = 1.25;
@@ -15,19 +16,31 @@ const DEFAULT_ROOT_MARGIN = "900px 0px";
 const PERFORMANCE_PAGE_SCALE = 1;
 const PERFORMANCE_PIXEL_RATIO = 1.25;
 const PERFORMANCE_ROOT_MARGIN = "300px 0px";
+const ANDROID_PAGE_SCALE = 0.9;
+const ANDROID_PIXEL_RATIO = 1;
+const ANDROID_ROOT_MARGIN = "120px 0px";
 
 export function getPdfRenderProfile({
   performanceMode,
   smallScreen,
   devicePixelRatio,
+  androidApp,
 }: PdfRenderProfileInput): PdfRenderProfile {
   const pixelRatio =
     Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1;
-  if (!performanceMode || !smallScreen) {
+  if (!performanceMode || (!smallScreen && !androidApp)) {
     return {
       pageScale: DEFAULT_PAGE_SCALE,
       renderRatio: pixelRatio,
       rootMargin: DEFAULT_ROOT_MARGIN,
+    };
+  }
+
+  if (androidApp) {
+    return {
+      pageScale: ANDROID_PAGE_SCALE,
+      renderRatio: Math.min(pixelRatio, ANDROID_PIXEL_RATIO),
+      rootMargin: ANDROID_ROOT_MARGIN,
     };
   }
 

@@ -56,14 +56,17 @@ export function NotificationsSheet({
           text="Qui compariranno voti, note e promemoria."
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="novita-list space-y-2">
           {list.map((n) => {
             const read = v.isRead(n.id, n.read);
             const M = NOTIF_META[n.type];
             return (
               <li
                 key={n.id}
-                className={cn("card-surface flex gap-3 p-3.5", !read && "border-primary/30")}
+                className={cn(
+                  "novita-list-item card-surface flex gap-3 p-3.5",
+                  !read && "border-primary/30",
+                )}
               >
                 <span
                   className={cn(

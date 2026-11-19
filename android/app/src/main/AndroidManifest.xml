@@ -16,10 +16,7 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
-<<<<<<< HEAD
 
-=======
->>>>>>> e48bbe463b01a481c3470249d2dc18f7ca72f677
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -32,26 +29,16 @@
         </activity>
 
         <activity-alias
-<<<<<<< HEAD
             android:name=".MainActivityIconVoto"
             android:targetActivity=".MainActivity"
             android:label="@string/app_label_voto"
             android:icon="@mipmap/ic_launcher"
             android:exported="true">
-=======
-            android:name=".AppIconClassic"
-            android:targetActivity=".MainActivity"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name">
->>>>>>> e48bbe463b01a481c3470249d2dc18f7ca72f677
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-<<<<<<< HEAD
 
         <activity-alias
             android:name=".MainActivityIconFamiglia"
@@ -60,21 +47,11 @@
             android:icon="@drawable/voto_family"
             android:enabled="false"
             android:exported="true">
-=======
-        <activity-alias
-            android:name=".AppIconLight"
-            android:targetActivity=".MainActivity"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_light"
-            android:label="@string/app_name">
->>>>>>> e48bbe463b01a481c3470249d2dc18f7ca72f677
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-<<<<<<< HEAD
 
         <activity-alias
             android:name=".MainActivityIconClasseviva"
@@ -83,21 +60,11 @@
             android:icon="@drawable/voto_classeviva"
             android:enabled="false"
             android:exported="true">
-=======
-        <activity-alias
-            android:name=".AppIconOcean"
-            android:targetActivity=".MainActivity"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_ocean"
-            android:label="@string/app_name">
->>>>>>> e48bbe463b01a481c3470249d2dc18f7ca72f677
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-<<<<<<< HEAD
 
         <activity-alias
             android:name=".MainActivityIconVotoDidupFamiglia"
@@ -197,15 +164,6 @@
             android:icon="@drawable/voto_classeviva"
             android:enabled="false"
             android:exported="true">
-=======
-        <activity-alias
-            android:name=".AppIconViolet"
-            android:targetActivity=".MainActivity"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_violet"
-            android:label="@string/app_name">
->>>>>>> e48bbe463b01a481c3470249d2dc18f7ca72f677
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
