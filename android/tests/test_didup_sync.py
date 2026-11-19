@@ -47,7 +47,7 @@ class FakeDidupClient:
 
 
 class DidupSyncTests(unittest.TestCase):
-    def test_new_update_count_suppresses_initial_sync_and_counts_new_records(self):
+    def test_new_update_categories_suppress_initial_sync_and_name_changed_sections(self):
         previous = {
             "updatedAt": "2026-11-01T08:00:00Z",
             "student": {"schoolYear": "2026/2027"},
@@ -67,20 +67,29 @@ class DidupSyncTests(unittest.TestCase):
             "diary": [{"id": "diary-1"}, {"id": "diary-2"}],
         }
 
-        self.assertEqual(didup_sync._new_update_count({}, current), 0)
-        self.assertEqual(didup_sync._new_update_count(previous, current), 5)
-        self.assertEqual(didup_sync._new_update_count(current, current), 0)
+        self.assertEqual(didup_sync._new_update_categories({}, current), [])
         self.assertEqual(
-            didup_sync._new_update_count(
+            didup_sync._new_update_categories(previous, current),
+            ["voti", "bacheca", "compiti", "presenze", "diario"],
+        )
+        self.assertEqual(didup_sync._new_update_categories(current, current), [])
+        self.assertEqual(
+            didup_sync._new_update_categories(
                 previous,
                 {**current, "student": {"schoolYear": "2027/2028"}},
             ),
-            0,
+            [],
         )
 
-    def test_sync_result_exposes_only_a_boolean_update_flag(self):
-        result = json.loads(didup_sync._result("ok", updates_found=True))
+    def test_sync_result_exposes_only_safe_update_categories(self):
+        result = json.loads(
+            didup_sync._result(
+                "ok",
+                update_categories=["voti", "bacheca", "voti", "voto-id-42"],
+            )
+        )
         self.assertTrue(result["updatesFound"])
+        self.assertEqual(result["updateCategories"], ["voti", "bacheca"])
         self.assertNotIn("updateCount", result)
 
     def test_oauth_state_must_be_present_and_match(self):

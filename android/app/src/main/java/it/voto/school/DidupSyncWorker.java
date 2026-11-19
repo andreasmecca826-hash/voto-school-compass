@@ -57,7 +57,7 @@ public final class DidupSyncWorker extends Worker {
             JSONObject result = new JSONObject(output);
             DidupSyncVault.updateFromWorker(context, result);
             if (result.optBoolean("updatesFound", false)) {
-                DidupUpdateNotifier.notifyUpdates(context);
+                DidupUpdateNotifier.notifyUpdates(context, result.optJSONArray("updateCategories"));
             }
             if (result.optBoolean("retry", false)) return Result.retry();
             if ("attachment_pending".equals(result.optString("code"))) {

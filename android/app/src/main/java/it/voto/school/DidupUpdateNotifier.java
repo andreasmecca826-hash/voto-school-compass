@@ -12,6 +12,11 @@ import android.os.Build;
 
 import androidx.core.content.ContextCompat;
 
+import org.json.JSONArray;
+
+import java.util.ArrayList;
+import java.util.List;
+
 final class DidupUpdateNotifier {
     private static final String CHANNEL_ID = "didup_updates";
     private static final int NOTIFICATION_ID = 4107;
@@ -33,7 +38,7 @@ final class DidupUpdateNotifier {
         return true;
     }
 
-    static void notifyUpdates(Context context) {
+    static void notifyUpdates(Context context, JSONArray updateCategories) {
         if (!DidupSyncVault.areUpdateNotificationsEnabled(context) || !canPost(context)) return;
         try {
             NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -61,8 +66,8 @@ final class DidupUpdateNotifier {
                     ? new Notification.Builder(context, CHANNEL_ID)
                     : new Notification.Builder(context);
             builder.setSmallIcon(R.drawable.ic_notification)
-                    .setContentTitle("VOTO")
-                    .setContentText("Nuovi aggiornamenti da DidUP. Apri VOTO per consultarli.")
+                    .setContentTitle("Aggiornamenti DidUP")
+                    .setContentText(notificationText(updateCategories))
                     .setVisibility(Notification.VISIBILITY_PRIVATE)
                     .setAutoCancel(true)
                     .setOnlyAlertOnce(true)
@@ -72,5 +77,35 @@ final class DidupUpdateNotifier {
         } catch (RuntimeException ignored) {
             // Una notifica non riuscita non deve rendere fallita la sincronizzazione dei dati.
         }
+    }
+
+    private static String notificationText(JSONArray updateCategories) {
+        List<String> categories = new ArrayList<>();
+        if (updateCategories != null) {
+            for (int index = 0; index < updateCategories.length(); index++) {
+                String category = updateCategories.optString(index, "");
+                if (("voti".equals(category) || "bacheca".equals(category)
+                        || "compiti".equals(category) || "presenze".equals(category)
+                        || "diario".equals(category)) && !categories.contains(category)) {
+                    categories.add(category);
+                }
+            }
+        }
+        if (categories.isEmpty()) return "Ci sono nuovi aggiornamenti da DidUP. Apri VOTO per consultarli.";
+        if (categories.size() == 1) {
+            String category = categories.get(0);
+            if ("voti".equals(category)) return "Ci sono nuovi voti. Apri VOTO per consultarli.";
+            if ("bacheca".equals(category)) return "Ci sono nuove comunicazioni in bacheca. Apri VOTO per leggerle.";
+            if ("compiti".equals(category)) return "Ci sono nuovi compiti. Apri VOTO per consultarli.";
+            if ("presenze".equals(category)) return "Ci sono aggiornamenti sulle presenze. Apri VOTO per consultarli.";
+            return "Ci sono nuovi aggiornamenti nel diario. Apri VOTO per consultarli.";
+        }
+
+        StringBuilder sectionNames = new StringBuilder();
+        for (int index = 0; index < categories.size(); index++) {
+            if (index > 0) sectionNames.append(index == categories.size() - 1 ? " e " : ", ");
+            sectionNames.append(categories.get(index));
+        }
+        return "Ci sono novità in " + sectionNames + ". Apri VOTO per consultarle.";
     }
 }

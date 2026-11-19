@@ -62,25 +62,25 @@ def _grade_ids(snapshot: dict[str, Any]) -> set[str]:
     }
 
 
-def _new_update_count(previous: dict[str, Any], current: dict[str, Any]) -> int:
-    """Count newly appearing records only after a prior snapshot exists."""
+def _new_update_categories(previous: dict[str, Any], current: dict[str, Any]) -> list[str]:
+    """Return safe category labels for newly appearing records after the baseline sync."""
     if not previous.get("updatedAt"):
-        return 0
+        return []
     old_student = previous.get("student") if isinstance(previous.get("student"), dict) else {}
     new_student = current.get("student") if isinstance(current.get("student"), dict) else {}
     old_year = str(old_student.get("schoolYear") or "")
     new_year = str(new_student.get("schoolYear") or "")
     if old_year and new_year and old_year != new_year:
-        return 0
+        return []
 
     groups = (
-        (_grade_ids(previous), _grade_ids(current)),
-        (_record_ids(previous.get("assignments")), _record_ids(current.get("assignments"))),
-        (_record_ids(previous.get("notifications")), _record_ids(current.get("notifications"))),
-        (_record_ids(previous.get("attendanceEvents")), _record_ids(current.get("attendanceEvents"))),
-        (_record_ids(previous.get("diary")), _record_ids(current.get("diary"))),
+        ("voti", _grade_ids(previous), _grade_ids(current)),
+        ("bacheca", _record_ids(previous.get("notifications")), _record_ids(current.get("notifications"))),
+        ("compiti", _record_ids(previous.get("assignments")), _record_ids(current.get("assignments"))),
+        ("presenze", _record_ids(previous.get("attendanceEvents")), _record_ids(current.get("attendanceEvents"))),
+        ("diario", _record_ids(previous.get("diary")), _record_ids(current.get("diary"))),
     )
-    return sum(len(new_ids - old_ids) for old_ids, new_ids in groups)
+    return [category for category, old_ids, new_ids in groups if new_ids - old_ids]
 
 
 def _result(
@@ -90,8 +90,12 @@ def _result(
     session: dict[str, Any] | None = None,
     synced_at: str | None = None,
     diagnostic: str | None = None,
-    updates_found: bool = False,
+    update_categories: list[str] | None = None,
 ) -> str:
+    allowed_categories = {"voti", "bacheca", "compiti", "presenze", "diario"}
+    categories = list(dict.fromkeys(
+        category for category in (update_categories or []) if category in allowed_categories
+    ))
     body: dict[str, Any] = {
         "ok": code in ("ok", "attachment_retry", "attachment_pending", "attachment_issue"),
         "code": code,
@@ -100,7 +104,8 @@ def _result(
             + (f" Dettaglio tecnico: {diagnostic}." if diagnostic else "")
         ),
         "retry": retry,
-        "updatesFound": updates_found,
+        "updatesFound": bool(categories),
+        "updateCategories": categories,
     }
     if synced_at:
         body["syncedAt"] = synced_at
@@ -503,7 +508,7 @@ def sync(input_json: str) -> str:
         except SnapshotError as error:
             code = str(error) if str(error) in _MESSAGES else "incomplete_dashboard"
             return _result(code, session=session)
-        updates_found = _new_update_count(previous, snapshot) > 0
+        update_categories = _new_update_categories(previous, snapshot)
         snapshot, session, attachment_issue, attachment_diagnostic = _mirror_attachments(
             client, snapshot, base_url, api_key, session
         )
@@ -536,7 +541,7 @@ def sync(input_json: str) -> str:
             session=session,
             synced_at=synced_at,
             diagnostic=attachment_diagnostic,
-            updates_found=updates_found,
+            update_categories=update_categories,
         )
     except Exception:
         return _result("sync_error", retry=True)
