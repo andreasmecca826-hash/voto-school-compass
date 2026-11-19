@@ -6,10 +6,6 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bvXmryNOIbEw1vYUjeFoVw_
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 const MAX_RANGE_HEADER_LENGTH = 128;
 const ATTACHMENT_REQUEST_TIMEOUT_MS = 45_000;
-const SIGNED_URL_CACHE_TTL_MS = 5 * 60_000;
-const MAX_SIGNED_URL_CACHE_ENTRIES = 64;
-type SignedUrlCacheEntry = { url: string; expiresAt: number };
-const signedUrlCache = new Map<string, SignedUrlCacheEntry>();
 const validPath = (value: unknown): value is string =>
   typeof value === "string" && /^\/?circulars\/[a-f0-9]{64}\.(pdf|docx)$/.test(value);
 
@@ -222,21 +218,13 @@ async function signedAttachmentUrl(
   project: { url: string; key: string },
   path: string,
   signal: AbortSignal,
+  authorization: string,
 ) {
-  const cacheKey = `${project.url}:${path}`;
-  const cached = signedUrlCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    signedUrlCache.delete(cacheKey);
-    signedUrlCache.set(cacheKey, cached);
-    return new URL(cached.url);
-  }
-  if (cached) signedUrlCache.delete(cacheKey);
-
   const response = await fetch(`${project.url}/functions/v1/mirror-circular`, {
     method: "POST",
     headers: {
       apikey: project.key,
-      Authorization: `Bearer ${project.key}`,
+      Authorization: authorization,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ path }),
@@ -251,15 +239,6 @@ async function signedAttachmentUrl(
   const url = new URL(result.signedUrl);
   if (url.protocol !== "https:" || url.origin !== project.url) {
     throw new Error("signed_url_origin_invalid");
-  }
-  signedUrlCache.set(cacheKey, {
-    url: url.toString(),
-    expiresAt: Date.now() + SIGNED_URL_CACHE_TTL_MS,
-  });
-  while (signedUrlCache.size > MAX_SIGNED_URL_CACHE_ENTRIES) {
-    const oldestKey = signedUrlCache.keys().next().value;
-    if (oldestKey === undefined) break;
-    signedUrlCache.delete(oldestKey);
   }
   return url;
 }
@@ -295,13 +274,17 @@ async function readPrivateAttachment(
   path: string,
   downloadName?: string | null,
   rangeHeader?: string,
+  authorization?: string,
 ) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ATTACHMENT_REQUEST_TIMEOUT_MS);
   let streamOwnsTimeout = false;
   const clearTimeoutIfDone = () => clearTimeout(timeout);
   try {
-    const signedUrl = await signedAttachmentUrl(project, path, controller.signal);
+    if (!authorization?.startsWith("Bearer ") || authorization.length > 16_384) {
+      throw new Error("auth_required");
+    }
+    const signedUrl = await signedAttachmentUrl(project, path, controller.signal, authorization);
     const response = await fetch(signedUrl, {
       signal: controller.signal,
       ...(rangeHeader ? { headers: { Range: rangeHeader } } : {}),
@@ -384,6 +367,10 @@ async function readPrivateAttachment(
 
 export async function handleCircularMirrorGet(request: Request) {
   try {
+    const authorization = request.headers.get("authorization") ?? "";
+    if (!authorization.startsWith("Bearer ") || authorization.length > 16_384) {
+      return json({ error: "Sessione richiesta" }, 401);
+    }
     const params = new URL(request.url).searchParams;
     const rawPath = params.get("path");
     const path = rawPath?.replace(/^\/+/, "") ?? null;
@@ -399,6 +386,7 @@ export async function handleCircularMirrorGet(request: Request) {
       path,
       downloadName,
       range.kind === "valid" ? range.value : undefined,
+      authorization,
     );
   } catch (error) {
     if (error instanceof AttachmentTooLargeError) {

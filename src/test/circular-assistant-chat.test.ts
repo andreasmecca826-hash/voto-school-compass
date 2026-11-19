@@ -8,9 +8,17 @@ import {
 import { askAboutCircular } from "@/lib/voto/circular-assistant";
 import { extractCircularPdfText } from "@/lib/voto/circular-reader";
 
+const generateOnDeviceLlm = vi.hoisted(() => vi.fn());
+const getCircularAttachmentSignedUrl = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/native-local-llm", () => ({
+  generateOnDeviceLlm,
+  isOnDeviceLlmAvailable: () => true,
+  getOnDeviceLlmStatus: vi.fn(),
+}));
 vi.mock("@/lib/voto/circular-assistant", () => ({
   askAboutCircular: vi.fn(),
 }));
+vi.mock("@/lib/voto/circulars", () => ({ getCircularAttachmentSignedUrl }));
 
 vi.mock("@/lib/voto/circular-reader", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/voto/circular-reader")>();
@@ -46,6 +54,8 @@ const extractPdfMock = vi.mocked(extractCircularPdfText);
 describe("chat locale/API sulle circolari", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    generateOnDeviceLlm.mockResolvedValue("Risposta locale al dispositivo.");
+    getCircularAttachmentSignedUrl.mockResolvedValue("https://signed.test/circular.pdf");
     extractPdfMock.mockResolvedValue({
       text: "[Pagina 1]\nI colloqui scuola-famiglia si terranno il 12 novembre 2026. Prenotare tramite registro elettronico.",
       pagesAnalyzed: 1,
@@ -135,6 +145,25 @@ describe("chat locale/API sulle circolari", () => {
     );
     expect(answer).toContain("12 novembre 2026");
     expect(extractPdfMock).toHaveBeenCalledOnce();
+  });
+
+  it("in modalità AI telefono passa solo domanda ed estratto al wrapper nativo, mai a Groq", async () => {
+    const answer = await answerCircularChatQuestion(
+      "Quando si terranno i colloqui dell’ultima circolare?",
+      notifications,
+      "on-device",
+    );
+    expect(answer).toContain("Risposta locale al dispositivo");
+    expect(generateOnDeviceLlm).toHaveBeenCalledOnce();
+    expect(generateOnDeviceLlm.mock.calls[0]?.[0]).toContain("I colloqui scuola-famiglia");
+    expect(askAboutCircularMock).not.toHaveBeenCalled();
+  });
+  it("propaga errore modello on-device senza fallback API", async () => {
+    generateOnDeviceLlm.mockRejectedValueOnce(new Error("modello non installato"));
+    await expect(
+      answerCircularChatQuestion("Cosa dice l’ultima circolare?", notifications, "on-device"),
+    ).rejects.toThrow("modello non installato");
+    expect(askAboutCircularMock).not.toHaveBeenCalled();
   });
 
   it("confronta localmente le due circolari più recenti", async () => {

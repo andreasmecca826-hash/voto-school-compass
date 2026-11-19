@@ -9,6 +9,7 @@ import secrets
 import string
 import time
 import urllib.parse
+import urllib.error
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
@@ -152,6 +153,8 @@ class DidupClient:
         self.api_mode = "legacy"
         self.profile_pk = ""
         self.profile_login: dict[str, Any] = {}
+        self.attachment_history_diagnostic = ""
+        self.attachment_history_retryable = False
 
     def _api(self, method: str, path: str, *, payload: dict[str, Any] | None = None,
              include_profile: bool = True):
@@ -303,7 +306,81 @@ class DidupClient:
         )
         dashboard = _extract_dashboard(dashboard_response)
         profile = self._profile()
+        dashboard = self._enrich_bacheca_attachments(dashboard)
         return dashboard, profile
+
+    def _enrich_bacheca_attachments(self, dashboard: dict[str, Any]) -> dict[str, Any]:
+        """Fetch bacheca history when the dashboard omits its attachment details."""
+        notices = _get(dashboard, "bacheca", default=[])
+        if not isinstance(notices, list) or not notices or not self.profile_pk:
+            return dashboard
+        if all(
+            isinstance(item, dict)
+            and isinstance(_get(item, "lista_allegati"), list)
+            and bool(_get(item, "lista_allegati"))
+            for item in notices
+        ):
+            return dashboard
+
+        path = "famiglia/storicobacheca" if self.api_mode == "web" else "storicobacheca"
+        try:
+            response = self._api("POST", path, payload={"pkScheda": self.profile_pk})
+        except DidupError as error:
+            self.attachment_history_diagnostic = error.diagnostic or error.code
+            self.attachment_history_retryable = error.retryable
+            return dashboard
+
+        data = _get(response, "data", default=response)
+        history = _get(data, "bacheca")
+        if not isinstance(history, list) and isinstance(data, list):
+            history = data
+        if not isinstance(history, list) and isinstance(data, dict):
+            records = _get(data, "dati", default=[])
+            if isinstance(records, list):
+                history = next(
+                    (candidate for record in records
+                     if isinstance(record, dict)
+                     and isinstance((candidate := _get(record, "bacheca")), list)),
+                    None,
+                )
+        if not isinstance(history, list):
+            self.attachment_history_diagnostic = "storico bacheca: risposta in formato inatteso"
+            self.attachment_history_retryable = True
+            return dashboard
+        if not history:
+            return dashboard
+
+        merged = [dict(item) for item in notices if isinstance(item, dict)]
+        index_by_pk = {
+            str(_get(item, "pk")): index
+            for index, item in enumerate(merged)
+            if _get(item, "pk") not in (None, "")
+        }
+        for item in history:
+            if not isinstance(item, dict):
+                continue
+            pk = _get(item, "pk")
+            operation = str(_get(item, "operazione", default="")).upper()
+            if pk in (None, ""):
+                if operation != "D":
+                    merged.append({key: value for key, value in item.items() if key != "operazione"})
+                continue
+            key = str(pk)
+            existing_index = index_by_pk.get(key)
+            if operation == "D":
+                if existing_index is not None:
+                    merged[existing_index] = {}
+                    index_by_pk.pop(key, None)
+                continue
+            clean_item = {field: value for field, value in item.items() if field != "operazione"}
+            if existing_index is None:
+                index_by_pk[key] = len(merged)
+                merged.append(clean_item)
+            else:
+                merged[existing_index].update(clean_item)
+
+        dashboard["bacheca"] = [item for item in merged if item]
+        return dashboard
 
     def _oauth_login(self) -> dict[str, Any]:
         """Login OAuth con un breve backoff sui soli errori transitori del server."""
@@ -343,19 +420,32 @@ class DidupClient:
         if not uid or len(uid) > 256:
             raise DidupError("didup_attachment_unavailable", retryable=True)
         if self.api_mode == "web":
-            # Il frontend Famiglia WEB invia anche la chiave della scheda profilo.
+            # Questi allegati arrivano dalla bacheca generale. pkScheda è previsto
+            # dal route distinto downloadallegatobachecaalunno, non da questo.
             path = "famiglia/downloadallegatobacheca"
-            payload = {"uid": uid, "pkScheda": self.profile_pk}
+            payload = {"uid": uid}
         else:
             path = "downloadallegatobacheca"
             payload = {"uid": uid}
         response = self._api("POST", path, payload=payload)
-        raw_url = response.get("url") if isinstance(response, dict) else None
+        # OpenAPI Famiglia dichiara questa risposta come stringa (URL); alcune
+        # versioni del servizio la restituiscono invece dentro un oggetto.
+        raw_url = response.strip() if isinstance(response, str) else None
+        if not raw_url and isinstance(response, dict):
+            raw_url = response.get("url")
         if not raw_url and isinstance(response, dict):
             raw_data = response.get("data")
-            if isinstance(raw_data, dict):
+            if isinstance(raw_data, str):
+                raw_url = raw_data.strip()
+            elif isinstance(raw_data, dict):
                 raw_url = raw_data.get("url")
         if not isinstance(raw_url, str) or not raw_url.strip():
+            raise DidupError("didup_attachment_unavailable", retryable=True)
+        return self.download_attachment_url(raw_url, filename)
+
+    def download_attachment_url(self, raw_url: str, filename: str) -> dict[str, Any]:
+        """Download an already-issued Argo/S3 URL without persisting its signed query."""
+        if not isinstance(raw_url, str) or not raw_url.strip() or len(raw_url) > 8192:
             raise DidupError("didup_attachment_unavailable", retryable=True)
         url = urllib.parse.urljoin(self.api_base, raw_url.strip())
         parsed = urllib.parse.urlparse(url)
@@ -365,16 +455,25 @@ class DidupClient:
             and (host == "portaleargo.it" or host.endswith(".portaleargo.it")
                  or host == "amazonaws.com" or host.endswith(".amazonaws.com"))
             and not parsed.username and not parsed.password
+            and parsed.port in (None, 443)
         )
         if not allowed:
             raise DidupError("didup_attachment_unavailable", retryable=True)
 
         # Il sito apre l'URL temporaneo dal contesto Famiglia; alcuni storage
-        # Argo rifiutano il download se manca questo Referer. Non inoltrare token.
+        # Argo rifiutano il download se Origin/Referer non corrispondono al client.
+        # Non inoltrare token né query firmate nei log.
+        if self.api_mode == "web":
+            origin = "https://didattica.portaleargo.it"
+            referer = origin + "/famiglia/"
+        else:
+            origin = "https://www.portaleargo.it"
+            referer = origin + "/appfamiglia/"
         request = urllib.request.Request(url, headers={
             "User-Agent": USER_AGENT,
             "Accept": "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,*/*",
-            "Referer": "https://www.portaleargo.it/famiglia/",
+            "Origin": origin,
+            "Referer": referer,
         })
         try:
             opener = urllib.request.build_opener(_SafeAttachmentRedirect())
@@ -391,6 +490,35 @@ class DidupClient:
                     raise DidupError("didup_attachment_too_large")
         except DidupError:
             raise
+        except urllib.error.HTTPError as error:
+            # Registra solo status, host e un codice XML AWS allowlisted; mai URL,
+            # query firmate, messaggi S3 o identificativi potenzialmente sensibili.
+            retryable = error.code in (403, 404, 410, 429) or error.code >= 500
+            s3_code = ""
+            if host == "amazonaws.com" or host.endswith(".amazonaws.com"):
+                try:
+                    body = error.read(8192).decode("utf-8", errors="ignore")
+                    match = re.search(r"<Code>\s*([A-Za-z0-9]{1,64})\s*</Code>", body)
+                    candidate = match.group(1) if match else ""
+                    if candidate in {
+                        "AccessDenied", "ExpiredToken", "RequestExpired",
+                        "SignatureDoesNotMatch", "InvalidAccessKeyId",
+                        "AuthorizationQueryParametersError", "RequestTimeTooSkewed",
+                        "NoSuchKey", "PermanentRedirect", "InvalidToken",
+                    }:
+                        s3_code = candidate
+                except Exception:
+                    pass
+            details = f"host {host}"
+            if s3_code:
+                details += f"; S3 {s3_code}"
+            raise DidupError(
+                "didup_attachment_unavailable",
+                retryable=retryable,
+                http_status=error.code,
+                endpoint="download-allegato",
+                diagnostic_details=details,
+            ) from None
         except Exception:
             raise DidupError("didup_attachment_unavailable", retryable=True)
 

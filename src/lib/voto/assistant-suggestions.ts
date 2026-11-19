@@ -52,6 +52,13 @@ const SUGGESTIONS = [
   "Cosa dice il regolamento a pagina 25?",
   "Dove trovo la pagella infraperiodale?",
   "Qual è lo stato della sincronizzazione?",
+  "Come si calcola la media ponderata in VOTO?",
+  "Come mi preparo a una verifica?",
+  "Come ricordare meglio quello che studio?",
+  "Qual è il voto sufficiente nell’indicatore colori?",
+  "Quali sono gli orari di apertura degli uffici?",
+  "Il dirigente scolastico riceve su appuntamento?",
+  "Dove si trova l’I.I.S. Morselli-Sturzo?",
 ] as const;
 
 function suggestionKey(value: string): string {

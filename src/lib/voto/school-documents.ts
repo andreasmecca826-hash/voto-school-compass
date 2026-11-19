@@ -1,5 +1,6 @@
 import type { CircularAssistantMode } from "./circular-assistant-chat";
 import { askWithDocument } from "./circular-assistant";
+import { generateOnDeviceLlm } from "@/lib/native-local-llm";
 
 export interface SchoolDocumentSource {
   title: string;
@@ -334,6 +335,11 @@ export async function answerSchoolPolicyQuestion(
     };
   }
 
-  const answer = await askWithDocument({ question, documentText, documentTruncated: false });
+  const answer =
+    mode === "on-device"
+      ? await generateOnDeviceLlm(
+          `Rispondi in italiano in modo conciso solo usando questi estratti scolastici. Non inventare regole; cita la pagina quando possibile.\nDomanda: ${question.slice(0, 1000)}\nEstratti: ${documentText.slice(0, 10000)}`,
+        )
+      : await askWithDocument({ question, documentText, documentTruncated: false });
   return { text: answer, sources };
 }

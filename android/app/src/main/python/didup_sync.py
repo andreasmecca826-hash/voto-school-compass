@@ -33,7 +33,7 @@ _MESSAGES = {
     "supabase_invalid_session": "La sessione VOTO è scaduta. Apri di nuovo l’app per aggiornarla.",
     "supabase_configuration": "La configurazione sicura del servizio non è disponibile.",
     "attachment_retry": "Dati scolastici aggiornati; alcuni allegati sono temporaneamente in attesa. Riproverò automaticamente.",
-    "attachment_pending": "Dati scolastici aggiornati; alcuni allegati sono in coda per i prossimi controlli.",
+    "attachment_pending": "Dati scolastici aggiornati; sto completando gli allegati a lotti. Il prossimo lotto partirà automaticamente.",
     "attachment_issue": "Dati scolastici aggiornati, ma un allegato non è stato archiviato. Verificalo direttamente in DidUP.",
     "sync_error": "Sincronizzazione non riuscita. Riproverò quando le condizioni lo consentiranno.",
 }
@@ -83,11 +83,21 @@ def _auth_headers(api_key: str, access_token: str) -> dict[str, str]:
     }
 
 
+def _http_diagnostic(stage: str, status: int | None = None, error: Exception | None = None) -> str:
+    """Expose operation/status or exception type only, never bodies or credentials."""
+    if status is not None:
+        return f"{stage}: HTTP {status}"
+    if error is not None:
+        return f"{stage}: rete ({type(error).__name__})"
+    return stage
+
+
 def _refresh_session(
     base_url: str, api_key: str, session: dict[str, Any]
 ) -> tuple[dict[str, Any] | None, str | None]:
     refresh_token = str(session.get("refresh_token") or "")
     if not refresh_token:
+        session["_diagnostic"] = "refresh sessione: refresh token assente"
         return None, "supabase_invalid_session"
     url = base_url.rstrip("/") + "/auth/v1/token?grant_type=refresh_token"
     payload = json.dumps({"refresh_token": refresh_token}, separators=(",", ":")).encode("utf-8")
@@ -97,13 +107,17 @@ def _refresh_session(
             headers={"apikey": api_key, "Content-Type": "application/json", "Accept": "application/json"}, timeout=20,
         )
         if status in (400, 401, 403):
+            session["_diagnostic"] = _http_diagnostic("refresh sessione", status)
             return None, "supabase_invalid_session"
         if status == 429 or status >= 500:
+            session["_diagnostic"] = _http_diagnostic("refresh sessione", status)
             return None, "supabase_unavailable"
         if status < 200 or status >= 300:
+            session["_diagnostic"] = _http_diagnostic("refresh sessione", status)
             return None, "supabase_configuration"
         data = json.loads(body.decode("utf-8"))
         if not isinstance(data, dict) or not data.get("access_token"):
+            session["_diagnostic"] = "refresh sessione: risposta senza token"
             return None, "supabase_unavailable"
         expires_at = data.get("expires_at")
         if not expires_at:
@@ -113,25 +127,55 @@ def _refresh_session(
             "refresh_token": str(data.get("refresh_token") or refresh_token),
             "expires_at": int(expires_at),
         }, None)
-    except Exception:
+    except Exception as error:
+        session["_diagnostic"] = _http_diagnostic("refresh sessione", error=error)
         return None, "supabase_unavailable"
 
 
 def _get_previous(base_url: str, api_key: str, session: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     url = base_url.rstrip("/") + "/functions/v1/school-data"
-    try:
-        status, _, body = _request(
-            _opener(redirects=True), "GET", url,
-            headers=_auth_headers(api_key, session["access_token"]), timeout=30,
-        )
-    except Exception:
-        return {}, {"error": "supabase_unavailable"}
+    status = 0
+    body = b""
+    last_error: Exception | None = None
+    for attempt, delay in enumerate((0, 1, 3)):
+        if delay:
+            time.sleep(delay)
+        try:
+            status, _, body = _request(
+                _opener(redirects=True), "GET", url,
+                headers=_auth_headers(api_key, session["access_token"]), timeout=30,
+            )
+            last_error = None
+        except Exception as error:
+            last_error = error
+            if attempt < 2:
+                continue
+        if last_error is not None:
+            if attempt < 2:
+                continue
+            break
+        if status == 503:
+            try:
+                initial_error = str(json.loads(body.decode("utf-8")).get("error", "")).casefold()
+            except Exception:
+                initial_error = ""
+            if "non ancora disponibili" in initial_error:
+                break
+        if status == 429 or status >= 500:
+            if attempt < 2:
+                continue
+        break
+    if last_error is not None:
+        return {}, {
+            "error": "supabase_unavailable",
+            "diagnostic": _http_diagnostic("lettura dati VOTO", error=last_error),
+        }
     if status == 200:
         try:
             payload = json.loads(body.decode("utf-8"))
             return (payload if isinstance(payload, dict) else {}), {}
         except (UnicodeDecodeError, json.JSONDecodeError):
-            return {}, {"error": "supabase_unavailable"}
+            return {}, {"error": "supabase_unavailable", "diagnostic": "lettura dati VOTO: risposta JSON non valida"}
     if status == 503:
         try:
             message = json.loads(body.decode("utf-8")).get("error", "")
@@ -139,14 +183,14 @@ def _get_previous(base_url: str, api_key: str, session: dict[str, Any]) -> tuple
             message = ""
         if "non ancora disponibili" in str(message).casefold():
             return {}, {}
-        return {}, {"error": "supabase_unavailable"}
+        return {}, {"error": "supabase_unavailable", "diagnostic": _http_diagnostic("lettura dati VOTO", status)}
     if status == 401:
-        return {}, {"error": "supabase_invalid_session"}
+        return {}, {"error": "supabase_invalid_session", "diagnostic": _http_diagnostic("lettura dati VOTO", status)}
     if status == 403:
-        return {}, {"error": "access_denied"}
+        return {}, {"error": "access_denied", "diagnostic": _http_diagnostic("lettura dati VOTO", status)}
     if status >= 500:
-        return {}, {"error": "supabase_unavailable"}
-    return {}, {"error": "supabase_unavailable"}
+        return {}, {"error": "supabase_unavailable", "diagnostic": _http_diagnostic("lettura dati VOTO", status)}
+    return {}, {"error": "supabase_unavailable", "diagnostic": _http_diagnostic("lettura dati VOTO", status)}
 
 
 def _upload(base_url: str, api_key: str, session: dict[str, Any], payload: dict[str, Any]) -> str | None:
@@ -157,10 +201,12 @@ def _upload(base_url: str, api_key: str, session: dict[str, Any], payload: dict[
             _opener(redirects=True), "POST", url, data=body,
             headers=_auth_headers(api_key, session["access_token"]), timeout=45,
         )
-    except Exception:
+    except Exception as error:
+        session["_diagnostic"] = _http_diagnostic("scrittura dati VOTO", error=error)
         return "supabase_unavailable"
     if 200 <= status < 300:
         return None
+    session["_diagnostic"] = _http_diagnostic("scrittura dati VOTO", status)
     if status == 401:
         return "supabase_invalid_session"
     if status == 403:
@@ -184,35 +230,42 @@ def _upload_attachment(base_url: str, api_key: str, session: dict[str, Any],
             _opener(redirects=True), "POST", url, data=content,
             headers=headers, timeout=60,
         )
-    except Exception:
+    except Exception as error:
+        session["_diagnostic"] = _http_diagnostic("upload allegato", error=error)
         return None, "supabase_unavailable"
     if status == 401:
+        session["_diagnostic"] = _http_diagnostic("upload allegato", status)
         return None, "supabase_invalid_session"
     if status == 403:
+        session["_diagnostic"] = _http_diagnostic("upload allegato", status)
         return None, "access_denied"
     if status < 200 or status >= 300:
+        session["_diagnostic"] = _http_diagnostic("upload allegato", status)
         return None, "supabase_unavailable"
     try:
         result = json.loads(body.decode("utf-8"))
     except Exception:
+        session["_diagnostic"] = "upload allegato: risposta JSON non valida"
         return None, "supabase_unavailable"
     path = result.get("path") if isinstance(result, dict) else None
     if not isinstance(path, str) or not re.fullmatch(r"circulars/[a-f0-9]{64}\.(pdf|docx)", path):
+        session["_diagnostic"] = "upload allegato: path risposta non valido"
         return None, "supabase_unavailable"
     return path, None
 
 
 def _mirror_attachments(client: DidupClient, snapshot: dict[str, Any], base_url: str,
-                        api_key: str, session: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], str | None]:
+                        api_key: str, session: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], str | None, str | None]:
     uploaded_by_uid: dict[str, str] = {}
     attempted_files = 0
     uploaded_bytes = 0
     retryable_issue = False
     permanent_issue = False
     queued_issue = False
+    attachment_diagnostic: str | None = None
     notices = snapshot.get("notifications")
     if not isinstance(notices, list):
-        return snapshot, session, None
+        return snapshot, session, None, None
     for notice in notices:
         if not isinstance(notice, dict):
             continue
@@ -220,10 +273,15 @@ def _mirror_attachments(client: DidupClient, snapshot: dict[str, Any], base_url:
         if not isinstance(attachments, list):
             continue
         for attachment in attachments:
-            if not isinstance(attachment, dict) or attachment.get("path"):
+            if not isinstance(attachment, dict):
                 continue
             uid = str(attachment.get("sourceUid") or "")
-            if not uid:
+            source_url = str(attachment.get("_sourceDownloadUrl") or "")
+            if attachment.get("path") and not source_url:
+                continue
+            if not uid and not source_url:
+                permanent_issue = True
+                attachment_diagnostic = attachment_diagnostic or "UID allegato e URL sorgente assenti"
                 continue
             if uid in uploaded_by_uid:
                 attachment["path"] = uploaded_by_uid[uid]
@@ -233,13 +291,36 @@ def _mirror_attachments(client: DidupClient, snapshot: dict[str, Any], base_url:
                 queued_issue = True
                 continue
             attempted_files += 1
+            filename = str(attachment.get("name") or "allegato.pdf")
             try:
-                downloaded = client.download_attachment(uid, str(attachment.get("name") or "allegato.pdf"))
+                if uid:
+                    try:
+                        downloaded = client.download_attachment(uid, filename)
+                    except DidupError as primary_error:
+                        if not source_url:
+                            raise
+                        try:
+                            downloaded = client.download_attachment_url(source_url, filename)
+                        except DidupError as fallback_error:
+                            if primary_error.retryable or fallback_error.retryable:
+                                retryable_issue = True
+                            else:
+                                permanent_issue = True
+                            attachment_diagnostic = (
+                                attachment_diagnostic
+                                or fallback_error.diagnostic
+                                or primary_error.diagnostic
+                                or fallback_error.code
+                            )
+                            continue
+                else:
+                    downloaded = client.download_attachment_url(source_url, filename)
             except DidupError as error:
                 if error.retryable:
                     retryable_issue = True
                 else:
                     permanent_issue = True
+                attachment_diagnostic = attachment_diagnostic or error.diagnostic or error.code
                 continue
             file_size = len(downloaded.get("content", b""))
             if uploaded_bytes + file_size > MAX_ATTACHMENT_BYTES_PER_SYNC:
@@ -262,9 +343,15 @@ def _mirror_attachments(client: DidupClient, snapshot: dict[str, Any], base_url:
                 attachment.pop("url", None)
             elif error == "supabase_unavailable":
                 retryable_issue = True
+                attachment_diagnostic = attachment_diagnostic or session.get("_diagnostic") or "upload allegato: servizio non disponibile"
             elif error:
                 permanent_issue = True
+                attachment_diagnostic = attachment_diagnostic or f"archiviazione Supabase: {error}"
 
+        # I link firmati valgono solo per questo tentativo: non vanno salvati nello snapshot.
+        for attachment in attachments:
+            if isinstance(attachment, dict):
+                attachment.pop("_sourceDownloadUrl", None)
         internal = next((item for item in attachments if isinstance(item, dict) and item.get("path")), None)
         external = next((item for item in attachments if isinstance(item, dict) and item.get("url")), None)
         notice["attachmentPath"] = internal.get("path") if internal else None
@@ -277,7 +364,7 @@ def _mirror_attachments(client: DidupClient, snapshot: dict[str, Any], base_url:
         "attachment_pending" if queued_issue else
         None
     )
-    return snapshot, session, issue
+    return snapshot, session, issue, attachment_diagnostic
 
 
 def sync(input_json: str) -> str:
@@ -308,7 +395,7 @@ def sync(input_json: str) -> str:
             refreshed, refresh_error = _refresh_session(base_url, api_key, session)
             if not refreshed:
                 code = refresh_error or "supabase_invalid_session"
-                return _result(code, retry=code == "supabase_unavailable", session=session)
+                return _result(code, retry=code == "supabase_unavailable", session=session, diagnostic=session.get("_diagnostic"))
             session = refreshed
 
         previous, previous_error = _get_previous(base_url, api_key, session)
@@ -316,11 +403,16 @@ def sync(input_json: str) -> str:
             refreshed, refresh_error = _refresh_session(base_url, api_key, session)
             if not refreshed:
                 code = refresh_error or "supabase_invalid_session"
-                return _result(code, retry=code == "supabase_unavailable", session=session)
+                return _result(code, retry=code == "supabase_unavailable", session=session, diagnostic=session.get("_diagnostic"))
             session = refreshed
             previous, previous_error = _get_previous(base_url, api_key, session)
         if previous_error:
-            return _result(previous_error["error"], retry=previous_error["error"] == "supabase_unavailable", session=session)
+            return _result(
+                previous_error["error"],
+                retry=previous_error["error"] == "supabase_unavailable",
+                session=session,
+                diagnostic=previous_error.get("diagnostic") or session.get("_diagnostic"),
+            )
 
         client = DidupClient(school_code, username, password)
         try:
@@ -365,19 +457,30 @@ def sync(input_json: str) -> str:
         except SnapshotError as error:
             code = str(error) if str(error) in _MESSAGES else "incomplete_dashboard"
             return _result(code, session=session)
-        snapshot, session, attachment_issue = _mirror_attachments(
+        snapshot, session, attachment_issue, attachment_diagnostic = _mirror_attachments(
             client, snapshot, base_url, api_key, session
         )
+        history_diagnostic = getattr(client, "attachment_history_diagnostic", "")
+        if history_diagnostic and not attachment_issue:
+            attachment_issue = (
+                "attachment_retry"
+                if getattr(client, "attachment_history_retryable", False)
+                else "attachment_issue"
+            )
+            attachment_diagnostic = f"lettura dettagli bacheca: {history_diagnostic}"
         upload_error = _upload(base_url, api_key, session, snapshot)
         if upload_error == "supabase_invalid_session":
             refreshed, refresh_error = _refresh_session(base_url, api_key, session)
             if not refreshed:
                 code = refresh_error or "supabase_invalid_session"
-                return _result(code, retry=code == "supabase_unavailable", session=session)
+                return _result(code, retry=code == "supabase_unavailable", session=session, diagnostic=session.get("_diagnostic"))
             session = refreshed
             upload_error = _upload(base_url, api_key, session, snapshot)
         if upload_error:
-            return _result(upload_error, retry=upload_error == "supabase_unavailable", session=session)
+            return _result(
+                upload_error, retry=upload_error == "supabase_unavailable",
+                session=session, diagnostic=session.get("_diagnostic"),
+            )
         synced_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
         code = attachment_issue or "ok"
         return _result(
@@ -385,6 +488,7 @@ def sync(input_json: str) -> str:
             retry=code == "attachment_retry",
             session=session,
             synced_at=synced_at,
+            diagnostic=attachment_diagnostic,
         )
     except Exception:
         return _result("sync_error", retry=True)

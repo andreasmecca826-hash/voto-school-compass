@@ -1,13 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { askWithDocument } = vi.hoisted(() => ({ askWithDocument: vi.fn() }));
+const { askWithDocument, generateOnDeviceLlm } = vi.hoisted(() => ({
+  askWithDocument: vi.fn(),
+  generateOnDeviceLlm: vi.fn(),
+}));
+vi.mock("@/lib/native-local-llm", () => ({
+  generateOnDeviceLlm,
+  isOnDeviceLlmAvailable: () => true,
+  getOnDeviceLlmStatus: vi.fn(),
+}));
 
 vi.mock("@/lib/voto/circular-assistant", () => ({ askWithDocument }));
 
 import { answerSchoolPolicyQuestion, isSchoolPolicyQuestion } from "@/lib/voto/school-documents";
 
 describe("fonti scolastiche ufficiali e ricerca utente", () => {
-  beforeEach(() => askWithDocument.mockReset());
+  beforeEach(() => {
+    askWithDocument.mockReset();
+    generateOnDeviceLlm.mockReset().mockResolvedValue("Risposta locale");
+  });
 
   it("riconosce una domanda sulle regole del fumo", () => {
     expect(isSchoolPolicyQuestion("Cosa accade se mi beccano a fumare?")).toBe(true);
@@ -29,6 +40,24 @@ describe("fonti scolastiche ufficiali e ricerca utente", () => {
         page: 23,
       }),
     ]);
+    expect(askWithDocument).not.toHaveBeenCalled();
+  });
+
+  it("risponde al regolamento con il wrapper on-device senza chiamare Groq", async () => {
+    const result = await answerSchoolPolicyQuestion(
+      "Cosa accade se mi beccano a fumare?",
+      "on-device",
+    );
+    expect(result.text).toBe("Risposta locale");
+    expect(generateOnDeviceLlm).toHaveBeenCalledOnce();
+    expect(generateOnDeviceLlm.mock.calls[0]?.[0]).toContain("ART. 33");
+    expect(askWithDocument).not.toHaveBeenCalled();
+  });
+  it("propaga errore on-device senza fallback Groq", async () => {
+    generateOnDeviceLlm.mockRejectedValueOnce(new Error("modello assente"));
+    await expect(
+      answerSchoolPolicyQuestion("Cosa accade se mi beccano a fumare?", "on-device"),
+    ).rejects.toThrow("modello assente");
     expect(askWithDocument).not.toHaveBeenCalled();
   });
 

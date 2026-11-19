@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(android.os.Bundle savedInstanceState) {
         registerPlugin(AppIconPlugin.class);
         registerPlugin(DidupSyncPlugin.class);
+        registerPlugin(LocalLlmPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

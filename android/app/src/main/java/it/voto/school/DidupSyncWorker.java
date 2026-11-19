@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 public final class DidupSyncWorker extends Worker {
     private static final String PERIODIC_NAME = "voto-didup-periodic-sync";
     private static final String IMMEDIATE_NAME = "voto-didup-manual-sync";
+    private static final String ATTACHMENT_BATCH_NAME = "voto-didup-attachment-batches";
 
     public DidupSyncWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -41,11 +42,11 @@ public final class DidupSyncWorker extends Worker {
         if (!manual && DidupSyncVault.isQuietHoursNow(context)) return Result.success();
         if (!DidupSyncVault.hasCredentials(context)) {
             recordLocalError(context, "credentials_required", "Inserisci le credenziali DidUP per attivare la sincronizzazione.");
-            return Result.failure();
+            return manual ? Result.failure() : Result.success();
         }
         if (!DidupSyncVault.hasSession(context)) {
             recordLocalError(context, "session_required", "Apri VOTO e accedi per autorizzare la sincronizzazione sicura.");
-            return Result.failure();
+            return manual ? Result.failure() : Result.success();
         }
 
         try {
@@ -56,8 +57,14 @@ public final class DidupSyncWorker extends Worker {
             JSONObject result = new JSONObject(output);
             DidupSyncVault.updateFromWorker(context, result);
             if (result.optBoolean("retry", false)) return Result.retry();
+            if ("attachment_pending".equals(result.optString("code"))) {
+                enqueueAttachmentContinuation(context);
+                return Result.success();
+            }
             if (result.optBoolean("ok", false)) return Result.success();
-            return Result.failure();
+            // Result.failure() termina definitivamente un PeriodicWorkRequest.
+            // Conserva lo stato di errore nel vault, ma lascia attivo il ciclo automatico.
+            return manual ? Result.failure() : Result.success();
         } catch (Throwable error) {
             recordLocalError(context, "sync_error", "Sincronizzazione non riuscita. Riproverò quando le condizioni lo consentiranno.");
             return Result.retry();
@@ -100,6 +107,28 @@ public final class DidupSyncWorker extends Worker {
         );
     }
 
+    private static void enqueueAttachmentContinuation(Context context) {
+        Context app = context.getApplicationContext();
+        if (!DidupSyncVault.isEnabled(app) || DidupSyncVault.isQuietHoursNow(app)) return;
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(DidupSyncWorker.class)
+                .setConstraints(constraints)
+                .setInitialDelay(30, TimeUnit.SECONDS)
+                .build();
+        WorkManager.getInstance(app).enqueueUniqueWork(
+                ATTACHMENT_BATCH_NAME,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
+                request
+        );
+    }
+
+    static void cancelAttachmentContinuations(Context context) {
+        WorkManager.getInstance(context.getApplicationContext())
+                .cancelUniqueWork(ATTACHMENT_BATCH_NAME);
+    }
+
     static void cancelPeriodic(Context context) {
         WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork(PERIODIC_NAME);
     }
@@ -123,5 +152,6 @@ public final class DidupSyncWorker extends Worker {
     static void cancelAll(Context context) {
         WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork(PERIODIC_NAME);
         WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork(IMMEDIATE_NAME);
+        cancelAttachmentContinuations(context);
     }
 }

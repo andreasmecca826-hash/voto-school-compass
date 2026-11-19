@@ -7,7 +7,12 @@ import { SchoolAuthContext, type PrefetchedSchoolData } from "@/lib/school-auth-
 import { fetchVotoData } from "@/lib/voto/parse";
 import { KEYS, load, save } from "@/lib/voto/storage";
 import { isDemoAccessCode } from "@/lib/demo-access";
-import { clearNativeDidupSync, persistNativeSupabaseSession } from "@/lib/native-didup-sync";
+import {
+  clearNativeDidupSync,
+  clearNativeSupabaseSession,
+  getNativeSupabaseSession,
+  persistNativeSupabaseSession,
+} from "@/lib/native-didup-sync";
 
 const OWNER_KEY = "voto.privateOwnerId";
 type Step = "checking" | "email" | "link-sent" | "claim" | "retry" | "ready";
@@ -35,7 +40,11 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   }, []);
 
   async function activate(userSession: Session) {
-    void persistNativeSupabaseSession(userSession).catch(() => undefined);
+    void persistNativeSupabaseSession(userSession)
+      .then(async () => {
+        if (Capacitor.isNativePlatform()) await supabase.auth.startAutoRefresh();
+      })
+      .catch(() => undefined);
     save(KEYS.demoMode, false);
     sessionRef.current = userSession;
     setSession(userSession);
@@ -67,7 +76,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
         setStep("claim");
         setError("");
       } else if (message.startsWith("PRIVATE_DATA_UNAUTHENTICATED:")) {
-        void clearNativeDidupSync();
+        void clearNativeSupabaseSession();
         sessionRef.current = null;
         setSession(null);
         setStep("email");
@@ -82,6 +91,43 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let appUrlListener: { remove: () => Promise<void> } | null = null;
+    let appStateListener: { remove: () => Promise<void> } | null = null;
+
+    const reconcileSession = async (): Promise<Session | null> => {
+      const { data: localData } = await supabase.auth.getSession();
+      let currentSession = localData.session;
+      if (!Capacitor.isNativePlatform()) return currentSession;
+
+      const nativeSession = await getNativeSupabaseSession();
+      if (nativeSession) {
+        const localExpiry = currentSession?.expires_at ?? 0;
+        const nativeIsNewer =
+          !currentSession ||
+          nativeSession.expiresAt > localExpiry ||
+          (nativeSession.expiresAt === localExpiry &&
+            nativeSession.refreshToken !== currentSession.refresh_token);
+        if (nativeIsNewer) {
+          const { data: restored, error: restoreError } = await supabase.auth.setSession({
+            access_token: nativeSession.accessToken,
+            refresh_token: nativeSession.refreshToken,
+          });
+          if (restored.session) currentSession = restored.session;
+          else if (!currentSession || (currentSession.expires_at ?? 0) <= Date.now() / 1000) {
+            throw restoreError ?? new Error("La sessione VOTO salvata non è recuperabile.");
+          }
+        }
+      }
+
+      if (currentSession && (currentSession.expires_at ?? 0) <= Date.now() / 1000 + 60) {
+        const { data: refreshed, error: refreshError } =
+          await supabase.auth.refreshSession(currentSession);
+        if (refreshed.session) currentSession = refreshed.session;
+        else if ((currentSession.expires_at ?? 0) <= Date.now() / 1000) {
+          throw refreshError ?? new Error("La sessione VOTO è scaduta.");
+        }
+      }
+      return currentSession;
+    };
 
     const handleAppUrl = async (url: string) => {
       if (!url.startsWith("it.voto.school://login-callback")) return;
@@ -118,25 +164,46 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       void App.getLaunchUrl().then((launch) => {
         if (launch?.url) void handleAppUrl(launch.url);
       });
+
+      void App.addListener("appStateChange", ({ isActive }) => {
+        if (!isActive) {
+          void supabase.auth.stopAutoRefresh();
+          return;
+        }
+        void reconcileSession()
+          .then((activeSession) => {
+            if (mounted && activeSession) void activate(activeSession);
+          })
+          .catch(() => undefined);
+      }).then((listener) => {
+        appStateListener = listener;
+        if (!mounted) void listener.remove();
+      });
     }
 
     // A demo scelta in una sessione precedente non deve sostituire il login al riavvio.
     save(KEYS.demoMode, false);
 
-    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
-      if (!mounted) return;
-      if (sessionError || !data.session) {
-        void clearNativeDidupSync();
+    void reconcileSession()
+      .then((activeSession) => {
+        if (!mounted) return;
+        if (!activeSession) {
+          setStep("email");
+          return;
+        }
+        void activate(activeSession);
+      })
+      .catch(() => {
+        if (!mounted) return;
         setStep("email");
-        return;
-      }
-      void activate(data.session);
-    });
+        setError("La sessione VOTO non è recuperabile. Accedi di nuovo.");
+      });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (nextSession) void persistNativeSupabaseSession(nextSession).catch(() => undefined);
       if (event === "SIGNED_OUT" && mounted) {
-        void clearNativeDidupSync();
+        void supabase.auth.stopAutoRefresh();
+        void clearNativeSupabaseSession();
         sessionRef.current = null;
         prefetchedDataRef.current = null;
         setSession(null);
@@ -155,6 +222,7 @@ export function SchoolDataAuthGate({ children }: { children: ReactNode }) {
       mounted = false;
       data.subscription.unsubscribe();
       if (appUrlListener) void appUrlListener.remove();
+      if (appStateListener) void appStateListener.remove();
     };
   }, []);
 

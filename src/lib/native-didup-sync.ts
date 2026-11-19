@@ -31,10 +31,17 @@ type NativeDidupSyncPlugin = {
     refreshToken: string;
     expiresAt: number;
   }): Promise<void>;
+  clearSupabaseSession(): Promise<void>;
+  getSupabaseSession(): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }>;
   getStatus(): Promise<DidupSyncStatus>;
   syncNow(): Promise<{ queued: boolean }>;
   setEnabled(options: { enabled: boolean; intervalMinutes: number }): Promise<void>;
   setQuietHours(options: { enabled: boolean; startTime: string; endTime: string }): Promise<void>;
+  openAppSettings(): Promise<void>;
   clear(): Promise<void>;
 };
 
@@ -51,6 +58,26 @@ export async function persistNativeSupabaseSession(session: Session) {
     refreshToken: session.refresh_token,
     expiresAt: session.expires_at ?? 0,
   });
+}
+
+export async function clearNativeSupabaseSession() {
+  if (!isAndroidDidupSyncAvailable()) return;
+  try {
+    await NativeDidupSync.clearSupabaseSession();
+  } catch {
+    // APK precedenti possono non avere ancora il metodo nativo selettivo.
+  }
+}
+
+export async function getNativeSupabaseSession() {
+  if (!isAndroidDidupSyncAvailable()) return null;
+  try {
+    const session = await NativeDidupSync.getSupabaseSession();
+    if (!session.accessToken || !session.refreshToken) return null;
+    return session;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveNativeDidupCredentials(input: {
@@ -96,6 +123,12 @@ export async function setNativeDidupQuietHours(
   if (!isAndroidDidupSyncAvailable())
     throw new Error("Funzione disponibile solo nell’app Android.");
   await NativeDidupSync.setQuietHours({ enabled, startTime, endTime });
+}
+
+export async function openNativeDidupAppSettings() {
+  if (!isAndroidDidupSyncAvailable())
+    throw new Error("Funzione disponibile solo nell’app Android.");
+  await NativeDidupSync.openAppSettings();
 }
 
 export async function clearNativeDidupSync() {

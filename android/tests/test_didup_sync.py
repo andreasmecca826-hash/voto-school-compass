@@ -1,5 +1,6 @@
 import json
 import sys
+import urllib.error
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -16,9 +17,28 @@ class FakeDidupClient:
     def __init__(self, behavior="ok"):
         self.behavior = behavior
         self.download_calls = 0
+        self.download_url_calls = 0
 
     def download_attachment(self, _uid, _filename):
         self.download_calls += 1
+        if self.behavior == "http403":
+            raise DidupError(
+                "didup_attachment_unavailable", retryable=True, http_status=403,
+                endpoint="download-allegato", diagnostic_details="host bucket.s3.amazonaws.com",
+            )
+        if self.behavior == "temporary":
+            raise DidupError("didup_temporarily_unavailable", retryable=True)
+        if self.behavior == "permanent":
+            raise DidupError("didup_attachment_invalid", retryable=False)
+        return {"content": b"%PDF-fake", "mime": "application/pdf", "sha256": "a" * 64}
+
+    def download_attachment_url(self, _url, _filename):
+        self.download_url_calls += 1
+        if self.behavior == "http403":
+            raise DidupError(
+                "didup_attachment_unavailable", retryable=True, http_status=403,
+                endpoint="download-allegato", diagnostic_details="host bucket.s3.amazonaws.com",
+            )
         if self.behavior == "temporary":
             raise DidupError("didup_temporarily_unavailable", retryable=True)
         if self.behavior == "permanent":
@@ -56,11 +76,58 @@ class DidupSyncTests(unittest.TestCase):
             refreshed, error = didup_sync._refresh_session("https://example.supabase.co", "public-key", session)
         self.assertIsNone(refreshed)
         self.assertEqual(error, "supabase_unavailable")
+        self.assertEqual(session["_diagnostic"], "refresh sessione: HTTP 503")
 
         with patch("didup_sync._request", return_value=(400, {}, b"invalid refresh token")):
             refreshed, error = didup_sync._refresh_session("https://example.supabase.co", "public-key", session)
         self.assertIsNone(refreshed)
         self.assertEqual(error, "supabase_invalid_session")
+        self.assertEqual(session["_diagnostic"], "refresh sessione: HTTP 400")
+
+    def test_snapshot_read_http_error_reports_stage_and_status_without_body(self):
+        session = {"access_token": "access-secret"}
+        with patch(
+            "didup_sync._request",
+            return_value=(503, {}, b'{"error":"internal storage details"}'),
+        ), patch("didup_sync.time.sleep"):
+            _snapshot, error = didup_sync._get_previous(
+                "https://example.supabase.co", "public-key", session
+            )
+
+        self.assertEqual(error["error"], "supabase_unavailable")
+        self.assertEqual(error["diagnostic"], "lettura dati VOTO: HTTP 503")
+        self.assertNotIn("internal storage details", error["diagnostic"])
+
+    def test_snapshot_read_retries_transient_url_error(self):
+        session = {"access_token": "access-secret"}
+        responses = [
+            urllib.error.URLError("temporary offline"),
+            (200, {}, b'{"subjects":[]}'),
+        ]
+        with patch("didup_sync._request", side_effect=responses) as request, patch(
+            "didup_sync.time.sleep"
+        ):
+            snapshot, error = didup_sync._get_previous(
+                "https://example.supabase.co", "public-key", session
+            )
+
+        self.assertEqual(snapshot, {"subjects": []})
+        self.assertEqual(error, {})
+        self.assertEqual(request.call_count, 2)
+
+    def test_snapshot_write_http_error_reports_stage_and_status(self):
+        session = {"access_token": "access-secret"}
+        with patch(
+            "didup_sync._request",
+            return_value=(503, {}, b"private response body"),
+        ):
+            error = didup_sync._upload(
+                "https://example.supabase.co", "public-key", session, {"student": {}}
+            )
+
+        self.assertEqual(error, "supabase_unavailable")
+        self.assertEqual(session["_diagnostic"], "scrittura dati VOTO: HTTP 503")
+        self.assertNotIn("private response body", session["_diagnostic"])
 
     def test_temporary_attachment_failure_requests_workmanager_retry(self):
         client = FakeDidupClient("temporary")
@@ -69,7 +136,7 @@ class DidupSyncTests(unittest.TestCase):
                 {"attachments": [{"name": "avviso.pdf", "sourceUid": "argo-1"}]}
             ]
         }
-        result, _session, issue = didup_sync._mirror_attachments(
+        result, _session, issue, _diagnostic = didup_sync._mirror_attachments(
             client, snapshot, "https://example.supabase.co", "public-key", {"access_token": "token"}
         )
         self.assertEqual(issue, "attachment_retry")
@@ -83,13 +150,69 @@ class DidupSyncTests(unittest.TestCase):
                 {"attachments": [{"name": "avviso.pdf", "sourceUid": "argo-1"}]}
             ]
         }
-        _result, _session, issue = didup_sync._mirror_attachments(
+        _result, _session, issue, _diagnostic = didup_sync._mirror_attachments(
             client, snapshot, "https://example.supabase.co", "public-key", {"access_token": "token"}
         )
         self.assertEqual(issue, "attachment_issue")
         status = json.loads(didup_sync._result(issue, synced_at="2026-11-17T00:00:00Z"))
         self.assertTrue(status["ok"])
         self.assertFalse(status["retry"])
+
+    def test_mirrors_temporary_url_when_attachment_has_no_uid_and_does_not_persist_it(self):
+        signed_url = "https://bucket.s3.amazonaws.com/avviso.pdf?X-Amz-Signature=temporary"
+        client = FakeDidupClient()
+        snapshot = {
+            "notifications": [
+                {"attachments": [{"name": "avviso.pdf", "_sourceDownloadUrl": signed_url}]}
+            ]
+        }
+        path = "circulars/" + "d" * 64 + ".pdf"
+        with patch("didup_sync._upload_attachment", return_value=(path, None)):
+            result, _session, issue, _diagnostic = didup_sync._mirror_attachments(
+                client, snapshot, "https://example.supabase.co", "public-key", {"access_token": "token"}
+            )
+
+        attachment = result["notifications"][0]["attachments"][0]
+        self.assertEqual(issue, None)
+        self.assertEqual(client.download_url_calls, 1)
+        self.assertEqual(attachment["path"], path)
+        self.assertNotIn("_sourceDownloadUrl", attachment)
+
+    def test_attachment_without_uid_or_safe_source_url_is_not_silently_reported_as_success(self):
+        client = FakeDidupClient()
+        snapshot = {"notifications": [{"attachments": [{"name": "avviso.pdf"}]}]}
+        _result, _session, issue, _diagnostic = didup_sync._mirror_attachments(
+            client, snapshot, "https://example.supabase.co", "public-key", {"access_token": "token"}
+        )
+        self.assertEqual(issue, "attachment_issue")
+        self.assertEqual(client.download_calls, 0)
+        self.assertEqual(client.download_url_calls, 0)
+
+    def test_attachment_http_error_is_visible_without_signed_url(self):
+        signed_url = "https://bucket.s3.amazonaws.com/file.pdf?X-Amz-Signature=secret-value"
+        client = FakeDidupClient("http403")
+        snapshot = {
+            "notifications": [
+                {
+                    "attachments": [
+                        {
+                            "name": "avviso.pdf",
+                            "sourceUid": "argo-1",
+                            "_sourceDownloadUrl": signed_url,
+                        }
+                    ]
+                }
+            ]
+        }
+        _result, _session, issue, diagnostic = didup_sync._mirror_attachments(
+            client, snapshot, "https://example.supabase.co", "public-key", {"access_token": "token"}
+        )
+        status = json.loads(didup_sync._result(issue, diagnostic=diagnostic))
+        self.assertEqual(issue, "attachment_retry")
+        self.assertIn("HTTP 403", diagnostic)
+        self.assertIn("bucket.s3.amazonaws.com", status["message"])
+        self.assertNotIn("X-Amz-Signature", status["message"])
+        self.assertNotIn("secret-value", status["message"])
 
     def test_attachment_file_cap_leaves_remaining_uid_for_next_period(self):
         client = FakeDidupClient()
@@ -104,7 +227,7 @@ class DidupSyncTests(unittest.TestCase):
             ]
         }
         with patch("didup_sync._upload_attachment", return_value=("circulars/" + "c" * 64 + ".pdf", None)):
-            result, _session, issue = didup_sync._mirror_attachments(
+            result, _session, issue, _diagnostic = didup_sync._mirror_attachments(
                 client, snapshot, "https://example.supabase.co", "public-key", {"access_token": "token"}
             )
         self.assertEqual(client.download_calls, 5)

@@ -57,15 +57,6 @@ function safeAttachmentFilename(value?: string) {
   return cleaned || "allegato";
 }
 
-function internalPdfUrl(path: string, download = false, filename?: string) {
-  const params = new URLSearchParams({ path });
-  if (download) {
-    params.set("download", "1");
-    params.set("filename", filename ?? "circolare.pdf");
-  }
-  return `/api/circulars/mirror?${params.toString()}`;
-}
-
 function mergeAttachments(
   attachments: CircularAttachment[] | undefined,
   fallback: CircularAttachment,
@@ -360,7 +351,7 @@ export function CircularViewer({
   const activeFile = files[activeIndex];
 
   useEffect(() => {
-    if (!open || !isNative || !activeFile?.path) {
+    if (!open || !activeFile?.path) {
       setNativeAttachmentUrl(null);
       setNativeAttachmentErrorPath(null);
       return;
@@ -381,7 +372,7 @@ export function CircularViewer({
     return () => {
       cancelled = true;
     };
-  }, [activeFile?.path, isNative, nativeUrlRetry, open]);
+  }, [activeFile?.path, nativeUrlRetry, open]);
 
   useEffect(() => {
     setIsZoomControlsOpen(false);
@@ -399,33 +390,35 @@ export function CircularViewer({
   }, [activeFile?.path, activeFile?.url, activeFile?.name]);
 
   const attachmentFilename = safeAttachmentFilename(activeFile?.name);
+  const isPdf =
+    /\.pdf$/i.test(activeFile?.name ?? "") ||
+    /\.pdf$/i.test(activeFile?.path ?? "") ||
+    /\.pdf(?:$|[?#])/i.test(activeFile?.url ?? "");
+  const isDocx =
+    /\.docx$/i.test(activeFile?.name ?? "") ||
+    /\.docx$/i.test(activeFile?.path ?? "") ||
+    /\.docx(?:$|[?#])/i.test(activeFile?.url ?? "");
   const nativeSignedUrl =
     activeFile?.path && nativeAttachmentUrl?.path === activeFile.path
       ? nativeAttachmentUrl.url
       : undefined;
   const isResolvingNativeAttachment = Boolean(
-    open &&
-    isNative &&
-    activeFile?.path &&
-    !nativeSignedUrl &&
-    nativeAttachmentErrorPath !== activeFile.path,
+    open && activeFile?.path && !nativeSignedUrl && nativeAttachmentErrorPath !== activeFile.path,
   );
   const hasNativeAttachmentError = Boolean(
-    isNative && activeFile?.path && nativeAttachmentErrorPath === activeFile.path,
+    activeFile?.path && nativeAttachmentErrorPath === activeFile.path,
   );
-  const internalPreviewUrl = activeFile?.path
-    ? isNative
-      ? nativeSignedUrl
-      : internalPdfUrl(activeFile.path)
-    : undefined;
-  const previewUrl = internalPreviewUrl ?? activeFile?.url;
+  const unarchivedNativeDocument = isNative && (isPdf || isDocx) && !activeFile?.path;
+  const previewUrl = activeFile?.path
+    ? nativeSignedUrl
+    : unarchivedNativeDocument
+      ? undefined
+      : activeFile?.url;
   const downloadUrl = activeFile?.path
-    ? isNative
-      ? nativeSignedUrl
-      : internalPdfUrl(activeFile.path, true, attachmentFilename)
-    : activeFile?.url;
-  const isPdf = /\.pdf$/i.test(activeFile?.name ?? "") || /\.pdf$/i.test(activeFile?.path ?? "");
-  const isDocx = /\.docx$/i.test(activeFile?.name ?? "") || /\.docx$/i.test(activeFile?.path ?? "");
+    ? nativeSignedUrl
+    : unarchivedNativeDocument
+      ? undefined
+      : activeFile?.url;
   const hasTextOnlyContent = !previewUrl && Boolean(extractedText?.trim());
   const documentLabel = hasTextOnlyContent ? "comunicazione" : "circolare";
   const canAnalyze = Boolean(previewUrl && (isPdf || isDocx));
@@ -1031,6 +1024,18 @@ export function CircularViewer({
             >
               Riprova
             </button>
+          </div>
+        ) : unarchivedNativeDocument ? (
+          <div
+            role="alert"
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+          >
+            <FileText className="h-8 w-8" />
+            <p>
+              Questo PDF/DOCX non è ancora archiviato in VOTO. Sincronizza di nuovo DidUP dalle
+              impostazioni; per sicurezza non apro il collegamento esterno che può restituire
+              AccessDenied.
+            </p>
           </div>
         ) : previewUrl && isPdf ? (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

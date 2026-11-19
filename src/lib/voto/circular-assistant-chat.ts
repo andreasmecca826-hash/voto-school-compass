@@ -1,9 +1,11 @@
 import { askAboutCircular } from "./circular-assistant";
+import { generateOnDeviceLlm } from "@/lib/native-local-llm";
 import { answerCircularQuestionLocally } from "./circular-local-answer";
 import { extractCircularDocxText, extractCircularPdfText } from "./circular-reader";
+import { getCircularAttachmentSignedUrl } from "./circulars";
 import type { AppNotification } from "./types";
 
-export type CircularAssistantMode = "local" | "api";
+export type CircularAssistantMode = "local" | "api" | "on-device";
 
 const MAX_API_DOCUMENT_LENGTH = 60_000;
 const CIRCULAR_TERMS = /\b(?:circolar\w*|avvis\w*|bachec\w*)\b/;
@@ -154,10 +156,6 @@ function attachmentPath(notice: AppNotification): string | undefined {
   );
 }
 
-function internalAttachmentUrl(path: string): string {
-  return `/api/circulars/mirror?${new URLSearchParams({ path }).toString()}`;
-}
-
 async function readNoticeText(
   notice: AppNotification,
 ): Promise<{ text: string; truncated: boolean }> {
@@ -165,7 +163,7 @@ async function readNoticeText(
   if (extractedText) return { text: extractedText, truncated: false };
   const path = attachmentPath(notice);
   if (path) {
-    const url = internalAttachmentUrl(path);
+    const url = await getCircularAttachmentSignedUrl(path);
     const document = path.toLowerCase().endsWith(".docx")
       ? await extractCircularDocxText(url)
       : await extractCircularPdfText(url);
@@ -232,6 +230,13 @@ export async function answerCircularChatQuestion(
 
   const clippedText = document.text.slice(0, MAX_API_DOCUMENT_LENGTH);
   const prefix = `Circolare: ${notice.title} (${dateLabel(notice.date)}).\n\n`;
+  if (mode === "on-device") {
+    const answer =
+      await generateOnDeviceLlm(`Rispondi in italiano in modo conciso basandoti esclusivamente sull’estratto. Se manca l’informazione, dichiaralo.
+Domanda: ${effectiveQuestion.slice(0, 1000)}
+Estratto: ${clippedText.slice(0, 10000)}`);
+    return `${prefix}${answer.slice(0, 4000)}`;
+  }
   if (mode === "api") {
     const answer = await askAboutCircular({
       question: effectiveQuestion,

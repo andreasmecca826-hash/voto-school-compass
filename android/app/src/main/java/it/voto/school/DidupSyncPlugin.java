@@ -1,5 +1,9 @@
 package it.voto.school;
 
+import android.content.Intent;
+import android.net.Uri;
+import android.provider.Settings;
+
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -10,6 +14,19 @@ import org.json.JSONObject;
 
 @CapacitorPlugin(name = "DidupSync")
 public class DidupSyncPlugin extends Plugin {
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("Impossibile aprire le impostazioni Android di VOTO.");
+        }
+    }
+
     @PluginMethod
     public void saveCredentials(PluginCall call) {
         String schoolCode = call.getString("schoolCode", "").trim();
@@ -52,6 +69,23 @@ public class DidupSyncPlugin extends Plugin {
             call.resolve();
         } catch (Exception error) {
             call.reject("Impossibile proteggere la sessione VOTO sul dispositivo.");
+        }
+    }
+
+    @PluginMethod
+    public void clearSupabaseSession(PluginCall call) {
+        DidupSyncWorker.cancelAll(getContext());
+        DidupSyncVault.clearSupabaseSession(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void getSupabaseSession(PluginCall call) {
+        try {
+            JSObject result = JSObject.fromJSONObject(DidupSyncVault.getSupabaseSession(getContext()));
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Sessione VOTO nativa non disponibile.");
         }
     }
 
@@ -112,6 +146,7 @@ public class DidupSyncPlugin extends Plugin {
             DidupSyncWorker.configurePeriodic(getContext());
         } else {
             DidupSyncWorker.cancelPeriodic(getContext());
+            DidupSyncWorker.cancelAttachmentContinuations(getContext());
         }
         call.resolve();
     }

@@ -30,6 +30,7 @@ import {
 import { SectionTitle } from "@/components/voto/ui";
 import { AppPinLockSettings } from "@/components/voto/AppPinLockSettings";
 import { DidupSyncSettings } from "@/components/voto/DidupSyncSettings";
+import { LocalModelSettings } from "@/components/voto/LocalModelSettings";
 import { useSchoolAuth } from "@/lib/school-auth-context";
 import { cn } from "@/lib/utils";
 import { fmtTime } from "@/lib/voto/dates";
@@ -346,6 +347,7 @@ function Settings() {
         </p>
       </section>
 
+      <LocalModelSettings />
       <SectionTitle>Prestazioni</SectionTitle>
       <section className="card-surface p-4">
         <button

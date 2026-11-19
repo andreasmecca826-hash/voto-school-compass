@@ -16,6 +16,7 @@ import {
   type AssignmentConfirmation,
 } from "@/lib/voto/assistant-actions";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
+import { generateOnDeviceLlm, getOnDeviceLlmStatus } from "@/lib/native-local-llm";
 import {
   answerCircularChatQuestion,
   isCircularChatQuestion,
@@ -34,6 +35,7 @@ import {
   renderCircularPdfPageImages,
 } from "@/lib/voto/circular-reader";
 import { isAssistantSearchQuery } from "@/lib/voto/assistant-search";
+import { answerSchoolAdministrativeInfo } from "@/lib/voto/school-administrative-info";
 import { AssistantMarkdown } from "@/components/voto/AssistantMarkdown";
 import {
   answerSchoolPolicyQuestion,
@@ -101,8 +103,68 @@ function Assistant() {
   const [question, setQuestion] = useState("");
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
   const [apiQuota, setApiQuota] = useState<ApiQuota | null>(() => getLastApiQuota());
+  const [deviceModelState, setDeviceModelState] = useState<string>("checking");
   const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
-  const activeAssistantMode = canUseApi && assistantMode === "api" ? "api" : "local";
+  const activeAssistantMode =
+    assistantMode === "on-device" && deviceModelState !== "ready"
+      ? "local"
+      : assistantMode === "api" && !canUseApi
+        ? "local"
+        : assistantMode;
+  const restoreOnDeviceModeRef = useRef(false);
+  useEffect(() => {
+    let live = true;
+    try {
+      restoreOnDeviceModeRef.current =
+        window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "on-device";
+    } catch {
+      restoreOnDeviceModeRef.current = false;
+    }
+    const refreshModelStatus = async () => {
+      try {
+        const status = await getOnDeviceLlmStatus();
+        if (!live) return;
+        setDeviceModelState(status.state);
+        if (status.state === "ready") {
+          if (restoreOnDeviceModeRef.current) {
+            restoreOnDeviceModeRef.current = false;
+            setAssistantMode((current) => (current === "local" ? "on-device" : current));
+          }
+        } else {
+          restoreOnDeviceModeRef.current = false;
+          setAssistantMode((current) => (current === "on-device" ? "local" : current));
+          try {
+            if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "on-device") {
+              window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+            }
+          } catch {
+            // Il fallback resta locale per la sessione corrente.
+          }
+        }
+      } catch {
+        if (!live) return;
+        setDeviceModelState("error");
+        restoreOnDeviceModeRef.current = false;
+        setAssistantMode((current) => (current === "on-device" ? "local" : current));
+        try {
+          if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === "on-device") {
+            window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
+          }
+        } catch {
+          // Il fallback resta locale per la sessione corrente.
+        }
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void refreshModelStatus();
+    };
+    void refreshModelStatus();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      live = false;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
   const [isReplying, setIsReplying] = useState(false);
   const [isReadingAttachment, setIsReadingAttachment] = useState(false);
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
@@ -114,7 +176,7 @@ function Assistant() {
       return [
         {
           role: "assistant",
-          text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+          text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati e i documenti sul dispositivo, spiego alcuni calcoli dell’app e do consigli generali di studio; con API puoi chiedere anche risposte generative su argomenti più ampi.",
         },
       ];
     }
@@ -128,7 +190,7 @@ function Assistant() {
     return [
       {
         role: "assistant",
-        text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati scolastici e i documenti sul dispositivo; con API puoi chiedere anche argomenti generali e avere risposte basate sui documenti pertinenti.",
+        text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati e i documenti sul dispositivo, spiego alcuni calcoli dell’app e do consigli generali di studio; con API puoi chiedere anche risposte generative su argomenti più ampi.",
       },
     ];
   });
@@ -146,7 +208,9 @@ function Assistant() {
     setSuggestions(pickAssistantSuggestions());
     try {
       const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
-      if (navigator.onLine && savedMode === "api") setAssistantMode("api");
+      if (savedMode === "on-device") {
+        // Il controllo nativo ripristina questa scelta solo se il modello è pronto.
+      } else if (navigator.onLine && savedMode === "api") setAssistantMode("api");
       else if (savedMode === "device" || savedMode === "vision" || savedMode === "api-vision") {
         setAssistantMode("local");
         window.localStorage.setItem(AI_MODE_STORAGE_KEY, "local");
@@ -169,6 +233,7 @@ function Assistant() {
 
   const changeAssistantMode = (mode: CircularAssistantMode) => {
     if (mode === "api" && !canUseApi) return;
+    if (mode === "on-device" && deviceModelState !== "ready") return;
     setAssistantMode(mode);
     try {
       window.localStorage.setItem(AI_MODE_STORAGE_KEY, mode);
@@ -278,7 +343,7 @@ function Assistant() {
     const userMessage = attachmentText
       ? `${clean || "Leggi questo allegato."}\n\n📎 ${attachmentLabel}\n${attachmentText}${attachment?.truncated ? "\n\n[Testo abbreviato]" : ""}`
       : clean;
-    const requestMode = assistantMode === "api" && canUseApi ? "api" : "local";
+    const requestMode: CircularAssistantMode = activeAssistantMode;
     const dayToClear = scheduleDayToClear(clean);
     const expectedLessons = dayToClear ? [...loadSchedule()[dayToClear]] : [];
     const assistantData = {
@@ -315,19 +380,28 @@ function Assistant() {
       Boolean(nextPendingAction) ||
       assignmentIntent?.kind === "clarify" ||
       assignmentIntent?.kind === "already";
+    const officialSchoolInfo =
+      !hasImmediateActionResponse && !attachment ? answerSchoolAdministrativeInfo(clean) : null;
     const useCircularAssistant =
       !hasImmediateActionResponse &&
+      !officialSchoolInfo &&
       (isCircularChatQuestion(clean) || isCircularFollowUpQuestion(clean, previousQuestion));
     const useSchoolPolicyAssistant =
-      !hasImmediateActionResponse && !useCircularAssistant && isSchoolPolicyQuestion(clean);
+      !hasImmediateActionResponse &&
+      !officialSchoolInfo &&
+      !useCircularAssistant &&
+      isSchoolPolicyQuestion(clean);
     const useGeneralApi =
       !hasImmediateActionResponse &&
+      !officialSchoolInfo &&
       !useCircularAssistant &&
       !useSchoolPolicyAssistant &&
-      requestMode === "api" &&
+      (requestMode === "api" || requestMode === "on-device") &&
       !isAssistantSearchQuery(clean);
     const useAttachmentApi = Boolean(attachmentText) && requestMode === "api";
+    const useAttachmentOnDevice = Boolean(attachmentText) && requestMode === "on-device";
     const localAnswer = () =>
+      officialSchoolInfo ??
       answerQuestion(clean, assistantData, loadSchedule(), now, v.interrogazioni, {
         ...(previousQuestion ? { previousQuestion } : {}),
         source: v.source,
@@ -366,11 +440,22 @@ function Assistant() {
     setMessages((current) => [...current, { role: "user", text: userMessage }]);
     setAttachment(null);
 
-    if (useAttachmentApi || useCircularAssistant || useSchoolPolicyAssistant || useGeneralApi) {
+    if (
+      useAttachmentApi ||
+      useAttachmentOnDevice ||
+      useCircularAssistant ||
+      useSchoolPolicyAssistant ||
+      useGeneralApi
+    ) {
       setIsReplying(true);
       try {
         let assistantMessage: AssistantChatMessage;
-        if (useAttachmentApi) {
+        if (useAttachmentOnDevice) {
+          const answer = await generateOnDeviceLlm(
+            `Rispondi in italiano in modo conciso basandoti solo sul testo allegato; se non basta, dillo.\nDomanda: ${(clean || "Riassumi l’allegato").slice(0, 1000)}\nTesto: ${attachmentText.slice(0, 10000)}`,
+          );
+          assistantMessage = { role: "assistant", text: answer.slice(0, 4000) };
+        } else if (useAttachmentApi) {
           assistantMessage = {
             role: "assistant",
             text: await askWithDocument({
@@ -391,17 +476,24 @@ function Assistant() {
             text: assistantResponse ?? "Non ho trovato una circolare pertinente.",
           };
         } else if (useSchoolPolicyAssistant) {
-          const schoolAnswer = await answerSchoolPolicyQuestion(
-            clean,
-            requestMode === "api" ? "api" : "local",
-          );
+          const schoolAnswer = await answerSchoolPolicyQuestion(clean, requestMode);
           assistantMessage = {
             role: "assistant",
             text: schoolAnswer.text,
             sources: schoolAnswer.sources,
           };
         } else {
-          assistantMessage = { role: "assistant", text: await askGeneralQuestion(clean) };
+          assistantMessage =
+            requestMode === "on-device"
+              ? {
+                  role: "assistant",
+                  text: (
+                    await generateOnDeviceLlm(
+                      `Rispondi in italiano in modo utile e conciso. Non inventare fatti se non sei sicuro.\nDomanda: ${clean.slice(0, 2000)}`,
+                    )
+                  ).slice(0, 4000),
+                }
+              : { role: "assistant", text: await askGeneralQuestion(clean) };
         }
         setMessages((current) => [...current, assistantMessage]);
         setApiQuota(getLastApiQuota());
@@ -494,7 +586,11 @@ function Assistant() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold">
             <Sparkles className="h-4 w-4 text-primary" />
-            {activeAssistantMode === "local" ? "Modalità Locale" : "Modalità API Groq (Qwen)"}
+            {activeAssistantMode === "local"
+              ? "Modalità Locale"
+              : activeAssistantMode === "on-device"
+                ? "AI telefono · Qwen3 0.6B"
+                : "Modalità API Groq (Qwen)"}
           </div>
           <div
             className="flex rounded-xl border border-border p-1"
@@ -510,6 +606,17 @@ function Assistant() {
             >
               Locale
             </button>
+            {deviceModelState === "ready" && (
+              <button
+                type="button"
+                aria-pressed={activeAssistantMode === "on-device"}
+                disabled={isReplying}
+                onClick={() => changeAssistantMode("on-device")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${activeAssistantMode === "on-device" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                AI telefono
+              </button>
+            )}
             {canUseApi && (
               <button
                 type="button"
@@ -526,14 +633,35 @@ function Assistant() {
         <p className="mt-1 text-[11px] text-muted-foreground">
           {activeAssistantMode === "local"
             ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
-            : "API invia a Groq la domanda e gli estratti pertinenti dei documenti. Non invia automaticamente dati scolastici o cronologia; i dati personali scritti nella domanda vengono inviati. Per zero spese, scegli Locale o AI telefono."}{" "}
+            : activeAssistantMode === "on-device"
+              ? "AI telefono usa il modello Qwen3 installato localmente: domanda e soli estratti pertinenti non escono dal dispositivo. Scarica il modello da Impostazioni; nessun fallback API in caso di errore."
+              : "API invia a Groq la domanda e gli estratti pertinenti dei documenti. Non invia automaticamente dati scolastici o cronologia; i dati personali scritti nella domanda vengono inviati."}{" "}
           {!canUseApi && (
             <span className="font-medium text-primary">
-              Offline: API non disponibile; è disponibile Locale.
+              Offline: API non disponibile. Locale e AI telefono restano sul dispositivo.
             </span>
           )}
           Verifica sempre eventuali aggiornamenti ufficiali della scuola.
         </p>
+        {activeAssistantMode === "on-device" && deviceModelState === "unsupported" && (
+          <p className="mt-2 text-xs font-medium text-destructive">
+            AI telefono non disponibile su questo dispositivo. Gestisci il modello da Impostazioni.
+          </p>
+        )}
+        {activeAssistantMode === "on-device" && deviceModelState === "not-installed" && (
+          <p className="mt-2 text-xs font-medium">
+            Modello assente: installalo da Impostazioni prima di inviare una domanda.
+          </p>
+        )}
+        {activeAssistantMode === "on-device" && (
+          <p className="mt-1 text-xs">
+            Se il modello manca o non risponde, riceverai un errore esplicito senza invio a Groq.{" "}
+            <a href="/impostazioni" className="text-primary underline">
+              Apri Impostazioni per installarlo
+            </a>
+            .
+          </p>
+        )}
         {activeAssistantMode === "api" && apiQuota && (
           <div className="mt-3 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[11px] text-muted-foreground">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

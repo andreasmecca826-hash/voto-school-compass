@@ -17,6 +17,7 @@ const native = vi.hoisted(() => ({
     lastAttemptAt: "",
   },
   getStatus: vi.fn(),
+  openAppSettings: vi.fn(),
   setEnabled: vi.fn(),
   setQuietHours: vi.fn(),
   clear: vi.fn(),
@@ -29,6 +30,7 @@ vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => "android" } 
 vi.mock("@/lib/native-didup-sync", () => ({
   clearNativeDidupSync: native.clear,
   getNativeDidupSyncStatus: native.getStatus,
+  openNativeDidupAppSettings: native.openAppSettings,
   requestNativeDidupSync: native.syncNow,
   saveNativeDidupCredentials: native.saveCredentials,
   setNativeDidupQuietHours: native.setQuietHours,
@@ -54,6 +56,7 @@ beforeEach(() => {
     lastAttemptAt: "",
   };
   native.getStatus.mockReset().mockImplementation(async () => ({ ...native.status }));
+  native.openAppSettings.mockReset().mockResolvedValue(undefined);
   native.setEnabled.mockReset().mockImplementation(async (enabled, intervalMinutes) => {
     native.status = { ...native.status, enabled, intervalMinutes };
   });
@@ -73,6 +76,13 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe("toggle sincronizzazione DidUP", () => {
+  it("apre le impostazioni Android dell’app per permettere all’utente di togliere restrizioni batteria", async () => {
+    render(<DidupSyncSettings />);
+    fireEvent.click(await screen.findByRole("button", { name: "Apri impostazioni app Android" }));
+
+    await waitFor(() => expect(native.openAppSettings).toHaveBeenCalledOnce());
+  });
+
   it("mostra se è attiva o sospesa e aggiorna subito lo stato quando si tocca", async () => {
     render(<DidupSyncSettings />);
     const toggle = await screen.findByRole("switch", {
@@ -97,6 +107,35 @@ describe("toggle sincronizzazione DidUP", () => {
     fireEvent.click(toggle);
     await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
     expect(native.setEnabled).toHaveBeenLastCalledWith(false, 360);
+  });
+
+  it("mostra il warning allegati anche se i dati generali sono stati sincronizzati", async () => {
+    native.status = {
+      ...native.status,
+      status: "attachment_issue",
+      message: "Allegato: download non riuscito (HTTP 403).",
+      lastSyncAt: "2026-11-18T18:00:00Z",
+    };
+    render(<DidupSyncSettings />);
+
+    expect(await screen.findByText("Verifica un allegato")).toBeInTheDocument();
+    expect(screen.getByText("Allegato: download non riuscito (HTTP 403).")).toBeInTheDocument();
+    expect(screen.queryByText("Sincronizzazione riuscita")).not.toBeInTheDocument();
+  });
+
+  it("aggiorna lo stato quando il worker completa un lotto in background", async () => {
+    native.status = { ...native.status, status: "attachment_pending" };
+    render(<DidupSyncSettings />);
+
+    expect(await screen.findByText("Allegati in coda")).toBeInTheDocument();
+    native.status = {
+      ...native.status,
+      status: "success",
+      message: "Sincronizzazione completata.",
+    };
+    fireEvent.focus(window);
+
+    expect(await screen.findByText("Sincronizzazione riuscita")).toBeInTheDocument();
   });
 
   it("spiega perché il toggle non è disponibile senza credenziali", async () => {

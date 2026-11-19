@@ -205,7 +205,70 @@ class DidupClientCircularAttachmentTests(unittest.TestCase):
         self.assertEqual(client.profile_pk, "profile-scheda-123")
         self.assertEqual(profile["nominativo"], "Studente")
 
-    def test_web_attachment_uses_family_route_and_pk_scheda(self):
+    def test_fetches_bacheca_history_when_dashboard_omits_attachment_list(self):
+        client = self.client()
+        client.profile_pk = "profile-scheda-123"
+        dashboard = {
+            "bacheca": [
+                {"pk": "notice-1", "oggetto": "Circolare", "messaggio": "Testo circolare"}
+            ]
+        }
+        history = {
+            "data": {
+                "bacheca": [
+                    {
+                        "pk": "notice-1",
+                        "listaAllegati": [
+                            {
+                                "pk": "attachment-uid-1",
+                                "nomeFile": "circolare.pdf",
+                                "url": "https://bucket.s3.amazonaws.com/circolare.pdf?sig=temp",
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+
+        with patch.object(client, "_api", return_value=history) as api:
+            result = client._enrich_bacheca_attachments(dashboard)
+
+        api.assert_called_once_with(
+            "POST",
+            "famiglia/storicobacheca",
+            payload={"pkScheda": "profile-scheda-123"},
+        )
+        self.assertEqual(len(result["bacheca"]), 1)
+        self.assertEqual(result["bacheca"][0]["messaggio"], "Testo circolare")
+        self.assertEqual(
+            result["bacheca"][0]["listaAllegati"][0]["pk"], "attachment-uid-1"
+        )
+
+    def test_accepts_history_returned_as_a_direct_list(self):
+        client = self.client()
+        client.profile_pk = "profile-scheda-123"
+        dashboard = {"bacheca": [{"pk": "notice-1", "oggetto": "Circolare"}]}
+        history = [{"pk": "notice-1", "listaAllegati": [{"pk": "file-1"}]}]
+
+        with patch.object(client, "_api", return_value=history):
+            result = client._enrich_bacheca_attachments(dashboard)
+
+        self.assertEqual(result["bacheca"][0]["listaAllegati"][0]["pk"], "file-1")
+        self.assertEqual(client.attachment_history_diagnostic, "")
+
+    def test_malformed_history_response_is_reported_as_retryable(self):
+        client = self.client()
+        client.profile_pk = "profile-scheda-123"
+        dashboard = {"bacheca": [{"pk": "notice-1", "oggetto": "Circolare"}]}
+
+        with patch.object(client, "_api", return_value={"data": {"unexpected": []}}):
+            result = client._enrich_bacheca_attachments(dashboard)
+
+        self.assertEqual(result, dashboard)
+        self.assertIn("risposta in formato inatteso", client.attachment_history_diagnostic)
+        self.assertTrue(client.attachment_history_retryable)
+
+    def test_web_attachment_uses_general_bacheca_route_with_uid_only(self):
         client = self.client()
         client.profile_pk = "profile-scheda-123"
         url = "https://bucket.s3.amazonaws.com/circolare.pdf?sig=temporary"
@@ -220,12 +283,29 @@ class DidupClientCircularAttachmentTests(unittest.TestCase):
         api.assert_called_once_with(
             "POST",
             "famiglia/downloadallegatobacheca",
-            payload={"uid": "attachment-uid-1", "pkScheda": "profile-scheda-123"},
+            payload={"uid": "attachment-uid-1"},
         )
         request = build_opener.return_value.open.call_args.args[0]
-        self.assertEqual(request.get_header("Referer"), "https://www.portaleargo.it/famiglia/")
+        self.assertEqual(request.get_header("Origin"), "https://didattica.portaleargo.it")
+        self.assertEqual(request.get_header("Referer"), "https://didattica.portaleargo.it/famiglia/")
         self.assertEqual(result["extension"], "pdf")
         self.assertEqual(result["content"], b"%PDF-1.7\nexample")
+
+    def test_web_attachment_accepts_openapi_string_url_response(self):
+        client = self.client()
+        client.profile_pk = "profile-scheda-123"
+        url = "https://bucket.s3.amazonaws.com/circolare.pdf?sig=fresh"
+        with patch.object(client, "_api", return_value=url), patch(
+            "didup_client.urllib.request.build_opener"
+        ) as build_opener:
+            downloaded = build_opener.return_value.open.return_value.__enter__.return_value
+            downloaded.geturl.return_value = url
+            downloaded.read.return_value = b"%PDF-1.7\nexample"
+            result = client.download_attachment("attachment-uid-1", "circolare.pdf")
+
+        request = build_opener.return_value.open.call_args.args[0]
+        self.assertEqual(request.full_url, url)
+        self.assertEqual(result["extension"], "pdf")
 
 
 if __name__ == "__main__":

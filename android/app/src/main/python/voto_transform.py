@@ -135,6 +135,24 @@ def _safe_url(value: str) -> str | None:
         return None
 
 
+def _safe_attachment_download_url(value: str) -> str | None:
+    """Allowlist Argo/S3 signed URLs for one-shot download during sync only."""
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(value.strip())
+        host = (parsed.hostname or "").casefold()
+        allowed_host = (
+            host == "portaleargo.it" or host.endswith(".portaleargo.it")
+            or host == "amazonaws.com" or host.endswith(".amazonaws.com")
+        )
+        if (parsed.scheme == "https" and allowed_host and parsed.path
+                and not parsed.username and not parsed.password and parsed.port in (None, 443)):
+            return value.strip()
+        return None
+    except Exception:
+        return None
+
+
 def _student_profile(profile: dict[str, Any] | None) -> dict[str, str]:
     data = profile if isinstance(profile, dict) else {}
     name = text(data, "nominativo", "nome_completo", "nomeCompleto")
@@ -295,7 +313,7 @@ def _build_attendance(events: list[Any]) -> tuple[list[dict[str, Any]], dict[str
 
 
 def _notification_key(item: dict[str, Any], kind: str, index: int) -> str:
-    fields = ("prg_promemoria", "prg_promemoria_alunno", "prg", "id") if kind == "reminder" else ("prg_messaggio", "prg_bacheca", "prg", "id")
+    fields = ("prg_promemoria", "prg_promemoria_alunno", "prg", "pk", "id") if kind == "reminder" else ("prg_messaggio", "prg_bacheca", "prg", "pk", "id")
     return _item_key(item, fields) or f"{kind}-{index}"
 
 
@@ -311,6 +329,7 @@ def _merge_attachments(current: list[dict[str, Any]], previous: Any) -> list[dic
     for item in current:
         name = str(item.get("name") or "").casefold()
         current_uid = str(item.get("sourceUid") or "")
+        current_download_url = item.get("_sourceDownloadUrl")
         match_index = next((i for i, old_item in enumerate(old)
                             if i not in used_old and isinstance(old_item, dict)
                             and (old_item.get("name") or "").casefold() == name
@@ -322,6 +341,10 @@ def _merge_attachments(current: list[dict[str, Any]], previous: Any) -> list[dic
             used_old.add(match_index)
             preserved = dict(old[match_index])
             preserved["name"] = item.get("name") or preserved.get("name")
+            if not current_uid and isinstance(current_download_url, str) and current_download_url:
+                preserved.pop("path", None)
+                preserved.pop("sourceUid", None)
+                preserved["_sourceDownloadUrl"] = current_download_url
             merged.append(preserved)
         else:
             merged.append(item)
@@ -340,14 +363,17 @@ def _merge_attachments(current: list[dict[str, Any]], previous: Any) -> list[dic
             name = str(old_item.get("name") or "").casefold()
             current = next((entry for entry in merged if str(entry.get("name") or "").casefold() == name), None)
             if current is not None:
-                if not current.get("sourceUid"):
+                if not current.get("sourceUid") and not current.get("_sourceDownloadUrl"):
                     current["sourceUid"] = source_uid
             else:
                 merged.append(dict(old_item))
     unique: list[dict[str, Any]] = []
     seen: set[str] = set()
     for item in merged:
-        identity = str(item.get("path") or item.get("url") or item.get("sourceUid") or item.get("name") or "")
+        identity = str(
+            item.get("path") or item.get("url") or item.get("sourceUid")
+            or item.get("_sourceDownloadUrl") or item.get("name") or ""
+        )
         if identity and identity not in seen:
             seen.add(identity)
             unique.append(item)
@@ -386,7 +412,13 @@ def _build_notifications(dashboard: dict[str, Any], previous: dict[str, Any]) ->
             date_names = ("dat_giorno", "dat_promemoria", "dat_evento", "data") if kind == "reminder" else ("dat_giorno", "dat_evento", "data")
             event_date = text(item, *date_names)
             parsed = _date(event_date)
-            if kind == "notice" and parsed and parsed < datetime.now(timezone.utc).date() - timedelta(days=365):
+            item_id = _notification_key(item, kind, index)
+            prior = old_by_id.get(item_id, {})
+            raw_attachments = get(item, "lista_allegati", default=[])
+            has_current_attachments = isinstance(raw_attachments, list) and bool(raw_attachments)
+            has_previous_attachments = isinstance(prior.get("attachments"), list) and bool(prior["attachments"])
+            is_old_notice = kind == "notice" and parsed and parsed < datetime.now(timezone.utc).date() - timedelta(days=365)
+            if is_old_notice and not (has_current_attachments or has_previous_attachments):
                 continue
             title = text(item, *title_names, default=default_title) or default_title
             message = text(item, *message_names)
@@ -395,9 +427,6 @@ def _build_notifications(dashboard: dict[str, Any], previous: dict[str, Any]) ->
                               if isinstance(value, str) and value.strip()
                               and any(token in key.casefold() for token in ("descr", "nota", "testo", "messag", "annot"))]
                 message = max(candidates, key=len, default="")
-            item_id = _notification_key(item, kind, index)
-            prior = old_by_id.get(item_id, {})
-            raw_attachments = get(item, "lista_allegati", default=[])
             entries: list[dict[str, Any]] = []
             if isinstance(raw_attachments, list):
                 parent_url = text(item, "url", "des_url")
@@ -413,6 +442,9 @@ def _build_notifications(dashboard: dict[str, Any], previous: dict[str, Any]) ->
                         url = path or url or parent_url
                     safe_url = _safe_url(url)
                     entry = {"name": name, **({"url": safe_url} if safe_url else {})}
+                    source_download_url = _safe_attachment_download_url(url)
+                    if source_download_url:
+                        entry["_sourceDownloadUrl"] = source_download_url
                     source_uid = text(attachment, "uid", "pk")
                     if source_uid:
                         entry["sourceUid"] = source_uid

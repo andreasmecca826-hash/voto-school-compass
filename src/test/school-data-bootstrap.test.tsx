@@ -7,6 +7,20 @@ import { DEMO_ACCESS_CODE } from "@/lib/demo-access";
 import { useVoto, VotoProvider } from "@/lib/voto/store";
 import { KEYS } from "@/lib/voto/storage";
 
+const nativeSync = vi.hoisted(() => ({
+  clearDidup: vi.fn(),
+  clearSupabaseSession: vi.fn(),
+  getSupabaseSession: vi.fn().mockResolvedValue(null),
+  persistSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/native-didup-sync", () => ({
+  clearNativeDidupSync: nativeSync.clearDidup,
+  clearNativeSupabaseSession: nativeSync.clearSupabaseSession,
+  getNativeSupabaseSession: nativeSync.getSupabaseSession,
+  persistNativeSupabaseSession: nativeSync.persistSession,
+}));
+
 vi.mock("@/lib/voto/circulars", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/voto/circulars")>();
   return {
@@ -99,6 +113,24 @@ function mockAuthSession() {
 }
 
 describe("bootstrap dati scolastici", () => {
+  it("non cancella il vault DidUP se all’avvio manca la sessione Supabase locale", async () => {
+    nativeSync.clearDidup.mockClear();
+    nativeSync.clearSupabaseSession.mockClear();
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.spyOn(supabase.auth, "onAuthStateChange").mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as never);
+
+    renderProtectedApp();
+
+    expect(await screen.findByRole("heading", { name: "Accedi a VOTO" })).toBeInTheDocument();
+    expect(nativeSync.clearSupabaseSession).not.toHaveBeenCalled();
+    expect(nativeSync.clearDidup).not.toHaveBeenCalled();
+  });
+
   it("mostra il login all’avvio anche se in precedenza era stata usata la demo", async () => {
     vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
       data: { session: null },

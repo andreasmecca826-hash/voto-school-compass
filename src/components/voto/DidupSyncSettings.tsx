@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   clearNativeDidupSync,
   getNativeDidupSyncStatus,
+  openNativeDidupAppSettings,
   requestNativeDidupSync,
   saveNativeDidupCredentials,
   setNativeDidupQuietHours,
@@ -115,8 +116,18 @@ export function DidupSyncSettings() {
   useEffect(() => {
     const isAndroid = Capacitor.getPlatform() === "android";
     setAndroid(isAndroid);
-    if (isAndroid) void refreshStatus();
+    if (!isAndroid) return;
+    void refreshStatus();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshStatus();
+    };
+    const timer = window.setInterval(refreshWhenVisible, 15_000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    window.addEventListener("focus", refreshWhenVisible);
     return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.removeEventListener("focus", refreshWhenVisible);
       if (pollTimer.current !== null) window.clearInterval(pollTimer.current);
     };
   }, [refreshStatus]);
@@ -167,6 +178,17 @@ export function DidupSyncSettings() {
       await refreshStatus();
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleOpenBatterySettings() {
+    try {
+      await openNativeDidupAppSettings();
+    } catch (error) {
+      toast.error("Impossibile aprire le impostazioni Android", {
+        description:
+          error instanceof Error ? error.message : "Apri manualmente le info app di VOTO.",
+      });
     }
   }
 
@@ -495,6 +517,22 @@ export function DidupSyncSettings() {
         sincronizzazione si sospende al logout VOTO e puoi rimuovere in ogni momento le credenziali
         locali.
       </p>
+      <div className="mt-3 rounded-xl border border-border bg-surface/40 p-3">
+        <p className="text-xs font-semibold">Aiuta VOTO a sincronizzare in background</p>
+        <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+          Su alcuni telefoni, soprattutto con risparmio energetico o restrizioni Samsung, Android
+          può ritardare i controlli. Apri le info app di VOTO e, se disponibile, imposta Batteria su
+          “Senza restrizioni” e abilita l’attività in background. È facoltativo e può aumentare il
+          consumo della batteria; gli orari restano comunque gestiti da Android.
+        </p>
+        <button
+          type="button"
+          onClick={() => void handleOpenBatterySettings()}
+          className="press mt-3 h-10 w-full rounded-xl border border-border text-xs font-semibold"
+        >
+          Apri impostazioni app Android
+        </button>
+      </div>
       {status.hasCredentials && (
         <button
           type="button"

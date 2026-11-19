@@ -1,11 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
 import { supabaseProjectUrl, supabasePublishableKey } from "./supabase-config";
 
 const isBrowser = typeof window !== "undefined";
+const isNativeApp = isBrowser && Capacitor.isNativePlatform();
 
 export const supabase = createClient(supabaseProjectUrl(), supabasePublishableKey(), {
   auth: {
-    autoRefreshToken: isBrowser,
+    autoRefreshToken: isBrowser && !isNativeApp,
     detectSessionInUrl: isBrowser,
     persistSession: isBrowser,
     flowType: "pkce",

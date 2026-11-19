@@ -57,12 +57,87 @@ beforeEach(() => {
   });
   askCircularText.mockReset().mockResolvedValue("Risposta API testuale.");
   askCircularImages.mockReset().mockResolvedValue("La scadenza è il 30 novembre.");
+  vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+    data: { session: { access_token: "test-user-token" } as never },
+    error: null,
+  } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes("/functions/v1/mirror-circular")) {
+        const body = JSON.parse(String(init?.body)) as { path: string };
+        return new Response(
+          JSON.stringify({
+            path: body.path,
+            signedUrl: `https://jmvxuhgjejzpezvawzfw.supabase.co/storage/v1/object/sign/${body.path}?token=test`,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
+    }),
+  );
   window.localStorage.removeItem("voto.circular-assistant-mode.v1");
   window.localStorage.removeItem("voto.circular-ai-models.v1");
   Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
 });
 
 describe("visualizzatore PDF delle circolari interne", () => {
+  it("non apre un URL Argo/S3 grezzo su Android se manca il path archiviato", () => {
+    const sourceUrl = "https://bucket.s3.amazonaws.com/circolare.pdf";
+    vi.stubGlobal("Capacitor", {
+      isNativePlatform: () => true,
+      getPlatform: () => "android",
+    });
+    const openWindow = vi.spyOn(window, "open").mockReturnValue(null);
+
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare senza copia interna"
+        fileName="circolare.pdf"
+        path={undefined}
+        url={sourceUrl}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("non è ancora archiviato in VOTO");
+    expect(screen.queryByRole("button", { name: "Apri PDF" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Scarica PDF" })).not.toBeInTheDocument();
+    expect(openWindow).not.toHaveBeenCalled();
+  });
+
+  it("non ricade sull’URL esterno se la firma del path interno fallisce", async () => {
+    const path = `circulars/${"b".repeat(64)}.pdf`;
+    const sourceUrl = "https://bucket.s3.amazonaws.com/circolare.pdf";
+    vi.stubGlobal("Capacitor", {
+      isNativePlatform: () => true,
+      getPlatform: () => "android",
+    });
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "test-user-token" } as never },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 403 })));
+    const openWindow = vi.spyOn(window, "open").mockReturnValue(null);
+
+    render(
+      <CircularViewer
+        open
+        onOpenChange={() => {}}
+        title="Circolare interna"
+        fileName="circolare.pdf"
+        path={path}
+        url={sourceUrl}
+      />,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("collegamento sicuro");
+    expect(screen.queryByRole("document", { name: "circolare.pdf" })).not.toBeInTheDocument();
+    expect(openWindow).not.toHaveBeenCalled();
+  });
+
   it.each([
     { extension: "pdf", openButton: "Apri PDF", downloadButton: "Scarica PDF" },
     { extension: "docx", openButton: "Apri DOCX", downloadButton: "Scarica DOCX" },
@@ -151,7 +226,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     },
   );
 
-  it("mantiene anteprima locale e download anche senza URL firmata anticipata", () => {
+  it("mantiene anteprima locale e download anche senza URL firmata anticipata", async () => {
     const path = `circulars/${"a".repeat(64)}.pdf`;
     render(
       <CircularViewer
@@ -164,7 +239,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    expect(screen.getByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
+    expect(await screen.findByRole("document", { name: "allegato.pdf" })).toBeInTheDocument();
     const openPdfButton = screen.getByRole("button", { name: "Apri PDF" });
     const downloadPdfButton = screen.getByRole("button", { name: "Scarica PDF" });
     expect(openPdfButton.parentElement).toHaveClass("grid-cols-2");
@@ -191,7 +266,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(
       screen.queryByRole("heading", { name: "Fai una domanda alla circolare" }),
     ).not.toBeInTheDocument();
-    const showChatButton = screen.getByRole("button", { name: "Fai una domanda" });
+    const showChatButton = await screen.findByRole("button", { name: "Fai una domanda" });
     expect(showChatButton).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(showChatButton);
     expect(
@@ -205,7 +280,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByRole("button", { name: "Chiedi" })).toBeDisabled();
   });
 
-  it("permette di scegliere l’API e ricorda la preferenza sul dispositivo", () => {
+  it("permette di scegliere l’API e ricorda la preferenza sul dispositivo", async () => {
     render(
       <CircularViewer
         open
@@ -217,7 +292,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Fai una domanda" }));
     fireEvent.click(screen.getByRole("button", { name: "API Groq (Qwen)" }));
 
     expect(screen.getByRole("button", { name: "API Groq (Qwen)" })).toHaveAttribute(
@@ -228,7 +303,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(window.localStorage.getItem("voto.circular-assistant-mode.v1")).toBe("api");
   });
 
-  it("nasconde l’API e ripristina Locale quando il browser va offline", () => {
+  it("nasconde l’API e ripristina Locale quando il browser va offline", async () => {
     render(
       <CircularViewer
         open
@@ -240,7 +315,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Fai una domanda" }));
     fireEvent.click(screen.getByRole("button", { name: "API Groq (Qwen)" }));
     act(() => {
       Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
@@ -256,7 +331,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     expect(screen.getByText(/Offline: disponibili solo le funzioni Locale/i)).toBeInTheDocument();
   });
 
-  it("parte in Locale se si apre offline anche con API salvata", () => {
+  it("parte in Locale se si apre offline anche con API salvata", async () => {
     window.localStorage.setItem("voto.circular-assistant-mode.v1", "api");
     Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
 
@@ -270,7 +345,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
         url={undefined}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Fai una domanda" }));
 
     expect(screen.queryByRole("button", { name: "API Groq (Qwen)" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Locale (sul dispositivo)" })).toHaveAttribute(
@@ -297,7 +372,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Fai una domanda" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Fai una domanda" }));
     fireEvent.click(await screen.findByRole("button", { name: "API visiva (Qwen)" }));
     expect(
       screen.getByText(/Groq riceve la domanda e le immagini JPEG delle prime 3 pagine PDF/i),
@@ -335,7 +410,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    const docxPreview = screen.getByRole("document", { name: "modulo.docx" });
+    const docxPreview = await screen.findByRole("document", { name: "modulo.docx" });
     Object.defineProperty(docxPreview, "clientWidth", { configurable: true, value: 300 });
     Object.defineProperty(docxPreview, "clientHeight", { configurable: true, value: 300 });
     Object.defineProperty(docxPreview, "scrollWidth", {
@@ -408,7 +483,7 @@ describe("visualizzatore PDF delle circolari interne", () => {
     ).toBeInTheDocument();
   });
 
-  it("preferisce il path PDF interno al duplicato esterno", () => {
+  it("preferisce il path PDF interno al duplicato esterno", async () => {
     const path = `circulars/${"c".repeat(64)}.pdf`;
     render(
       <CircularViewer
@@ -422,10 +497,10 @@ describe("visualizzatore PDF delle circolari interne", () => {
       />,
     );
 
-    expect(screen.getByRole("document", { name: "circolare.pdf" })).toBeInTheDocument();
+    expect(await screen.findByRole("document", { name: "circolare.pdf" })).toBeInTheDocument();
   });
 
-  it("permette di passare da un allegato all’altro nella stessa circolare", () => {
+  it("permette di passare da un allegato all’altro nella stessa circolare", async () => {
     render(
       <CircularViewer
         open
@@ -445,10 +520,10 @@ describe("visualizzatore PDF delle circolari interne", () => {
     fireEvent.click(secondAttachmentTab);
 
     expect(secondAttachmentTab).toHaveAttribute("aria-selected", "true");
-    const secondPreview = screen.getByRole("document", { name: "secondo.pdf" });
+    const secondPreview = await screen.findByRole("document", { name: "secondo.pdf" });
     expect(secondPreview).toBeInTheDocument();
     expect(secondPreview.getAttribute("data-preview-src")).toContain(
-      encodeURIComponent(`circulars/${"e".repeat(64)}.pdf`),
+      `circulars/${"e".repeat(64)}.pdf`,
     );
   });
 
@@ -497,9 +572,9 @@ describe("visualizzatore PDF delle circolari interne", () => {
         "true",
       ),
     );
-    const newPreview = screen.getByRole("document", { name: "nuovo-1.pdf" });
+    const newPreview = await screen.findByRole("document", { name: "nuovo-1.pdf" });
     expect(newPreview.getAttribute("data-preview-src")).toContain(
-      encodeURIComponent(`circulars/${"c".repeat(64)}.pdf`),
+      `circulars/${"c".repeat(64)}.pdf`,
     );
   });
 

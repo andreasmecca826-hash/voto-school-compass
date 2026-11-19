@@ -1004,6 +1004,13 @@ describe("Assistente locale", () => {
     }
   });
 
+  it("include nel riepilogo capability le spiegazioni generali offline appena aggiunte", () => {
+    const capabilities = answerQuestion("Cosa posso chiederti?", data);
+    expect(capabilities).toContain("spiegare come VOTO calcola le medie");
+    expect(capabilities).toContain("consigli generali sul metodo di studio");
+    expect(capabilities).toContain("in Locale non genero spiegazioni libere");
+  });
+
   it("descrive le azioni sui compiti come disponibili solo dopo conferma", () => {
     const capabilities = answerQuestion("Cosa sai fare?", data);
     expect(capabilities).toContain("Dopo la tua conferma");

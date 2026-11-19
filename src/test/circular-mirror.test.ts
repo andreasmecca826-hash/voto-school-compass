@@ -4,11 +4,14 @@ import { handleCircularMirrorGet, parseSingleByteRange } from "@/routes/api/circ
 const path = `circulars/${"a".repeat(64)}.pdf`;
 const projectUrl = "https://jmvxuhgjejzpezvawzfw.supabase.co";
 
-function request(range?: string, attachmentPath = path) {
+function request(range?: string, attachmentPath = path, authenticated = true) {
   return new Request(
     `https://voto.test/api/circulars/mirror?path=${encodeURIComponent(attachmentPath)}`,
     {
-      ...(range ? { headers: { Range: range } } : {}),
+      headers: {
+        ...(range ? { Range: range } : {}),
+        ...(authenticated ? { Authorization: "Bearer test-user-token" } : {}),
+      },
     },
   );
 }
@@ -86,6 +89,16 @@ describe("proxy Range dell’anteprima circolari", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("richiede una sessione per firmare il file", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await handleCircularMirrorGet(request(undefined, path, false));
+
+    expect(response.status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rifiuta un PDF oltre 25 MB anche quando arriva una risposta parziale", async () => {
     const largePath = `circulars/${"b".repeat(64)}.pdf`;
     installFetchMock(
@@ -153,17 +166,17 @@ describe("proxy Range dell’anteprima circolari", () => {
     }
   });
 
-  it("riusa per cinque minuti la firma server-side tra richieste Range dello stesso PDF", async () => {
+  it("inoltra la sessione a ogni richiesta Range senza riusare la firma tra identità", async () => {
     const cachedPath = `circulars/${"d".repeat(64)}.pdf`;
     const cachedSignedUrl = `${projectUrl}/storage/v1/object/sign/${cachedPath}?token=cache`;
+    const signedResponse = () =>
+      new Response(JSON.stringify({ path: cachedPath, signedUrl: cachedSignedUrl }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ path: cachedPath, signedUrl: cachedSignedUrl }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
-      )
+      .mockResolvedValueOnce(signedResponse())
       .mockResolvedValueOnce(
         new Response(new Uint8Array([1, 2]), {
           status: 206,
@@ -174,6 +187,7 @@ describe("proxy Range dell’anteprima circolari", () => {
           },
         }),
       )
+      .mockResolvedValueOnce(signedResponse())
       .mockResolvedValueOnce(
         new Response(new Uint8Array([3, 4]), {
           status: 206,
@@ -192,9 +206,13 @@ describe("proxy Range dell’anteprima circolari", () => {
     expect(first.status).toBe(206);
     expect(second.status).toBe(206);
     await Promise.all([first.arrayBuffer(), second.arrayBuffer()]);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(fetchMock.mock.calls[0]?.[0]).toContain("/functions/v1/mirror-circular");
+    expect(
+      new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get("authorization"),
+    ).toBe("Bearer test-user-token");
     expect(String(fetchMock.mock.calls[1]?.[0])).toBe(cachedSignedUrl);
-    expect(String(fetchMock.mock.calls[2]?.[0])).toBe(cachedSignedUrl);
+    expect(String(fetchMock.mock.calls[2]?.[0])).toContain("/functions/v1/mirror-circular");
+    expect(String(fetchMock.mock.calls[3]?.[0])).toBe(cachedSignedUrl);
   });
 });

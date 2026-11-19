@@ -125,6 +125,25 @@ final class DidupSyncVault {
         editor.apply();
     }
 
+    static synchronized void clearSupabaseSession(Context context) {
+        prefs(context).edit()
+                .remove(KEY_ACCESS)
+                .remove(KEY_REFRESH)
+                .remove(KEY_EXPIRES)
+                .putString("status", "session_required")
+                .putString("message", "Accedi di nuovo a VOTO per riprendere la sincronizzazione DidUP.")
+                .apply();
+    }
+
+    static synchronized JSONObject getSupabaseSession(Context context) throws JSONException {
+        SharedPreferences p = prefs(context);
+        JSONObject result = new JSONObject();
+        result.put("accessToken", decrypt(p.getString(KEY_ACCESS, "")));
+        result.put("refreshToken", decrypt(p.getString(KEY_REFRESH, "")));
+        result.put("expiresAt", p.getLong(KEY_EXPIRES, 0L));
+        return result;
+    }
+
     static synchronized JSONObject buildInput(Context context) throws JSONException {
         SharedPreferences p = prefs(context);
         JSONObject input = new JSONObject();
@@ -163,7 +182,9 @@ final class DidupSyncVault {
             editor.putLong(KEY_EXPIRES, expiresAt);
         }
         boolean ok = result.optBoolean("ok", false);
-        editor.putString("status", ok ? "success" : result.optString("code", "sync_error"));
+        String code = result.optString("code", "sync_error");
+        boolean attachmentWarning = code.startsWith("attachment_");
+        editor.putString("status", ok && !attachmentWarning ? "success" : code);
         editor.putString("message", result.optString("message", "Sincronizzazione non riuscita."));
         editor.putString("last_attempt_at", utcNow());
         if (ok) editor.putString("last_sync_at", result.optString("syncedAt", utcNow()));

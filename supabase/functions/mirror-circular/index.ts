@@ -2,6 +2,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Cache-Control": "private, no-store",
 };
 const bucket = Deno.env.get("SUPABASE_STORAGE_BUCKET") || "circulars";
 const validPath = (value: unknown): value is string =>
@@ -26,6 +27,42 @@ function normalizeProjectUrl(raw: string) {
   return parsed.origin;
 }
 
+function adminHeaders(key: string, contentType?: string) {
+  const headers: Record<string, string> = {
+    apikey: key,
+    ...(contentType ? { "Content-Type": contentType } : {}),
+  };
+  if (
+    key.split(".").length === 3 &&
+    !key.startsWith("sb_secret_") &&
+    !key.startsWith("sb_publishable_")
+  ) {
+    headers.Authorization = `Bearer ${key}`;
+  }
+  return headers;
+}
+
+async function authenticatedUserId(request: Request, url: string, key: string) {
+  const authorization = request.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ") || authorization.length > 16_384) return null;
+  const response = await fetch(`${url}/auth/v1/user`, {
+    headers: { apikey: key, Authorization: authorization },
+  });
+  if (!response.ok) return null;
+  const user = await response.json();
+  return typeof user?.id === "string" ? user.id : null;
+}
+
+async function isOwner(url: string, key: string, userId: string) {
+  const response = await fetch(`${url}/rest/v1/rpc/is_school_data_owner`, {
+    method: "POST",
+    headers: adminHeaders(key, "application/json"),
+    body: JSON.stringify({ p_user_id: userId }),
+  });
+  if (!response.ok) return false;
+  return (await response.json()) === true;
+}
+
 function storageHeaders(key: string) {
   const headers: Record<string, string> = {
     apikey: key,
@@ -42,19 +79,10 @@ function storageHeaders(key: string) {
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (request.method !== "POST") {
     return jsonResponse({ error: "Metodo non consentito" }, 405);
   }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: "JSON non valido" }, 400);
-  }
-  const path = typeof body === "object" && body !== null ? (body as { path?: unknown }).path : null;
-  if (!validPath(path)) return jsonResponse({ error: "Path allegato non valido" }, 400);
 
   const rawUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -64,6 +92,24 @@ Deno.serve(async (request: Request) => {
 
   try {
     const projectUrl = normalizeProjectUrl(rawUrl);
+    const userId = await authenticatedUserId(request, projectUrl, serviceKey);
+    if (!userId) return jsonResponse({ error: "Sessione non valida" }, 401);
+    if (!(await isOwner(projectUrl, serviceKey, userId))) {
+      return jsonResponse({ error: "Account non autorizzato" }, 403);
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonResponse({ error: "JSON non valido" }, 400);
+    }
+    const path = typeof body === "object" && body !== null ? (body as { path?: unknown }).path : null;
+    if (!validPath(path)) return jsonResponse({ error: "Path allegato non valido" }, 400);
+    if (!/^[a-z0-9_-]{1,63}$/i.test(bucket)) {
+      return jsonResponse({ error: "Bucket non configurato" }, 503);
+    }
+
     const objectPath = path.split("/").map(encodeURIComponent).join("/");
     const response = await fetch(
       `${projectUrl}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${objectPath}`,

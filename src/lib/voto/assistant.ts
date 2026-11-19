@@ -17,6 +17,7 @@ import {
   isAssistantSearchQuery,
   searchAssistantData,
 } from "./assistant-search";
+import { answerGeneralSchoolHelp } from "./assistant-general-help";
 import { answerSchoolRegulation } from "./school-regulations";
 import { parseEventDateTime } from "./dates";
 
@@ -474,6 +475,9 @@ export function answerQuestion(
     return "Per organizzare lo studio scegli tu ogni sessione nel Planner di studio: apri Studio Lab > Calcolatore universale > Planner di studio e indica argomento, materia, metodo, giorno, orario e durata. Le sessioni restano salvate su questo dispositivo; non creo un piano automatico dal registro.";
   }
 
+  const generalSchoolAnswer = answerGeneralSchoolHelp(normalized);
+  if (generalSchoolAnswer) return generalSchoolAnswer;
+
   if (
     normalized.includes("cosa sai fare") ||
     normalized.includes("cosa puoi fare") ||
@@ -482,7 +486,7 @@ export function answerQuestion(
     normalized.includes("cosa offre l app") ||
     normalized.includes("tutto quello che puoi controllare")
   ) {
-    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; posso inoltre spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali, leggere le flashcard in Studio Lab > Calcolatore universale > Flashcard e usare il Planner di studio manuale in Studio Lab > Calcolatore universale > Planner di studio scegliendo materia, argomento, metodo, data, orario e durata. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, indicando sempre che va verificata per l’anno corrente. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze dal Calcolo assenze di Studio Lab e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
+    return "Posso consultare i dati già caricati: profilo, voti e medie, compiti, presenze, orario, interrogazioni, diario, note, promemoria, circolari, notifiche di voto e docenti; spiegare come VOTO calcola le medie e i propri indicatori; dare consigli generali sul metodo di studio e preparazione a verifiche; spiegare i riepiloghi indicativi delle pagelle di primo trimestre e finale e la pagella infraperiodale manuale in Menu > Scrutini infraperiodali; leggere le flashcard in Studio Lab > Calcolatore universale > Flashcard e usare il Planner di studio manuale scegliendo tu materia, argomento, metodo, data, orario e durata. Posso anche rispondere su una sintesi locale del Regolamento d’Istituto Morselli-Sturzo 2025/2026, da verificare per l’anno corrente. I consigli sono deterministici e generali: in Locale non genero spiegazioni libere su qualsiasi argomento del programma. Se me lo chiedi, posso scegliere a caso un tema completo tra i preset disponibili e applicarlo solo dopo la tua conferma. Posso preparare riepiloghi e filtri per ieri, oggi, domani e dopodomani, calcolare le assenze dal Calcolo assenze di Studio Lab e i giorni di calendario alla fine delle lezioni se imposti la data in Studio Lab, oltre ad altri calcoli scolastici. Dopo la tua conferma posso segnare un compito come completato o riaprirlo e cancellare un giorno dell’orario. Non accedo autonomamente a DidUP, non invio giustificazioni e non modifico notifiche.";
   }
 
   if (
