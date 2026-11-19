@@ -7,7 +7,6 @@ import {
   Download,
   Eye,
   EyeOff,
-  Github,
   Gauge,
   LoaderCircle,
   SlidersHorizontal,
@@ -37,7 +36,6 @@ import { fmtTime } from "@/lib/voto/dates";
 import { canResetDemoData } from "@/lib/voto/demo";
 import { createPreferencesBackup, parsePreferencesBackup } from "@/lib/voto/preferences-backup";
 import { parseVotoData } from "@/lib/voto/parse";
-import { supabase } from "@/lib/supabase-auth";
 import {
   useVoto,
   type Accent,
@@ -247,8 +245,6 @@ const PERFORMANCE_OPTION_META: {
 function Settings() {
   const v = useVoto();
   const auth = useSchoolAuth();
-  const [githubLinked, setGithubLinked] = useState(false);
-  const [linkingGithub, setLinkingGithub] = useState(false);
   const preferencesInput = useRef<HTMLInputElement>(null);
   const [showMoreThemes, setShowMoreThemes] = useState(false);
   const [showMoreCompleteThemes, setShowMoreCompleteThemes] = useState(false);
@@ -258,34 +254,6 @@ function Settings() {
   const [debugJson, setDebugJson] = useState("");
   const debugTaps = useRef({ count: 0, last: 0 });
 
-  useEffect(() => {
-    let mounted = true;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (mounted)
-        setGithubLinked(
-          data.user?.identities?.some((identity) => identity.provider === "github") ?? false,
-        );
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const linkGithub = async () => {
-    setLinkingGithub(true);
-    try {
-      const { error } = await supabase.auth.linkIdentity({
-        provider: "github",
-        options: { redirectTo: window.location.href },
-      });
-      if (error) throw error;
-    } catch (error) {
-      setLinkingGithub(false);
-      toast.error("Collegamento GitHub non riuscito", {
-        description: error instanceof Error ? error.message : "Riprova tra poco.",
-      });
-    }
-  };
   useEffect(() => {
     if (!canResetDemoData(v.source, v.url)) {
       setDebugOpen(false);
@@ -362,13 +330,6 @@ function Settings() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">Modalità prestazioni</span>
-            <span className="mt-1 block text-xs text-muted-foreground">
-              Riduce sfocature, ombre e animazioni e nasconde temporaneamente gli sfondi decorativi
-              per rendere l’app più fluida sui telefoni meno recenti. Su smartphone alleggerisce le
-              anteprime PDF e aspetta che le pagine si avvicinino allo schermo prima di
-              renderizzarle. Nell’APK Android applica un profilo PDF ancora più leggero e riduce i
-              layer decorativi animati quando l’opzione sfondi è attiva.
-            </span>
           </span>
           <span
             aria-hidden="true"
@@ -462,29 +423,6 @@ function Settings() {
         <p className="text-[11px] text-muted-foreground">
           Ultima sincronizzazione: {fmtTime(v.lastSync)}
         </p>
-        <div className="mt-4 rounded-xl border border-border p-3">
-          <div className="flex items-start gap-3">
-            <Github className="mt-0.5 h-4 w-4 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold">Accesso GitHub per il widget</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {githubLinked
-                  ? "GitHub è collegato a questo account Supabase. Il widget può usare Accedi con GitHub."
-                  : "Collega GitHub a questo account già autorizzato, senza creare un secondo account."}
-              </p>
-            </div>
-          </div>
-          {!githubLinked && (
-            <button
-              type="button"
-              onClick={() => void linkGithub()}
-              disabled={linkingGithub}
-              className="press mt-3 h-10 w-full rounded-xl bg-foreground px-3 text-sm font-medium text-background disabled:opacity-60"
-            >
-              {linkingGithub ? "Apertura di GitHub…" : "Collega account GitHub"}
-            </button>
-          )}
-        </div>
         <div className="mt-4 flex gap-2 rounded-xl bg-surface p-3 text-[11px] text-muted-foreground">
           <ShieldAlert className="h-4 w-4 shrink-0 text-warning" />I dati sono letti da uno storage
           privato e l’Edge Function li consegna solo all’account autorizzato. La sincronizzazione
