@@ -98,7 +98,11 @@ type ToolId =
   | "business-lab"
   | "inventory-lab"
   | "hospitality-lab"
-  | "travel-itinerary-lab";
+  | "travel-itinerary-lab"
+  | "geo-survey-lab"
+  | "navigation-lab"
+  | "language-classics-lab"
+  | "language-practice-lab";
 
 type ShopTool = {
   id: ToolId;
@@ -1822,12 +1826,60 @@ const THIRD_BLOCK_TOOLS: ShopTool[] = [
     label: "Itinerari",
   },
 ];
+const FOURTH_BLOCK_TOOLS: ShopTool[] = [
+  {
+    id: "geo-survey-lab",
+    title: "Geo-survey lab",
+    description:
+      "Coordinate, triangolazione, pendenze/dislivelli e superfici/volumi in modalità selezionabili per C.A.T.",
+    track: "cat",
+    icon: Globe,
+    label: "Rilievo e topografia",
+  },
+  {
+    id: "navigation-lab",
+    title: "Navigation lab",
+    description:
+      "Nodi, waypoint, velocità-tempo-distanza, coordinate e autonomia per nautico e aeronautico.",
+    track: "nautico",
+    icon: Globe,
+    label: "Navigazione integrata",
+  },
+  {
+    id: "navigation-lab",
+    title: "Navigation lab",
+    description:
+      "Nodi, waypoint, velocità-tempo-distanza, coordinate e autonomia per nautico e aeronautico.",
+    track: "aeronautico",
+    icon: Globe,
+    label: "Navigazione integrata",
+  },
+  {
+    id: "language-classics-lab",
+    title: "Language classics lab",
+    description:
+      "Flashcard di paradigmi e declinazioni, analisi guidata della frase e traduzione con suggerimenti locali.",
+    track: "classico-eschilo",
+    icon: Globe,
+    label: "Latino e greco",
+  },
+  {
+    id: "language-practice-lab",
+    title: "Language practice lab",
+    description:
+      "Esercizi locali di lessico, grammatica e traduzione guidata per il percorso linguistico.",
+    track: "linguistico-vittorini",
+    icon: Globe,
+    label: "Pratica linguistica",
+  },
+];
 const CATALOG_TOOLS = [
   ...TOOLS,
   ...FIRST_BLOCK_TOOLS,
   ...EXTRA_TOOLS,
   ...SECOND_BLOCK_TOOLS,
   ...THIRD_BLOCK_TOOLS,
+  ...FOURTH_BLOCK_TOOLS,
 ];
 
 const TRACK_LABELS: Record<Track, string> = {
@@ -4246,6 +4298,372 @@ function TravelItineraryLab() {
     </div>
   );
 }
+
+function GeoSurveyLab() {
+  const [mode, setMode] = useState("coordinates");
+  const [a, setA] = useState("10");
+  const [b, setB] = useState("20");
+  const [c, setC] = useState("30");
+  const n: [number, number, number] = [Number(a), Number(b), Number(c)];
+  const finite = [a, b, c].every((value) => value.trim() !== "") && n.every(Number.isFinite);
+  let result = "Inserisci valori validi per iniziare.";
+  if (finite) {
+    if (mode === "coordinates")
+      result = `Distanza planimetrica: ${Math.hypot(n[2] - n[0], n[1] - n[0]).toFixed(2)} u`;
+    if (mode === "triangulation")
+      result = `Lato stimato (triangolazione didattica): ${Math.sqrt(Math.max(0, n[0] ** 2 + n[1] ** 2 - 2 * n[0] * n[1] * Math.cos((n[2] * Math.PI) / 180))).toFixed(2)} u`;
+    if (mode === "slope")
+      result = `Dislivello: ${(n[1] - n[0]).toFixed(2)} m · pendenza: ${n[2] !== 0 ? (((n[1] - n[0]) / n[2]) * 100).toFixed(2) : "—"}%`;
+    if (mode === "surface")
+      result = `Superficie: ${(n[0] * n[1]).toFixed(2)} m² · volume: ${(n[0] * n[1] * n[2]).toFixed(2)} m³`;
+  }
+  const values: [string, string, string] = [a, b, c];
+  const setters: [(value: string) => void, (value: string) => void, (value: string) => void] = [
+    setA,
+    setB,
+    setC,
+  ];
+  const labels =
+    mode === "coordinates"
+      ? ["X punto A", "Y punto A", "X punto B"]
+      : mode === "triangulation"
+        ? ["Lato 1", "Lato 2", "Angolo compreso"]
+        : mode === "slope"
+          ? ["Quota iniziale", "Quota finale", "Distanza orizzontale"]
+          : ["Lunghezza", "Larghezza", "Altezza"];
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modalità rilievo
+        <select
+          aria-label="Modalità geo-survey"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="coordinates">Coordinate</option>
+          <option value="triangulation">Triangolazione</option>
+          <option value="slope">Pendenze e dislivelli</option>
+          <option value="surface">Superfici e volumi</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-3 gap-2">
+        {labels.map((label, i) => (
+          <NumberField
+            key={label}
+            id={`geo-${i}`}
+            label={label}
+            value={values[i] ?? ""}
+            onChange={setters[i] ?? setA}
+          />
+        ))}
+      </div>
+      {finite ? (
+        <p
+          role="status"
+          aria-label="Risultato geo-survey"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          <strong>{result}</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci solo numeri finiti e una distanza diversa da zero quando richiesta.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Modello locale per esercitazione: controlla sempre unità, segni e convenzioni del rilievo
+        reale.
+      </p>
+    </div>
+  );
+}
+
+function NavigationLab() {
+  const [mode, setMode] = useState("route"),
+    [nodes, setNodes] = useState("A → B → C"),
+    [distance, setDistance] = useState("120"),
+    [speed, setSpeed] = useState("30"),
+    [fuel, setFuel] = useState("600"),
+    [consumption, setConsumption] = useState("20");
+  const d = Number(distance),
+    v = Number(speed),
+    f = Number(fuel),
+    q = Number(consumption),
+    valid = [d, v, f, q].every(Number.isFinite) && d >= 0 && v > 0 && f >= 0 && q > 0;
+  const result =
+    mode === "route"
+      ? `Nodi/waypoint: ${nodes || "—"} · tempo: ${(d / v).toFixed(2)} h · distanza: ${d.toFixed(1)} km`
+      : mode === "coordinates"
+        ? `Coordinate/rotta: ${nodes || "—"} · distanza da verificare sul piano di navigazione`
+        : `Autonomia: ${(f / q).toFixed(1)} h · percorrenza teorica: ${((f / q) * v).toFixed(1)} km`;
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modulo
+        <select
+          aria-label="Modulo navigation lab"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="route">Nodi, waypoint e rotta</option>
+          <option value="coordinates">Coordinate e controllo rotta</option>
+          <option value="autonomy">Autonomia</option>
+        </select>
+      </label>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Nodi / waypoint
+        <input
+          aria-label="Nodi e waypoint"
+          maxLength={120}
+          value={nodes}
+          onChange={(e) => setNodes(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="nav-distance"
+          label="Distanza"
+          unit="km"
+          value={distance}
+          onChange={setDistance}
+        />
+        <NumberField
+          id="nav-speed"
+          label="Velocità"
+          unit="km/h"
+          value={speed}
+          onChange={setSpeed}
+        />
+        <NumberField
+          id="nav-fuel"
+          label="Autonomia disponibile"
+          unit="unità"
+          value={fuel}
+          onChange={setFuel}
+        />
+        <NumberField
+          id="nav-consumption"
+          label="Consumo orario"
+          unit="unità/h"
+          value={consumption}
+          onChange={setConsumption}
+        />
+      </div>
+      {valid ? (
+        <p
+          role="status"
+          aria-label="Risultato navigation lab"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          <strong>{result}</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Usa distanza non negativa, velocità e consumo positivi.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Laboratorio teorico offline: il route planner resta il riferimento per la distanza tra due
+        coordinate; qui si esercitano nodi, waypoints e autonomia senza duplicarlo.
+      </p>
+    </div>
+  );
+}
+
+const CLASSICS_CARDS = [
+  { front: "amo, amas, amare", back: "1ª coniugazione · paradigma" },
+  { front: "rosa, rosae", back: "1ª declinazione · genitivo singolare" },
+  { front: "λύω, λύεις", back: "presente attivo · paradigma greco" },
+];
+function LanguageClassicsLab() {
+  const [mode, setMode] = useState("flashcards"),
+    [card, setCard] = useState(0),
+    [reveal, setReveal] = useState(false),
+    [sentence, setSentence] = useState("Puella rosam amat."),
+    [translation, setTranslation] = useState("");
+  const currentCard = CLASSICS_CARDS[card] ?? { front: "", back: "" };
+  const prompt =
+    mode === "flashcards"
+      ? reveal
+        ? currentCard.back
+        : currentCard.front
+      : mode === "analysis"
+        ? "Soggetto · verbo · complemento oggetto: individua caso e funzione"
+        : "Suggerimento: cerca prima il verbo, poi soggetto e complementi.";
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modalità
+        <select
+          aria-label="Modalità classici"
+          value={mode}
+          onChange={(e) => {
+            setMode(e.target.value);
+            setReveal(false);
+          }}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="flashcards">Flashcard paradigmi e declinazioni</option>
+          <option value="analysis">Analisi guidata della frase</option>
+          <option value="translation">Traduzione con suggerimenti</option>
+        </select>
+      </label>
+      {mode === "flashcards" && (
+        <>
+          <div className="rounded-xl bg-surface p-4">
+            <p className="text-lg font-semibold">{prompt}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" onClick={() => setReveal((v) => !v)}>
+              {reveal ? "Nascondi" : "Rivela"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCard((card + 1) % CLASSICS_CARDS.length);
+                setReveal(false);
+              }}
+            >
+              Prossima carta
+            </Button>
+          </div>
+        </>
+      )}
+      {mode === "analysis" && (
+        <>
+          <label className="block text-xs font-medium text-muted-foreground">
+            Frase
+            <input
+              aria-label="Frase da analizzare"
+              maxLength={160}
+              value={sentence}
+              onChange={(e) => setSentence(e.target.value)}
+              className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+            />
+          </label>
+          <p
+            role="status"
+            aria-label="Guida analisi frase"
+            className="rounded-xl bg-primary-soft p-3 text-sm"
+          >
+            {prompt}
+            <br />
+            <span className="text-xs text-muted-foreground">Frase: {sentence || "—"}</span>
+          </p>
+        </>
+      )}
+      {mode === "translation" && (
+        <>
+          <label className="block text-xs font-medium text-muted-foreground">
+            Prova traduzione
+            <textarea
+              aria-label="Traduzione guidata"
+              maxLength={300}
+              value={translation}
+              onChange={(e) => setTranslation(e.target.value)}
+              className="mt-1 min-h-24 w-full rounded-xl border border-input bg-card p-3 text-sm"
+            />
+          </label>
+          <p
+            role="status"
+            aria-label="Suggerimento traduzione"
+            className="rounded-xl bg-primary-soft p-3 text-sm"
+          >
+            {prompt}
+          </p>
+        </>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Supporto didattico locale: offre tracce e suggerimenti, non promette un’analisi automatica
+        perfetta.
+      </p>
+    </div>
+  );
+}
+
+const PRACTICE_ITEMS = [
+  { word: "sostenibile", answer: "sustainable" },
+  { word: "although", answer: "sebbene" },
+  { word: "to improve", answer: "migliorare" },
+];
+function LanguagePracticeLab() {
+  const [mode, setMode] = useState("lexicon"),
+    [index, setIndex] = useState(0),
+    [answer, setAnswer] = useState("");
+  const item = PRACTICE_ITEMS[index] ?? { word: "", answer: "" };
+  const feedback = answer.trim()
+    ? answer.trim().toLocaleLowerCase("it-IT") === item.answer
+      ? "Risposta corretta: prova a usarla in una frase."
+      : `Suggerimento: ${item.answer}`
+    : "Inserisci una risposta per ricevere un feedback locale.";
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Esercizio
+        <select
+          aria-label="Tipo esercizio linguistico"
+          value={mode}
+          onChange={(e) => {
+            setMode(e.target.value);
+            setAnswer("");
+          }}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="lexicon">Lessico</option>
+          <option value="grammar">Grammatica</option>
+          <option value="translation">Traduzione guidata</option>
+        </select>
+      </label>
+      <div className="rounded-xl bg-surface p-4">
+        <p className="text-xs text-muted-foreground">
+          {mode === "lexicon"
+            ? "Traduci"
+            : mode === "grammar"
+              ? "Completa: If I ___ time, I would read."
+              : "Rendi in italiano: The student is learning."}
+        </p>
+        <p className="mt-1 text-lg font-semibold">
+          {mode === "lexicon"
+            ? item.word
+            : mode === "grammar"
+              ? "had"
+              : "suggerimento: cerca soggetto e verbo"}
+        </p>
+      </div>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Risposta
+        <input
+          aria-label="Risposta esercizio linguistico"
+          maxLength={160}
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <div className="flex gap-2">
+        <Button type="button" onClick={() => setIndex((index + 1) % PRACTICE_ITEMS.length)}>
+          Prossimo
+        </Button>
+      </div>
+      <p
+        role="status"
+        aria-label="Feedback esercizio linguistico"
+        className="rounded-xl bg-primary-soft p-3 text-sm"
+      >
+        {feedback}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Dataset locale per esercitazione; nessun servizio esterno e nessuna correzione automatica
+        completa.
+      </p>
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
   if (id === "electronics-lab") return <ElectronicsLab />;
   if (id === "signal-lab") return <SignalLab />;
@@ -4258,6 +4676,10 @@ function ToolContent({ id }: { id: ToolId }) {
   if (id === "inventory-lab") return <InventoryLab />;
   if (id === "hospitality-lab") return <HospitalityLab />;
   if (id === "travel-itinerary-lab") return <TravelItineraryLab />;
+  if (id === "geo-survey-lab") return <GeoSurveyLab />;
+  if (id === "navigation-lab") return <NavigationLab />;
+  if (id === "language-classics-lab") return <LanguageClassicsLab />;
+  if (id === "language-practice-lab") return <LanguagePracticeLab />;
   if (id === "web-lab") return <WebLab />;
   if (id === "code-lab") return <CodeLab />;
   if (id === "sql-lab") return <SqlLab />;

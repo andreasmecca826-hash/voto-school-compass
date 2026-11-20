@@ -216,6 +216,68 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
     expect(screen.getByRole("status")).toHaveTextContent("saldo registro: 75.00 €");
     expect(screen.getByText(/non calcola imposte/)).toBeInTheDocument();
   });
+  it("apre geo-survey lab e cambia tra rilievo, pendenza e superfici", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Majorana");
+    chooseTrack("Costruzioni, Ambiente e Territorio");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Geo-survey lab" }));
+    expect(screen.getByRole("status", { name: "Risultato geo-survey" })).toHaveTextContent(
+      "Distanza planimetrica",
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità geo-survey" }), {
+      target: { value: "slope" },
+    });
+    expect(screen.getByRole("status", { name: "Risultato geo-survey" })).toHaveTextContent(
+      "pendenza",
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità geo-survey" }), {
+      target: { value: "surface" },
+    });
+    expect(screen.getByRole("status", { name: "Risultato geo-survey" })).toHaveTextContent(
+      "Superficie",
+    );
+    fireEvent.change(screen.getByLabelText("Lunghezza"), { target: { value: "" } });
+    expect(screen.getByRole("alert")).toHaveTextContent("Inserisci solo numeri");
+  });
+
+  it("apre navigation lab e calcola tempo e autonomia senza duplicare il planner", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Majorana");
+    chooseTrack("Nautico");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Navigation lab" }));
+    expect(screen.getByRole("status", { name: "Risultato navigation lab" })).toHaveTextContent(
+      "tempo: 4.00 h",
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Modulo navigation lab" }), {
+      target: { value: "autonomy" },
+    });
+    expect(screen.getByRole("status", { name: "Risultato navigation lab" })).toHaveTextContent(
+      "Autonomia: 30.0 h",
+    );
+    fireEvent.change(screen.getByLabelText("Velocità (km/h)"), { target: { value: "0" } });
+    expect(screen.getByRole("alert")).toHaveTextContent("velocità");
+  });
+
+  it("apre language classics lab con flashcard e analisi guidata", () => {
+    render(<StudyToolsShop />);
+    chooseSchool('IIS "Eschilo"');
+    chooseTrack("Liceo Classico");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Language classics lab" }));
+    expect(screen.getByText("amo, amas, amare")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Rivela" }));
+    expect(screen.getByText(/1ª coniugazione/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità classici" }), {
+      target: { value: "analysis" },
+    });
+    expect(screen.getByRole("status", { name: "Guida analisi frase" })).toHaveTextContent(
+      "Soggetto",
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità classici" }), {
+      target: { value: "translation" },
+    });
+    expect(screen.getByText(/Supporto didattico locale/)).toBeInTheDocument();
+  });
+
   it("apre hospitality e calcola disponibilità, occupazione e ADR", () => {
     render(<StudyToolsShop />);
     chooseSchool("IIS E. Morselli - L. Sturzo");
