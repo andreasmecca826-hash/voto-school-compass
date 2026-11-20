@@ -1,11 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowDownRight,
-  ArrowRight,
   ArrowUpRight,
   Award,
   BookOpen,
-  Calculator,
   CalendarCheck,
   CalendarDays,
   CheckCircle2,
@@ -14,7 +12,6 @@ import {
   Github,
   Megaphone,
   Minus,
-  Store,
   StickyNote,
 } from "lucide-react";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
@@ -271,36 +268,6 @@ function Dashboard() {
             </section>
           </div>
         )}
-
-        <div style={{ order: homeOrder("compiti") + 1, zoom: homeModuleScale("compiti") }}>
-          <div className="mt-3 flex items-stretch gap-2">
-            <Link
-              to="/studio"
-              className="press card-surface flex min-w-0 flex-1 items-center gap-3 p-3 text-left"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                <Calculator className="h-4 w-4" />
-              </span>
-              <span className="flex-1">
-                <span className="block text-sm font-semibold">Studio Lab</span>
-                <span className="block truncate text-[11px] text-muted-foreground">
-                  Calcoli e strumenti di studio
-                </span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
-            <Link
-              to="/negozio"
-              aria-label="Negozio strumenti"
-              title="Negozio strumenti"
-              className="press card-surface flex w-14 shrink-0 items-center justify-center rounded-2xl p-2 text-primary"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft">
-                <Store className="h-5 w-5" />
-              </span>
-            </Link>
-          </div>
-        </div>
 
         {isHomeModuleVisible("prossima-lezione") && (
           <div

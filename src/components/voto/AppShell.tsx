@@ -139,13 +139,6 @@ const MORE_NAV = [
     color: "#e1a642",
   },
   {
-    to: "/negozio",
-    label: "Negozio strumenti",
-    description: "Laboratori e strumenti per il tuo indirizzo",
-    icon: Store,
-    color: "#3c9b88",
-  },
-  {
     to: "/professori",
     label: "Professori",
     description: "Docenti e materie",
@@ -847,20 +840,39 @@ function MoreMenu({
           <GraduationCap className="h-7 w-7" />
         </span>
       </div>
-      <Button
-        asChild
-        variant="outline"
-        className="mb-5 h-auto min-h-24 w-full justify-start gap-4 whitespace-normal rounded-lg bg-card px-4 py-4 text-left"
-      >
-        <Link to="/studio" onClick={onClose}>
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center text-primary">
-            <Sparkles />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-display text-lg font-semibold">Studio Lab.</span>
-          </span>
-        </Link>
-      </Button>
+      <div className="mb-5 flex items-stretch gap-2">
+        <Button
+          asChild
+          variant="outline"
+          className="h-14 min-w-0 flex-1 justify-start gap-3 rounded-2xl bg-card px-3 text-left"
+        >
+          <Link to="/studio" onClick={onClose}>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">Studio Lab</span>
+              <span className="block truncate text-[10px] text-muted-foreground">
+                Calcoli e strumenti di studio
+              </span>
+            </span>
+            <span className="text-xs text-muted-foreground">›</span>
+          </Link>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          aria-label="Negozio strumenti"
+          title="Negozio strumenti"
+          className="h-14 w-14 shrink-0 rounded-2xl bg-card p-2 text-primary"
+        >
+          <Link to="/negozio" onClick={onClose}>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft">
+              <Store className="h-5 w-5" />
+            </span>
+          </Link>
+        </Button>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {MORE_NAV.map(({ to, label, description, icon: Icon, color }) => {
           const active = currentPath.startsWith(to);

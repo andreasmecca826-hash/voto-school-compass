@@ -12,6 +12,7 @@ import {
   Network,
   Search,
   Sigma,
+  Star,
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -293,736 +294,736 @@ const TOOLS: ShopTool[] = [
   },
   {
     id: "percentage-calculator",
-    title: "Agraria, Agroalimentare e Agroindustria",
-    description: "Percentuali per rese e produzioni",
+    title: "Percentuali per rese e produzioni",
+    description: "Strumento pratico per Agraria, Agroalimentare e Agroindustria.",
     track: "agraria",
     icon: Gauge,
     label: "Produzioni agricole",
   },
   {
     id: "aspect-ratio",
-    title: "Agraria, Agroalimentare e Agroindustria",
-    description: "Proporzioni per miscele e trattamenti",
+    title: "Proporzioni per miscele e trattamenti",
+    description: "Strumento pratico per Agraria, Agroalimentare e Agroindustria.",
     track: "agraria",
     icon: Activity,
     label: "Gestione delle quantità",
   },
   {
     id: "travel-budget",
-    title: "Agraria, Agroalimentare e Agroindustria",
-    description: "Budget di coltivazione",
+    title: "Budget di coltivazione",
+    description: "Strumento pratico per Agraria, Agroalimentare e Agroindustria.",
     track: "agraria",
     icon: Globe,
     label: "Economia agraria",
   },
   {
     id: "exchange-converter",
-    title: "Agraria, Agroalimentare e Agroindustria",
-    description: "Conversione unità e rese",
+    title: "Conversione unità e rese",
+    description: "Strumento pratico per Agraria, Agroalimentare e Agroindustria.",
     track: "agraria",
     icon: Sigma,
     label: "Misure e dati",
   },
   {
     id: "percentage-calculator",
-    title: "Viticoltura ed Enologia",
-    description: "Calcolo rese uva-vino",
+    title: "Calcolo rese uva-vino",
+    description: "Strumento pratico per Viticoltura ed Enologia.",
     track: "viticoltura",
     icon: Gauge,
     label: "Produzioni vitivinicole",
   },
   {
     id: "aspect-ratio",
-    title: "Viticoltura ed Enologia",
-    description: "Proporzioni per soluzioni",
+    title: "Proporzioni per soluzioni",
+    description: "Strumento pratico per Viticoltura ed Enologia.",
     track: "viticoltura",
     icon: Activity,
     label: "Tecnologie enologiche",
   },
   {
     id: "travel-budget",
-    title: "Viticoltura ed Enologia",
-    description: "Costi di vendemmia",
+    title: "Costi di vendemmia",
+    description: "Strumento pratico per Viticoltura ed Enologia.",
     track: "viticoltura",
     icon: Globe,
     label: "Economia della filiera",
   },
   {
     id: "exchange-converter",
-    title: "Viticoltura ed Enologia",
-    description: "Conversione tassi e misure",
+    title: "Conversione tassi e misure",
+    description: "Strumento pratico per Viticoltura ed Enologia.",
     track: "viticoltura",
     icon: Sigma,
     label: "Commercializzazione",
   },
   {
     id: "aspect-ratio",
-    title: "Chimica e Materiali",
-    description: "Proporzioni di laboratorio",
+    title: "Proporzioni di laboratorio",
+    description: "Strumento pratico per Chimica e Materiali.",
     track: "chimica",
     icon: Activity,
     label: "Preparazioni chimiche",
   },
   {
     id: "percentage-calculator",
-    title: "Chimica e Materiali",
-    description: "Calcolo percentuale soluzioni",
+    title: "Calcolo percentuale soluzioni",
+    description: "Strumento pratico per Chimica e Materiali.",
     track: "chimica",
     icon: Gauge,
     label: "Analisi chimica",
   },
   {
     id: "rc-time",
-    title: "Chimica e Materiali",
-    description: "Costante e risposta RC",
+    title: "Costante e risposta RC",
+    description: "Strumento pratico per Chimica e Materiali.",
     track: "chimica",
     icon: Activity,
     label: "Misure strumentali",
   },
   {
     id: "exchange-converter",
-    title: "Chimica e Materiali",
-    description: "Conversione dati di analisi",
+    title: "Conversione dati di analisi",
+    description: "Strumento pratico per Chimica e Materiali.",
     track: "chimica",
     icon: Sigma,
     label: "Elaborazione dati",
   },
   {
     id: "percentage-calculator",
-    title: "Biotecnologie Sanitarie",
-    description: "Percentuali e diluizioni",
+    title: "Percentuali e diluizioni",
+    description: "Strumento pratico per Biotecnologie Sanitarie.",
     track: "biotecnologie",
     icon: Gauge,
     label: "Laboratorio biomedico",
   },
   {
     id: "aspect-ratio",
-    title: "Biotecnologie Sanitarie",
-    description: "Proporzioni per campioni",
+    title: "Proporzioni per campioni",
+    description: "Strumento pratico per Biotecnologie Sanitarie.",
     track: "biotecnologie",
     icon: Activity,
     label: "Protocolli",
   },
   {
     id: "ascii-table",
-    title: "Biotecnologie Sanitarie",
-    description: "Codifica dei campioni",
+    title: "Codifica dei campioni",
+    description: "Strumento pratico per Biotecnologie Sanitarie.",
     track: "biotecnologie",
     icon: Sigma,
     label: "Sistemi informativi",
   },
   {
     id: "travel-budget",
-    title: "Biotecnologie Sanitarie",
-    description: "Budget di laboratorio",
+    title: "Budget di laboratorio",
+    description: "Strumento pratico per Biotecnologie Sanitarie.",
     track: "biotecnologie",
     icon: Globe,
     label: "Gestione laboratorio",
   },
   {
     id: "aspect-ratio",
-    title: "Enogastronomia",
-    description: "Ridimensionatore ricette",
+    title: "Ridimensionatore ricette",
+    description: "Strumento pratico per Enogastronomia.",
     track: "enogastronomia",
     icon: Activity,
     label: "Produzione gastronomica",
   },
   {
     id: "percentage-calculator",
-    title: "Enogastronomia",
-    description: "Costo e prezzo del piatto",
+    title: "Costo e prezzo del piatto",
+    description: "Strumento pratico per Enogastronomia.",
     track: "enogastronomia",
     icon: Gauge,
     label: "Food cost",
   },
   {
     id: "travel-budget",
-    title: "Enogastronomia",
-    description: "Budget del servizio",
+    title: "Budget del servizio",
+    description: "Strumento pratico per Enogastronomia.",
     track: "enogastronomia",
     icon: Globe,
     label: "Organizzazione eventi",
   },
   {
     id: "exchange-converter",
-    title: "Enogastronomia",
-    description: "Conversione misure in cucina",
+    title: "Conversione misure in cucina",
+    description: "Strumento pratico per Enogastronomia.",
     track: "enogastronomia",
     icon: Sigma,
     label: "Tecniche di cucina",
   },
   {
     id: "percentage-calculator",
-    title: "Servizi di Sala e di Vendita",
-    description: "Conto e ripartizione tavoli",
+    title: "Conto e ripartizione tavoli",
+    description: "Strumento pratico per Servizi di Sala e di Vendita.",
     track: "sala-vendita",
     icon: Gauge,
     label: "Servizio di sala",
   },
   {
     id: "travel-budget",
-    title: "Servizi di Sala e di Vendita",
-    description: "Budget evento",
+    title: "Budget evento",
+    description: "Strumento pratico per Servizi di Sala e di Vendita.",
     track: "sala-vendita",
     icon: Globe,
     label: "Organizzazione banchetti",
   },
   {
     id: "aspect-ratio",
-    title: "Servizi di Sala e di Vendita",
-    description: "Proporzioni del servizio",
+    title: "Proporzioni del servizio",
+    description: "Strumento pratico per Servizi di Sala e di Vendita.",
     track: "sala-vendita",
     icon: Activity,
     label: "Tecniche operative",
   },
   {
     id: "exchange-converter",
-    title: "Servizi di Sala e di Vendita",
-    description: "Cambio valuta per clienti",
+    title: "Cambio valuta per clienti",
+    description: "Strumento pratico per Servizi di Sala e di Vendita.",
     track: "sala-vendita",
     icon: Sigma,
     label: "Accoglienza clienti",
   },
   {
     id: "travel-budget",
-    title: "Accoglienza Turistica",
-    description: "Preventivo soggiorno",
+    title: "Preventivo soggiorno",
+    description: "Strumento pratico per Accoglienza Turistica.",
     track: "accoglienza",
     icon: Globe,
     label: "Servizi ricettivi",
   },
   {
     id: "exchange-converter",
-    title: "Accoglienza Turistica",
-    description: "Cambio valuta del viaggiatore",
+    title: "Cambio valuta del viaggiatore",
+    description: "Strumento pratico per Accoglienza Turistica.",
     track: "accoglienza",
     icon: Sigma,
     label: "Geografia turistica",
   },
   {
     id: "percentage-calculator",
-    title: "Accoglienza Turistica",
-    description: "Sconti e commissioni",
+    title: "Sconti e commissioni",
+    description: "Strumento pratico per Accoglienza Turistica.",
     track: "accoglienza",
     icon: Gauge,
     label: "Vendita dei servizi",
   },
   {
     id: "aspect-ratio",
-    title: "Accoglienza Turistica",
-    description: "Proporzioni per itinerari",
+    title: "Proporzioni per itinerari",
+    description: "Strumento pratico per Accoglienza Turistica.",
     track: "accoglienza",
     icon: Activity,
     label: "Progettazione itinerari",
   },
   {
     id: "percentage-calculator",
-    title: "Relazioni Internazionali per il Marketing",
-    description: "Margini e variazioni commerciali",
+    title: "Margini e variazioni commerciali",
+    description: "Strumento pratico per Relazioni Internazionali per il Marketing.",
     track: "rim",
     icon: Gauge,
     label: "Marketing internazionale",
   },
   {
     id: "exchange-converter",
-    title: "Relazioni Internazionali per il Marketing",
-    description: "Cambio valuta commerciale",
+    title: "Cambio valuta commerciale",
+    description: "Strumento pratico per Relazioni Internazionali per il Marketing.",
     track: "rim",
     icon: Sigma,
     label: "Commercio estero",
   },
   {
     id: "travel-budget",
-    title: "Relazioni Internazionali per il Marketing",
-    description: "Preventivo internazionale",
+    title: "Preventivo internazionale",
+    description: "Strumento pratico per Relazioni Internazionali per il Marketing.",
     track: "rim",
     icon: Globe,
     label: "Negoziazione",
   },
   {
     id: "ascii-table",
-    title: "Relazioni Internazionali per il Marketing",
-    description: "Codifica dati aziendali",
+    title: "Codifica dati aziendali",
+    description: "Strumento pratico per Relazioni Internazionali per il Marketing.",
     track: "rim",
     icon: Sigma,
     label: "Comunicazione digitale",
   },
   {
     id: "base-converter",
-    title: "Sistemi Informativi Aziendali",
-    description: "Convertitore di basi per dati",
+    title: "Convertitore di basi per dati",
+    description: "Strumento pratico per Sistemi Informativi Aziendali.",
     track: "sia",
     icon: Binary,
     label: "Informatica aziendale",
   },
   {
     id: "binary-calculator",
-    title: "Sistemi Informativi Aziendali",
-    description: "Calcolatrice binaria aziendale",
+    title: "Calcolatrice binaria aziendale",
+    description: "Strumento pratico per Sistemi Informativi Aziendali.",
     track: "sia",
     icon: Cpu,
     label: "Sistemi informativi",
   },
   {
     id: "ascii-table",
-    title: "Sistemi Informativi Aziendali",
-    description: "ASCII e codici dati",
+    title: "ASCII e codici dati",
+    description: "Strumento pratico per Sistemi Informativi Aziendali.",
     track: "sia",
     icon: Sigma,
     label: "Basi di dati",
   },
   {
     id: "iva-calculator",
-    title: "Sistemi Informativi Aziendali",
-    description: "IVA e prezzi aziendali",
+    title: "IVA e prezzi aziendali",
+    description: "Strumento pratico per Sistemi Informativi Aziendali.",
     track: "sia",
     icon: Sigma,
     label: "Contabilità integrata",
   },
   {
     id: "aspect-ratio",
-    title: "Costruzioni, Ambiente e Territorio",
-    description: "Proporzioni di tavole e rilievi",
+    title: "Proporzioni di tavole e rilievi",
+    description: "Strumento pratico per Costruzioni, Ambiente e Territorio.",
     track: "cat",
     icon: Activity,
     label: "Disegno tecnico",
   },
   {
     id: "percentage-calculator",
-    title: "Costruzioni, Ambiente e Territorio",
-    description: "Pendenze e percentuali",
+    title: "Pendenze e percentuali",
+    description: "Strumento pratico per Costruzioni, Ambiente e Territorio.",
     track: "cat",
     icon: Gauge,
     label: "Topografia",
   },
   {
     id: "travel-budget",
-    title: "Costruzioni, Ambiente e Territorio",
-    description: "Budget di cantiere",
+    title: "Budget di cantiere",
+    description: "Strumento pratico per Costruzioni, Ambiente e Territorio.",
     track: "cat",
     icon: Globe,
     label: "Gestione cantiere",
   },
   {
     id: "print-resolution",
-    title: "Costruzioni, Ambiente e Territorio",
-    description: "Risoluzione di stampa tecnica",
+    title: "Risoluzione di stampa tecnica",
+    description: "Strumento pratico per Costruzioni, Ambiente e Territorio.",
     track: "cat",
     icon: Search,
     label: "CAD e stampa",
   },
   {
     id: "gear-ratio",
-    title: "Nautico",
-    description: "Rapporti e velocità di trasmissione",
+    title: "Rapporti e velocità di trasmissione",
+    description: "Strumento pratico per Nautico.",
     track: "nautico",
     icon: GitBranch,
     label: "Macchine marine",
   },
   {
     id: "torque-power",
-    title: "Nautico",
-    description: "Coppia e potenza del motore",
+    title: "Coppia e potenza del motore",
+    description: "Strumento pratico per Nautico.",
     track: "nautico",
     icon: Gauge,
     label: "Propulsione",
   },
   {
     id: "travel-budget",
-    title: "Nautico",
-    description: "Budget di navigazione",
+    title: "Budget di navigazione",
+    description: "Strumento pratico per Nautico.",
     track: "nautico",
     icon: Globe,
     label: "Pianificazione",
   },
   {
     id: "base-converter",
-    title: "Nautico",
-    description: "Conversione dati e codici",
+    title: "Conversione dati e codici",
+    description: "Strumento pratico per Nautico.",
     track: "nautico",
     icon: Binary,
     label: "Strumentazione",
   },
   {
     id: "percentage-calculator",
-    title: "Conduzione del mezzo aereo",
-    description: "Rapporti e prestazioni",
+    title: "Rapporti e prestazioni",
+    description: "Strumento pratico per Conduzione del mezzo aereo.",
     track: "aeronautico",
     icon: Gauge,
     label: "Navigazione aerea",
   },
   {
     id: "exchange-converter",
-    title: "Conduzione del mezzo aereo",
-    description: "Conversione dati di volo",
+    title: "Conversione dati di volo",
+    description: "Strumento pratico per Conduzione del mezzo aereo.",
     track: "aeronautico",
     icon: Sigma,
     label: "Strumentazione di volo",
   },
   {
     id: "aspect-ratio",
-    title: "Conduzione del mezzo aereo",
-    description: "Proporzioni di rotta",
+    title: "Proporzioni di rotta",
+    description: "Strumento pratico per Conduzione del mezzo aereo.",
     track: "aeronautico",
     icon: Activity,
     label: "Pianificazione del volo",
   },
   {
     id: "travel-budget",
-    title: "Conduzione del mezzo aereo",
-    description: "Budget operativo",
+    title: "Budget operativo",
+    description: "Strumento pratico per Conduzione del mezzo aereo.",
     track: "aeronautico",
     icon: Globe,
     label: "Gestione operativa",
   },
   {
     id: "color-converter",
-    title: "Liceo Artistico · Arti Figurative",
-    description: "Laboratorio colori RGB",
+    title: "Laboratorio colori RGB",
+    description: "Strumento pratico per Liceo Artistico · Arti Figurative.",
     track: "artistico",
     icon: Lightbulb,
     label: "Teoria del colore",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Artistico · Arti Figurative",
-    description: "Proporzioni del disegno",
+    title: "Proporzioni del disegno",
+    description: "Strumento pratico per Liceo Artistico · Arti Figurative.",
     track: "artistico",
     icon: Activity,
     label: "Disegno e composizione",
   },
   {
     id: "print-resolution",
-    title: "Liceo Artistico · Arti Figurative",
-    description: "Risoluzione di stampa",
+    title: "Risoluzione di stampa",
+    description: "Strumento pratico per Liceo Artistico · Arti Figurative.",
     track: "artistico",
     icon: Search,
     label: "Tecniche digitali",
   },
   {
     id: "ascii-table",
-    title: "Liceo Artistico · Arti Figurative",
-    description: "Codifica dei caratteri",
+    title: "Codifica dei caratteri",
+    description: "Strumento pratico per Liceo Artistico · Arti Figurative.",
     track: "artistico",
     icon: Sigma,
     label: "Tecnologie artistiche",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Artistico · Design della Moda",
-    description: "Proporzioni e cartamodelli",
+    title: "Proporzioni e cartamodelli",
+    description: "Strumento pratico per Liceo Artistico · Design della Moda.",
     track: "moda",
     icon: Activity,
     label: "Progettazione moda",
   },
   {
     id: "color-converter",
-    title: "Liceo Artistico · Design della Moda",
-    description: "Colori tessili e digitali",
+    title: "Colori tessili e digitali",
+    description: "Strumento pratico per Liceo Artistico · Design della Moda.",
     track: "moda",
     icon: Lightbulb,
     label: "Design del colore",
   },
   {
     id: "travel-budget",
-    title: "Liceo Artistico · Design della Moda",
-    description: "Budget di confezione",
+    title: "Budget di confezione",
+    description: "Strumento pratico per Liceo Artistico · Design della Moda.",
     track: "moda",
     icon: Globe,
     label: "Produzione e costi",
   },
   {
     id: "percentage-calculator",
-    title: "Liceo Artistico · Design della Moda",
-    description: "Percentuali di taglio",
+    title: "Percentuali di taglio",
+    description: "Strumento pratico per Liceo Artistico · Design della Moda.",
     track: "moda",
     icon: Gauge,
     label: "Modellistica",
   },
   {
     id: "color-converter",
-    title: "Liceo Artistico · Audiovisivo e Multimediale",
-    description: "Colori per video e grafica",
+    title: "Colori per video e grafica",
+    description: "Strumento pratico per Liceo Artistico · Audiovisivo e Multimediale.",
     track: "audiovisivo",
     icon: Lightbulb,
     label: "Grafica digitale",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Artistico · Audiovisivo e Multimediale",
-    description: "Risoluzione e formato video",
+    title: "Risoluzione e formato video",
+    description: "Strumento pratico per Liceo Artistico · Audiovisivo e Multimediale.",
     track: "audiovisivo",
     icon: Activity,
     label: "Ripresa e montaggio",
   },
   {
     id: "print-resolution",
-    title: "Liceo Artistico · Audiovisivo e Multimediale",
-    description: "Pixel e DPI per immagini",
+    title: "Pixel e DPI per immagini",
+    description: "Strumento pratico per Liceo Artistico · Audiovisivo e Multimediale.",
     track: "audiovisivo",
     icon: Search,
     label: "Fotografia",
   },
   {
     id: "ascii-table",
-    title: "Liceo Artistico · Audiovisivo e Multimediale",
-    description: "Codifica audio-video",
+    title: "Codifica audio-video",
+    description: "Strumento pratico per Liceo Artistico · Audiovisivo e Multimediale.",
     track: "audiovisivo",
     icon: Sigma,
     label: "Tecnologie multimediali",
   },
   {
     id: "ohms-law",
-    title: "Manutenzione e Assistenza Tecnica",
-    description: "Legge di Ohm per diagnosi",
+    title: "Legge di Ohm per diagnosi",
+    description: "Strumento pratico per Manutenzione e Assistenza Tecnica.",
     track: "manutenzione",
     icon: Zap,
     label: "Diagnostica elettrica",
   },
   {
     id: "led-resistor",
-    title: "Manutenzione e Assistenza Tecnica",
-    description: "Resistenza per LED e segnali",
+    title: "Resistenza per LED e segnali",
+    description: "Strumento pratico per Manutenzione e Assistenza Tecnica.",
     track: "manutenzione",
     icon: Lightbulb,
     label: "Impianti e circuiti",
   },
   {
     id: "voltage-divider",
-    title: "Manutenzione e Assistenza Tecnica",
-    description: "Partitore per sensori",
+    title: "Partitore per sensori",
+    description: "Strumento pratico per Manutenzione e Assistenza Tecnica.",
     track: "manutenzione",
     icon: Gauge,
     label: "Automazione",
   },
   {
     id: "gear-ratio",
-    title: "Manutenzione e Assistenza Tecnica",
-    description: "Rapporto di trasmissione",
+    title: "Rapporto di trasmissione",
+    description: "Strumento pratico per Manutenzione e Assistenza Tecnica.",
     track: "manutenzione",
     icon: GitBranch,
     label: "Meccanica",
   },
   {
     id: "color-converter",
-    title: "Industria e Artigianato per il Made in Italy",
-    description: "Colori per prodotto e packaging",
+    title: "Colori per prodotto e packaging",
+    description: "Strumento pratico per Industria e Artigianato per il Made in Italy.",
     track: "made-italy",
     icon: Lightbulb,
     label: "Design del prodotto",
   },
   {
     id: "aspect-ratio",
-    title: "Industria e Artigianato per il Made in Italy",
-    description: "Proporzioni di progetto",
+    title: "Proporzioni di progetto",
+    description: "Strumento pratico per Industria e Artigianato per il Made in Italy.",
     track: "made-italy",
     icon: Activity,
     label: "Progettazione",
   },
   {
     id: "percentage-calculator",
-    title: "Industria e Artigianato per il Made in Italy",
-    description: "Costi e ricarichi",
+    title: "Costi e ricarichi",
+    description: "Strumento pratico per Industria e Artigianato per il Made in Italy.",
     track: "made-italy",
     icon: Gauge,
     label: "Economia del prodotto",
   },
   {
     id: "print-resolution",
-    title: "Industria e Artigianato per il Made in Italy",
-    description: "Risoluzione per cataloghi",
+    title: "Risoluzione per cataloghi",
+    description: "Strumento pratico per Industria e Artigianato per il Made in Italy.",
     track: "made-italy",
     icon: Search,
     label: "Comunicazione prodotto",
   },
   {
     id: "aspect-ratio",
-    title: "Odontotecnico",
-    description: "Proporzioni di modelli",
+    title: "Proporzioni di modelli",
+    description: "Strumento pratico per Odontotecnico.",
     track: "odontotecnico",
     icon: Activity,
     label: "Anatomia e modellazione",
   },
   {
     id: "color-converter",
-    title: "Odontotecnico",
-    description: "Colori e scale cromatiche",
+    title: "Colori e scale cromatiche",
+    description: "Strumento pratico per Odontotecnico.",
     track: "odontotecnico",
     icon: Lightbulb,
     label: "Materiali estetici",
   },
   {
     id: "percentage-calculator",
-    title: "Odontotecnico",
-    description: "Percentuali di materiali",
+    title: "Percentuali di materiali",
+    description: "Strumento pratico per Odontotecnico.",
     track: "odontotecnico",
     icon: Gauge,
     label: "Laboratorio odontotecnico",
   },
   {
     id: "travel-budget",
-    title: "Odontotecnico",
-    description: "Budget del laboratorio",
+    title: "Budget del laboratorio",
+    description: "Strumento pratico per Odontotecnico.",
     track: "odontotecnico",
     icon: Globe,
     label: "Gestione laboratorio",
   },
   {
     id: "percentage-calculator",
-    title: "Liceo Scientifico · E. Vittorini",
-    description: "Calcolatore scientifico di percentuali",
+    title: "Calcolatore scientifico di percentuali",
+    description: "Strumento pratico per Liceo Scientifico · E. Vittorini.",
     track: "scientifico-vittorini",
     icon: Gauge,
     label: "Matematica",
   },
   {
     id: "color-converter",
-    title: "Liceo Scientifico · E. Vittorini",
-    description: "Laboratorio colori e dati",
+    title: "Laboratorio colori e dati",
+    description: "Strumento pratico per Liceo Scientifico · E. Vittorini.",
     track: "scientifico-vittorini",
     icon: Lightbulb,
     label: "Tecnologie",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Scientifico · E. Vittorini",
-    description: "Proporzioni e grafici",
+    title: "Proporzioni e grafici",
+    description: "Strumento pratico per Liceo Scientifico · E. Vittorini.",
     track: "scientifico-vittorini",
     icon: Activity,
     label: "Rappresentazione",
   },
   {
     id: "ascii-table",
-    title: "Liceo Scientifico · E. Vittorini",
-    description: "Codifica dei caratteri",
+    title: "Codifica dei caratteri",
+    description: "Strumento pratico per Liceo Scientifico · E. Vittorini.",
     track: "scientifico-vittorini",
     icon: Sigma,
     label: "Informatica",
   },
   {
     id: "exchange-converter",
-    title: "Liceo Linguistico · E. Vittorini",
-    description: "Cambio valuta e viaggi",
+    title: "Cambio valuta e viaggi",
+    description: "Strumento pratico per Liceo Linguistico · E. Vittorini.",
     track: "linguistico-vittorini",
     icon: Sigma,
     label: "Lingue e turismo",
   },
   {
     id: "travel-budget",
-    title: "Liceo Linguistico · E. Vittorini",
-    description: "Budget di soggiorno",
+    title: "Budget di soggiorno",
+    description: "Strumento pratico per Liceo Linguistico · E. Vittorini.",
     track: "linguistico-vittorini",
     icon: Globe,
     label: "Cultura e mobilità",
   },
   {
     id: "percentage-calculator",
-    title: "Liceo Linguistico · E. Vittorini",
-    description: "Percentuali e statistiche",
+    title: "Percentuali e statistiche",
+    description: "Strumento pratico per Liceo Linguistico · E. Vittorini.",
     track: "linguistico-vittorini",
     icon: Gauge,
     label: "Analisi dei dati",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Linguistico · E. Vittorini",
-    description: "Formati e impaginazione",
+    title: "Formati e impaginazione",
+    description: "Strumento pratico per Liceo Linguistico · E. Vittorini.",
     track: "linguistico-vittorini",
     icon: Activity,
     label: "Comunicazione",
   },
   {
     id: "binary-calculator",
-    title: "Liceo Scientifico · Scienze Applicate",
-    description: "Calcoli binari",
+    title: "Calcoli binari",
+    description: "Strumento pratico per Liceo Scientifico · Scienze Applicate.",
     track: "scienze-applicate-vittorini",
     icon: Cpu,
     label: "Informatica",
   },
   {
     id: "subnet-calculator",
-    title: "Liceo Scientifico · Scienze Applicate",
-    description: "Reti e subnet",
+    title: "Reti e subnet",
+    description: "Strumento pratico per Liceo Scientifico · Scienze Applicate.",
     track: "scienze-applicate-vittorini",
     icon: Network,
     label: "Sistemi e reti",
   },
   {
     id: "rc-time",
-    title: "Liceo Scientifico · Scienze Applicate",
-    description: "Laboratorio RC",
+    title: "Laboratorio RC",
+    description: "Strumento pratico per Liceo Scientifico · Scienze Applicate.",
     track: "scienze-applicate-vittorini",
     icon: Activity,
     label: "Laboratorio",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Scientifico · Scienze Applicate",
-    description: "Proporzioni sperimentali",
+    title: "Proporzioni sperimentali",
+    description: "Strumento pratico per Liceo Scientifico · Scienze Applicate.",
     track: "scienze-applicate-vittorini",
     icon: Activity,
     label: "Metodo scientifico",
   },
   {
     id: "base-converter",
-    title: "Liceo Scientifico quadriennale · TRED",
-    description: "Conversione dati digitali",
+    title: "Conversione dati digitali",
+    description: "Strumento pratico per Liceo Scientifico quadriennale · TRED.",
     track: "tred-vittorini",
     icon: Binary,
     label: "Transizione digitale",
   },
   {
     id: "logic-gates",
-    title: "Liceo Scientifico quadriennale · TRED",
-    description: "Porte logiche",
+    title: "Porte logiche",
+    description: "Strumento pratico per Liceo Scientifico quadriennale · TRED.",
     track: "tred-vittorini",
     icon: GitBranch,
     label: "Sistemi digitali",
   },
   {
     id: "print-resolution",
-    title: "Liceo Scientifico quadriennale · TRED",
-    description: "Risoluzione e formati",
+    title: "Risoluzione e formati",
+    description: "Strumento pratico per Liceo Scientifico quadriennale · TRED.",
     track: "tred-vittorini",
     icon: Search,
     label: "Comunicazione digitale",
   },
   {
     id: "percentage-calculator",
-    title: "Liceo Scientifico quadriennale · TRED",
-    description: "Percentuali di progetto",
+    title: "Percentuali di progetto",
+    description: "Strumento pratico per Liceo Scientifico quadriennale · TRED.",
     track: "tred-vittorini",
     icon: Gauge,
     label: "Transizione ecologica",
   },
   {
     id: "percentage-calculator",
-    title: "Liceo Scientifico · Biologia a curvatura biomedica",
-    description: "Percentuali e diluizioni",
+    title: "Percentuali e diluizioni",
+    description: "Strumento pratico per Liceo Scientifico · Biologia a curvatura biomedica.",
     track: "biomedica-vittorini",
     icon: Gauge,
     label: "Biologia",
   },
   {
     id: "aspect-ratio",
-    title: "Liceo Scientifico · Biologia a curvatura biomedica",
-    description: "Proporzioni di laboratorio",
+    title: "Proporzioni di laboratorio",
+    description: "Strumento pratico per Liceo Scientifico · Biologia a curvatura biomedica.",
     track: "biomedica-vittorini",
     icon: Activity,
     label: "Laboratorio biomedico",
   },
   {
     id: "ascii-table",
-    title: "Liceo Scientifico · Biologia a curvatura biomedica",
-    description: "Codifica dei campioni",
+    title: "Codifica dei campioni",
+    description: "Strumento pratico per Liceo Scientifico · Biologia a curvatura biomedica.",
     track: "biomedica-vittorini",
     icon: Sigma,
     label: "Dati scientifici",
   },
   {
     id: "travel-budget",
-    title: "Liceo Scientifico · Biologia a curvatura biomedica",
-    description: "Budget di laboratorio",
+    title: "Budget di laboratorio",
+    description: "Strumento pratico per Liceo Scientifico · Biologia a curvatura biomedica.",
     track: "biomedica-vittorini",
     icon: Globe,
     label: "Organizzazione",
@@ -2093,23 +2094,142 @@ function ToolContent({ id }: { id: ToolId }) {
   return <ResistorCode />;
 }
 
+type SchoolId = "morselli-sturzo" | "majorana" | "vittorini" | "altri";
+
+const SCHOOL_KEY = "voto.study-tools-shop.school.v1";
+const FAVORITE_SCHOOLS_KEY = "voto.study-tools-shop.favorite-schools.v1";
+const FAVORITE_TRACKS_KEY = "voto.study-tools-shop.favorite-tracks.v1";
+
+const SCHOOL_LABELS: Record<SchoolId, string> = {
+  "morselli-sturzo": "IIS E. Morselli - L. Sturzo",
+  majorana: "IIS E. Majorana",
+  vittorini: 'Liceo Scientifico e Linguistico "E. Vittorini"',
+  altri: "Altri indirizzi",
+};
+
+const SCHOOL_TRACKS: Record<SchoolId, Track[]> = {
+  "morselli-sturzo": [
+    "agraria",
+    "viticoltura",
+    "informatica",
+    "elettronica",
+    "meccatronica",
+    "chimica",
+    "biotecnologie",
+    "turismo",
+    "afm",
+    "rim",
+    "sia",
+    "enogastronomia",
+    "sala-vendita",
+    "accoglienza",
+  ],
+  majorana: [
+    "cat",
+    "nautico",
+    "aeronautico",
+    "artistico",
+    "moda",
+    "audiovisivo",
+    "manutenzione",
+    "made-italy",
+    "odontotecnico",
+  ],
+  vittorini: [
+    "scientifico-vittorini",
+    "linguistico-vittorini",
+    "scienze-applicate-vittorini",
+    "tred-vittorini",
+    "biomedica-vittorini",
+  ],
+  altri: ["grafica"],
+};
+
+function readStringArray(key: string): string[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) ?? "null");
+    return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : [];
+  } catch {
+    return [];
+  }
+}
+
+function isTrackInSchool(school: SchoolId | null, value: string): value is Track {
+  return school !== null && SCHOOL_TRACKS[school].includes(value as Track);
+}
+
 export function StudyToolsShop() {
-  const [track, setTrack] = useState<Track>("informatica");
+  const [school, setSchool] = useState<SchoolId | null>(null);
+  const [track, setTrack] = useState<Track | null>(null);
   const [openTool, setOpenTool] = useState<ToolId | null>(null);
   const [search, setSearch] = useState("");
+  const [favoriteSchools, setFavoriteSchools] = useState<SchoolId[]>([]);
+  const [favoriteTracks, setFavoriteTracks] = useState<Track[]>([]);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(TRACK_KEY);
-      if (saved && saved in TRACK_LABELS) setTrack(saved as Track);
+      const savedSchools = readStringArray(FAVORITE_SCHOOLS_KEY).filter(
+        (value): value is SchoolId => value in SCHOOL_LABELS,
+      );
+      const savedTracks = readStringArray(FAVORITE_TRACKS_KEY).filter(
+        (value): value is Track => value in TRACK_LABELS,
+      );
+      const savedSchool = localStorage.getItem(SCHOOL_KEY);
+      const preferredSchool =
+        savedSchool && savedSchool in SCHOOL_LABELS ? (savedSchool as SchoolId) : null;
+      const quickSchool = savedSchools[0] ?? preferredSchool;
+      const quickTrack = savedTracks.find((value) => isTrackInSchool(quickSchool, value));
+      setFavoriteSchools(savedSchools);
+      setFavoriteTracks(savedTracks);
+      if (quickSchool) {
+        setSchool(quickSchool);
+        if (quickTrack) setTrack(quickTrack);
+      }
     } catch {
-      // Il catalogo resta disponibile anche se lo storage non è accessibile.
+      // Il negozio resta utilizzabile anche se lo storage non è accessibile.
     }
   }, []);
 
-  function changeTrack(nextTrack: Track) {
+  function persistList(key: string, values: string[]) {
+    try {
+      localStorage.setItem(key, JSON.stringify(values));
+    } catch {
+      // Il preferito resta valido nella sessione corrente.
+    }
+  }
+
+  function toggleSchoolFavorite(value: SchoolId) {
+    const next = favoriteSchools.includes(value)
+      ? favoriteSchools.filter((item) => item !== value)
+      : [...favoriteSchools, value];
+    setFavoriteSchools(next);
+    persistList(FAVORITE_SCHOOLS_KEY, next);
+  }
+
+  function toggleTrackFavorite(value: Track) {
+    const next = favoriteTracks.includes(value)
+      ? favoriteTracks.filter((item) => item !== value)
+      : [...favoriteTracks, value];
+    setFavoriteTracks(next);
+    persistList(FAVORITE_TRACKS_KEY, next);
+  }
+
+  function chooseSchool(nextSchool: SchoolId) {
+    setSchool(nextSchool);
+    setTrack(null);
+    setOpenTool(null);
+    setSearch("");
+    try {
+      localStorage.setItem(SCHOOL_KEY, nextSchool);
+    } catch {
+      // La selezione vale comunque per la sessione corrente.
+    }
+  }
+
+  function chooseTrack(nextTrack: Track) {
     setTrack(nextTrack);
     setOpenTool(null);
+    setSearch("");
     try {
       localStorage.setItem(TRACK_KEY, nextTrack);
     } catch {
@@ -2118,6 +2238,7 @@ export function StudyToolsShop() {
   }
 
   const filteredTools = useMemo(() => {
+    if (!track) return [];
     const query = search.trim().toLocaleLowerCase("it-IT");
     return TOOLS.filter((tool) => {
       const matchesTrack = tool.track === track;
@@ -2138,11 +2259,12 @@ export function StudyToolsShop() {
       {openTool && selectedTool ? (
         <>
           <Button variant="ghost" size="sm" onClick={() => setOpenTool(null)} className="pl-0">
-            <ArrowLeft /> Torna al catalogo
+            <ArrowLeft /> Torna agli strumenti
           </Button>
           <section className="card-surface space-y-4 p-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                {school ? SCHOOL_LABELS[school] : "Negozio strumenti"} ·{" "}
                 {TRACK_LABELS[selectedTool.track]}
               </p>
               <h2 className="mt-1 font-display text-2xl font-semibold">{selectedTool.title}</h2>
@@ -2153,40 +2275,138 @@ export function StudyToolsShop() {
             <ToolContent id={openTool} />
           </section>
         </>
-      ) : (
+      ) : !school ? (
         <>
           <section className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-soft/70 via-card to-card p-4 shadow-sm">
             <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-              <CircuitBoard className="h-3.5 w-3.5" /> Strumenti per il tuo indirizzo
+              <CircuitBoard className="h-3.5 w-3.5" /> Prima scegli la scuola
             </p>
             <h2 className="mt-1 font-display text-2xl font-semibold">Negozio strumenti</h2>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Un catalogo di strumenti digitali pronti da usare, scelti per le materie del tuo
-              indirizzo.
+              Scegli la scuola, poi l’indirizzo. Usa la stella per ritrovare subito i tuoi
+              preferiti.
             </p>
           </section>
-
-          <div className="space-y-2">
-            <p className="text-xs font-semibold">Seleziona il tuo indirizzo</p>
-            <div role="group" aria-label="Indirizzo scolastico" className="grid grid-cols-2 gap-2">
-              {(Object.keys(TRACK_LABELS) as Track[]).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  aria-pressed={track === item}
-                  onClick={() => changeTrack(item)}
-                  className={`min-h-11 rounded-xl border px-3 text-sm font-semibold transition-colors ${
-                    track === item
-                      ? "border-primary bg-primary-soft text-primary"
-                      : "border-border bg-card text-muted-foreground"
-                  }`}
-                >
-                  {TRACK_LABELS[item]}
-                </button>
-              ))}
+          <section aria-label="Scuole" className="space-y-2">
+            <p className="text-xs font-semibold">Scegli la scuola</p>
+            {Object.keys(SCHOOL_LABELS).map((item) => {
+              const schoolId = item as SchoolId;
+              const favorite = favoriteSchools.includes(schoolId);
+              return (
+                <div key={schoolId} className="card-surface flex items-center gap-2 p-3">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => chooseSchool(schoolId)}
+                  >
+                    <span className="block text-sm font-semibold">{SCHOOL_LABELS[schoolId]}</span>
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                      {SCHOOL_TRACKS[schoolId].length} indirizzi disponibili
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`${favorite ? "Rimuovi" : "Aggiungi"} scuola preferita: ${SCHOOL_LABELS[schoolId]}`}
+                    title={
+                      favorite ? "Rimuovi scuola dai preferiti" : "Aggiungi scuola ai preferiti"
+                    }
+                    onClick={() => toggleSchoolFavorite(schoolId)}
+                    className="rounded-xl p-2 text-primary hover:bg-primary-soft"
+                  >
+                    <Star className="h-5 w-5" fill={favorite ? "currentColor" : "none"} />
+                  </button>
+                </div>
+              );
+            })}
+          </section>
+        </>
+      ) : !track ? (
+        <>
+          <Button variant="ghost" size="sm" onClick={() => setSchool(null)} className="pl-0">
+            <ArrowLeft /> Cambia scuola
+          </Button>
+          <section className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                  Scuola selezionata
+                </p>
+                <h2 className="mt-1 font-display text-xl font-semibold">{SCHOOL_LABELS[school]}</h2>
+              </div>
+              <button
+                type="button"
+                aria-label={`${favoriteSchools.includes(school) ? "Rimuovi" : "Aggiungi"} scuola preferita: ${SCHOOL_LABELS[school]}`}
+                onClick={() => toggleSchoolFavorite(school)}
+                className="rounded-xl p-2 text-primary hover:bg-primary-soft"
+              >
+                <Star
+                  className="h-5 w-5"
+                  fill={favoriteSchools.includes(school) ? "currentColor" : "none"}
+                />
+              </button>
             </div>
+            <p className="text-xs text-muted-foreground">Ora scegli l’indirizzo di studio.</p>
+            <div role="group" aria-label="Indirizzi della scuola" className="space-y-2">
+              {SCHOOL_TRACKS[school].map((item) => {
+                const favorite = favoriteTracks.includes(item);
+                return (
+                  <div key={item} className="card-surface flex items-center gap-2 p-3">
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => chooseTrack(item)}
+                    >
+                      <span className="block text-sm font-semibold">{TRACK_LABELS[item]}</span>
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        Apri il catalogo dedicato
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${favorite ? "Rimuovi" : "Aggiungi"} indirizzo preferito: ${TRACK_LABELS[item]}`}
+                      title={
+                        favorite
+                          ? "Rimuovi indirizzo dai preferiti"
+                          : "Aggiungi indirizzo ai preferiti"
+                      }
+                      onClick={() => toggleTrackFavorite(item)}
+                      className="rounded-xl p-2 text-primary hover:bg-primary-soft"
+                    >
+                      <Star className="h-5 w-5" fill={favorite ? "currentColor" : "none"} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setTrack(null)} className="pl-0">
+              <ArrowLeft /> Cambia indirizzo
+            </Button>
+            <button
+              type="button"
+              aria-label={`${favoriteTracks.includes(track) ? "Rimuovi" : "Aggiungi"} indirizzo preferito: ${TRACK_LABELS[track]}`}
+              onClick={() => toggleTrackFavorite(track)}
+              className="rounded-xl p-2 text-primary hover:bg-primary-soft"
+            >
+              <Star
+                className="h-5 w-5"
+                fill={favoriteTracks.includes(track) ? "currentColor" : "none"}
+              />
+            </button>
           </div>
-
+          <section className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-soft/70 via-card to-card p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+              {SCHOOL_LABELS[school]}
+            </p>
+            <h2 className="mt-1 font-display text-2xl font-semibold">{TRACK_LABELS[track]}</h2>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Strumenti pratici per il tuo indirizzo.
+            </p>
+          </section>
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -2197,11 +2417,13 @@ export function StudyToolsShop() {
               className="h-11 w-full rounded-xl border border-input bg-card pl-10 pr-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
-
           <section aria-label={`Strumenti di ${TRACK_LABELS[track]}`} className="space-y-2">
             {filteredTools.length ? (
               filteredTools.map(({ id, title, description, icon: Icon, label }) => (
-                <article key={id} className="card-surface flex items-center gap-3 p-3.5">
+                <article
+                  key={`${id}-${title}`}
+                  className="card-surface flex items-center gap-3 p-3.5"
+                >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-primary">
                     <Icon className="h-5 w-5" />
                   </span>
@@ -2223,10 +2445,6 @@ export function StudyToolsShop() {
               </p>
             )}
           </section>
-          <p className="text-[11px] leading-4 text-muted-foreground">
-            Ogni indirizzo ha strumenti dedicati e la selezione viene salvata solo su questo
-            dispositivo.
-          </p>
         </>
       )}
     </div>
