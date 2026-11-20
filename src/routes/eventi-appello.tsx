@@ -41,6 +41,17 @@ function isJustified(event: AttendanceEvent) {
   );
 }
 
+function isPending(event: AttendanceEvent) {
+  return event.justificationStatus?.trim().toLocaleLowerCase("it-IT").includes("da giustificare") ?? false;
+}
+
+function statusLabel(event: AttendanceEvent) {
+  const status = event.justificationStatus?.trim().toLocaleLowerCase("it-IT");
+  if (status === "giustificata") return "Giustificata";
+  if (status === "da giustificare") return "Da giustificare";
+  return undefined;
+}
+
 const FILTERS: { value: EventFilter; label: string }[] = [
   { value: "all", label: "Tutti" },
   { value: "absence", label: "Assenze" },
@@ -85,7 +96,7 @@ function EventiAppello() {
     () =>
       events.filter(
         (event) =>
-          (filter === "all" || event.type === filter) && (!onlyPending || !isJustified(event)),
+          (filter === "all" || event.type === filter) && (!onlyPending || isPending(event)),
       ),
     [events, filter, onlyPending],
   );
@@ -97,7 +108,7 @@ function EventiAppello() {
     }),
     [events],
   );
-  const pendingCount = events.filter((event) => !isJustified(event)).length;
+  const pendingCount = events.filter(isPending).length;
 
   return (
     <div className="min-h-dvh pb-8">
@@ -194,6 +205,7 @@ function EventiAppello() {
             const meta = eventMeta(event.type);
             const Icon = meta.icon;
             const justified = isJustified(event);
+            const label = statusLabel(event);
             return (
               <li key={event.id} className="card-surface flex items-center gap-3 p-3">
                 <span
@@ -214,15 +226,17 @@ function EventiAppello() {
                   </time>
                   <p className="mt-1 text-[11px] text-muted-foreground">{meta.description}</p>
                 </div>
-                <span
-                  className={cn(
-                    "flex shrink-0 items-center gap-1 text-[10px] font-semibold",
-                    justified ? "text-success" : "text-danger",
-                  )}
-                >
-                  {justified ? <CheckCircle2 className="h-4 w-4" /> : null}
-                  {justified ? "Giustificato" : "Da giustificare"}
-                </span>
+                {label ? (
+                  <span
+                    className={cn(
+                      "flex shrink-0 items-center gap-1 text-[10px] font-semibold",
+                      justified ? "text-success" : "text-danger",
+                    )}
+                  >
+                    {justified ? <CheckCircle2 className="h-4 w-4" /> : null}
+                    {label}
+                  </span>
+                ) : null}
               </li>
             );
           })}

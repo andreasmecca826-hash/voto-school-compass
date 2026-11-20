@@ -67,6 +67,30 @@ class VotoTransformTests(unittest.TestCase):
         self.assertEqual(notice["attachments"][0]["sourceUid"], "argo-file-abc")
         self.assertNotIn("url", notice["attachments"][0])
 
+    def test_justification_status_requires_explicit_confirmation(self):
+        dashboard = self.dashboard()
+        dashboard["appello"] = [
+            {"prg_evento": 5, "cod_evento": "A", "dat_evento": "2026-11-03", "giustificata": "S", "da_giustificare": "S"},
+            {"prg_evento": 6, "cod_evento": "I", "dat_evento": "2026-11-04", "giustificata": "S", "da_giustificare": 1},
+            {"prg_evento": 7, "cod_evento": "U", "dat_evento": "2026-11-05", "giustificata": "S"},
+            {"prg_evento": 8, "cod_evento": "A", "dat_evento": "2026-11-06", "da_giustificare": "S"},
+            {"prg_evento": 9, "cod_evento": "I", "dat_evento": "2026-11-07", "giustificata": "N"},
+            {"prg_evento": 10, "cod_evento": "U", "dat_evento": "2026-11-08"},
+        ]
+
+        events = build_payload(dashboard, {"anno_scolastico": "2026/2027"})["attendanceEvents"]
+        self.assertEqual([event["id"] for event in events], ["5", "6", "7", "8", "9", "10"])
+        self.assertEqual([event.get("justificationStatus") for event in events], ["Giustificata", "Giustificata", "Giustificata", "Da giustificare", None, None])
+        self.assertEqual(events[3]["justificationStatus"], "Da giustificare")
+        self.assertEqual(build_payload(dashboard, {"anno_scolastico": "2026/2027"})["attendance"], {
+            "absenceDays": 2,
+            "absenceHours": 12,
+            "delays": 2,
+            "earlyExits": 2,
+            "annualHours": 990,
+            "absenceLimitHours": 264,
+        })
+
     def test_keeps_old_notice_when_it_has_a_pdf_attachment(self):
         dashboard = self.dashboard()
         dashboard["bacheca"][0]["dat_giorno"] = "2020-10-10"

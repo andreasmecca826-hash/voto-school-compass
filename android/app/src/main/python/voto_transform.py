@@ -292,9 +292,13 @@ def _build_attendance(events: list[Any]) -> tuple[list[dict[str, Any]], dict[str
         if not parsed:
             continue
         pending_raw = get(event, "da_giustificare")
-        pending = pending_raw is True or str(pending_raw or "").strip().upper() in {"S", "SI", "TRUE", "1"}
+        pending = (
+            pending_raw is True
+            or (isinstance(pending_raw, (int, float)) and pending_raw > 0)
+            or str(pending_raw or "").strip().upper() in {"S", "SI", "TRUE", "1", "YES", "Y"}
+        )
         justified = text(event, "giustificata").upper() == "S"
-        status = "Da giustificare" if code == "A" and pending else "Giustificata" if code == "A" and justified else None
+        status = "Giustificata" if justified else "Da giustificare" if pending else None
         result.append({
             "id": text(event, "prg_evento", "id") or f"appello-{code}-{parsed.isoformat()}-{index}",
             "type": type_map[code],
