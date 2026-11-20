@@ -72,7 +72,18 @@ type ToolId =
   | "iva-calculator"
   | "break-even"
   | "print-resolution"
-  | "percentage-calculator";
+  | "percentage-calculator"
+  | "molarity-lab"
+  | "ph-lab"
+  | "statistics-lab"
+  | "route-planner"
+  | "food-cost"
+  | "ledger-cashflow"
+  | "sql-schema"
+  | "agronomy-lab"
+  | "plc-troubleshooter"
+  | "language-cards"
+  | "creative-planner";
 
 type ShopTool = {
   id: ToolId;
@@ -1130,6 +1141,323 @@ const TOOLS: ShopTool[] = [
   },
 ];
 
+const EXTRA_TOOLS: ShopTool[] = [
+  {
+    id: "molarity-lab",
+    title: "Laboratorio molarità e diluizioni",
+    description: "Prepara una soluzione e applica C₁V₁ = C₂V₂ con controllo delle unità.",
+    track: "chimica",
+    icon: Sigma,
+    label: "Chimica quantitativa",
+  },
+  {
+    id: "ph-lab",
+    title: "Laboratorio pH",
+    description: "Stima il pH di acidi e basi forti e osserva la scala logaritmica.",
+    track: "chimica",
+    icon: Activity,
+    label: "Acidi e basi",
+  },
+  {
+    id: "molarity-lab",
+    title: "Diluizioni per biotecnologie",
+    description: "Calcola stock, volume finale e aliquota per un protocollo di laboratorio.",
+    track: "biotecnologie",
+    icon: Sigma,
+    label: "Protocolli",
+  },
+  {
+    id: "ph-lab",
+    title: "pH e biosicurezza",
+    description: "Collega concentrazione e pH nella preparazione di campioni biologici.",
+    track: "biotecnologie",
+    icon: Activity,
+    label: "Laboratorio",
+  },
+  {
+    id: "statistics-lab",
+    title: "Statistica descrittiva e regressione",
+    description: "Inserisci dati separati da virgola e ricava media, mediana, deviazione e retta.",
+    track: "scientifico-vittorini",
+    icon: Sigma,
+    label: "Dati e modelli",
+  },
+  {
+    id: "statistics-lab",
+    title: "Statistica per scienze umane",
+    description: "Esplora distribuzioni, percentuali e relazione lineare tra due variabili.",
+    track: "scienze-umane-eschilo",
+    icon: Sigma,
+    label: "Ricerca sociale",
+  },
+  {
+    id: "statistics-lab",
+    title: "Indicatori e regressione",
+    description: "Calcola percentuali e tendenza lineare per fenomeni economico-sociali.",
+    track: "economico-sociale-eschilo",
+    icon: Sigma,
+    label: "Economia",
+  },
+  {
+    id: "statistics-lab",
+    title: "Percentuali e regressione",
+    description: "Analizza risultati sperimentali e variazioni percentuali.",
+    track: "linguistico-vittorini",
+    icon: Sigma,
+    label: "Analisi dati",
+  },
+  {
+    id: "route-planner",
+    title: "Distanza, rotta ed ETA",
+    description: "Calcola distanza tra coordinate, bearing iniziale e tempo stimato.",
+    track: "cat",
+    icon: Globe,
+    label: "Topografia",
+  },
+  {
+    id: "route-planner",
+    title: "Rotta nautica ed ETA",
+    description: "Simula una tratta con coordinate, velocità e prua teorica.",
+    track: "nautico",
+    icon: Globe,
+    label: "Navigazione",
+  },
+  {
+    id: "route-planner",
+    title: "Rotta aeronautica ed ETA",
+    description: "Stima distanza ortodromica semplificata e durata del volo.",
+    track: "aeronautico",
+    icon: Globe,
+    label: "Pianificazione volo",
+  },
+  {
+    id: "route-planner",
+    title: "Itinerario e tempi",
+    description: "Calcola tappa, direzione e arrivo per un percorso turistico.",
+    track: "turismo",
+    icon: Globe,
+    label: "Itinerari",
+  },
+  {
+    id: "route-planner",
+    title: "Itinerario per accoglienza",
+    description: "Prepara una tappa con distanza, rotta e durata per il cliente.",
+    track: "accoglienza",
+    icon: Globe,
+    label: "Guest experience",
+  },
+  {
+    id: "food-cost",
+    title: "Food cost e porzioni",
+    description: "Somma ingredienti, porzioni e margine per definire il prezzo del piatto.",
+    track: "enogastronomia",
+    icon: Gauge,
+    label: "Food cost",
+  },
+  {
+    id: "food-cost",
+    title: "Food cost del servizio",
+    description: "Stima costo per coperto, ricarico e resa della ricetta.",
+    track: "sala-vendita",
+    icon: Gauge,
+    label: "Servizio",
+  },
+  {
+    id: "food-cost",
+    title: "Checklist HACCP",
+    description: "Segna i controlli essenziali di ricezione, conservazione e servizio.",
+    track: "accoglienza",
+    icon: Gauge,
+    label: "Qualità",
+  },
+  {
+    id: "ledger-cashflow",
+    title: "Partita doppia e cash-flow",
+    description: "Registra entrate e uscite e osserva il saldo progressivo.",
+    track: "afm",
+    icon: Activity,
+    label: "Contabilità",
+  },
+  {
+    id: "ledger-cashflow",
+    title: "Cash-flow internazionale",
+    description: "Simula incassi e pagamenti per una commessa estera.",
+    track: "rim",
+    icon: Activity,
+    label: "Finanza",
+  },
+  {
+    id: "ledger-cashflow",
+    title: "Bilancio di progetto",
+    description: "Confronta dare/avere e saldo per un progetto informativo.",
+    track: "sia",
+    icon: Activity,
+    label: "Gestione",
+  },
+  {
+    id: "sql-schema",
+    title: "Schema database e SQL",
+    description: "Definisci tabelle, chiavi e genera una query SELECT didattica.",
+    track: "sia",
+    icon: Network,
+    label: "Basi di dati",
+  },
+  {
+    id: "sql-schema",
+    title: "Dati aziendali e SQL",
+    description: "Progetta una tabella clienti e una query per il marketing.",
+    track: "afm",
+    icon: Network,
+    label: "Sistemi informativi",
+  },
+  {
+    id: "sql-schema",
+    title: "CRM e query export",
+    description: "Modella clienti e ordini per una relazione internazionale.",
+    track: "rim",
+    icon: Network,
+    label: "CRM",
+  },
+  {
+    id: "agronomy-lab",
+    title: "Bilancio idrico e rese",
+    description: "Stima fabbisogno irriguo, resa e produzione da superficie e input.",
+    track: "agraria",
+    icon: Activity,
+    label: "Produzioni",
+  },
+  {
+    id: "agronomy-lab",
+    title: "Fermentazione base",
+    description: "Simula zuccheri, resa teorica e avanzamento della fermentazione.",
+    track: "viticoltura",
+    icon: Activity,
+    label: "Enologia",
+  },
+  {
+    id: "plc-troubleshooter",
+    title: "PLC: verità e troubleshooting",
+    description: "Prova ingressi, uscita e diagnosi di tre guasti tipici.",
+    track: "meccatronica",
+    icon: GitBranch,
+    label: "Automazione",
+  },
+  {
+    id: "plc-troubleshooter",
+    title: "Diagnostica manutenzione",
+    description: "Segui una checklist interattiva per isolare un guasto di macchina.",
+    track: "manutenzione",
+    icon: GitBranch,
+    label: "Troubleshooting",
+  },
+  {
+    id: "language-cards",
+    title: "Flashcard e traduzione guidata",
+    description: "Ripassa lessico e costruisci una traduzione scegliendo il registro.",
+    track: "linguistico-vittorini",
+    icon: Globe,
+    label: "Lingue",
+  },
+  {
+    id: "language-cards",
+    title: "Lessico latino e traduzione",
+    description: "Ripassa forme e lessico con una traccia guidata di traduzione.",
+    track: "classico-eschilo",
+    icon: Globe,
+    label: "Lingue classiche",
+  },
+  {
+    id: "language-cards",
+    title: "Lessico e argomentazione",
+    description: "Costruisci una breve risposta e seleziona registro e parole chiave.",
+    track: "scienze-umane-eschilo",
+    icon: Globe,
+    label: "Comunicazione",
+  },
+  {
+    id: "creative-planner",
+    title: "Storyboard e shot-list",
+    description: "Organizza inquadratura, durata, audio e azione di ogni scena.",
+    track: "audiovisivo",
+    icon: Lightbulb,
+    label: "Produzione",
+  },
+  {
+    id: "creative-planner",
+    title: "Prospettiva e proporzioni",
+    description: "Imposta scala, linea d'orizzonte e proporzioni per una tavola.",
+    track: "artistico",
+    icon: Lightbulb,
+    label: "Disegno",
+  },
+  {
+    id: "creative-planner",
+    title: "Tessuto, moda e materiali",
+    description: "Abbina capo, materiale, mano e uso con una scheda di progetto.",
+    track: "moda",
+    icon: Lightbulb,
+    label: "Materiali",
+  },
+  {
+    id: "creative-planner",
+    title: "Materiali e workflow protesico",
+    description: "Scegli materiale e fase per un workflow odontotecnico tracciabile.",
+    track: "odontotecnico",
+    icon: Lightbulb,
+    label: "Laboratorio",
+  },
+  {
+    id: "creative-planner",
+    title: "Materiali del prodotto",
+    description: "Confronta materiale, finitura e destinazione per un progetto Made in Italy.",
+    track: "made-italy",
+    icon: Lightbulb,
+    label: "Progetto",
+  },
+  {
+    id: "statistics-lab",
+    title: "Statistiche per TRED",
+    description: "Calcola media, percentuali e regressione su dati di progetto.",
+    track: "tred-vittorini",
+    icon: Sigma,
+    label: "Dati",
+  },
+  {
+    id: "statistics-lab",
+    title: "Statistiche biomediche",
+    description: "Riassumi misure di laboratorio e relazione tra due variabili.",
+    track: "biomedica-vittorini",
+    icon: Sigma,
+    label: "Laboratorio",
+  },
+  {
+    id: "statistics-lab",
+    title: "Percentuali e rese",
+    description: "Calcola resa, variazione e tendenza dei dati agricoli.",
+    track: "agraria",
+    icon: Sigma,
+    label: "Dati agricoli",
+  },
+  {
+    id: "statistics-lab",
+    title: "Percentuali e rese",
+    description: "Calcola resa, variazione e tendenza dei dati vitivinicoli.",
+    track: "viticoltura",
+    icon: Sigma,
+    label: "Dati enologici",
+  },
+  {
+    id: "route-planner",
+    title: "Distanza per cantiere",
+    description: "Stima tragitto e durata per una visita tecnica.",
+    track: "made-italy",
+    icon: Globe,
+    label: "Logistica",
+  },
+];
+
+const CATALOG_TOOLS = [...TOOLS, ...EXTRA_TOOLS];
+
 const TRACK_LABELS: Record<Track, string> = {
   informatica: "Informatica",
   elettronica: "Elettronica",
@@ -2174,7 +2502,424 @@ function PrintResolution() {
   );
 }
 
+function MolarityLab() {
+  const [stock, setStock] = useState("1");
+  const [finalC, setFinalC] = useState("0.1");
+  const [volume, setVolume] = useState("250");
+  const c1 = Number(stock),
+    c2 = Number(finalC),
+    v2 = Number(volume);
+  const valid = c1 > 0 && c2 > 0 && c2 <= c1 && v2 > 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField id="molar-stock" label="C₁ stock" unit="M" value={stock} onChange={setStock} />
+        <NumberField
+          id="molar-final"
+          label="C₂ finale"
+          unit="M"
+          value={finalC}
+          onChange={setFinalC}
+        />
+        <NumberField id="molar-volume" label="V₂" unit="mL" value={volume} onChange={setVolume} />
+      </div>
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Preleva <strong>{((c2 * v2) / c1).toFixed(2)} mL</strong> di stock e aggiungi{" "}
+          <strong>{(v2 - (c2 * v2) / c1).toFixed(2)} mL</strong> di solvente.
+          <br />
+          <span className="text-xs text-muted-foreground">C₁V₁ = C₂V₂</span>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Usa concentrazioni positive con C₂ ≤ C₁ e volume positivo.
+        </p>
+      )}
+    </div>
+  );
+}
+function PhLab() {
+  const [concentration, setConcentration] = useState("0.001");
+  const [kind, setKind] = useState("acid");
+  const c = Number(concentration);
+  const valid = c > 0;
+  const ph = valid ? (kind === "acid" ? -Math.log10(c) : 14 + Math.log10(c)) : null;
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Tipo
+        <select
+          aria-label="Tipo di soluzione"
+          value={kind}
+          onChange={(e) => setKind(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="acid">Acido forte</option>
+          <option value="base">Base forte</option>
+        </select>
+      </label>
+      <NumberField
+        id="ph-concentration"
+        label="Concentrazione"
+        unit="mol/L"
+        value={concentration}
+        onChange={setConcentration}
+      />
+      {valid && ph !== null && ph >= 0 && ph <= 14 ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          pH stimato: <strong>{ph.toFixed(2)}</strong> · pOH {(14 - ph).toFixed(2)}
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci una concentrazione positiva compatibile con la scala 0–14.
+        </p>
+      )}
+    </div>
+  );
+}
+function parseSeries(value: string) {
+  return value
+    .split(/[;,\s]+/)
+    .map(Number)
+    .filter(Number.isFinite);
+}
+function StatisticsLab() {
+  const [raw, setRaw] = useState("4, 7, 8, 10, 11");
+  const [xraw, setXraw] = useState("1, 2, 3, 4, 5");
+  const ys = parseSeries(raw),
+    xs = parseSeries(xraw),
+    mean = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0,
+    sorted = [...ys].sort((a, b) => a - b),
+    median = sorted.length ? sorted[Math.floor((sorted.length - 1) / 2)] : 0,
+    variance = ys.length ? ys.reduce((a, b) => a + (b - mean) ** 2, 0) / ys.length : 0;
+  const n = Math.min(xs.length, ys.length),
+    mx = n ? xs.slice(0, n).reduce((a, b) => a + b, 0) / n : 0,
+    my = n ? ys.slice(0, n).reduce((a, b) => a + b, 0) / n : 0,
+    den = xs.slice(0, n).reduce((a, b) => a + (b - mx) ** 2, 0),
+    slope = den
+      ? xs.slice(0, n).reduce((a, b, i) => a + (b - mx) * ((ys[i] ?? 0) - my), 0) / den
+      : 0,
+    intercept = my - slope * mx;
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Valori y
+        <input
+          aria-label="Valori statistici"
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Valori x (regressione)
+        <input
+          aria-label="Valori x regressione"
+          value={xraw}
+          onChange={(e) => setXraw(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      {ys.length ? (
+        <dl className="grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-xl bg-surface p-3">
+            <dt className="text-[10px] text-muted-foreground">Media / mediana</dt>
+            <dd className="font-semibold">
+              {mean.toFixed(2)} / {median}
+            </dd>
+          </div>
+          <div className="rounded-xl bg-surface p-3">
+            <dt className="text-[10px] text-muted-foreground">Deviazione standard</dt>
+            <dd className="font-semibold">{Math.sqrt(variance).toFixed(2)}</dd>
+          </div>
+          <div className="col-span-2 rounded-xl bg-primary-soft p-3">
+            <dt className="text-[10px] text-muted-foreground">Retta y = ax + b</dt>
+            <dd className="font-semibold">
+              y = {slope.toFixed(3)}x + {intercept.toFixed(3)}
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci una serie numerica.
+        </p>
+      )}
+    </div>
+  );
+}
+function RoutePlanner() {
+  const [lat1, setLat1] = useState("37.07"),
+    [lon1, setLon1] = useState("14.25"),
+    [lat2, setLat2] = useState("37.50"),
+    [lon2, setLon2] = useState("15.08"),
+    [speed, setSpeed] = useState("60");
+  const rad = Math.PI / 180,
+    a = Number(lat1) * rad,
+    b = Number(lat2) * rad,
+    dlat = (Number(lat2) - Number(lat1)) * rad,
+    dlon = (Number(lon2) - Number(lon1)) * rad,
+    h = Math.sin(dlat / 2) ** 2 + Math.cos(a) * Math.cos(b) * Math.sin(dlon / 2) ** 2,
+    km = 6371 * 2 * Math.asin(Math.sqrt(h)),
+    valid = [a, b, km, Number(speed)].every(Number.isFinite) && Number(speed) > 0;
+  const bearing =
+    (Math.atan2(
+      Math.sin(dlon) * Math.cos(b),
+      Math.cos(a) * Math.sin(b) - Math.sin(a) * Math.cos(b) * Math.cos(dlon),
+    ) /
+      rad +
+      360) %
+    360;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField id="route-lat1" label="Lat. partenza" value={lat1} onChange={setLat1} />
+        <NumberField id="route-lon1" label="Lon. partenza" value={lon1} onChange={setLon1} />
+        <NumberField id="route-lat2" label="Lat. arrivo" value={lat2} onChange={setLat2} />
+        <NumberField id="route-lon2" label="Lon. arrivo" value={lon2} onChange={setLon2} />
+      </div>
+      <NumberField
+        id="route-speed"
+        label="Velocità"
+        unit="km/h"
+        value={speed}
+        onChange={setSpeed}
+      />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Distanza: <strong>{km.toFixed(1)} km</strong> · rotta iniziale:{" "}
+          <strong>{bearing.toFixed(0)}°</strong> · ETA:{" "}
+          <strong>{(km / Number(speed)).toFixed(2)} h</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci coordinate e velocità valide.
+        </p>
+      )}
+    </div>
+  );
+}
+function FoodCost() {
+  const [ingredients, setIngredients] = useState("12"),
+    [portions, setPortions] = useState("10"),
+    [margin, setMargin] = useState("30");
+  const c = Number(ingredients),
+    p = Number(portions),
+    m = Number(margin),
+    valid = c >= 0 && p > 0 && m >= 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField
+          id="food-total"
+          label="Costo ingredienti"
+          unit="€"
+          value={ingredients}
+          onChange={setIngredients}
+        />
+        <NumberField id="food-portions" label="Porzioni" value={portions} onChange={setPortions} />
+        <NumberField
+          id="food-margin"
+          label="Ricarico"
+          unit="%"
+          value={margin}
+          onChange={setMargin}
+        />
+      </div>
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Costo porzione: <strong>{(c / p).toFixed(2)} €</strong> · prezzo indicativo:{" "}
+          <strong>{((c / p) * (1 + m / 100)).toFixed(2)} €</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci costi non negativi, porzioni positive e ricarico valido.
+        </p>
+      )}
+      <div className="rounded-xl border border-border p-3 text-xs">
+        <p className="font-semibold">Checklist HACCP</p>
+        {["Catena del freddo", "Allergeni identificati", "Superfici sanificate"].map((item) => (
+          <label key={item} className="mt-2 flex gap-2">
+            <input type="checkbox" /> {item}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+function LedgerCashflow() {
+  const [income, setIncome] = useState("1200"),
+    [outcome, setOutcome] = useState("450");
+  const saldo = Number(income) - Number(outcome);
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="ledger-income"
+          label="Entrate / Dare"
+          unit="€"
+          value={income}
+          onChange={setIncome}
+        />
+        <NumberField
+          id="ledger-outcome"
+          label="Uscite / Avere"
+          unit="€"
+          value={outcome}
+          onChange={setOutcome}
+        />
+      </div>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        Saldo cash-flow: <strong>{saldo.toFixed(2)} €</strong> ·{" "}
+        {saldo >= 0 ? "avanzo" : "fabbisogno"}
+      </p>
+    </div>
+  );
+}
+function SqlSchema() {
+  const [table, setTable] = useState("clienti"),
+    [field, setField] = useState("cognome");
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Tabella
+          <input
+            aria-label="Nome tabella"
+            value={table}
+            onChange={(e) => setTable(e.target.value.replace(/\W/g, ""))}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Campo filtro
+          <input
+            aria-label="Campo filtro"
+            value={field}
+            onChange={(e) => setField(e.target.value.replace(/\W/g, ""))}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          />
+        </label>
+      </div>
+      <pre className="overflow-auto rounded-xl bg-surface p-3 text-xs">{`CREATE TABLE ${table || "tabella"} (id INTEGER PRIMARY KEY, ${field || "campo"} TEXT);\nSELECT * FROM ${table || "tabella"} ORDER BY ${field || "campo"};`}</pre>
+    </div>
+  );
+}
+function AgronomyLab() {
+  const [area, setArea] = useState("1000"),
+    [water, setWater] = useState("25"),
+    [yieldKg, setYieldKg] = useState("650");
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField id="agri-area" label="Superficie" unit="m²" value={area} onChange={setArea} />
+        <NumberField id="agri-water" label="Acqua" unit="L/m²" value={water} onChange={setWater} />
+        <NumberField
+          id="agri-yield"
+          label="Produzione"
+          unit="kg"
+          value={yieldKg}
+          onChange={setYieldKg}
+        />
+      </div>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        Fabbisogno idrico: <strong>{((Number(area) * Number(water)) / 1000).toFixed(1)} m³</strong>{" "}
+        · resa: <strong>{((Number(yieldKg) / Number(area)) * 10000).toFixed(0)} kg/ha</strong>
+      </p>
+    </div>
+  );
+}
+function PlcTroubleshooter() {
+  const [input, setInput] = useState(false),
+    [sensor, setSensor] = useState(false);
+  const output = input && sensor;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant={input ? "default" : "outline"} onClick={() => setInput((v) => !v)}>
+          Start: {input ? "ON" : "OFF"}
+        </Button>
+        <Button variant={sensor ? "default" : "outline"} onClick={() => setSensor((v) => !v)}>
+          Sensore: {sensor ? "OK" : "KO"}
+        </Button>
+      </div>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        Uscita motore: <strong>{output ? "ATTIVA" : "FERMA"}</strong> ·{" "}
+        {input ? (sensor ? "Nessun guasto" : "Controlla sensore") : "Controlla consenso di avvio"}
+      </p>
+    </div>
+  );
+}
+function LanguageCards() {
+  const [known, setKnown] = useState(false),
+    [register, setRegister] = useState("formale");
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl bg-surface p-4">
+        <p className="text-xs text-muted-foreground">Flashcard</p>
+        <p className="mt-1 text-lg font-semibold">
+          {known ? "sviluppo → development" : "development → sviluppo"}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={() => setKnown((v) => !v)}>Rivela / ripassa</Button>
+        <select
+          aria-label="Registro traduzione"
+          value={register}
+          onChange={(e) => setRegister(e.target.value)}
+          className="h-10 rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="formale">Formale</option>
+          <option value="informale">Informale</option>
+        </select>
+      </div>
+      <p role="status" className="text-xs text-muted-foreground">
+        Registro selezionato: {register} · prova a riformulare la frase.
+      </p>
+    </div>
+  );
+}
+function CreativePlanner() {
+  const [name, setName] = useState("Scena / campione"),
+    [material, setMaterial] = useState("cotone / luce morbida");
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Titolo progetto
+        <input
+          aria-label="Titolo progetto"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Materiale / indicazione
+        <input
+          aria-label="Materiale progetto"
+          value={material}
+          onChange={(e) => setMaterial(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        <strong>{name || "Progetto"}</strong> · scheda pronta: {material || "aggiungi materiali"}
+      </p>
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
+  if (id === "molarity-lab") return <MolarityLab />;
+  if (id === "ph-lab") return <PhLab />;
+  if (id === "statistics-lab") return <StatisticsLab />;
+  if (id === "route-planner") return <RoutePlanner />;
+  if (id === "food-cost") return <FoodCost />;
+  if (id === "ledger-cashflow") return <LedgerCashflow />;
+  if (id === "sql-schema") return <SqlSchema />;
+  if (id === "agronomy-lab") return <AgronomyLab />;
+  if (id === "plc-troubleshooter") return <PlcTroubleshooter />;
+  if (id === "language-cards") return <LanguageCards />;
+  if (id === "creative-planner") return <CreativePlanner />;
   if (id === "base-converter") return <BaseConverter />;
   if (id === "binary-calculator") return <BinaryCalculator />;
   if (id === "ascii-table") return <AsciiTable />;
@@ -2343,7 +3088,7 @@ export function StudyToolsShop() {
   const filteredTools = useMemo(() => {
     if (!track) return [];
     const query = search.trim().toLocaleLowerCase("it-IT");
-    return TOOLS.filter((tool) => {
+    return CATALOG_TOOLS.filter((tool) => {
       const matchesTrack = tool.track === track;
       const matchesSearch =
         !query ||
@@ -2353,7 +3098,7 @@ export function StudyToolsShop() {
       return matchesTrack && matchesSearch;
     });
   }, [search, track]);
-  const selectedTool = TOOLS.find(
+  const selectedTool = CATALOG_TOOLS.find(
     ({ id, track: toolTrack }) => id === openTool && toolTrack === track,
   );
 

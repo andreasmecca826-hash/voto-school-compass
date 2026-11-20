@@ -8,11 +8,11 @@ const FAVORITE_SCHOOLS_KEY = "voto.study-tools-shop.favorite-schools.v1";
 const FAVORITE_TRACKS_KEY = "voto.study-tools-shop.favorite-tracks.v1";
 
 function chooseSchool(name: string) {
-  fireEvent.click(screen.getAllByRole("button", { name: new RegExp(name) })[0]);
+  fireEvent.click(screen.getAllByRole("button", { name: new RegExp(name) })[0]!);
 }
 
 function chooseTrack(name: string) {
-  fireEvent.click(screen.getAllByRole("button", { name: new RegExp(name) })[0]);
+  fireEvent.click(screen.getAllByRole("button", { name: new RegExp(name) })[0]!);
 }
 
 afterEach(() => {
@@ -80,5 +80,34 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
     chooseSchool('Liceo Scientifico e Linguistico "E. Vittorini"');
     chooseTrack("Liceo Linguistico · E. Vittorini");
     expect(screen.getByRole("button", { name: "Apri Cambio valuta e viaggi" })).toBeInTheDocument();
+  });
+
+  it("calcola una diluizione nel laboratorio di chimica", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Chimica e Materiali");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio molarità e diluizioni" }));
+    expect(screen.getByRole("status")).toHaveTextContent("25.00 mL");
+  });
+
+  it("calcola statistiche e regressione per lo scientifico", () => {
+    render(<StudyToolsShop />);
+    chooseSchool('Liceo Scientifico e Linguistico "E. Vittorini"');
+    chooseTrack("Liceo Scientifico · E. Vittorini");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Apri Statistica descrittiva e regressione" }),
+    );
+    fireEvent.change(screen.getByLabelText("Valori statistici"), { target: { value: "1, 2, 3" } });
+    expect(screen.getByText(/2\.00 \/ 2/)).toBeInTheDocument();
+    expect(screen.getByText(/y = 1\.000x/)).toBeInTheDocument();
+  });
+
+  it("calcola distanza ed ETA per il nautico", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Majorana");
+    chooseTrack("Nautico");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Rotta nautica ed ETA" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Distanza:");
+    expect(screen.getByRole("status")).toHaveTextContent("ETA:");
   });
 });
