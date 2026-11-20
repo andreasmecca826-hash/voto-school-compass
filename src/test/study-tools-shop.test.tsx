@@ -110,4 +110,40 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Distanza:");
     expect(screen.getByRole("status")).toHaveTextContent("ETA:");
   });
+
+  it("mostra l'anteprima HTML/CSS in un iframe sandboxato", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Informatica");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio web HTML/CSS" }));
+    expect(screen.getByRole("textbox", { name: "Editor HTML" })).toBeInTheDocument();
+    expect(screen.getByTitle("Anteprima HTML e CSS")).toHaveAttribute("sandbox", "");
+  });
+
+  it("esegue SELECT solo sul dataset SQL locale", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Sistemi Informativi Aziendali");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio SQL aziendale" }));
+    expect(screen.getByRole("status", { name: "Risultato query SQL" })).toHaveTextContent(
+      "Arianna",
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Query SQL" }), {
+      target: { value: "DELETE FROM studenti;" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("Query non riconosciuta");
+  });
+
+  it("risolve un'equazione quadratica e aggiorna la tabella matematica", () => {
+    render(<StudyToolsShop />);
+    chooseSchool('Liceo Scientifico e Linguistico "E. Vittorini"');
+    chooseTrack("Liceo Scientifico · E. Vittorini");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio equazioni e funzioni" }));
+    expect(screen.getByRole("status", { name: "Risultato equazione" })).toHaveTextContent(
+      "1.00, 2.00",
+    );
+    fireEvent.change(screen.getByLabelText("a"), { target: { value: "0" } });
+    expect(screen.getByRole("status", { name: "Risultato equazione" })).toHaveTextContent("0.67");
+    expect(screen.getByText("Tabella valori e grafico semplice")).toBeInTheDocument();
+  });
 });

@@ -83,7 +83,11 @@ type ToolId =
   | "agronomy-lab"
   | "plc-troubleshooter"
   | "language-cards"
-  | "creative-planner";
+  | "creative-planner"
+  | "web-lab"
+  | "code-lab"
+  | "sql-lab"
+  | "math-lab";
 
 type ShopTool = {
   id: ToolId;
@@ -1141,6 +1145,149 @@ const TOOLS: ShopTool[] = [
   },
 ];
 
+const FIRST_BLOCK_TOOLS: ShopTool[] = [
+  {
+    id: "web-lab",
+    title: "Laboratorio web HTML/CSS",
+    description:
+      "Scrivi HTML e CSS e osserva un’anteprima locale in iframe sandboxato, senza script eseguiti.",
+    track: "informatica",
+    icon: Globe,
+    label: "Web design",
+  },
+  {
+    id: "code-lab",
+    title: "Laboratorio JavaScript e pseudocodice",
+    description:
+      "Segui esempi guidati e ottieni output locale con esercizi predefiniti, senza eval non controllato.",
+    track: "informatica",
+    icon: Cpu,
+    label: "Programmazione",
+  },
+  {
+    id: "sql-lab",
+    title: "Laboratorio SQL interattivo",
+    description: "Esplora schema, SELECT e risultati su un piccolo dataset didattico fisso.",
+    track: "informatica",
+    icon: Network,
+    label: "Basi di dati",
+  },
+  {
+    id: "web-lab",
+    title: "Laboratorio web per grafica",
+    description: "Prototipa una composizione HTML/CSS in anteprima locale e sandboxata.",
+    track: "grafica",
+    icon: Globe,
+    label: "Web design",
+  },
+  {
+    id: "code-lab",
+    title: "Laboratorio JavaScript per dati",
+    description: "Esercizi guidati di logica e manipolazione dati con output locale sicuro.",
+    track: "grafica",
+    icon: Cpu,
+    label: "Interattività",
+  },
+  {
+    id: "web-lab",
+    title: "Laboratorio web aziendale",
+    description: "Crea una piccola interfaccia HTML/CSS per sistemi informativi.",
+    track: "sia",
+    icon: Globe,
+    label: "Web design",
+  },
+  {
+    id: "code-lab",
+    title: "Laboratorio JavaScript aziendale",
+    description: "Impara condizioni e cicli con esempi guidati e output locale limitato.",
+    track: "sia",
+    icon: Cpu,
+    label: "Programmazione",
+  },
+  {
+    id: "sql-lab",
+    title: "Laboratorio SQL aziendale",
+    description: "Interroga un dataset clienti e ordini con SELECT didattiche sicure.",
+    track: "sia",
+    icon: Network,
+    label: "Basi di dati",
+  },
+  {
+    id: "math-lab",
+    title: "Laboratorio equazioni e funzioni",
+    description:
+      "Risolvi equazioni lineari e quadratiche e visualizza tabella e grafico della funzione.",
+    track: "scientifico-vittorini",
+    icon: Sigma,
+    label: "Matematica",
+  },
+  {
+    id: "math-lab",
+    title: "Laboratorio matematico applicato",
+    description: "Studia radici e andamento di una funzione con calcolo locale e grafico semplice.",
+    track: "scienze-applicate-vittorini",
+    icon: Sigma,
+    label: "Matematica",
+  },
+  {
+    id: "web-lab",
+    title: "Laboratorio web e prototipi",
+    description: "Progetta una pagina HTML/CSS e visualizzala in un’anteprima isolata.",
+    track: "scienze-applicate-vittorini",
+    icon: Globe,
+    label: "Tecnologie web",
+  },
+  {
+    id: "code-lab",
+    title: "Laboratorio JavaScript e algoritmi",
+    description: "Esercizi guidati di algoritmi con output deterministico nel browser.",
+    track: "scienze-applicate-vittorini",
+    icon: Cpu,
+    label: "Algoritmi",
+  },
+  {
+    id: "sql-lab",
+    title: "Laboratorio SQL e dati",
+    description: "Sperimenta query SELECT su dati fissi senza collegamenti a database remoti.",
+    track: "scienze-applicate-vittorini",
+    icon: Network,
+    label: "Dati",
+  },
+  {
+    id: "math-lab",
+    title: "Laboratorio funzioni TRED",
+    description:
+      "Risolvi equazioni e osserva i valori di una funzione in una tabella e in un grafico.",
+    track: "tred-vittorini",
+    icon: Sigma,
+    label: "Modelli matematici",
+  },
+  {
+    id: "web-lab",
+    title: "Laboratorio web TRED",
+    description: "Realizza un prototipo HTML/CSS con anteprima isolata e sicura.",
+    track: "tred-vittorini",
+    icon: Globe,
+    label: "Transizione digitale",
+  },
+  {
+    id: "code-lab",
+    title: "Laboratorio codice TRED",
+    description: "Allenati con esempi di JavaScript e pseudocodice senza esecuzione arbitraria.",
+    track: "tred-vittorini",
+    icon: Cpu,
+    label: "Programmazione",
+  },
+  {
+    id: "sql-lab",
+    title: "Laboratorio SQL TRED",
+    description: "Costruisci SELECT guidate su un dataset locale di esempio.",
+    track: "tred-vittorini",
+    icon: Network,
+    label: "Dati digitali",
+  },
+];
+
 const EXTRA_TOOLS: ShopTool[] = [
   {
     id: "molarity-lab",
@@ -1456,7 +1603,7 @@ const EXTRA_TOOLS: ShopTool[] = [
   },
 ];
 
-const CATALOG_TOOLS = [...TOOLS, ...EXTRA_TOOLS];
+const CATALOG_TOOLS = [...TOOLS, ...FIRST_BLOCK_TOOLS, ...EXTRA_TOOLS];
 
 const TRACK_LABELS: Record<Track, string> = {
   informatica: "Informatica",
@@ -2908,7 +3055,256 @@ function CreativePlanner() {
   );
 }
 
+function WebLab() {
+  const [html, setHtml] = useState(
+    "<main><h1>Ciao web!</h1><p>Una pagina costruita da te.</p></main>",
+  );
+  const [css, setCss] = useState(
+    "body { font-family: sans-serif; padding: 1rem; color: #17324d; } h1 { color: #0f766e; }",
+  );
+  const srcDoc = `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${html}</body></html>`;
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        L’anteprima usa un iframe sandboxato senza <code>allow-scripts</code>: HTML e CSS restano
+        locali.
+      </p>
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="block text-xs font-medium text-muted-foreground">
+          HTML
+          <textarea
+            aria-label="Editor HTML"
+            value={html}
+            onChange={(e) => setHtml(e.target.value)}
+            className="mt-1 min-h-36 w-full rounded-xl border border-input bg-card p-3 font-mono text-xs"
+          />
+        </label>
+        <label className="block text-xs font-medium text-muted-foreground">
+          CSS
+          <textarea
+            aria-label="Editor CSS"
+            value={css}
+            onChange={(e) => setCss(e.target.value)}
+            className="mt-1 min-h-36 w-full rounded-xl border border-input bg-card p-3 font-mono text-xs"
+          />
+        </label>
+      </div>
+      <div>
+        <p className="mb-1 text-xs font-semibold">Anteprima locale</p>
+        <iframe
+          title="Anteprima HTML e CSS"
+          sandbox=""
+          srcDoc={srcDoc}
+          className="h-48 w-full rounded-xl border border-border bg-white"
+        />
+      </div>
+    </div>
+  );
+}
+
+const CODE_EXAMPLES = {
+  somma: {
+    label: "Somma di due numeri",
+    pseudo: "leggi a, b\nmostra a + b",
+    output: "La somma di 7 e 5 è 12.",
+  },
+  pari: {
+    label: "Controllo pari/dispari",
+    pseudo: "se n % 2 = 0 allora\n  mostra pari\naltrimenti mostra dispari",
+    output: "18 è pari.",
+  },
+  ciclo: {
+    label: "Ciclo di conteggio",
+    pseudo: "per i da 1 a 4\n  mostra i",
+    output: "1 · 2 · 3 · 4",
+  },
+} as const;
+function CodeLab() {
+  const [example, setExample] = useState<keyof typeof CODE_EXAMPLES>("somma");
+  const current = CODE_EXAMPLES[example];
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Esempio guidato
+        <select
+          aria-label="Esempio di codice"
+          value={example}
+          onChange={(e) => setExample(e.target.value as keyof typeof CODE_EXAMPLES)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          {Object.entries(CODE_EXAMPLES).map(([key, item]) => (
+            <option key={key} value={key}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <pre className="rounded-xl bg-surface p-3 text-xs">{current.pseudo}</pre>
+      <p
+        role="status"
+        aria-label="Output del laboratorio"
+        className="rounded-xl bg-primary-soft p-3 text-sm"
+      >
+        Output locale: <strong>{current.output}</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Sono disponibili solo esempi predefiniti: nessun codice inserito viene eseguito con eval.
+      </p>
+    </div>
+  );
+}
+
+type SqlRow = { id: number; name: string; track: string; grade: number };
+const SQL_ROWS: SqlRow[] = [
+  { id: 1, name: "Arianna", track: "Informatica", grade: 8 },
+  { id: 2, name: "Bruno", track: "SIA", grade: 7 },
+  { id: 3, name: "Chiara", track: "Scientifico", grade: 9 },
+];
+function SqlLab() {
+  const [query, setQuery] = useState(
+    "SELECT name, grade FROM studenti WHERE grade >= 8 ORDER BY grade DESC;",
+  );
+  const match = query
+    .trim()
+    .match(
+      /^SELECT\s+(\*|name\s*,\s*grade)\s+FROM\s+studenti(?:\s+WHERE\s+grade\s*>=\s*(\d+))?(?:\s+ORDER\s+BY\s+(name|grade)(?:\s+(ASC|DESC))?)?\s*;?$/i,
+    );
+  let rows = match ? SQL_ROWS.filter((row) => !match[2] || row.grade >= Number(match[2])) : [];
+  if (match?.[3])
+    rows = [...rows].sort((a, b) =>
+      match[3].toLowerCase() === "name" ? a.name.localeCompare(b.name) : a.grade - b.grade,
+    );
+  if (match?.[4]?.toLowerCase() === "desc") rows.reverse();
+  const columns = match?.[1] === "*" ? ["id", "name", "track", "grade"] : ["name", "grade"];
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl bg-surface p-3 text-xs">
+        <p className="font-semibold">Schema fisso: studenti</p>
+        <p className="mt-1 font-mono">id INTEGER · name TEXT · track TEXT · grade INTEGER</p>
+      </div>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Query SELECT
+        <textarea
+          aria-label="Query SQL"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="mt-1 min-h-24 w-full rounded-xl border border-input bg-card p-3 font-mono text-xs"
+        />
+      </label>
+      {match ? (
+        <div
+          role="status"
+          aria-label="Risultato query SQL"
+          className="overflow-auto rounded-xl border border-border"
+        >
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column} className="border-b border-border p-2 font-semibold">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  {columns.map((column) => (
+                    <td key={column} className="p-2">
+                      {row[column as keyof SqlRow]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="p-2 text-muted-foreground">{rows.length} righe · dataset locale</p>
+        </div>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Query non riconosciuta: usa solo SELECT sulle colonne dello schema studenti.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MathLab() {
+  const [a, setA] = useState("1"),
+    [b, setB] = useState("-3"),
+    [c, setC] = useState("2");
+  const A = Number(a),
+    B = Number(b),
+    C = Number(c),
+    valid = [A, B, C].every(Number.isFinite) && (A !== 0 || B !== 0);
+  const delta = B * B - 4 * A * C,
+    roots =
+      A === 0
+        ? [-C / B]
+        : delta < 0
+          ? []
+          : delta === 0
+            ? [-B / (2 * A)]
+            : [(-B - Math.sqrt(delta)) / (2 * A), (-B + Math.sqrt(delta)) / (2 * A)];
+  const points = [-2, -1, 0, 1, 2].map((x) => ({ x, y: A * x * x + B * x + C }));
+  const max = Math.max(...points.map((p) => Math.abs(p.y)), 1);
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Equazione ax² + bx + c = 0: se a = 0 viene risolta come equazione lineare.
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField id="math-a" label="a" value={a} onChange={setA} />
+        <NumberField id="math-b" label="b" value={b} onChange={setB} />
+        <NumberField id="math-c" label="c" value={c} onChange={setC} />
+      </div>
+      {valid ? (
+        <>
+          <p
+            role="status"
+            aria-label="Risultato equazione"
+            className="rounded-xl bg-primary-soft p-3 text-sm"
+          >
+            Δ = <strong>{delta.toFixed(2)}</strong> · soluzioni:{" "}
+            <strong>
+              {roots.length ? roots.map((root) => root.toFixed(2)).join(", ") : "nessuna reale"}
+            </strong>
+          </p>
+          <table className="w-full text-xs">
+            <caption className="mb-1 text-left font-semibold">
+              Tabella valori e grafico semplice
+            </caption>
+            <tbody>
+              {points.map((point) => (
+                <tr key={point.x}>
+                  <td className="p-1">x = {point.x}</td>
+                  <td className="p-1">f(x) = {point.y.toFixed(2)}</td>
+                  <td className="p-1">
+                    <span
+                      className="inline-block h-2 rounded bg-primary"
+                      style={{ width: `${Math.max(4, (Math.abs(point.y) / max) * 100)}%` }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci coefficienti numerici e almeno a o b diverso da zero.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
+  if (id === "web-lab") return <WebLab />;
+  if (id === "code-lab") return <CodeLab />;
+  if (id === "sql-lab") return <SqlLab />;
+  if (id === "math-lab") return <MathLab />;
   if (id === "molarity-lab") return <MolarityLab />;
   if (id === "ph-lab") return <PhLab />;
   if (id === "statistics-lab") return <StatisticsLab />;
