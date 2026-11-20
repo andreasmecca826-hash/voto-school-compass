@@ -42,7 +42,12 @@ type Track =
   | "audiovisivo"
   | "manutenzione"
   | "made-italy"
-  | "odontotecnico";
+  | "odontotecnico"
+  | "scientifico-vittorini"
+  | "linguistico-vittorini"
+  | "scienze-applicate-vittorini"
+  | "tred-vittorini"
+  | "biomedica-vittorini";
 type ToolId =
   | "base-converter"
   | "binary-calculator"
@@ -862,6 +867,166 @@ const TOOLS: ShopTool[] = [
     icon: Globe,
     label: "Gestione laboratorio",
   },
+  {
+    id: "percentage-calculator",
+    title: "Liceo Scientifico · E. Vittorini",
+    description: "Calcolatore scientifico di percentuali",
+    track: "scientifico-vittorini",
+    icon: Gauge,
+    label: "Matematica",
+  },
+  {
+    id: "color-converter",
+    title: "Liceo Scientifico · E. Vittorini",
+    description: "Laboratorio colori e dati",
+    track: "scientifico-vittorini",
+    icon: Lightbulb,
+    label: "Tecnologie",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Liceo Scientifico · E. Vittorini",
+    description: "Proporzioni e grafici",
+    track: "scientifico-vittorini",
+    icon: Activity,
+    label: "Rappresentazione",
+  },
+  {
+    id: "ascii-table",
+    title: "Liceo Scientifico · E. Vittorini",
+    description: "Codifica dei caratteri",
+    track: "scientifico-vittorini",
+    icon: Sigma,
+    label: "Informatica",
+  },
+  {
+    id: "exchange-converter",
+    title: "Liceo Linguistico · E. Vittorini",
+    description: "Cambio valuta e viaggi",
+    track: "linguistico-vittorini",
+    icon: Sigma,
+    label: "Lingue e turismo",
+  },
+  {
+    id: "travel-budget",
+    title: "Liceo Linguistico · E. Vittorini",
+    description: "Budget di soggiorno",
+    track: "linguistico-vittorini",
+    icon: Globe,
+    label: "Cultura e mobilità",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Liceo Linguistico · E. Vittorini",
+    description: "Percentuali e statistiche",
+    track: "linguistico-vittorini",
+    icon: Gauge,
+    label: "Analisi dei dati",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Liceo Linguistico · E. Vittorini",
+    description: "Formati e impaginazione",
+    track: "linguistico-vittorini",
+    icon: Activity,
+    label: "Comunicazione",
+  },
+  {
+    id: "binary-calculator",
+    title: "Liceo Scientifico · Scienze Applicate",
+    description: "Calcoli binari",
+    track: "scienze-applicate-vittorini",
+    icon: Cpu,
+    label: "Informatica",
+  },
+  {
+    id: "subnet-calculator",
+    title: "Liceo Scientifico · Scienze Applicate",
+    description: "Reti e subnet",
+    track: "scienze-applicate-vittorini",
+    icon: Network,
+    label: "Sistemi e reti",
+  },
+  {
+    id: "rc-time",
+    title: "Liceo Scientifico · Scienze Applicate",
+    description: "Laboratorio RC",
+    track: "scienze-applicate-vittorini",
+    icon: Activity,
+    label: "Laboratorio",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Liceo Scientifico · Scienze Applicate",
+    description: "Proporzioni sperimentali",
+    track: "scienze-applicate-vittorini",
+    icon: Activity,
+    label: "Metodo scientifico",
+  },
+  {
+    id: "base-converter",
+    title: "Liceo Scientifico quadriennale · TRED",
+    description: "Conversione dati digitali",
+    track: "tred-vittorini",
+    icon: Binary,
+    label: "Transizione digitale",
+  },
+  {
+    id: "logic-gates",
+    title: "Liceo Scientifico quadriennale · TRED",
+    description: "Porte logiche",
+    track: "tred-vittorini",
+    icon: GitBranch,
+    label: "Sistemi digitali",
+  },
+  {
+    id: "print-resolution",
+    title: "Liceo Scientifico quadriennale · TRED",
+    description: "Risoluzione e formati",
+    track: "tred-vittorini",
+    icon: Search,
+    label: "Comunicazione digitale",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Liceo Scientifico quadriennale · TRED",
+    description: "Percentuali di progetto",
+    track: "tred-vittorini",
+    icon: Gauge,
+    label: "Transizione ecologica",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Liceo Scientifico · Biologia a curvatura biomedica",
+    description: "Percentuali e diluizioni",
+    track: "biomedica-vittorini",
+    icon: Gauge,
+    label: "Biologia",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Liceo Scientifico · Biologia a curvatura biomedica",
+    description: "Proporzioni di laboratorio",
+    track: "biomedica-vittorini",
+    icon: Activity,
+    label: "Laboratorio biomedico",
+  },
+  {
+    id: "ascii-table",
+    title: "Liceo Scientifico · Biologia a curvatura biomedica",
+    description: "Codifica dei campioni",
+    track: "biomedica-vittorini",
+    icon: Sigma,
+    label: "Dati scientifici",
+  },
+  {
+    id: "travel-budget",
+    title: "Liceo Scientifico · Biologia a curvatura biomedica",
+    description: "Budget di laboratorio",
+    track: "biomedica-vittorini",
+    icon: Globe,
+    label: "Organizzazione",
+  },
 ];
 
 const TRACK_LABELS: Record<Track, string> = {
@@ -889,6 +1054,11 @@ const TRACK_LABELS: Record<Track, string> = {
   manutenzione: "Manutenzione e Assistenza Tecnica",
   "made-italy": "Industria e Artigianato per il Made in Italy",
   odontotecnico: "Odontotecnico",
+  "scientifico-vittorini": "Liceo Scientifico · E. Vittorini",
+  "linguistico-vittorini": "Liceo Linguistico · E. Vittorini",
+  "scienze-applicate-vittorini": "Liceo Scientifico · Scienze Applicate",
+  "tred-vittorini": "Liceo Scientifico quadriennale · TRED",
+  "biomedica-vittorini": "Liceo Scientifico · Curvatura Biomedica",
 };
 const BASES = [
   { value: "2", label: "Binario (base 2)" },
