@@ -92,7 +92,13 @@ type ToolId =
   | "signal-lab"
   | "automation-lab"
   | "chemistry-lab"
-  | "biotech-lab";
+  | "biotech-lab"
+  | "physics-lab"
+  | "waves-optics-lab"
+  | "business-lab"
+  | "inventory-lab"
+  | "hospitality-lab"
+  | "travel-itinerary-lab";
 
 type ShopTool = {
   id: ToolId;
@@ -1707,7 +1713,122 @@ const SECOND_BLOCK_TOOLS: ShopTool[] = [
   },
 ];
 
-const CATALOG_TOOLS = [...TOOLS, ...FIRST_BLOCK_TOOLS, ...EXTRA_TOOLS, ...SECOND_BLOCK_TOOLS];
+const THIRD_BLOCK_TOOLS: ShopTool[] = [
+  {
+    id: "physics-lab",
+    title: "Laboratorio di fisica",
+    description:
+      "Modella moto rettilineo, energia/lavoro e seconda legge di Newton con input, risultato e tabella di confronto.",
+    track: "scientifico-vittorini",
+    icon: Gauge,
+    label: "Fisica implicita",
+  },
+  {
+    id: "physics-lab",
+    title: "Fisica applicata",
+    description:
+      "Sperimenta moto, lavoro ed equilibrio dinamico con un modello semplificato e trasparente.",
+    track: "scienze-applicate-vittorini",
+    icon: Gauge,
+    label: "Scienze applicate",
+  },
+  {
+    id: "physics-lab",
+    title: "Fisica e TRED",
+    description:
+      "Collega grandezze fisiche e dati in una simulazione locale di moto, energia e forza.",
+    track: "tred-vittorini",
+    icon: Gauge,
+    label: "TRED",
+  },
+  {
+    id: "waves-optics-lab",
+    title: "Onde, ottica e fluidi",
+    description:
+      "Seleziona onde, lenti/specchi o galleggiamento: modello didattico semplificato, non misura reale.",
+    track: "scienze-applicate-vittorini",
+    icon: Lightbulb,
+    label: "Fisica sperimentale",
+  },
+  {
+    id: "business-lab",
+    title: "Laboratorio business",
+    description:
+      "Simula fatturazione didattica, ammortamento/interesse e un registro di movimenti; non è fiscalità reale.",
+    track: "afm",
+    icon: Activity,
+    label: "Gestione aziendale",
+  },
+  {
+    id: "business-lab",
+    title: "Business e sistemi informativi",
+    description:
+      "Organizza documenti e movimenti aziendali in un modello locale, solo per esercitazione.",
+    track: "sia",
+    icon: Activity,
+    label: "SIA",
+  },
+  {
+    id: "business-lab",
+    title: "Business internazionale",
+    description:
+      "Confronta fatture, capitale e movimenti in una simulazione senza normativa fiscale reale.",
+    track: "rim",
+    icon: Activity,
+    label: "RIM",
+  },
+  {
+    id: "inventory-lab",
+    title: "Magazzino locale",
+    description:
+      "Inserisci e rimuovi prodotti, controlla quantità, scorta minima e valore dell'inventario.",
+    track: "enogastronomia",
+    icon: Network,
+    label: "Scorte",
+  },
+  {
+    id: "inventory-lab",
+    title: "Scorte di sala e vendita",
+    description: "Gestisci una piccola lista prodotti locale e individua le scorte sotto soglia.",
+    track: "sala-vendita",
+    icon: Network,
+    label: "Magazzino",
+  },
+  {
+    id: "hospitality-lab",
+    title: "Simulazione hospitality",
+    description:
+      "Gestisci prenotazioni/check-in, camere disponibili, occupazione e ADR in un unico scenario locale.",
+    track: "accoglienza",
+    icon: Globe,
+    label: "Ospitalità",
+  },
+  {
+    id: "travel-itinerary-lab",
+    title: "Creatore di itinerari",
+    description:
+      "Progetta tappe e giorni, calcola costi e genera un preventivo: pianificazione, non budget generico.",
+    track: "turismo",
+    icon: Globe,
+    label: "Pianificazione tappe",
+  },
+  {
+    id: "travel-itinerary-lab",
+    title: "Pacchetto per accoglienza",
+    description:
+      "Componi un pacchetto con tappe, durata e costi per un preventivo didattico locale.",
+    track: "accoglienza",
+    icon: Globe,
+    label: "Itinerari",
+  },
+];
+const CATALOG_TOOLS = [
+  ...TOOLS,
+  ...FIRST_BLOCK_TOOLS,
+  ...EXTRA_TOOLS,
+  ...SECOND_BLOCK_TOOLS,
+  ...THIRD_BLOCK_TOOLS,
+];
 
 const TRACK_LABELS: Record<Track, string> = {
   informatica: "Informatica",
@@ -3760,12 +3881,383 @@ function BiotechLab() {
   );
 }
 
+function PhysicsLab() {
+  const [mode, setMode] = useState("motion");
+  const [a, setA] = useState("12"),
+    [b, setB] = useState("5"),
+    [c, setC] = useState("2");
+  const x = Number(a),
+    y = Number(b),
+    z = Number(c);
+  const result =
+    mode === "motion"
+      ? { label: "spazio", value: x * y + 0.5 * z * y * y, unit: "m" }
+      : mode === "energy"
+        ? { label: "lavoro", value: x * y, unit: "J" }
+        : { label: "forza", value: x * y, unit: "N" };
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modalità
+        <select
+          aria-label="Modalità fisica"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="motion">Moto rettilineo: s = v·t + ½a·t²</option>
+          <option value="energy">Energia/lavoro: W = F·d</option>
+          <option value="newton">Newton: F = m·a</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField
+          id="physics-a"
+          label={mode === "newton" ? "Massa" : mode === "energy" ? "Forza" : "Velocità"}
+          unit={mode === "newton" ? "kg" : mode === "energy" ? "N" : "m/s"}
+          value={a}
+          onChange={setA}
+        />
+        <NumberField
+          id="physics-b"
+          label={mode === "motion" ? "Tempo" : mode === "energy" ? "Distanza" : "Accelerazione"}
+          unit={mode === "motion" ? "s" : mode === "energy" ? "m" : "m/s²"}
+          value={b}
+          onChange={setB}
+        />
+        <NumberField
+          id="physics-c"
+          label={mode === "motion" ? "Accelerazione" : "Dato extra"}
+          unit={mode === "motion" ? "m/s²" : "—"}
+          value={c}
+          onChange={setC}
+        />
+      </div>
+      <p
+        role="status"
+        aria-label={`Risultato fisica: ${result.label} ${result.value.toFixed(2)} ${result.unit}`}
+        className="rounded-xl bg-primary-soft p-3 text-sm"
+      >
+        Risultato:{" "}
+        <strong>
+          {result.label} = {Number.isFinite(result.value) ? result.value.toFixed(2) : "—"}{" "}
+          {result.unit}
+        </strong>
+      </p>
+      <table className="w-full text-xs">
+        <caption className="mb-1 text-left font-semibold">Tabella modello</caption>
+        <tbody>
+          <tr>
+            <th className="p-1 text-left">Grandezza</th>
+            <th className="p-1 text-right">Valore</th>
+          </tr>
+          <tr>
+            <td className="p-1">Input 1</td>
+            <td className="p-1 text-right">{x}</td>
+          </tr>
+          <tr>
+            <td className="p-1">Input 2</td>
+            <td className="p-1 text-right">{y}</td>
+          </tr>
+          <tr>
+            <td className="p-1">Risultato</td>
+            <td className="p-1 text-right">
+              {result.value.toFixed(2)} {result.unit}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+function WavesOpticsLab() {
+  const [mode, setMode] = useState("waves"),
+    [one, setOne] = useState("2"),
+    [two, setTwo] = useState("0.5");
+  const a = Number(one),
+    b = Number(two);
+  const result =
+    mode === "waves"
+      ? `periodo ${(a > 0 ? 1 / a : 0).toFixed(2)} s`
+      : mode === "optics"
+        ? `immagine a ${((a * b) / (a - b || 1)).toFixed(2)} cm (lente sottile)`
+        : `volume immerso ${(a > 0 ? (b / a) * 100 : 0).toFixed(1)}%`;
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modello
+        <select
+          aria-label="Modalità onde ottica fluidi"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="waves">Onde: T = 1/f</option>
+          <option value="optics">Lente sottile: 1/f = 1/p + 1/q</option>
+          <option value="float">Galleggiamento: volume immerso</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="waves-one"
+          label={
+            mode === "waves"
+              ? "Frequenza"
+              : mode === "optics"
+                ? "Distanza oggetto"
+                : "Densità fluido"
+          }
+          unit={mode === "waves" ? "Hz" : "cm / kg·L⁻¹"}
+          value={one}
+          onChange={setOne}
+        />
+        <NumberField
+          id="waves-two"
+          label={
+            mode === "waves"
+              ? "Ampiezza"
+              : mode === "optics"
+                ? "Distanza focale"
+                : "Densità oggetto"
+          }
+          unit={mode === "waves" ? "m" : "cm / kg·L⁻¹"}
+          value={two}
+          onChange={setTwo}
+        />
+      </div>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        <strong>{result}</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Modello semplificato per esercitazione: non sostituisce una misura di laboratorio.
+      </p>
+    </div>
+  );
+}
+function BusinessLab() {
+  const [price, setPrice] = useState("100"),
+    [qty, setQty] = useState("3"),
+    [capital, setCapital] = useState("1200"),
+    [rate, setRate] = useState("5"),
+    [years, setYears] = useState("4"),
+    [moves, setMoves] = useState("250,-80,120");
+  const total = Number(price) * Number(qty),
+    interest = ((Number(capital) * Number(rate)) / 100) * Number(years),
+    balance = moves
+      .split(",")
+      .map(Number)
+      .filter(Number.isFinite)
+      .reduce((a, n) => a + n, 0);
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="business-price"
+          label="Prezzo unitario"
+          unit="€"
+          value={price}
+          onChange={setPrice}
+        />
+        <NumberField id="business-qty" label="Quantità" value={qty} onChange={setQty} />
+        <NumberField
+          id="business-capital"
+          label="Capitale didattico"
+          unit="€"
+          value={capital}
+          onChange={setCapital}
+        />
+        <NumberField
+          id="business-rate"
+          label="Tasso semplice"
+          unit="%"
+          value={rate}
+          onChange={setRate}
+        />
+        <NumberField id="business-years" label="Anni" value={years} onChange={setYears} />
+      </div>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Movimenti locali (separati da virgola)
+        <input
+          aria-label="Movimenti business"
+          value={moves}
+          onChange={(e) => setMoves(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        Fattura didattica: <strong>{total.toFixed(2)} €</strong> · interesse semplice:{" "}
+        <strong>{interest.toFixed(2)} €</strong> · saldo registro:{" "}
+        <strong>{balance.toFixed(2)} €</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Esempio educativo: non calcola imposte, IVA o adempimenti fiscali reali.
+      </p>
+    </div>
+  );
+}
+function InventoryLab() {
+  const [rows, setRows] = useState([{ name: "Pomodori", qty: 8, min: 10, price: 1.5 }]),
+    [name, setName] = useState(""),
+    [qty, setQty] = useState("5"),
+    [min, setMin] = useState("2"),
+    [price, setPrice] = useState("3");
+  const add = () => {
+    if (name.trim() && Number(qty) >= 0)
+      setRows((r) => [
+        ...r,
+        { name: name.trim(), qty: Number(qty), min: Number(min), price: Number(price) },
+      ]);
+    setName("");
+  };
+  const total = rows.reduce((s, r) => s + r.qty * r.price, 0);
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Prodotto
+          <input
+            aria-label="Nome prodotto"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          />
+        </label>
+        <NumberField id="inventory-qty" label="Quantità" value={qty} onChange={setQty} />
+        <NumberField id="inventory-min" label="Scorta minima" value={min} onChange={setMin} />
+        <NumberField
+          id="inventory-price"
+          label="Costo unitario"
+          unit="€"
+          value={price}
+          onChange={setPrice}
+        />
+      </div>
+      <Button type="button" onClick={add}>
+        Inserisci riga
+      </Button>
+      <table className="w-full text-xs">
+        <caption className="mb-1 text-left font-semibold">Registro prodotti locale</caption>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={`${r.name}-${i}`}>
+              <td className="p-1">{r.name}</td>
+              <td className="p-1">{r.qty} u.</td>
+              <td className="p-1">{r.qty < r.min ? "Sotto scorta" : "OK"}</td>
+              <td>
+                <button
+                  type="button"
+                  aria-label={`Rimuovi ${r.name}`}
+                  onClick={() => setRows((x) => x.filter((_, j) => j !== i))}
+                  className="text-danger underline"
+                >
+                  Rimuovi
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p role="status">
+        Valore inventario: <strong>{total.toFixed(2)} €</strong>
+      </p>
+    </div>
+  );
+}
+function HospitalityLab() {
+  const [rooms, setRooms] = useState("20"),
+    [bookings, setBookings] = useState("14"),
+    [checked, setChecked] = useState("10"),
+    [revenue, setRevenue] = useState("850");
+  const r = Number(rooms),
+    b = Number(bookings),
+    c = Number(checked),
+    rev = Number(revenue);
+  const occ = r > 0 ? (c / r) * 100 : 0,
+    adr = c > 0 ? rev / c : 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField id="hotel-rooms" label="Camere totali" value={rooms} onChange={setRooms} />
+        <NumberField
+          id="hotel-bookings"
+          label="Prenotazioni"
+          value={bookings}
+          onChange={setBookings}
+        />
+        <NumberField
+          id="hotel-checkin"
+          label="Check-in attivi"
+          value={checked}
+          onChange={setChecked}
+        />
+        <NumberField
+          id="hotel-revenue"
+          label="Ricavo simulato"
+          unit="€"
+          value={revenue}
+          onChange={setRevenue}
+        />
+      </div>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        Disponibilità: <strong>{Math.max(0, r - b)} camere</strong> · occupazione:{" "}
+        <strong>{occ.toFixed(1)}%</strong> · ADR: <strong>{adr.toFixed(2)} €</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Scenario locale di prenotazioni e check-in; nessun dato ospite o PMS esterno.
+      </p>
+    </div>
+  );
+}
+function TravelItineraryLab() {
+  const [stops, setStops] = useState("3"),
+    [days, setDays] = useState("5"),
+    [cost, setCost] = useState("180"),
+    [fee, setFee] = useState("40");
+  const total = Number(stops) * Number(cost) + Number(fee);
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField id="trip-stops" label="Tappe" value={stops} onChange={setStops} />
+        <NumberField id="trip-days" label="Giorni" value={days} onChange={setDays} />
+        <NumberField
+          id="trip-cost"
+          label="Costo per tappa"
+          unit="€"
+          value={cost}
+          onChange={setCost}
+        />
+        <NumberField id="trip-fee" label="Servizi fissi" unit="€" value={fee} onChange={setFee} />
+      </div>
+      <ol className="list-decimal space-y-1 pl-5 text-sm">
+        {Array.from({ length: Math.max(0, Math.min(12, Number(stops) || 0)) }, (_, i) => (
+          <li key={i}>
+            Giorno {Math.min(Number(days) || 1, i + 1)} · Tappa {i + 1} ·{" "}
+            {(Number(cost) || 0).toFixed(2)} €
+          </li>
+        ))}
+      </ol>
+      <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+        Preventivo itinerario: <strong>{total.toFixed(2)} €</strong> · durata:{" "}
+        <strong>{days} giorni</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Pianificazione didattica delle tappe; non duplica il calcolo del budget di viaggio.
+      </p>
+    </div>
+  );
+}
 function ToolContent({ id }: { id: ToolId }) {
   if (id === "electronics-lab") return <ElectronicsLab />;
   if (id === "signal-lab") return <SignalLab />;
   if (id === "automation-lab") return <AutomationLab />;
   if (id === "chemistry-lab") return <ChemistryLab />;
   if (id === "biotech-lab") return <BiotechLab />;
+  if (id === "physics-lab") return <PhysicsLab />;
+  if (id === "waves-optics-lab") return <WavesOpticsLab />;
+  if (id === "business-lab") return <BusinessLab />;
+  if (id === "inventory-lab") return <InventoryLab />;
+  if (id === "hospitality-lab") return <HospitalityLab />;
+  if (id === "travel-itinerary-lab") return <TravelItineraryLab />;
   if (id === "web-lab") return <WebLab />;
   if (id === "code-lab") return <CodeLab />;
   if (id === "sql-lab") return <SqlLab />;

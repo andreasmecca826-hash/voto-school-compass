@@ -194,4 +194,39 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
       "Met · Gly · STOP",
     );
   });
+  it("apre il laboratorio di fisica e calcola il moto con tabella", () => {
+    render(<StudyToolsShop />);
+    chooseSchool('Liceo Scientifico e Linguistico "E. Vittorini"');
+    chooseTrack("Liceo Scientifico · E. Vittorini");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio di fisica" }));
+    fireEvent.change(screen.getByLabelText("Velocità (m/s)"), { target: { value: "10" } });
+    expect(screen.getByRole("status", { name: /Risultato fisica: spazio/ })).toHaveTextContent(
+      "spazio = 75.00 m",
+    );
+    expect(screen.getByText("Tabella modello")).toBeInTheDocument();
+  });
+  it("apre il laboratorio business e aggiorna il registro locale", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Amministrazione, Finanza e Marketing");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio business" }));
+    fireEvent.change(screen.getByLabelText("Movimenti business"), {
+      target: { value: "100,-25" },
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("saldo registro: 75.00 €");
+    expect(screen.getByText(/non calcola imposte/)).toBeInTheDocument();
+  });
+  it("apre hospitality e calcola disponibilità, occupazione e ADR", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Accoglienza Turistica");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Simulazione hospitality" }));
+    fireEvent.change(screen.getByLabelText("Camere totali"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Prenotazioni"), { target: { value: "6" } });
+    fireEvent.change(screen.getByLabelText("Check-in attivi"), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("Ricavo simulato (€)"), { target: { value: "500" } });
+    expect(screen.getByRole("status")).toHaveTextContent("Disponibilità: 4 camere");
+    expect(screen.getByRole("status")).toHaveTextContent("occupazione: 50.0%");
+    expect(screen.getByRole("status")).toHaveTextContent("ADR: 100.00 €");
+  });
 });
