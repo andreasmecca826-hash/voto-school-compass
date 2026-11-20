@@ -10,6 +10,10 @@ function readLightness(block: string, token: string): number | undefined {
 }
 
 describe("complete theme palettes", () => {
+  it("activates dark utilities for the VOTO dark-mode attribute", () => {
+    expect(styles).toContain('@custom-variant dark (&:is(.dark *, [data-mode="scuro"] *));');
+  });
+
   it("keeps explicit dark and light palettes on the correct side of the luminance range", () => {
     const palettes = [
       ...styles.matchAll(/(?:^|\n)\s*:?(?:root)?\[data-theme="([^"]+)"\][^{]*\{([^{}]*)\}/g),

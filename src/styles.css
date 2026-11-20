@@ -5,7 +5,7 @@
 @import "./themes/glassmorphism.css";
 @import "./themes/extra-themes.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *, [data-mode="scuro"] *));
 
 @font-face {
   font-family: "Manrope";
