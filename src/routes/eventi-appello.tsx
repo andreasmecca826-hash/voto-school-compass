@@ -47,7 +47,6 @@ function isPending(event: AttendanceEvent) {
 
 function statusLabel(event: AttendanceEvent) {
   const status = event.justificationStatus?.trim().toLocaleLowerCase("it-IT");
-  if (status === "giustificata") return "Giustificata";
   if (status === "da giustificare") return "Da giustificare";
   return undefined;
 }

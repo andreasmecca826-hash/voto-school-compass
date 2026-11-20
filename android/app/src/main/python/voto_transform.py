@@ -298,7 +298,7 @@ def _build_attendance(events: list[Any]) -> tuple[list[dict[str, Any]], dict[str
             or str(pending_raw or "").strip().upper() in {"S", "SI", "TRUE", "1", "YES", "Y"}
         )
         justified = text(event, "giustificata").upper() == "S"
-        status = "Giustificata" if justified else "Da giustificare" if pending else None
+        status = "Da giustificare" if pending and not justified else None
         result.append({
             "id": text(event, "prg_evento", "id") or f"appello-{code}-{parsed.isoformat()}-{index}",
             "type": type_map[code],

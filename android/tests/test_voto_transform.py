@@ -80,7 +80,7 @@ class VotoTransformTests(unittest.TestCase):
 
         events = build_payload(dashboard, {"anno_scolastico": "2026/2027"})["attendanceEvents"]
         self.assertEqual([event["id"] for event in events], ["5", "6", "7", "8", "9", "10"])
-        self.assertEqual([event.get("justificationStatus") for event in events], ["Giustificata", "Giustificata", "Giustificata", "Da giustificare", None, None])
+        self.assertEqual([event.get("justificationStatus") for event in events], [None, None, None, "Da giustificare", None, None])
         self.assertEqual(events[3]["justificationStatus"], "Da giustificare")
         self.assertEqual(build_payload(dashboard, {"anno_scolastico": "2026/2027"})["attendance"], {
             "absenceDays": 2,
