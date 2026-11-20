@@ -102,7 +102,13 @@ type ToolId =
   | "geo-survey-lab"
   | "navigation-lab"
   | "language-classics-lab"
-  | "language-practice-lab";
+  | "language-practice-lab"
+  | "design-lab"
+  | "media-storyboard-lab"
+  | "fashion-lab"
+  | "dental-materials-lab"
+  | "social-research-lab"
+  | "viticulture-traceability-lab";
 
 type ShopTool = {
   id: ToolId;
@@ -1873,6 +1879,112 @@ const FOURTH_BLOCK_TOOLS: ShopTool[] = [
     label: "Pratica linguistica",
   },
 ];
+const FIFTH_BLOCK_TOOLS: ShopTool[] = [
+  {
+    id: "design-lab",
+    title: "Design lab",
+    description:
+      "Sperimenta colore, tipografia e impaginazione/proporzioni in modalità selezionabili.",
+    track: "grafica",
+    icon: Lightbulb,
+    label: "Progetto grafico",
+  },
+  {
+    id: "design-lab",
+    title: "Design lab artistico",
+    description:
+      "Collega palette, carattere e composizione a una tavola artistica, senza duplicare RGB/HEX.",
+    track: "artistico",
+    icon: Lightbulb,
+    label: "Composizione",
+  },
+  {
+    id: "media-storyboard-lab",
+    title: "Media storyboard lab",
+    description:
+      "Costruisci scene, inquadrature, durata, audio e shot-list per un prodotto audiovisivo.",
+    track: "audiovisivo",
+    icon: Activity,
+    label: "Pre-produzione",
+  },
+  {
+    id: "media-storyboard-lab",
+    title: "Storyboard per grafica",
+    description: "Organizza una sequenza visiva con inquadrature e audio di riferimento.",
+    track: "grafica",
+    icon: Activity,
+    label: "Narrazione visiva",
+  },
+  {
+    id: "fashion-lab",
+    title: "Fashion lab",
+    description: "Registra misure e proporzioni e stima consumo e piazzamento del tessuto.",
+    track: "moda",
+    icon: Sigma,
+    label: "Modellistica",
+  },
+  {
+    id: "fashion-lab",
+    title: "Fashion lab Made in Italy",
+    description: "Simula scelta del tessuto, consumo e margine di taglio per un capo.",
+    track: "made-italy",
+    icon: Sigma,
+    label: "Produzione artigianale",
+  },
+  {
+    id: "dental-materials-lab",
+    title: "Dental materials lab",
+    description:
+      "Guida anatomia e occlusione e collega materiali alle fasi impronta-modello-protesi.",
+    track: "odontotecnico",
+    icon: CircuitBoard,
+    label: "Workflow protesico",
+  },
+  {
+    id: "social-research-lab",
+    title: "Social research lab",
+    description: "Crea un questionario locale, calcola frequenze/percentuali e leggi un grafico.",
+    track: "scienze-umane-eschilo",
+    icon: Sigma,
+    label: "Ricerca sociale",
+  },
+  {
+    id: "social-research-lab",
+    title: "Social research lab LES",
+    description:
+      "Interpreta una piccola distribuzione per scienze umane e percorso economico-sociale.",
+    track: "economico-sociale-eschilo",
+    icon: Sigma,
+    label: "Metodi quantitativi",
+  },
+  {
+    id: "viticulture-traceability-lab",
+    title: "Viticulture traceability lab",
+    description:
+      "Registra lotto, resa, zuccheri, pH e fermentazione con una traccia di filiera locale.",
+    track: "viticoltura",
+    icon: Activity,
+    label: "Tracciabilità enologica",
+  },
+  {
+    id: "viticulture-traceability-lab",
+    title: "Traceability lab agraria",
+    description:
+      "Estende il bilancio agronomico con registro di lotto, resa e controlli di qualità.",
+    track: "agraria",
+    icon: Activity,
+    label: "Filiera e qualità",
+  },
+  {
+    id: "viticulture-traceability-lab",
+    title: "Tracciabilità materia prima",
+    description: "Collega lotto e controlli di processo alla trasformazione agroalimentare.",
+    track: "enogastronomia",
+    icon: Activity,
+    label: "Filiera alimentare",
+  },
+];
+
 const CATALOG_TOOLS = [
   ...TOOLS,
   ...FIRST_BLOCK_TOOLS,
@@ -1880,6 +1992,7 @@ const CATALOG_TOOLS = [
   ...SECOND_BLOCK_TOOLS,
   ...THIRD_BLOCK_TOOLS,
   ...FOURTH_BLOCK_TOOLS,
+  ...FIFTH_BLOCK_TOOLS,
 ];
 
 const TRACK_LABELS: Record<Track, string> = {
@@ -4664,6 +4777,375 @@ function LanguagePracticeLab() {
   );
 }
 
+function DesignLab() {
+  const [mode, setMode] = useState("palette"),
+    [subject, setSubject] = useState("Poster didattico");
+  const guidance =
+    mode === "palette"
+      ? "Scegli una dominante, un contrasto e verifica la leggibilità."
+      : mode === "type"
+        ? "Abbina un carattere per titoli e uno per testo; limita le gerarchie."
+        : "Definisci griglia, margini e proporzione prima di inserire gli elementi.";
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modalità design
+        <select
+          aria-label="Modalità design"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="palette">Colore e palette</option>
+          <option value="type">Tipografia</option>
+          <option value="layout">Impaginazione e proporzioni</option>
+        </select>
+      </label>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Elaborato
+        <input
+          aria-label="Titolo elaborato design"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          maxLength={80}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <p role="status" aria-label="Guida design" className="rounded-xl bg-primary-soft p-3 text-sm">
+        <strong>{subject || "Elaborato"}</strong> · {guidance}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Laboratorio concettuale: non sostituisce la verifica su supporto, stampa o profilo colore.
+      </p>
+    </div>
+  );
+}
+
+const SHOT_TYPES = ["Campo lungo", "Campo medio", "Primo piano", "Dettaglio"];
+function MediaStoryboardLab() {
+  const [scene, setScene] = useState("1"),
+    [shot, setShot] = useState(SHOT_TYPES[1]),
+    [duration, setDuration] = useState("8"),
+    [audio, setAudio] = useState("Ambiente");
+  const valid = Number(duration) >= 0 && Number.isFinite(Number(duration));
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-xs font-medium text-muted-foreground">
+          Scena
+          <input
+            aria-label="Numero scena"
+            value={scene}
+            onChange={(e) => setScene(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          />
+        </label>
+        <label className="block text-xs font-medium text-muted-foreground">
+          Inquadratura
+          <select
+            aria-label="Tipo inquadratura"
+            value={shot}
+            onChange={(e) => setShot(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          >
+            {SHOT_TYPES.map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+        </label>
+        <NumberField
+          id="story-duration"
+          label="Durata"
+          unit="s"
+          value={duration}
+          onChange={setDuration}
+        />
+        <label className="block text-xs font-medium text-muted-foreground">
+          Audio
+          <select
+            aria-label="Audio scena"
+            value={audio}
+            onChange={(e) => setAudio(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          >
+            <option>Ambiente</option>
+            <option>Dialogo</option>
+            <option>Musica</option>
+            <option>Silenzio</option>
+          </select>
+        </label>
+      </div>
+      {valid ? (
+        <p
+          role="status"
+          aria-label="Shot-list storyboard"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          <strong>Scena {scene || "—"}</strong> · {shot} · {duration} s · audio: {audio}
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci una durata numerica non negativa.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Shot-list locale: aggiungi le scene una alla volta e verifica continuità, diritti audio e
+        accessibilità.
+      </p>
+    </div>
+  );
+}
+
+function FashionLab() {
+  const [bust, setBust] = useState("88"),
+    [length, setLength] = useState("70"),
+    [width, setWidth] = useState("140"),
+    [pieces, setPieces] = useState("2"),
+    [waste, setWaste] = useState("10");
+  const b = Number(bust),
+    l = Number(length),
+    w = Number(width),
+    n = Number(pieces),
+    q = Number(waste);
+  const valid =
+    [b, l, w, n, q].every(Number.isFinite) && b > 0 && l > 0 && w > 0 && n > 0 && q >= 0;
+  const consumption = valid ? (l * n * (1 + q / 100)) / 100 : 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="fashion-bust"
+          label="Circonferenza torace"
+          unit="cm"
+          value={bust}
+          onChange={setBust}
+        />
+        <NumberField
+          id="fashion-length"
+          label="Lunghezza capo"
+          unit="cm"
+          value={length}
+          onChange={setLength}
+        />
+        <NumberField
+          id="fashion-width"
+          label="Altezza tessuto"
+          unit="cm"
+          value={width}
+          onChange={setWidth}
+        />
+        <NumberField
+          id="fashion-pieces"
+          label="Pezzi principali"
+          value={pieces}
+          onChange={setPieces}
+        />
+        <NumberField
+          id="fashion-waste"
+          label="Margine taglio"
+          unit="%"
+          value={waste}
+          onChange={setWaste}
+        />
+      </div>
+      {valid ? (
+        <p
+          role="status"
+          aria-label="Risultato fashion lab"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          Proporzione guida torace: <strong>{(b / 2).toFixed(1)} cm</strong> · consumo stimato:{" "}
+          <strong>{consumption.toFixed(2)} m</strong> · piazzamento su altezza {w} cm.
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci misure positive e margine non negativo.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Stima semplificata: non sostituisce cartamodello, prova, verso del tessuto o scheda tecnica.
+      </p>
+    </div>
+  );
+}
+
+function DentalMaterialsLab() {
+  const [mode, setMode] = useState("anatomy");
+  const text =
+    mode === "anatomy"
+      ? "Riconosci arcata, cuspidi e superfici prima del modello."
+      : mode === "occlusion"
+        ? "Controlla contatti, intercuspidazione e guida in modo descrittivo."
+        : mode === "materials"
+          ? "Confronta gesso, resina e ceramica in base alla fase didattica."
+          : "Sequenza: impronta → modello → progettazione → protesi → controllo.";
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Modulo
+        <select
+          aria-label="Modulo dental materials"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option value="anatomy">Anatomia</option>
+          <option value="occlusion">Occlusione guidata</option>
+          <option value="materials">Materiali</option>
+          <option value="workflow">Workflow impronta-modello-protesi</option>
+        </select>
+      </label>
+      <p
+        role="status"
+        aria-label="Guida dental materials"
+        className="rounded-xl bg-primary-soft p-3 text-sm"
+      >
+        <strong>{text}</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Solo didattico: non è diagnosi, prescrizione, progettazione clinica o indicazione operativa
+        per pazienti.
+      </p>
+    </div>
+  );
+}
+
+function SocialResearchLab() {
+  const [question, setQuestion] = useState("Come valuti il servizio?");
+  const [counts, setCounts] = useState("12, 8, 5, 3");
+  const values = counts
+    .split(",")
+    .map((x) => Number(x.trim()))
+    .filter((x) => Number.isFinite(x) && x >= 0);
+  const total = values.reduce((a, x) => a + x, 0);
+  const max = Math.max(...values, 1);
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Domanda del questionario
+        <input
+          aria-label="Domanda questionario"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          maxLength={120}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <label className="block text-xs font-medium text-muted-foreground">
+        Frequenze per risposta
+        <input
+          aria-label="Frequenze questionario"
+          value={counts}
+          onChange={(e) => setCounts(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <p
+        role="status"
+        aria-label="Risultato ricerca sociale"
+        className="rounded-xl bg-primary-soft p-3 text-sm"
+      >
+        <strong>{question || "Domanda"}</strong> · {total} risposte locali
+      </p>
+      <ul aria-label="Grafico frequenze" className="space-y-2">
+        {values.map((value, i) => (
+          <li key={i} className="flex items-center gap-2 text-xs">
+            <span className="w-16">Opzione {i + 1}</span>
+            <span className="h-3 rounded bg-primary" style={{ width: `${(value / max) * 100}%` }} />
+            <span>
+              {value} · {total ? ((value / total) * 100).toFixed(1) : "0.0"}%
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted-foreground">
+        Campione dimostrativo offline: descrivi numerosità, frequenze e percentuali; non inferire
+        causalità da questo grafico.
+      </p>
+    </div>
+  );
+}
+
+function ViticultureTraceabilityLab() {
+  const [lot, setLot] = useState("VG-001"),
+    [grapes, setGrapes] = useState("1000"),
+    [wine, setWine] = useState("650"),
+    [sugar, setSugar] = useState("20"),
+    [ph, setPh] = useState("3.4"),
+    [fermentation, setFermentation] = useState("Avviata");
+  const g = Number(grapes),
+    v = Number(wine),
+    valid = [g, v, Number(sugar), Number(ph)].every(Number.isFinite) && g > 0 && v >= 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-xs font-medium text-muted-foreground">
+          Lotto
+          <input
+            aria-label="Codice lotto"
+            value={lot}
+            onChange={(e) => setLot(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          />
+        </label>
+        <NumberField
+          id="trace-grapes"
+          label="Uva conferita"
+          unit="kg"
+          value={grapes}
+          onChange={setGrapes}
+        />
+        <NumberField
+          id="trace-wine"
+          label="Mosto/vino ottenuto"
+          unit="L"
+          value={wine}
+          onChange={setWine}
+        />
+        <NumberField
+          id="trace-sugar"
+          label="Zuccheri"
+          unit="°Brix"
+          value={sugar}
+          onChange={setSugar}
+        />
+        <NumberField id="trace-ph" label="pH" value={ph} onChange={setPh} />
+        <label className="block text-xs font-medium text-muted-foreground">
+          Fermentazione
+          <select
+            aria-label="Stato fermentazione"
+            value={fermentation}
+            onChange={(e) => setFermentation(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          >
+            <option>Non avviata</option>
+            <option>Avviata</option>
+            <option>Conclusa</option>
+          </select>
+        </label>
+      </div>
+      {valid ? (
+        <p
+          role="status"
+          aria-label="Risultato tracciabilità viticola"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          Lotto <strong>{lot || "—"}</strong> · resa: <strong>{((v / g) * 100).toFixed(1)}%</strong>{" "}
+          · fermentazione: {fermentation}
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci massa positiva e volume non negativo.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Estensione dell’agronomy lab: aggiunge tracciabilità e controlli di processo; dati simulati,
+        non registro normativo.
+      </p>
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
   if (id === "electronics-lab") return <ElectronicsLab />;
   if (id === "signal-lab") return <SignalLab />;
@@ -4680,6 +5162,12 @@ function ToolContent({ id }: { id: ToolId }) {
   if (id === "navigation-lab") return <NavigationLab />;
   if (id === "language-classics-lab") return <LanguageClassicsLab />;
   if (id === "language-practice-lab") return <LanguagePracticeLab />;
+  if (id === "design-lab") return <DesignLab />;
+  if (id === "media-storyboard-lab") return <MediaStoryboardLab />;
+  if (id === "fashion-lab") return <FashionLab />;
+  if (id === "dental-materials-lab") return <DentalMaterialsLab />;
+  if (id === "social-research-lab") return <SocialResearchLab />;
+  if (id === "viticulture-traceability-lab") return <ViticultureTraceabilityLab />;
   if (id === "web-lab") return <WebLab />;
   if (id === "code-lab") return <CodeLab />;
   if (id === "sql-lab") return <SqlLab />;

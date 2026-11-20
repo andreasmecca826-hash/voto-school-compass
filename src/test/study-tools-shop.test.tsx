@@ -292,3 +292,65 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
     expect(screen.getByRole("status")).toHaveTextContent("ADR: 100.00 €");
   });
 });
+
+describe("quinto blocco laboratori didattici", () => {
+  it("apre design lab e cambia modalità tra tipografia e impaginazione", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Majorana");
+    chooseTrack("Liceo Artistico · Arti Figurative");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Design lab artistico" }));
+    expect(screen.getByRole("status", { name: "Guida design" })).toHaveTextContent(
+      "Scegli una dominante",
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità design" }), {
+      target: { value: "type" },
+    });
+    expect(screen.getByRole("status", { name: "Guida design" })).toHaveTextContent("carattere");
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità design" }), {
+      target: { value: "layout" },
+    });
+    expect(screen.getByRole("status", { name: "Guida design" })).toHaveTextContent("griglia");
+  });
+
+  it("calcola frequenze e percentuali nel social research lab", () => {
+    render(<StudyToolsShop />);
+    chooseSchool('IIS "Eschilo"');
+    chooseTrack("Liceo delle Scienze Umane");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Social research lab" }));
+    fireEvent.change(screen.getByLabelText("Frequenze questionario"), {
+      target: { value: "10, 5, 5" },
+    });
+    expect(screen.getByRole("status", { name: "Risultato ricerca sociale" })).toHaveTextContent(
+      "20 risposte locali",
+    );
+    expect(screen.getByLabelText("Grafico frequenze")).toHaveTextContent("50.0%");
+  });
+
+  it("guida anatomia, occlusione e workflow nel dental materials lab", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Majorana");
+    chooseTrack("Odontotecnico");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Dental materials lab" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Modulo dental materials" }), {
+      target: { value: "workflow" },
+    });
+    expect(screen.getByRole("status", { name: "Guida dental materials" })).toHaveTextContent(
+      "impronta",
+    );
+    expect(screen.getByText(/Solo didattico/)).toBeInTheDocument();
+  });
+
+  it("genera una shot-list locale con scena, durata e audio", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Majorana");
+    chooseTrack("Audiovisivo e Multimediale");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Media storyboard lab" }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /Durata/ }), {
+      target: { value: "12" },
+    });
+    fireEvent.change(screen.getByLabelText("Audio scena"), { target: { value: "Dialogo" } });
+    expect(screen.getByRole("status", { name: "Shot-list storyboard" })).toHaveTextContent(
+      "12 s · audio: Dialogo",
+    );
+  });
+});
