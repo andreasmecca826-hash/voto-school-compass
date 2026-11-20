@@ -13,6 +13,7 @@ import {
   Search,
   Sigma,
   Star,
+  ShieldCheck,
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -108,7 +109,8 @@ type ToolId =
   | "fashion-lab"
   | "dental-materials-lab"
   | "social-research-lab"
-  | "viticulture-traceability-lab";
+  | "viticulture-traceability-lab"
+  | "safety-lab";
 
 type ShopTool = {
   id: ToolId;
@@ -1439,6 +1441,24 @@ const EXTRA_TOOLS: ShopTool[] = [
     label: "Qualità",
   },
   {
+    id: "safety-lab",
+    title: "Safety lab cucina e HACCP",
+    description:
+      "Checklist locale per igiene, allergeni, temperature e organizzazione del servizio.",
+    track: "enogastronomia",
+    icon: ShieldCheck,
+    label: "Sicurezza alimentare",
+  },
+  {
+    id: "safety-lab",
+    title: "Safety lab servizio e HACCP",
+    description:
+      "Checklist locale per igiene, allergeni, temperature e organizzazione del servizio.",
+    track: "sala-vendita",
+    icon: ShieldCheck,
+    label: "Sicurezza alimentare",
+  },
+  {
     id: "ledger-cashflow",
     title: "Partita doppia e cash-flow",
     description: "Registra entrate e uscite e osserva il saldo progressivo.",
@@ -1652,6 +1672,30 @@ const SECOND_BLOCK_TOOLS: ShopTool[] = [
     label: "Diagnostica",
   },
   {
+    id: "safety-lab",
+    title: "Safety lab elettronica e officina",
+    description: "Checklist locale per preparare banco, DPI, utensili e area di lavoro.",
+    track: "elettronica",
+    icon: ShieldCheck,
+    label: "Sicurezza operativa",
+  },
+  {
+    id: "safety-lab",
+    title: "Safety lab officina",
+    description: "Checklist locale per preparare banco, DPI, utensili e area di lavoro.",
+    track: "meccatronica",
+    icon: ShieldCheck,
+    label: "Sicurezza operativa",
+  },
+  {
+    id: "safety-lab",
+    title: "Safety lab manutenzione",
+    description: "Checklist locale per preparare banco, DPI, utensili e area di lavoro.",
+    track: "manutenzione",
+    icon: ShieldCheck,
+    label: "Sicurezza operativa",
+  },
+  {
     id: "signal-lab",
     title: "Laboratorio segnali e oscilloscopio",
     description:
@@ -1720,6 +1764,22 @@ const SECOND_BLOCK_TOOLS: ShopTool[] = [
     track: "biomedica-vittorini",
     icon: Binary,
     label: "Biologia molecolare",
+  },
+  {
+    id: "safety-lab",
+    title: "Safety lab chimico e biotech",
+    description: "Checklist locale per preparare laboratorio, DPI, materiali e smaltimento.",
+    track: "chimica",
+    icon: ShieldCheck,
+    label: "Sicurezza di laboratorio",
+  },
+  {
+    id: "safety-lab",
+    title: "Safety lab biotech",
+    description: "Checklist locale per preparare laboratorio, DPI, materiali e smaltimento.",
+    track: "biotecnologie",
+    icon: ShieldCheck,
+    label: "Sicurezza di laboratorio",
   },
 ];
 
@@ -1834,6 +1894,14 @@ const THIRD_BLOCK_TOOLS: ShopTool[] = [
 ];
 const FOURTH_BLOCK_TOOLS: ShopTool[] = [
   {
+    id: "safety-lab",
+    title: "Safety lab nautica e uscite",
+    description: "Checklist locale per dotazioni, meteo, ruoli e comunicazioni prima dell'uscita.",
+    track: "nautico",
+    icon: ShieldCheck,
+    label: "Sicurezza in navigazione",
+  },
+  {
     id: "geo-survey-lab",
     title: "Geo-survey lab",
     description:
@@ -1941,6 +2009,14 @@ const FIFTH_BLOCK_TOOLS: ShopTool[] = [
     label: "Workflow protesico",
   },
   {
+    id: "safety-lab",
+    title: "Safety lab odontotecnico",
+    description: "Checklist locale per preparare banco, DPI, strumenti e materiali protesici.",
+    track: "odontotecnico",
+    icon: ShieldCheck,
+    label: "Sicurezza del banco",
+  },
+  {
     id: "social-research-lab",
     title: "Social research lab",
     description: "Crea un questionario locale, calcola frequenze/percentuali e leggi un grafico.",
@@ -1994,6 +2070,49 @@ const CATALOG_TOOLS = [
   ...FOURTH_BLOCK_TOOLS,
   ...FIFTH_BLOCK_TOOLS,
 ];
+
+const SAFETY_CHECKLIST = [
+  {
+    category: "Laboratorio chimico/biotech",
+    items: [
+      "Indossa i DPI previsti dal docente",
+      "Etichetta campioni e reagenti",
+      "Prepara raccolta e smaltimento indicati",
+    ],
+  },
+  {
+    category: "Elettronica/officina",
+    items: [
+      "Controlla banco, cavi e protezioni",
+      "Metti in sicurezza l'alimentazione prima di intervenire",
+      "Riordina utensili e area di lavoro",
+    ],
+  },
+  {
+    category: "Cucina/HACCP",
+    items: [
+      "Lava le mani e verifica la divisa",
+      "Controlla separazione e tracciabilità degli alimenti",
+      "Verifica pulizia e temperature previste",
+    ],
+  },
+  {
+    category: "Nautica/uscite",
+    items: [
+      "Verifica dotazioni e comunicazioni",
+      "Controlla meteo, rotta e piano dell'uscita",
+      "Condividi ruoli, rientro e procedure d'emergenza",
+    ],
+  },
+  {
+    category: "Odontotecnica",
+    items: [
+      "Indossa i DPI e prepara il banco",
+      "Controlla materiali, strumenti e aspirazione",
+      "Pulisci e disinfetta la postazione",
+    ],
+  },
+] as const;
 
 const TRACK_LABELS: Record<Track, string> = {
   informatica: "Informatica",
@@ -5146,6 +5265,59 @@ function ViticultureTraceabilityLab() {
   );
 }
 
+function SafetyLab() {
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const items = SAFETY_CHECKLIST.flatMap(({ category, items: categoryItems }) =>
+    categoryItems.map((label) => ({ category, label, id: `${category}-${label}` })),
+  );
+  const completed = items.filter(({ id }) => checked[id]).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-primary-soft p-3">
+        <p role="status" aria-label="Completamento checklist" className="text-sm font-semibold">
+          {completed} / {items.length} completate
+        </p>
+        <Button type="button" variant="outline" size="sm" onClick={() => setChecked({})}>
+          Azzera checklist
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {SAFETY_CHECKLIST.map(({ category, items: categoryItems }) => (
+          <fieldset key={category} className="rounded-xl border border-border p-3">
+            <legend className="px-1 text-xs font-semibold">{category}</legend>
+            <div className="space-y-2">
+              {categoryItems.map((label) => {
+                const id = `${category}-${label}`;
+                return (
+                  <label key={id} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(checked[id])}
+                      onChange={(event) =>
+                        setChecked((current) => ({ ...current, [id]: event.target.checked }))
+                      }
+                      className="mt-0.5 h-4 w-4 accent-primary"
+                    />
+                    <span>{label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        ))}
+      </div>
+      <p
+        role="note"
+        className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-5"
+      >
+        Attività didattica locale: non sostituisce procedure ufficiali, regolamenti, valutazioni del
+        rischio o istruzioni del personale responsabile.
+      </p>
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
   if (id === "electronics-lab") return <ElectronicsLab />;
   if (id === "signal-lab") return <SignalLab />;
@@ -5168,6 +5340,7 @@ function ToolContent({ id }: { id: ToolId }) {
   if (id === "dental-materials-lab") return <DentalMaterialsLab />;
   if (id === "social-research-lab") return <SocialResearchLab />;
   if (id === "viticulture-traceability-lab") return <ViticultureTraceabilityLab />;
+  if (id === "safety-lab") return <SafetyLab />;
   if (id === "web-lab") return <WebLab />;
   if (id === "code-lab") return <CodeLab />;
   if (id === "sql-lab") return <SqlLab />;

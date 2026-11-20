@@ -160,6 +160,21 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
     expect(screen.getByText(/I totale \(AC\)/)).toBeInTheDocument();
   });
 
+  it("apre safety-lab e aggiorna il conteggio quando spunta una voce", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Elettronica");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Safety lab elettronica e officina" }));
+    expect(screen.getByRole("note")).toHaveTextContent("non sostituisce procedure ufficiali");
+    expect(screen.getByRole("status", { name: "Completamento checklist" })).toHaveTextContent(
+      "0 / 15 completate",
+    );
+    fireEvent.click(screen.getByLabelText("Controlla banco, cavi e protezioni"));
+    expect(screen.getByRole("status", { name: "Completamento checklist" })).toHaveTextContent(
+      "1 / 15 completate",
+    );
+  });
+
   it("calcola massa molare e moli nel nuovo laboratorio di chimica", () => {
     render(<StudyToolsShop />);
     chooseSchool("IIS E. Morselli - L. Sturzo");
