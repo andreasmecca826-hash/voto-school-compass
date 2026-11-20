@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Settings,
   StickyNote,
+  Store,
   UsersRound,
   X,
   Sparkles,
@@ -136,6 +137,13 @@ const MORE_NAV = [
     description: "Promemoria dal registro DidUP",
     icon: Clock3,
     color: "#e1a642",
+  },
+  {
+    to: "/negozio",
+    label: "Negozio strumenti",
+    description: "Laboratori e strumenti per il tuo indirizzo",
+    icon: Store,
+    color: "#3c9b88",
   },
   {
     to: "/professori",

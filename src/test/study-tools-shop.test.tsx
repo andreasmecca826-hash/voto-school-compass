@@ -54,4 +54,18 @@ describe("Negozio strumenti per indirizzo", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apri Resistenza per LED" }));
     expect(screen.getByRole("status")).toHaveTextContent("300 Ω");
   });
+
+  it("offre cataloghi dedicati anche ai nuovi indirizzi", () => {
+    render(<StudyToolsShop />);
+    fireEvent.click(screen.getByRole("button", { name: "Grafica e Comunicazione" }));
+    expect(screen.getByRole("button", { name: "Apri Laboratorio colori RGB" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio colori RGB" }));
+    expect(screen.getByRole("status")).toHaveTextContent("#3498DB");
+
+    fireEvent.click(screen.getByRole("button", { name: "Torna al catalogo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Amministrazione, Finanza e Marketing" }));
+    expect(screen.getByRole("button", { name: "Apri IVA e prezzi" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apri IVA e prezzi" }));
+    expect(screen.getByRole("status")).toHaveTextContent("122.00 €");
+  });
 });

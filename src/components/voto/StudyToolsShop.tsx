@@ -18,7 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const TRACK_KEY = "voto.study-tools-shop.track.v1";
-type Track = "informatica" | "elettronica";
+type Track = "informatica" | "elettronica" | "meccatronica" | "grafica" | "turismo" | "afm";
 type ToolId =
   | "base-converter"
   | "binary-calculator"
@@ -29,7 +29,17 @@ type ToolId =
   | "rc-time"
   | "led-resistor"
   | "voltage-divider"
-  | "resistor-code";
+  | "resistor-code"
+  | "gear-ratio"
+  | "torque-power"
+  | "color-converter"
+  | "aspect-ratio"
+  | "travel-budget"
+  | "exchange-converter"
+  | "iva-calculator"
+  | "break-even"
+  | "print-resolution"
+  | "percentage-calculator";
 
 type ShopTool = {
   id: ToolId;
@@ -124,11 +134,143 @@ const TOOLS: ShopTool[] = [
     icon: CircuitBoard,
     label: "Componenti",
   },
+  {
+    id: "gear-ratio",
+    title: "Rapporto di trasmissione",
+    description: "Calcola rapporto, velocità e coppia tra due ingranaggi o pulegge.",
+    track: "meccatronica",
+    icon: GitBranch,
+    label: "Meccanica applicata",
+  },
+  {
+    id: "torque-power",
+    title: "Coppia e potenza",
+    description: "Passa da coppia e giri al minuto alla potenza meccanica dell'albero.",
+    track: "meccatronica",
+    icon: Gauge,
+    label: "Macchine a fluido",
+  },
+  {
+    id: "rc-time",
+    title: "Costante di tempo RC",
+    description: "Usa un circuito RC come esempio di sistema e misura la risposta nel tempo.",
+    track: "meccatronica",
+    icon: Activity,
+    label: "Controlli",
+  },
+  {
+    id: "voltage-divider",
+    title: "Partitore per sensori",
+    description: "Dimensiona un partitore per adattare il segnale di un sensore analogico.",
+    track: "meccatronica",
+    icon: CircuitBoard,
+    label: "Automazione",
+  },
+  {
+    id: "color-converter",
+    title: "Laboratorio colori RGB",
+    description: "Converti RGB, HEX e HSL per palette, web design e stampa digitale.",
+    track: "grafica",
+    icon: Lightbulb,
+    label: "Teoria del colore",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Proporzioni e formati",
+    description: "Mantieni il rapporto d'aspetto per ridimensionare immagini e tavole grafiche.",
+    track: "grafica",
+    icon: Sigma,
+    label: "Impaginazione",
+  },
+  {
+    id: "base-converter",
+    title: "Convertitore di basi",
+    description: "Confronta i formati numerici usati nei file digitali e nella codifica colore.",
+    track: "grafica",
+    icon: Binary,
+    label: "Tecnologie digitali",
+  },
+  {
+    id: "print-resolution",
+    title: "Risoluzione di stampa",
+    description: "Stima pixel, centimetri e DPI per preparare un file alla stampa.",
+    track: "grafica",
+    icon: Search,
+    label: "Prestampa",
+  },
+  {
+    id: "travel-budget",
+    title: "Budget di viaggio",
+    description: "Somma trasporti, alloggio, pasti e attività per controllare il costo pro capite.",
+    track: "turismo",
+    icon: Globe,
+    label: "Organizzazione viaggi",
+  },
+  {
+    id: "exchange-converter",
+    title: "Cambio valuta manuale",
+    description: "Converti un importo usando il tasso di cambio inserito, senza dati online.",
+    track: "turismo",
+    icon: Sigma,
+    label: "Geografia turistica",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Proporzioni per materiali viaggio",
+    description: "Mantieni le proporzioni per mappe, brochure e materiali di un itinerario.",
+    track: "turismo",
+    icon: Activity,
+    label: "Itinerari",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Sconti e percentuali",
+    description: "Calcola sconti, ricarichi, commissioni e variazioni percentuali.",
+    track: "turismo",
+    icon: Gauge,
+    label: "Economia del turismo",
+  },
+  {
+    id: "iva-calculator",
+    title: "IVA e prezzi",
+    description: "Scorpora o aggiungi l'IVA e confronta imponibile, imposta e totale.",
+    track: "afm",
+    icon: Sigma,
+    label: "Contabilità",
+  },
+  {
+    id: "break-even",
+    title: "Punto di pareggio",
+    description: "Trova quante unità servono per coprire costi fissi e costi variabili.",
+    track: "afm",
+    icon: GitBranch,
+    label: "Gestione aziendale",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Margine e ricarico",
+    description: "Passa dal costo al prezzo di vendita e verifica margine e ricarico.",
+    track: "afm",
+    icon: Gauge,
+    label: "Marketing",
+  },
+  {
+    id: "exchange-converter",
+    title: "Conversione valuta aziendale",
+    description: "Confronta importi e tassi per acquisti, fornitori e operazioni internazionali.",
+    track: "afm",
+    icon: Activity,
+    label: "Finanza",
+  },
 ];
 
 const TRACK_LABELS: Record<Track, string> = {
   informatica: "Informatica",
   elettronica: "Elettronica",
+  meccatronica: "Meccanica e Meccatronica",
+  grafica: "Grafica e Comunicazione",
+  turismo: "Turismo",
+  afm: "Amministrazione, Finanza e Marketing",
 };
 const BASES = [
   { value: "2", label: "Binario (base 2)" },
@@ -757,6 +899,389 @@ function ResistorCode() {
   );
 }
 
+function GearRatio() {
+  const [driver, setDriver] = useState("20");
+  const [driven, setDriven] = useState("60");
+  const [speed, setSpeed] = useState("1500");
+  const ratio = Number(driven) / Number(driver);
+  const valid = Number(driver) > 0 && Number(driven) > 0 && Number(speed) >= 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="gear-driver"
+          label="Denti motrice"
+          value={driver}
+          onChange={setDriver}
+          step="1"
+        />
+        <NumberField
+          id="gear-driven"
+          label="Denti condotta"
+          value={driven}
+          onChange={setDriven}
+          step="1"
+        />
+      </div>
+      <NumberField
+        id="gear-speed"
+        label="Velocità motrice"
+        unit="rpm"
+        value={speed}
+        onChange={setSpeed}
+      />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Rapporto: <strong>{ratio.toFixed(2)}:1</strong>
+          <br />
+          Velocità condotta: <strong>{(Number(speed) / ratio).toFixed(1)} rpm</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci valori positivi per denti e velocità.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TorquePower() {
+  const [torque, setTorque] = useState("12");
+  const [rpm, setRpm] = useState("1500");
+  const valid = Number(torque) >= 0 && Number(rpm) >= 0;
+  const power = valid ? (2 * Math.PI * Number(rpm) * Number(torque)) / 60 : null;
+  return (
+    <div className="space-y-3">
+      <NumberField
+        id="torque-value"
+        label="Coppia"
+        unit="N·m"
+        value={torque}
+        onChange={setTorque}
+      />
+      <NumberField id="torque-rpm" label="Velocità" unit="rpm" value={rpm} onChange={setRpm} />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Potenza meccanica: <strong>{(power! / 1000).toFixed(3)} kW</strong>
+          <br />
+          <span className="text-xs text-muted-foreground">P = 2π × n × M ÷ 60</span>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci coppia e velocità non negative.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ColorConverter() {
+  const [red, setRed] = useState("52");
+  const [green, setGreen] = useState("152");
+  const [blue, setBlue] = useState("219");
+  const channels = [Number(red), Number(green), Number(blue)];
+  const valid = channels.every((value) => Number.isInteger(value) && value >= 0 && value <= 255);
+  const hex = valid
+    ? `#${channels
+        .map((value) => value.toString(16).padStart(2, "0"))
+        .join("")
+        .toUpperCase()}`
+    : "";
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField id="color-red" label="Rosso" value={red} onChange={setRed} step="1" />
+        <NumberField id="color-green" label="Verde" value={green} onChange={setGreen} step="1" />
+        <NumberField id="color-blue" label="Blu" value={blue} onChange={setBlue} step="1" />
+      </div>
+      {valid ? (
+        <div
+          role="status"
+          className="rounded-xl p-4 text-sm"
+          style={{
+            backgroundColor: hex,
+            color: channels.reduce((a, b) => a + b, 0) > 380 ? "#111" : "#fff",
+          }}
+        >
+          <strong>{hex}</strong>
+          <br />
+          <span className="text-xs">rgb({channels.join(", ")})</span>
+        </div>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Ogni canale deve essere un intero tra 0 e 255.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+function AspectRatio() {
+  const [width, setWidth] = useState("1920");
+  const [height, setHeight] = useState("1080");
+  const w = Number(width);
+  const h = Number(height);
+  const valid = Number.isInteger(w) && Number.isInteger(h) && w > 0 && h > 0;
+  const divisor = valid ? gcd(w, h) : 1;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="aspect-width"
+          label="Larghezza"
+          unit="px"
+          value={width}
+          onChange={setWidth}
+          step="1"
+        />
+        <NumberField
+          id="aspect-height"
+          label="Altezza"
+          unit="px"
+          value={height}
+          onChange={setHeight}
+          step="1"
+        />
+      </div>
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Formato:{" "}
+          <strong>
+            {w / divisor}:{h / divisor}
+          </strong>
+          <br />
+          Rapporto: <strong>{(w / h).toFixed(3)}:1</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci due dimensioni intere positive.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PercentageCalculator() {
+  const [amount, setAmount] = useState("100");
+  const [rate, setRate] = useState("20");
+  const value = Number(amount);
+  const percent = Number(rate);
+  const valid = Number.isFinite(value) && Number.isFinite(percent) && value >= 0;
+  return (
+    <div className="space-y-3">
+      <NumberField
+        id="percentage-amount"
+        label="Importo"
+        unit="€"
+        value={amount}
+        onChange={setAmount}
+      />
+      <NumberField
+        id="percentage-rate"
+        label="Percentuale"
+        unit="%"
+        value={rate}
+        onChange={setRate}
+      />
+      {valid ? (
+        <dl className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-surface p-3">
+            <dt className="text-[10px] text-muted-foreground">Percentuale</dt>
+            <dd className="font-semibold">{((value * percent) / 100).toFixed(2)} €</dd>
+          </div>
+          <div className="rounded-xl bg-surface p-3">
+            <dt className="text-[10px] text-muted-foreground">Totale con aumento</dt>
+            <dd className="font-semibold">{(value * (1 + percent / 100)).toFixed(2)} €</dd>
+          </div>
+        </dl>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci valori numerici validi.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function IvaCalculator() {
+  const [amount, setAmount] = useState("100");
+  const [rate, setRate] = useState("22");
+  const imponibile = Number(amount);
+  const iva = Number(rate);
+  const valid = imponibile >= 0 && iva >= 0;
+  return (
+    <div className="space-y-3">
+      <NumberField
+        id="iva-amount"
+        label="Imponibile"
+        unit="€"
+        value={amount}
+        onChange={setAmount}
+      />
+      <NumberField id="iva-rate" label="Aliquota" unit="%" value={rate} onChange={setRate} />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          IVA: <strong>{((imponibile * iva) / 100).toFixed(2)} €</strong>
+          <br />
+          Totale: <strong>{(imponibile * (1 + iva / 100)).toFixed(2)} €</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci imponibile e aliquota non negativi.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BreakEven() {
+  const [fixed, setFixed] = useState("10000");
+  const [price, setPrice] = useState("50");
+  const [variable, setVariable] = useState("20");
+  const units = Number(fixed) / (Number(price) - Number(variable));
+  const valid = Number(fixed) >= 0 && Number(price) > Number(variable);
+  return (
+    <div className="space-y-3">
+      <NumberField
+        id="breakeven-fixed"
+        label="Costi fissi"
+        unit="€"
+        value={fixed}
+        onChange={setFixed}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="breakeven-price"
+          label="Prezzo unitario"
+          unit="€"
+          value={price}
+          onChange={setPrice}
+        />
+        <NumberField
+          id="breakeven-variable"
+          label="Costo variabile"
+          unit="€"
+          value={variable}
+          onChange={setVariable}
+        />
+      </div>
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Punto di pareggio: <strong>{Math.ceil(units)} unità</strong>
+          <br />
+          <span className="text-xs text-muted-foreground">
+            Margine unitario: {(Number(price) - Number(variable)).toFixed(2)} €
+          </span>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Il prezzo deve essere maggiore del costo variabile.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TravelBudget() {
+  const [people, setPeople] = useState("2");
+  const [transport, setTransport] = useState("120");
+  const [stay, setStay] = useState("360");
+  const [days, setDays] = useState("3");
+  const total = Number(transport) + Number(stay) + Number(days) * 40;
+  const valid = Number(people) > 0 && total >= 0;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="travel-people"
+          label="Partecipanti"
+          value={people}
+          onChange={setPeople}
+          step="1"
+        />
+        <NumberField id="travel-days" label="Giorni" value={days} onChange={setDays} step="1" />
+      </div>
+      <NumberField
+        id="travel-transport"
+        label="Trasporti"
+        unit="€"
+        value={transport}
+        onChange={setTransport}
+      />
+      <NumberField id="travel-stay" label="Alloggio" unit="€" value={stay} onChange={setStay} />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Budget stimato: <strong>{total.toFixed(2)} €</strong>
+          <br />
+          Quota per persona: <strong>{(total / Number(people)).toFixed(2)} €</strong>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci partecipanti e valori validi.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ExchangeConverter() {
+  const [amount, setAmount] = useState("100");
+  const [rate, setRate] = useState("1.08");
+  const valid = Number(amount) >= 0 && Number(rate) > 0;
+  return (
+    <div className="space-y-3">
+      <NumberField
+        id="exchange-amount"
+        label="Importo di partenza"
+        value={amount}
+        onChange={setAmount}
+      />
+      <NumberField id="exchange-rate" label="Tasso applicato" value={rate} onChange={setRate} />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Importo convertito: <strong>{(Number(amount) * Number(rate)).toFixed(2)}</strong>
+          <br />
+          <span className="text-xs text-muted-foreground">
+            Tasso inserito manualmente: nessun dato online.
+          </span>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci importo positivo e tasso maggiore di zero.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PrintResolution() {
+  const [cm, setCm] = useState("21");
+  const [dpi, setDpi] = useState("300");
+  const px = (Number(cm) / 2.54) * Number(dpi);
+  const valid = Number(cm) > 0 && Number(dpi) > 0;
+  return (
+    <div className="space-y-3">
+      <NumberField id="print-cm" label="Lato di stampa" unit="cm" value={cm} onChange={setCm} />
+      <NumberField id="print-dpi" label="Risoluzione" unit="DPI" value={dpi} onChange={setDpi} />
+      {valid ? (
+        <p role="status" className="rounded-xl bg-primary-soft p-3 text-sm">
+          Pixel necessari: <strong>{Math.round(px)} px</strong>
+          <br />
+          <span className="text-xs text-muted-foreground">1 pollice = 2,54 cm</span>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci dimensione e DPI positivi.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
   if (id === "base-converter") return <BaseConverter />;
   if (id === "binary-calculator") return <BinaryCalculator />;
@@ -767,6 +1292,16 @@ function ToolContent({ id }: { id: ToolId }) {
   if (id === "rc-time") return <RcTimeConstant />;
   if (id === "led-resistor") return <LedResistor />;
   if (id === "voltage-divider") return <VoltageDivider />;
+  if (id === "gear-ratio") return <GearRatio />;
+  if (id === "torque-power") return <TorquePower />;
+  if (id === "color-converter") return <ColorConverter />;
+  if (id === "aspect-ratio") return <AspectRatio />;
+  if (id === "travel-budget") return <TravelBudget />;
+  if (id === "exchange-converter") return <ExchangeConverter />;
+  if (id === "iva-calculator") return <IvaCalculator />;
+  if (id === "break-even") return <BreakEven />;
+  if (id === "print-resolution") return <PrintResolution />;
+  if (id === "percentage-calculator") return <PercentageCalculator />;
   return <ResistorCode />;
 }
 
@@ -778,7 +1313,7 @@ export function StudyToolsShop() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(TRACK_KEY);
-      if (saved === "informatica" || saved === "elettronica") setTrack(saved);
+      if (saved && saved in TRACK_LABELS) setTrack(saved as Track);
     } catch {
       // Il catalogo resta disponibile anche se lo storage non è accessibile.
     }
@@ -806,7 +1341,9 @@ export function StudyToolsShop() {
       return matchesTrack && matchesSearch;
     });
   }, [search, track]);
-  const selectedTool = TOOLS.find(({ id }) => id === openTool);
+  const selectedTool = TOOLS.find(
+    ({ id, track: toolTrack }) => id === openTool && toolTrack === track,
+  );
 
   return (
     <div className="space-y-4">
@@ -899,8 +1436,8 @@ export function StudyToolsShop() {
             )}
           </section>
           <p className="text-[11px] leading-4 text-muted-foreground">
-            Per ora il catalogo parte da Informatica ed Elettronica. La selezione dell’indirizzo
-            viene salvata solo su questo dispositivo.
+            Ogni indirizzo ha strumenti dedicati e la selezione viene salvata solo su questo
+            dispositivo.
           </p>
         </>
       )}
