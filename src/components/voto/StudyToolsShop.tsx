@@ -48,7 +48,10 @@ type Track =
   | "linguistico-vittorini"
   | "scienze-applicate-vittorini"
   | "tred-vittorini"
-  | "biomedica-vittorini";
+  | "biomedica-vittorini"
+  | "classico-eschilo"
+  | "scienze-umane-eschilo"
+  | "economico-sociale-eschilo";
 type ToolId =
   | "base-converter"
   | "binary-calculator"
@@ -1028,6 +1031,103 @@ const TOOLS: ShopTool[] = [
     icon: Globe,
     label: "Organizzazione",
   },
+
+  {
+    id: "ascii-table",
+    title: "Laboratorio di testi classici",
+    description: "Esplora caratteri e codici per testi, citazioni e documenti digitali.",
+    track: "classico-eschilo",
+    icon: Sigma,
+    label: "Lingue classiche e digitale",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Percentuali e dati storici",
+    description: "Calcola variazioni e percentuali per esercizi di storia e attualità.",
+    track: "classico-eschilo",
+    icon: Gauge,
+    label: "Matematica e storia",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Proporzioni per elaborati",
+    description: "Ridimensiona schemi e materiali per presentazioni e tesine.",
+    track: "classico-eschilo",
+    icon: Activity,
+    label: "Comunicazione",
+  },
+  {
+    id: "print-resolution",
+    title: "Stampa di tavole e tesine",
+    description: "Calcola pixel e DPI per preparare elaborati e portfolio.",
+    track: "classico-eschilo",
+    icon: Search,
+    label: "Produzione digitale",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Percentuali sociali",
+    description: "Analizza percentuali e variazioni in fenomeni sociali e demografici.",
+    track: "scienze-umane-eschilo",
+    icon: Gauge,
+    label: "Scienze umane",
+  },
+  {
+    id: "travel-budget",
+    title: "Budget per attività didattiche",
+    description: "Organizza costi, partecipanti e quote per uscite e progetti.",
+    track: "scienze-umane-eschilo",
+    icon: Globe,
+    label: "Organizzazione",
+  },
+  {
+    id: "aspect-ratio",
+    title: "Proporzioni per mappe concettuali",
+    description: "Mantieni rapporti e formati per schemi e presentazioni.",
+    track: "scienze-umane-eschilo",
+    icon: Activity,
+    label: "Metodologia",
+  },
+  {
+    id: "ascii-table",
+    title: "Codifica dei questionari",
+    description: "Converti caratteri e codici per organizzare dati e questionari.",
+    track: "scienze-umane-eschilo",
+    icon: Sigma,
+    label: "Ricerca sociale",
+  },
+  {
+    id: "iva-calculator",
+    title: "IVA e prezzi",
+    description: "Calcola imponibile, IVA e totale nelle attività economiche.",
+    track: "economico-sociale-eschilo",
+    icon: Sigma,
+    label: "Diritto ed economia",
+  },
+  {
+    id: "percentage-calculator",
+    title: "Indicatori economici",
+    description: "Calcola variazioni, percentuali e indicatori per l’analisi economica.",
+    track: "economico-sociale-eschilo",
+    icon: Gauge,
+    label: "Economia",
+  },
+  {
+    id: "exchange-converter",
+    title: "Cambio valuta",
+    description: "Confronta importi e tassi per esercizi di economia internazionale.",
+    track: "economico-sociale-eschilo",
+    icon: Sigma,
+    label: "Scambi internazionali",
+  },
+  {
+    id: "break-even",
+    title: "Punto di pareggio",
+    description: "Trova le unità necessarie per coprire costi fissi e variabili.",
+    track: "economico-sociale-eschilo",
+    icon: GitBranch,
+    label: "Gestione aziendale",
+  },
 ];
 
 const TRACK_LABELS: Record<Track, string> = {
@@ -1060,6 +1160,9 @@ const TRACK_LABELS: Record<Track, string> = {
   "scienze-applicate-vittorini": "Liceo Scientifico · Scienze Applicate",
   "tred-vittorini": "Liceo Scientifico quadriennale · TRED",
   "biomedica-vittorini": "Liceo Scientifico · Curvatura Biomedica",
+  "classico-eschilo": "Liceo Classico · Eschilo",
+  "scienze-umane-eschilo": "Liceo delle Scienze Umane · Eschilo",
+  "economico-sociale-eschilo": "Scienze Umane · Opzione Economico-Sociale",
 };
 const BASES = [
   { value: "2", label: "Binario (base 2)" },
@@ -2094,7 +2197,7 @@ function ToolContent({ id }: { id: ToolId }) {
   return <ResistorCode />;
 }
 
-type SchoolId = "morselli-sturzo" | "majorana" | "vittorini" | "altri";
+type SchoolId = "morselli-sturzo" | "majorana" | "eschilo" | "vittorini";
 
 const SCHOOL_KEY = "voto.study-tools-shop.school.v1";
 const FAVORITE_SCHOOLS_KEY = "voto.study-tools-shop.favorite-schools.v1";
@@ -2103,8 +2206,8 @@ const FAVORITE_TRACKS_KEY = "voto.study-tools-shop.favorite-tracks.v1";
 const SCHOOL_LABELS: Record<SchoolId, string> = {
   "morselli-sturzo": "IIS E. Morselli - L. Sturzo",
   majorana: "IIS E. Majorana",
+  eschilo: 'IIS "Eschilo"',
   vittorini: 'Liceo Scientifico e Linguistico "E. Vittorini"',
-  altri: "Altri indirizzi",
 };
 
 const SCHOOL_TRACKS: Record<SchoolId, Track[]> = {
@@ -2135,6 +2238,7 @@ const SCHOOL_TRACKS: Record<SchoolId, Track[]> = {
     "made-italy",
     "odontotecnico",
   ],
+  eschilo: ["classico-eschilo", "scienze-umane-eschilo", "economico-sociale-eschilo"],
   vittorini: [
     "scientifico-vittorini",
     "linguistico-vittorini",
@@ -2142,7 +2246,6 @@ const SCHOOL_TRACKS: Record<SchoolId, Track[]> = {
     "tred-vittorini",
     "biomedica-vittorini",
   ],
-  altri: ["grafica"],
 };
 
 function readStringArray(key: string): string[] {
