@@ -1,0 +1,5 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:orientation="vertical" android:padding="12dp" android:gravity="center_vertical" android:background="#172033" android:layout_width="match_parent" android:layout_height="match_parent">
+    <TextView android:id="@+id/title" android:text="VOTO" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:singleLine="true" android:ellipsize="end" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:id="@+id/summary" android:text="Configura il widget" android:textColor="#D8E2F2" android:textSize="15sp" android:maxLines="4" android:ellipsize="end" android:layout_marginTop="6dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:id="@+id/updated" android:text="" android:textColor="#9AAAC2" android:textSize="10sp" android:singleLine="true" android:ellipsize="end" android:layout_marginTop="5dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+</LinearLayout>

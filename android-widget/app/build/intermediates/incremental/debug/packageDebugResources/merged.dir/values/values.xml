@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="widget_interface_themes"><item>Sistema</item><item>Chiaro</item><item>Scuro</item><item>AMOLED</item></string-array>
+    <string-array name="widget_modes"><item>Media generale</item><item>Ultimo voto</item><item>Assenze e ritardi</item><item>Note disciplinari</item><item>Circolari recenti</item><item>Dashboard completa</item><item>Compiti in sospeso</item><item>Prossimo compito</item><item>Notifiche non lette</item><item>Studente e classe</item><item>Materie valutate</item></string-array>
+    <string-array name="widget_text_sizes"><item>Compatto</item><item>Standard</item><item>Grande</item></string-array>
+    <string-array name="widget_themes"><item>Blu notte</item><item>Verde bosco</item><item>Viola</item><item>Nero minimal</item><item>Carta chiara</item><item>Arancio tramonto</item><item>Azzurro ghiaccio</item><item>Rosso rubino</item><item>Grigio elegante</item><item>Originale</item><item>Oro</item><item>Diamante</item><item>Tramonto</item><item>Lavender</item><item>Cybercore</item><item>Brutalist</item><item>Retro OS</item><item>Windows 98</item><item>Windows 7</item><item>Dark Academia</item><item>Glassmorphism</item><item>Casinò</item><item>Calcio</item><item>Terminale</item><item>Pixel Arcade</item><item>Y2K</item><item>Primavera</item><item>Estate</item><item>Autunno</item><item>Inverno</item><item>Personalizzato</item><item>Emoji</item><item>Sangue</item></string-array>
+    <color name="voto_blue">#61A7FF</color>
+    <color name="voto_dark">#172033</color>
+    <string name="app_name">VOTO Widget</string>
+    <string name="widget_compact_name">VOTO 2×2</string>
+    <string name="widget_large_name">VOTO Dashboard</string>
+    <string name="widget_medium_name">VOTO Medio</string>
+    <string name="widget_small_name">VOTO Riepilogo</string>
+    <string name="widget_wide_name">VOTO Largo</string>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:colorAccent">@color/voto_blue</item><item name="android:navigationBarColor">@color/voto_dark</item><item name="android:statusBarColor">@color/voto_dark</item></style>
+</resources>

@@ -1,0 +1,132 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="it.voto.widget" >
+4
+5    <uses-sdk android:minSdkVersion="23" />
+6
+7    <uses-permission android:name="android.permission.INTERNET" />
+7-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:2:5-67
+7-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:2:22-64
+8
+9    <application>
+9-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:3:5-10:19
+10        <activity
+10-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:4:9-85
+11            android:name="it.voto.widget.WidgetConfigureActivity"
+11-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:4:19-58
+12            android:exported="true" />
+12-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:4:59-82
+13
+14        <receiver
+14-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:9-325
+15            android:name="it.voto.widget.SmallWidgetProvider"
+15-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:19-54
+16            android:exported="true"
+16-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:97-120
+17            android:label="@string/widget_small_name" >
+17-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:55-96
+18            <intent-filter>
+18-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:121-218
+19                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+19-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:136-202
+19-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:144-200
+20            </intent-filter>
+21
+22            <meta-data
+22-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:218-314
+23                android:name="android.appwidget.provider"
+23-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:229-270
+24                android:resource="@xml/widget_small_info" />
+24-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:271-312
+25        </receiver>
+26        <receiver
+26-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:6:9-325
+27            android:name="it.voto.widget.LargeWidgetProvider"
+27-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:6:19-54
+28            android:exported="true"
+28-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:6:97-120
+29            android:label="@string/widget_large_name" >
+29-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:6:55-96
+30            <intent-filter>
+30-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:121-218
+31                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+31-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:136-202
+31-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:144-200
+32            </intent-filter>
+33
+34            <meta-data
+34-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:218-314
+35                android:name="android.appwidget.provider"
+35-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:229-270
+36                android:resource="@xml/widget_large_info" />
+36-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:271-312
+37        </receiver>
+38        <receiver
+38-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:7:9-328
+39            android:name="it.voto.widget.MediumWidgetProvider"
+39-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:7:19-55
+40            android:exported="true"
+40-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:7:99-122
+41            android:label="@string/widget_medium_name" >
+41-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:7:56-98
+42            <intent-filter>
+42-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:121-218
+43                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+43-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:136-202
+43-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:144-200
+44            </intent-filter>
+45
+46            <meta-data
+46-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:218-314
+47                android:name="android.appwidget.provider"
+47-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:229-270
+48                android:resource="@xml/widget_medium_info" />
+48-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:271-312
+49        </receiver>
+50        <receiver
+50-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:8:9-322
+51            android:name="it.voto.widget.WideWidgetProvider"
+51-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:8:19-53
+52            android:exported="true"
+52-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:8:95-118
+53            android:label="@string/widget_wide_name" >
+53-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:8:54-94
+54            <intent-filter>
+54-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:121-218
+55                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+55-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:136-202
+55-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:144-200
+56            </intent-filter>
+57
+58            <meta-data
+58-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:218-314
+59                android:name="android.appwidget.provider"
+59-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:229-270
+60                android:resource="@xml/widget_wide_info" />
+60-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:271-312
+61        </receiver>
+62        <receiver
+62-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:9:9-331
+63            android:name="it.voto.widget.CompactWidgetProvider"
+63-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:9:19-56
+64            android:exported="true"
+64-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:9:101-124
+65            android:label="@string/widget_compact_name" >
+65-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:9:57-100
+66            <intent-filter>
+66-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:121-218
+67                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+67-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:136-202
+67-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:144-200
+68            </intent-filter>
+69
+70            <meta-data
+70-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:218-314
+71                android:name="android.appwidget.provider"
+71-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:229-270
+72                android:resource="@xml/widget_compact_info" />
+72-->C:\Users\smecc\OneDrive\Documenti\GITHUB\voto-school-compass\android-widget\app\src\main\AndroidManifest.xml:5:271-312
+73        </receiver>
+74    </application>
+75
+76</manifest>
