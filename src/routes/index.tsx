@@ -14,6 +14,7 @@ import {
   Github,
   Megaphone,
   Minus,
+  Store,
   StickyNote,
 } from "lucide-react";
 import { PeriodPicker } from "@/components/voto/PeriodPicker";
@@ -273,21 +274,38 @@ function Dashboard() {
 
         {isHomeModuleVisible("simulatore") && (
           <div style={{ order: homeOrder("simulatore"), zoom: homeModuleScale("simulatore") }}>
-            <Link
-              to="/studio"
-              className="press card-surface mt-3 flex w-full items-center gap-3 p-4 text-left"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                <Calculator className="h-5 w-5" />
-              </span>
-              <span className="flex-1">
-                <span className="block text-sm font-semibold">Studio Lab</span>
-                <span className="block text-xs text-muted-foreground">
-                  Calcolo media, assenze e strumenti di studio
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Link
+                to="/studio"
+                className="press card-surface flex w-full items-center gap-3 p-4 text-left"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <Calculator className="h-5 w-5" />
                 </span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold">Studio Lab</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Calcolo media, assenze e strumenti di studio
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+              <Link
+                to="/negozio"
+                className="press card-surface flex w-full items-center gap-3 p-4 text-left"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <Store className="h-5 w-5" />
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold">Negozio strumenti</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Utility digitali per il tuo indirizzo
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            </div>
           </div>
         )}
 

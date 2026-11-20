@@ -19,6 +19,7 @@ import { Route as DiarioRouteImport } from './routes/diario'
 import { Route as EventiAppelloRouteImport } from './routes/eventi-appello'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
 import { Route as InterrogazioniRouteImport } from './routes/interrogazioni'
+import { Route as NegozioRouteImport } from './routes/negozio'
 import { Route as NoteRouteImport } from './routes/note'
 import { Route as OrarioRouteImport } from './routes/orario'
 import { Route as PersonalizzaRouteImport } from './routes/personalizza'
@@ -79,6 +80,11 @@ const InterrogazioniRoute = InterrogazioniRouteImport.update({
   path: '/interrogazioni',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NegozioRoute = NegozioRouteImport.update({
+  id: '/negozio',
+  path: '/negozio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NoteRoute = NoteRouteImport.update({
   id: '/note',
   path: '/note',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/eventi-appello': typeof EventiAppelloRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/negozio': typeof NegozioRoute
   '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/eventi-appello': typeof EventiAppelloRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/negozio': typeof NegozioRoute
   '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/eventi-appello': typeof EventiAppelloRoute
   '/impostazioni': typeof ImpostazioniRoute
   '/interrogazioni': typeof InterrogazioniRoute
+  '/negozio': typeof NegozioRoute
   '/note': typeof NoteRoute
   '/orario': typeof OrarioRoute
   '/personalizza': typeof PersonalizzaRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/eventi-appello'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/negozio'
     | '/note'
     | '/orario'
     | '/personalizza'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/eventi-appello'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/negozio'
     | '/note'
     | '/orario'
     | '/personalizza'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/eventi-appello'
     | '/impostazioni'
     | '/interrogazioni'
+    | '/negozio'
     | '/note'
     | '/orario'
     | '/personalizza'
@@ -266,6 +278,7 @@ export interface RootRouteChildren {
   EventiAppelloRoute: typeof EventiAppelloRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
   InterrogazioniRoute: typeof InterrogazioniRoute
+  NegozioRoute: typeof NegozioRoute
   NoteRoute: typeof NoteRoute
   OrarioRoute: typeof OrarioRoute
   PersonalizzaRoute: typeof PersonalizzaRoute
@@ -349,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterrogazioniRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/negozio': {
+      id: '/negozio'
+      path: '/negozio'
+      fullPath: '/negozio'
+      preLoaderRoute: typeof NegozioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/note': {
       id: '/note'
       path: '/note'
@@ -426,6 +446,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventiAppelloRoute: EventiAppelloRoute,
   ImpostazioniRoute: ImpostazioniRoute,
   InterrogazioniRoute: InterrogazioniRoute,
+  NegozioRoute: NegozioRoute,
   NoteRoute: NoteRoute,
   OrarioRoute: OrarioRoute,
   PersonalizzaRoute: PersonalizzaRoute,

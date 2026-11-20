@@ -1,1 +1,22 @@
-{"routes":[{"path":"/"},{"path":"/assenze"},{"path":"/assistente"},{"path":"/bacheca"},{"path":"/compiti"},{"path":"/diario"},{"path":"/eventi-appello"},{"path":"/impostazioni"},{"path":"/interrogazioni"},{"path":"/note"},{"path":"/orario"},{"path":"/personalizza"},{"path":"/professori"},{"path":"/promemoria"},{"path":"/scrutini-infraperiodali"},{"path":"/studio"},{"path":"/voti"}]}
+{
+  "routes": [
+    { "path": "/" },
+    { "path": "/assenze" },
+    { "path": "/assistente" },
+    { "path": "/bacheca" },
+    { "path": "/compiti" },
+    { "path": "/diario" },
+    { "path": "/eventi-appello" },
+    { "path": "/impostazioni" },
+    { "path": "/interrogazioni" },
+    { "path": "/negozio" },
+    { "path": "/note" },
+    { "path": "/orario" },
+    { "path": "/personalizza" },
+    { "path": "/professori" },
+    { "path": "/promemoria" },
+    { "path": "/scrutini-infraperiodali" },
+    { "path": "/studio" },
+    { "path": "/voti" }
+  ]
+}
