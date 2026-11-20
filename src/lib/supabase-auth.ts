@@ -1,13 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
-import { Capacitor } from "@capacitor/core";
 import { supabaseProjectUrl, supabasePublishableKey } from "./supabase-config";
 
 const isBrowser = typeof window !== "undefined";
-const isNativeApp = isBrowser && Capacitor.isNativePlatform();
 
 export const supabase = createClient(supabaseProjectUrl(), supabasePublishableKey(), {
   auth: {
-    autoRefreshToken: isBrowser && !isNativeApp,
+    // Anche l’app nativa usa il client Supabase nel WebView: disattivare qui
+    // il rinnovo faceva scadere il token dopo poco tempo e riportava al login.
+    autoRefreshToken: isBrowser,
     detectSessionInUrl: isBrowser,
     persistSession: isBrowser,
     flowType: "pkce",
