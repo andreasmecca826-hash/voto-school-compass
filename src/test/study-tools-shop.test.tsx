@@ -44,4 +44,14 @@ describe("Negozio strumenti per indirizzo", () => {
     );
     expect(screen.getByRole("heading", { name: "Legge di Ohm" })).toBeInTheDocument();
   });
+
+  it("offre strumenti pratici di rete e laboratorio elettronico", () => {
+    render(<StudyToolsShop />);
+    fireEvent.click(screen.getByRole("button", { name: "Apri Calcolatore subnet" }));
+    expect(screen.getByText("192.168.1.0")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Torna al catalogo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Elettronica" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apri Resistenza per LED" }));
+    expect(screen.getByRole("status")).toHaveTextContent("300 Ω");
+  });
 });
