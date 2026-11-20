@@ -87,7 +87,12 @@ type ToolId =
   | "web-lab"
   | "code-lab"
   | "sql-lab"
-  | "math-lab";
+  | "math-lab"
+  | "electronics-lab"
+  | "signal-lab"
+  | "automation-lab"
+  | "chemistry-lab"
+  | "biotech-lab";
 
 type ShopTool = {
   id: ToolId;
@@ -1603,7 +1608,106 @@ const EXTRA_TOOLS: ShopTool[] = [
   },
 ];
 
-const CATALOG_TOOLS = [...TOOLS, ...FIRST_BLOCK_TOOLS, ...EXTRA_TOOLS];
+const SECOND_BLOCK_TOOLS: ShopTool[] = [
+  {
+    id: "electronics-lab",
+    title: "Laboratorio elettronico DC/AC",
+    description:
+      "Esplora una rete resistiva, un diodo/LED e misure didattiche con KCL/KVL semplificate.",
+    track: "elettronica",
+    icon: CircuitBoard,
+    label: "Misure e circuiti",
+  },
+  {
+    id: "electronics-lab",
+    title: "Laboratorio elettronico per meccatronica",
+    description: "Leggi correnti di ramo, cadute e stato del diodo in una rete offline.",
+    track: "meccatronica",
+    icon: CircuitBoard,
+    label: "Elettrotecnica applicata",
+  },
+  {
+    id: "electronics-lab",
+    title: "Misure elettriche di manutenzione",
+    description:
+      "Confronta valori attesi e misure di una rete resistiva senza simulare hardware reale.",
+    track: "manutenzione",
+    icon: CircuitBoard,
+    label: "Diagnostica",
+  },
+  {
+    id: "signal-lab",
+    title: "Laboratorio segnali e oscilloscopio",
+    description:
+      "Confronta onda sinusoidale, quadra e triangolare con frequenza, periodo e ampiezza.",
+    track: "elettronica",
+    icon: Activity,
+    label: "Segnali",
+  },
+  {
+    id: "signal-lab",
+    title: "Segnali per scienze applicate",
+    description: "Genera una tabella di campioni e collega frequenza, periodo e ampiezza.",
+    track: "scienze-applicate-vittorini",
+    icon: Activity,
+    label: "Fisica sperimentale",
+  },
+  {
+    id: "signal-lab",
+    title: "Segnali e dati biomedici",
+    description:
+      "Leggi una forma d’onda idealizzata come modello didattico, non come misura clinica.",
+    track: "biomedica-vittorini",
+    icon: Activity,
+    label: "Biosegnali",
+  },
+  {
+    id: "automation-lab",
+    title: "Laboratorio automazione Ladder",
+    description:
+      "Prova una rete Ladder didattica con sensori, consenso e attuatore; non è un PLC reale.",
+    track: "meccatronica",
+    icon: GitBranch,
+    label: "Automazione",
+  },
+  {
+    id: "automation-lab",
+    title: "Ladder e diagnostica manutenzione",
+    description:
+      "Attiva ingressi simulati, osserva l’uscita e individua il contatto che blocca il ciclo.",
+    track: "manutenzione",
+    icon: GitBranch,
+    label: "Troubleshooting",
+  },
+  {
+    id: "chemistry-lab",
+    title: "Laboratorio formula e stechiometria",
+    description: "Valida una formula semplice, calcola massa molare e converte grammi in moli.",
+    track: "chimica",
+    icon: Sigma,
+    label: "Stechiometria",
+  },
+  {
+    id: "biotech-lab",
+    title: "Laboratorio DNA/RNA e codoni",
+    description:
+      "Controlla una sequenza, trova il complementare e traduci codoni RNA in amminoacidi.",
+    track: "biotecnologie",
+    icon: Binary,
+    label: "Genetica",
+  },
+  {
+    id: "biotech-lab",
+    title: "Genetica molecolare biomedica",
+    description:
+      "Usa una sequenza breve per distinguere filamento complementare, RNA e traduzione.",
+    track: "biomedica-vittorini",
+    icon: Binary,
+    label: "Biologia molecolare",
+  },
+];
+
+const CATALOG_TOOLS = [...TOOLS, ...FIRST_BLOCK_TOOLS, ...EXTRA_TOOLS, ...SECOND_BLOCK_TOOLS];
 
 const TRACK_LABELS: Record<Track, string> = {
   informatica: "Informatica",
@@ -3170,9 +3274,10 @@ function SqlLab() {
       /^SELECT\s+(\*|name\s*,\s*grade)\s+FROM\s+studenti(?:\s+WHERE\s+grade\s*>=\s*(\d+))?(?:\s+ORDER\s+BY\s+(name|grade)(?:\s+(ASC|DESC))?)?\s*;?$/i,
     );
   let rows = match ? SQL_ROWS.filter((row) => !match[2] || row.grade >= Number(match[2])) : [];
-  if (match?.[3])
+  const orderBy = match?.[3];
+  if (orderBy)
     rows = [...rows].sort((a, b) =>
-      match[3].toLowerCase() === "name" ? a.name.localeCompare(b.name) : a.grade - b.grade,
+      orderBy.toLowerCase() === "name" ? a.name.localeCompare(b.name) : a.grade - b.grade,
     );
   if (match?.[4]?.toLowerCase() === "desc") rows.reverse();
   const columns = match?.[1] === "*" ? ["id", "name", "track", "grade"] : ["name", "grade"];
@@ -3300,7 +3405,367 @@ function MathLab() {
   );
 }
 
+function ElectronicsLab() {
+  const [mode, setMode] = useState("DC");
+  const [supply, setSupply] = useState("12");
+  const [r1, setR1] = useState("1000");
+  const [r2, setR2] = useState("2200");
+  const [diode, setDiode] = useState("on");
+  const v = Number(supply),
+    R1 = Number(r1),
+    R2 = Number(r2);
+  const valid = v > 0 && R1 > 0 && R2 > 0 && [v, R1, R2].every(Number.isFinite);
+  const current = valid ? v / (R1 + R2) : 0;
+  const node = valid ? (v * R2) / (R1 + R2) : 0;
+  const diodeDrop = diode === "on" ? 0.7 : 0;
+  const ledCurrent = valid && v > diodeDrop ? (v - diodeDrop) / R1 : 0;
+  const displayCurrent = mode === "AC" ? current / Math.sqrt(2) : current;
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Modello ideale offline: in AC usiamo il valore RMS e non fasori o componenti reattivi.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-xs font-medium text-muted-foreground">
+          Modalità
+          <select
+            aria-label="Modalità circuito"
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          >
+            <option>DC</option>
+            <option>AC</option>
+          </select>
+        </label>
+        <label className="block text-xs font-medium text-muted-foreground">
+          Diodo/LED
+          <select
+            aria-label="Stato diodo"
+            value={diode}
+            onChange={(e) => setDiode(e.target.value)}
+            className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+          >
+            <option value="on">Inserito (0,7 V)</option>
+            <option value="off">Bypass</option>
+          </select>
+        </label>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <NumberField
+          id="electronics-supply"
+          label="Alimentazione"
+          unit="V"
+          value={supply}
+          onChange={setSupply}
+        />
+        <NumberField id="electronics-r1" label="Ramo R1" unit="Ω" value={r1} onChange={setR1} />
+        <NumberField id="electronics-r2" label="Ramo R2" unit="Ω" value={r2} onChange={setR2} />
+      </div>
+      {valid ? (
+        <>
+          <p
+            role="status"
+            aria-label="Misure circuito"
+            className="rounded-xl bg-primary-soft p-3 text-sm"
+          >
+            KCL: I ingresso = I ramo · KVL: Σ cadute = V alimentazione.
+          </p>
+          <table className="w-full text-xs">
+            <caption className="mb-1 text-left font-semibold">Tabella misure didattiche</caption>
+            <tbody>
+              <tr>
+                <td className="p-1">I totale ({mode})</td>
+                <td className="p-1 font-mono">{(displayCurrent * 1000).toFixed(2)} mA</td>
+              </tr>
+              <tr>
+                <td className="p-1">V nodo partitore</td>
+                <td className="p-1 font-mono">{node.toFixed(2)} V</td>
+              </tr>
+              <tr>
+                <td className="p-1">I LED ideale</td>
+                <td className="p-1 font-mono">{(ledCurrent * 1000).toFixed(2)} mA</td>
+              </tr>
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci tensione e resistenze positive.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SignalLab() {
+  const [shape, setShape] = useState("Sinusoide");
+  const [frequency, setFrequency] = useState("2");
+  const [amplitude, setAmplitude] = useState("1");
+  const f = Number(frequency),
+    a = Number(amplitude),
+    valid = f > 0 && a >= 0 && [f, a].every(Number.isFinite);
+  const samples = [0, 0.125, 0.25, 0.375, 0.5].map((t) => {
+    const phase = (t * f) % 1;
+    const y =
+      shape === "Sinusoide"
+        ? Math.sin(phase * 2 * Math.PI)
+        : shape === "Quadra"
+          ? phase < 0.5
+            ? 1
+            : -1
+          : 1 - 4 * Math.abs(Math.round(phase) - phase);
+    return { t, y: y * a };
+  });
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Forma d’onda
+        <select
+          aria-label="Forma d onda"
+          value={shape}
+          onChange={(e) => setShape(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        >
+          <option>Sinusoide</option>
+          <option>Quadra</option>
+          <option>Triangolare</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id="signal-frequency"
+          label="Frequenza"
+          unit="Hz"
+          value={frequency}
+          onChange={setFrequency}
+        />
+        <NumberField
+          id="signal-amplitude"
+          label="Ampiezza"
+          unit="unità"
+          value={amplitude}
+          onChange={setAmplitude}
+        />
+      </div>
+      {valid ? (
+        <>
+          <p
+            role="status"
+            aria-label="Parametri segnale"
+            className="rounded-xl bg-primary-soft p-3 text-sm"
+          >
+            Periodo: <strong>{(1 / f).toFixed(3)} s</strong> · picco-picco:{" "}
+            <strong>{(2 * a).toFixed(2)}</strong>
+          </p>
+          <table className="w-full text-xs">
+            <caption className="mb-1 text-left font-semibold">
+              Campioni su un intervallo di 0,5 s
+            </caption>
+            <tbody>
+              {samples.map((sample) => (
+                <tr key={sample.t}>
+                  <td className="p-1">t = {sample.t.toFixed(3)} s</td>
+                  <td className="p-1 font-mono">y = {sample.y.toFixed(3)}</td>
+                  <td className="p-1">
+                    <span
+                      className="inline-block h-2 rounded bg-primary"
+                      style={{
+                        width: `${Math.max(4, Math.min(100, 50 + (sample.y / Math.max(a, 1)) * 50))}%`,
+                      }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci frequenza positiva e ampiezza non negativa.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AutomationLab() {
+  const [sensor, setSensor] = useState(false),
+    [guard, setGuard] = useState(true),
+    [start, setStart] = useState(false);
+  const output = sensor && guard && start;
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Rete didattica: [START] AND [SENSORE] AND [RIPARO CHIUSO] → (MOTORE). Non invia comandi a un
+        PLC.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <Button variant={start ? "default" : "outline"} onClick={() => setStart(!start)}>
+          START: {start ? "1" : "0"}
+        </Button>
+        <Button variant={sensor ? "default" : "outline"} onClick={() => setSensor(!sensor)}>
+          Sensore: {sensor ? "1" : "0"}
+        </Button>
+        <Button variant={guard ? "default" : "outline"} onClick={() => setGuard(!guard)}>
+          Riparo: {guard ? "chiuso" : "aperto"}
+        </Button>
+      </div>
+      <p
+        role="status"
+        aria-label={`Uscita attuatore: ${output ? "attiva" : "ferma"}`}
+        className="rounded-xl bg-primary-soft p-3 text-sm"
+      >
+        Uscita attuatore: <strong>{output ? "ATTIVA" : "FERMA"}</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Diagnosi:{" "}
+        {output
+          ? "tutti i contatti della serie sono chiusi."
+          : `contatto aperto: ${!start ? "START" : !sensor ? "SENSORE" : "RIPARO"}.`}
+      </p>
+    </div>
+  );
+}
+
+const ATOMIC_MASSES: Record<string, number> = {
+  H: 1.008,
+  C: 12.011,
+  N: 14.007,
+  O: 15.999,
+  Na: 22.99,
+  Cl: 35.45,
+  Ca: 40.078,
+};
+function parseFormula(formula: string) {
+  const matches = [...formula.trim().matchAll(/([A-Z][a-z]?)(\d*)/g)];
+  if (
+    !formula.trim() ||
+    matches.length === 0 ||
+    matches.map((m) => m[0]).join("") !== formula.trim()
+  )
+    return null;
+  const parts = matches.map((m) => ({ symbol: m[1]!, count: Number(m[2] || 1) }));
+  return parts.every(({ symbol, count }) => ATOMIC_MASSES[symbol] && count > 0 && count <= 99)
+    ? parts
+    : null;
+}
+function ChemistryLab() {
+  const [formula, setFormula] = useState("H2O"),
+    [grams, setGrams] = useState("18");
+  const parts = parseFormula(formula);
+  const mass = parts?.reduce((sum, part) => sum + ATOMIC_MASSES[part.symbol]! * part.count, 0) ?? 0;
+  const g = Number(grams);
+  const valid = Boolean(parts) && mass > 0 && g >= 0 && Number.isFinite(g);
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Formula semplice (es. H2O, CO2, NaCl)
+        <input
+          aria-label="Formula chimica"
+          value={formula}
+          onChange={(e) => setFormula(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 text-sm"
+        />
+      </label>
+      <NumberField
+        id="chemistry-grams"
+        label="Massa del campione"
+        unit="g"
+        value={grams}
+        onChange={setGrams}
+      />
+      {valid ? (
+        <p
+          role="status"
+          aria-label="Risultato stechiometria"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          Massa molare: <strong>{mass.toFixed(3)} g/mol</strong> · quantità:{" "}
+          <strong>{(g / mass).toFixed(4)} mol</strong>
+          <br />
+          <span className="text-xs text-muted-foreground">
+            Calcolo introduttivo senza parentesi o cariche ioniche.
+          </span>
+        </p>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Formula non valida: usa elementi supportati e pedici interi positivi.
+        </p>
+      )}
+    </div>
+  );
+}
+
+const CODONS: Record<string, string> = {
+  AUG: "Met",
+  UUU: "Phe",
+  UUC: "Phe",
+  UGG: "Trp",
+  UAA: "STOP",
+  UAG: "STOP",
+  UGA: "STOP",
+  GCU: "Ala",
+  GCC: "Ala",
+  GGC: "Gly",
+  GGG: "Gly",
+};
+function BiotechLab() {
+  const [sequence, setSequence] = useState("ATGGGCTAA");
+  const clean = sequence.toUpperCase().replaceAll(" ", "");
+  const valid = /^[ATCG]+$/.test(clean) && clean.length <= 90;
+  const rna = valid ? clean.replaceAll("T", "U") : "";
+  const complement = valid
+    ? [...clean].map((base) => ({ A: "T", T: "A", C: "G", G: "C" })[base]).join("")
+    : "";
+  const codons = valid ? (rna.match(/.{1,3}/g) ?? []) : [];
+  const translation = codons.map((codon) => CODONS[codon] ?? "?").join(" · ");
+  return (
+    <div className="space-y-3">
+      <label className="block text-xs font-medium text-muted-foreground">
+        Sequenza DNA (A, T, C, G)
+        <input
+          aria-label="Sequenza DNA"
+          value={sequence}
+          onChange={(e) => setSequence(e.target.value)}
+          className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 font-mono text-sm"
+        />
+      </label>
+      {valid ? (
+        <div
+          role="status"
+          aria-label="Risultato biologia molecolare"
+          className="rounded-xl bg-primary-soft p-3 text-sm"
+        >
+          <p>
+            Complementare: <strong className="font-mono">{complement}</strong>
+          </p>
+          <p>
+            RNA messaggero: <strong className="font-mono">{rna}</strong>
+          </p>
+          <p>
+            Codoni: <strong>{translation}</strong>
+          </p>
+          <span className="text-xs text-muted-foreground">
+            Sono riconosciuti alcuni codoni d’esempio; “?” segnala un codone non incluso nella
+            tabella didattica.
+          </span>
+        </div>
+      ) : (
+        <p role="alert" className="text-xs text-danger">
+          Inserisci solo A, T, C, G e una sequenza non vuota (massimo 90 basi).
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ToolContent({ id }: { id: ToolId }) {
+  if (id === "electronics-lab") return <ElectronicsLab />;
+  if (id === "signal-lab") return <SignalLab />;
+  if (id === "automation-lab") return <AutomationLab />;
+  if (id === "chemistry-lab") return <ChemistryLab />;
+  if (id === "biotech-lab") return <BiotechLab />;
   if (id === "web-lab") return <WebLab />;
   if (id === "code-lab") return <CodeLab />;
   if (id === "sql-lab") return <SqlLab />;

@@ -146,4 +146,52 @@ describe("Negozio strumenti per scuola e indirizzo", () => {
     expect(screen.getByRole("status", { name: "Risultato equazione" })).toHaveTextContent("0.67");
     expect(screen.getByText("Tabella valori e grafico semplice")).toBeInTheDocument();
   });
+
+  it("mostra le misure del laboratorio elettronico DC/AC", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Elettronica");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio elettronico DC/AC" }));
+    expect(screen.getByRole("status", { name: "Misure circuito" })).toBeInTheDocument();
+    expect(screen.getByText("Tabella misure didattiche")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Modalità circuito" }), {
+      target: { value: "AC" },
+    });
+    expect(screen.getByText(/I totale \(AC\)/)).toBeInTheDocument();
+  });
+
+  it("calcola massa molare e moli nel nuovo laboratorio di chimica", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Chimica e Materiali");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Apri Laboratorio formula e stechiometria" }),
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Formula chimica" }), {
+      target: { value: "CO2" },
+    });
+    fireEvent.change(screen.getByLabelText("Massa del campione (g)"), {
+      target: { value: "44" },
+    });
+    expect(screen.getByRole("status", { name: "Risultato stechiometria" })).toHaveTextContent(
+      "0.9998 mol",
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Formula chimica" }), {
+      target: { value: "H2O(" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("Formula non valida");
+  });
+
+  it("calcola complementare DNA e traduzione codoni nel laboratorio biotech", () => {
+    render(<StudyToolsShop />);
+    chooseSchool("IIS E. Morselli - L. Sturzo");
+    chooseTrack("Biotecnologie Sanitarie");
+    fireEvent.click(screen.getByRole("button", { name: "Apri Laboratorio DNA/RNA e codoni" }));
+    expect(screen.getByRole("status", { name: "Risultato biologia molecolare" })).toHaveTextContent(
+      "Complementare: TACCCGATT",
+    );
+    expect(screen.getByRole("status", { name: "Risultato biologia molecolare" })).toHaveTextContent(
+      "Met · Gly · STOP",
+    );
+  });
 });
