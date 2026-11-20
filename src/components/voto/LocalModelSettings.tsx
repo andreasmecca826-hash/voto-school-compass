@@ -4,150 +4,207 @@ import {
   cancelOnDeviceLlmDownload,
   deleteOnDeviceLlm,
   downloadOnDeviceLlm,
+  getLocalModelCatalog,
   getOnDeviceLlmStatus,
+  getSelectedLocalModel,
   isOnDeviceLlmAvailable,
+  selectLocalModel,
   type LocalLlmStatus,
+  type LocalModelId,
+  type LocalModelInfo,
 } from "@/lib/native-local-llm";
 
-const initial: LocalLlmStatus = {
+const formatBytes = (bytes: number) =>
+  `${(bytes / 1073741824).toFixed(bytes >= 1073741824 ? 1 : 2)} GB`;
+const initialStatus = (model: LocalModelInfo): LocalLlmStatus => ({
+  modelId: model.id,
   supported: false,
   state: "unsupported",
   downloadedBytes: 0,
-  totalBytes: 0,
+  totalBytes: model.sizeBytes,
+  requiredFreeBytes: model.requiredFreeBytes,
+  availableBytes: 0,
   progress: 0,
-};
+});
+
 export function LocalModelSettings() {
-  const [status, setStatus] = useState(initial);
-  const [busy, setBusy] = useState(false);
+  const [models, setModels] = useState<LocalModelInfo[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, LocalLlmStatus>>({});
+  const [selected, setSelected] = useState<LocalModelId | null>(null);
+  const [busy, setBusy] = useState<LocalModelId | null>(null);
+
   const refresh = useCallback(async () => {
-    if (!isOnDeviceLlmAvailable()) {
-      setStatus(initial);
-      return;
-    }
-    try {
-      setStatus(await getOnDeviceLlmStatus());
-    } catch (error) {
-      setStatus({
-        ...initial,
-        supported: true,
-        state: "error",
-        errorMessage: error instanceof Error ? error.message : "Stato non disponibile",
-      });
-    }
+    const catalog = await getLocalModelCatalog();
+    setModels(catalog);
+    const next = await Promise.all(
+      catalog.map(async (model) => [model.id, await getOnDeviceLlmStatus(model.id)] as const),
+    );
+    setStatuses(Object.fromEntries(next));
+    if (isOnDeviceLlmAvailable()) setSelected(await getSelectedLocalModel());
   }, []);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
   useEffect(() => {
-    if (!["downloading", "verifying"].includes(status.state)) return;
-    const timer = window.setInterval(() => void refresh(), 900);
+    if (
+      !Object.values(statuses).some((status) => ["downloading", "verifying"].includes(status.state))
+    )
+      return;
+    const timer = window.setInterval(() => void refresh(), 1000);
     return () => window.clearInterval(timer);
-  }, [status.state, refresh]);
-  const action = async (fn: () => Promise<void>) => {
-    setBusy(true);
-    let actionError = "";
+  }, [statuses, refresh]);
+
+  const action = async (modelId: LocalModelId, operation: () => Promise<void>) => {
+    setBusy(modelId);
     try {
-      await fn();
-    } catch (error) {
-      actionError = error instanceof Error ? error.message : "Operazione non riuscita";
+      await operation();
     } finally {
       await refresh();
-      if (actionError) {
-        setStatus((s: LocalLlmStatus) => ({ ...s, state: "error", errorMessage: actionError }));
-      }
-      setBusy(false);
+      setBusy(null);
     }
   };
-  const supported = isOnDeviceLlmAvailable() && status.supported;
-  const downloading = status.state === "downloading" || status.state === "verifying";
-  const label: Record<LocalLlmStatus["state"], string> = {
-    unsupported: "Non supportato su questo dispositivo/ABI",
-    "not-installed": "Modello non installato",
-    downloading: "Download in corso…",
-    verifying: "Verifica del modello…",
-    ready: "Modello pronto",
-    error: status.errorMessage || "Si è verificato un errore",
-  };
+
+  const labelFor = (status: LocalLlmStatus) =>
+    ({
+      unsupported: "Non disponibile su questo dispositivo",
+      "not-installed": "Non scaricata",
+      downloading: "Download in corso…",
+      verifying: "Verifica file…",
+      ready: "Pronta offline",
+      error: status.errorMessage || "Errore download",
+    })[status.state];
+
   return (
     <>
       <h2 className="mt-6 mb-2 text-sm font-semibold">AI sul telefono</h2>
       <section className="card-surface space-y-3 p-4" aria-label="Impostazioni AI sul telefono">
-        <p className="text-sm font-medium">Qwen3 0.6B · circa 586 MiB</p>
         <p className="text-xs text-muted-foreground">
-          Il modello è facoltativo, scaricato solo da qui e usato solo scegliendo AI telefono in
-          Assistente. Il download usa circa 586 MiB di traffico (anche dati mobili) e richiede circa
-          720 MiB liberi sul dispositivo. Domande e documenti restano sul telefono; non vengono
-          inviati a Groq. Modello rilasciato con licenza Apache-2.0;{" "}
-          <a
-            href="https://huggingface.co/litert-community/Qwen3-0.6B/tree/8d42ab5f1db14cad987fac57aeb17d070f9e180d"
-            target="_blank"
-            rel="noreferrer"
-            className="underline"
-          >
-            fonte e termini del modello.
-          </a>
+          Quattro modelli LiteRT-LM separati: nessuno viene inserito nell’APK. Il peso indicato è lo
+          spazio del file; durante il download viene mostrato anche lo spazio libero rilevato.
         </p>
-        <p role="status" className="text-xs">
-          {label[status.state]}
-          {status.totalBytes > 0 && downloading
-            ? ` · ${Math.round(status.progress)}% (${(status.downloadedBytes / 1048576).toFixed(0)} / ${(status.totalBytes / 1048576).toFixed(0)} MiB)`
-            : ""}
-        </p>
-        {downloading && (
-          <progress
-            className="w-full"
-            max={100}
-            value={status.progress}
-            aria-label="Download modello"
-          />
-        )}
-        {!supported && (
-          <p className="text-xs text-muted-foreground">
-            Questo dispositivo o ABI non è supportato dal bridge installato.
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          {supported && status.state !== "ready" && (
-            <button
-              className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground disabled:opacity-50"
-              disabled={busy || downloading}
-              onClick={() => void action(downloadOnDeviceLlm)}
-            >
-              {status.state === "error" ? "Riprova download" : "Scarica modello"}
-            </button>
-          )}
-          {downloading && (
-            <button
-              className="rounded-lg border px-3 py-2 text-xs"
-              disabled={busy}
-              onClick={() => void action(cancelOnDeviceLlmDownload)}
-            >
-              Annulla
-            </button>
-          )}
-          {supported && status.state === "ready" && (
-            <button
-              className="rounded-lg border px-3 py-2 text-xs"
-              disabled={busy}
-              onClick={() => void action(deleteOnDeviceLlm)}
-            >
-              Elimina modello
-            </button>
-          )}
-          <button
-            className="rounded-lg border px-3 py-2 text-xs"
-            disabled={busy}
-            onClick={() => void refresh()}
-          >
-            Aggiorna stato
-          </button>
+        <div className="space-y-3">
+          {models.map((model) => {
+            const status = statuses[model.id] ?? initialStatus(model);
+            const downloading = status.state === "downloading" || status.state === "verifying";
+            const isBusy = busy === model.id;
+            return (
+              <article
+                key={model.id}
+                className={`rounded-xl border p-3 ${selected === model.id ? "border-primary bg-primary-soft/30" : "border-border"}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold">{model.label}</p>
+                      {selected === model.id && (
+                        <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">
+                          Selezionata
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs font-medium">{model.modelName}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Download/spazio: <strong>{formatBytes(model.sizeBytes)}</strong> · consigliati{" "}
+                      {formatBytes(model.requiredFreeBytes)} liberi.
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {model.compatibility}. Licenza: {model.license}.
+                    </p>
+                    {model.note && <p className="mt-1 text-[10px] text-warning">{model.note}</p>}
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {status.availableBytes ? `${formatBytes(status.availableBytes)} liberi` : ""}
+                  </span>
+                </div>
+                <p role="status" className="mt-2 text-[11px]">
+                  {labelFor(status)}
+                  {downloading && status.totalBytes > 0
+                    ? ` · ${Math.round(status.progress * 100)}% (${formatBytes(status.downloadedBytes)} / ${formatBytes(status.totalBytes)})`
+                    : ""}
+                </p>
+                {downloading && (
+                  <progress
+                    className="mt-1 w-full"
+                    max={1}
+                    value={status.progress}
+                    aria-label={`Download ${model.label}`}
+                  />
+                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {status.state === "ready" && (
+                    <button
+                      type="button"
+                      className="rounded-lg bg-primary px-3 py-2 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
+                      disabled={isBusy || selected === model.id}
+                      onClick={() =>
+                        void action(model.id, async () => {
+                          await selectLocalModel(model.id);
+                          setSelected(model.id);
+                        })
+                      }
+                    >
+                      {selected === model.id ? "In uso" : "Usa questo modello"}
+                    </button>
+                  )}
+                  {status.state !== "ready" &&
+                    status.state !== "downloading" &&
+                    status.state !== "verifying" && (
+                      <button
+                        type="button"
+                        className="rounded-lg bg-primary px-3 py-2 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
+                        disabled={isBusy || !isOnDeviceLlmAvailable()}
+                        onClick={() => void action(model.id, () => downloadOnDeviceLlm(model.id))}
+                      >
+                        {status.state === "error" ? "Riprova download" : "Scarica modello"}
+                      </button>
+                    )}
+                  {downloading && (
+                    <button
+                      type="button"
+                      className="rounded-lg border px-3 py-2 text-[11px] disabled:opacity-50"
+                      disabled={isBusy}
+                      onClick={() =>
+                        void action(model.id, () => cancelOnDeviceLlmDownload(model.id))
+                      }
+                    >
+                      Annulla
+                    </button>
+                  )}
+                  {status.state === "ready" && (
+                    <button
+                      type="button"
+                      className="rounded-lg border px-3 py-2 text-[11px] disabled:opacity-50"
+                      disabled={isBusy}
+                      onClick={() => void action(model.id, () => deleteOnDeviceLlm(model.id))}
+                    >
+                      Elimina
+                    </button>
+                  )}
+                </div>
+                {!isOnDeviceLlmAvailable() && (
+                  <p className="mt-2 text-[10px] text-muted-foreground">
+                    Il download e l’uso offline si attivano nell’app Android. Il modello Ultra
+                    Leggera è pensato per dispositivi con poca RAM.
+                  </p>
+                )}
+              </article>
+            );
+          })}
         </div>
+        <button
+          type="button"
+          className="rounded-lg border px-3 py-2 text-[11px]"
+          onClick={() => void refresh()}
+        >
+          Aggiorna stato
+        </button>
         <p className="text-[11px] text-muted-foreground">
-          Per selezionare il modello:{" "}
+          Dopo aver scaricato e selezionato un modello, apri{" "}
           <Link className="text-primary underline" to="/assistente">
-            apri Assistente
+            Assistente
           </Link>{" "}
-          e scegli AI telefono. Il download non parte automaticamente.
+          e scegli “Locale”. L’API Groq resta invariata e continua a funzionare come prima.
         </p>
       </section>
     </>

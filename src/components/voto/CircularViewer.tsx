@@ -39,6 +39,11 @@ import {
 } from "@/lib/voto/circular-assistant";
 import { useOnlineStatus } from "@/lib/voto/use-online-status";
 import { getCircularAttachmentSignedUrl, isCapacitorNative } from "@/lib/voto/circulars";
+import {
+  generateOnDeviceLlm,
+  getSelectedLocalModel,
+  type LocalModelId,
+} from "@/lib/native-local-llm";
 import { AssistantMarkdown } from "./AssistantMarkdown";
 import { PdfCanvasPreview } from "./PdfCanvasPreview";
 
@@ -298,6 +303,7 @@ export function CircularViewer({
   const [isAskingAi, setIsAskingAi] = useState(false);
   const [aiProgressMessage, setAiProgressMessage] = useState<string | undefined>();
   const [aiDocumentTruncated, setAiDocumentTruncated] = useState(false);
+  const [selectedLocalModel, setSelectedLocalModel] = useState<LocalModelId | null>(null);
   const isNative = isCapacitorNative();
   const activeAiMode = isOnline && (aiMode === "api" || aiMode === "api-vision") ? aiMode : "local";
   const aiRequestId = useRef(0);
@@ -327,6 +333,13 @@ export function CircularViewer({
       // La modalità resta locale per la sessione corrente.
     }
   }, [aiMode, isOnline]);
+
+  useEffect(() => {
+    if (!isNative) return;
+    void getSelectedLocalModel()
+      .then(setSelectedLocalModel)
+      .catch(() => setSelectedLocalModel(null));
+  }, [isNative]);
 
   useEffect(() => {
     if (open) {
@@ -522,7 +535,15 @@ export function CircularViewer({
             documentTruncated,
           });
         } else {
-          answer = answerCircularQuestionLocally(question, limitedDocumentText);
+          if (isNative && selectedLocalModel) {
+            setAiProgressMessage("Risposta generata sul telefono…");
+            answer = await generateOnDeviceLlm(
+              `Rispondi in italiano alla domanda usando esclusivamente il testo della circolare.\n\nDOMANDA:\n${question}\n\nTESTO:\n${limitedDocumentText}`,
+              selectedLocalModel,
+            );
+          } else {
+            answer = answerCircularQuestionLocally(question, limitedDocumentText);
+          }
         }
       }
       if (aiRequestId.current === requestId) {
@@ -884,7 +905,7 @@ export function CircularViewer({
               </div>
               <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
                 {effectiveAiMode === "local"
-                  ? "Il testo viene cercato sul dispositivo e non inviato a Groq. La modalità locale mostra passaggi pertinenti, senza generare una risposta."
+                  ? "Se hai scaricato e selezionato un modello, la risposta viene generata sul telefono con LiteRT-LM. Altrimenti VOTO usa la ricerca locale di passaggi. In entrambi i casi: testo non inviato a Groq."
                   : effectiveAiMode === "api-vision"
                     ? "Solo quando premi Chiedi, Groq riceve la domanda e le immagini JPEG delle prime 3 pagine PDF, che escono dal dispositivo. Titolo, cronologia, voti e presenze non vengono inviati."
                     : "Solo quando premi Chiedi, vengono inviati a Groq il testo selezionabile e la domanda corrente. Non vengono inviati titolo, cronologia, voti o presenze."}{" "}

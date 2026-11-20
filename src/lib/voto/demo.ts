@@ -198,13 +198,14 @@ export function makeDemoRaw() {
       },
       {
         id: "a4",
-        title: "Essay: My future career",
-        subject: "Inglese",
+        title: "Ex. pag. 77 n. 5, 6 and 7. Be prepared for the oral tests.",
+        subject: "Lingua Inglese",
         dueDate: iso(3),
         dueTime: "23:59",
+        assignedDate: iso(-1),
         completed: false,
-        details: "250 parole",
-        teacher: "Prof. Bianchi",
+        details: "Ex. pag. 77 n. 5, 6 and 7. Be prepared for the oral tests.",
+        teacher: "M. FASONE",
       },
       {
         id: "a5",

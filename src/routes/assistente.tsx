@@ -4,6 +4,7 @@ import {
   FileText,
   LoaderCircle,
   Paperclip,
+  Plus,
   ScanText,
   Send,
   Sparkles,
@@ -16,7 +17,12 @@ import {
   type AssignmentConfirmation,
 } from "@/lib/voto/assistant-actions";
 import { answerQuestion, scheduleDayToClear } from "@/lib/voto/assistant";
-import { generateOnDeviceLlm, getOnDeviceLlmStatus } from "@/lib/native-local-llm";
+import {
+  generateOnDeviceLlm,
+  getOnDeviceLlmStatus,
+  getSelectedLocalModel,
+  type LocalModelId,
+} from "@/lib/native-local-llm";
 import {
   answerCircularChatQuestion,
   isCircularChatQuestion,
@@ -104,6 +110,7 @@ function Assistant() {
   const [assistantMode, setAssistantMode] = useState<CircularAssistantMode>("local");
   const [apiQuota, setApiQuota] = useState<ApiQuota | null>(() => getLastApiQuota());
   const [deviceModelState, setDeviceModelState] = useState<string>("checking");
+  const [selectedDeviceModel, setSelectedDeviceModel] = useState<LocalModelId | null>(null);
   const canUseApi = isOnline && (typeof navigator === "undefined" || navigator.onLine);
   const activeAssistantMode =
     assistantMode === "on-device" && deviceModelState !== "ready"
@@ -122,10 +129,12 @@ function Assistant() {
     }
     const refreshModelStatus = async () => {
       try {
-        const status = await getOnDeviceLlmStatus();
+        const modelId = await getSelectedLocalModel();
+        const status = modelId ? await getOnDeviceLlmStatus(modelId) : null;
         if (!live) return;
-        setDeviceModelState(status.state);
-        if (status.state === "ready") {
+        setSelectedDeviceModel(modelId);
+        setDeviceModelState(status?.state ?? "not-installed");
+        if (status?.state === "ready") {
           if (restoreOnDeviceModeRef.current) {
             restoreOnDeviceModeRef.current = false;
             setAssistantMode((current) => (current === "local" ? "on-device" : current));
@@ -453,6 +462,7 @@ function Assistant() {
         if (useAttachmentOnDevice) {
           const answer = await generateOnDeviceLlm(
             `Rispondi in italiano in modo conciso basandoti solo sul testo allegato; se non basta, dillo.\nDomanda: ${(clean || "Riassumi l’allegato").slice(0, 1000)}\nTesto: ${attachmentText.slice(0, 10000)}`,
+            selectedDeviceModel ?? undefined,
           );
           assistantMessage = { role: "assistant", text: answer.slice(0, 4000) };
         } else if (useAttachmentApi) {
@@ -490,6 +500,7 @@ function Assistant() {
                   text: (
                     await generateOnDeviceLlm(
                       `Rispondi in italiano in modo utile e conciso. Non inventare fatti se non sei sicuro.\nDomanda: ${clean.slice(0, 2000)}`,
+                      selectedDeviceModel ?? undefined,
                     )
                   ).slice(0, 4000),
                 }
@@ -567,6 +578,26 @@ function Assistant() {
     ]);
   };
 
+  const startNewChat = () => {
+    if (isReplying || isReadingAttachment) return;
+    setQuestion("");
+    setMessages([
+      {
+        role: "assistant",
+        text: "Ciao! Sono l’assistente di VOTO. In Locale consulto i dati e i documenti sul dispositivo, spiego alcuni calcoli dell’app e do consigli generali di studio; con API puoi chiedere anche risposte generative su argomenti più ampi.",
+      },
+    ]);
+    setPendingAction(null);
+    setAttachment(null);
+    setAttachmentError("");
+    setSuggestions(pickAssistantSuggestions());
+    try {
+      window.localStorage.removeItem(ASSISTANT_MESSAGES_KEY);
+    } catch {
+      // La nuova chat resta comunque attiva nella sessione corrente.
+    }
+  };
+
   return (
     <div className="pt-3">
       <div className="flex items-start justify-between gap-3">
@@ -577,9 +608,22 @@ function Assistant() {
             pertinenti.
           </p>
         </div>
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
-          <Bot className="h-5 w-5" />
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={startNewChat}
+            disabled={isReplying || isReadingAttachment}
+            className="press inline-flex h-10 items-center gap-1.5 rounded-xl border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40"
+            aria-label="Avvia nuova chat"
+            title="Avvia nuova chat"
+          >
+            <Plus className="h-4 w-4" />
+            Nuova chat
+          </button>
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <Bot className="h-5 w-5" />
+          </span>
+        </div>
       </div>
 
       <section className="card-surface mt-5 p-4">

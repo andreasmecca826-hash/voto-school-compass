@@ -1,5 +1,5 @@
-import { CalendarX2, FileText } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { CalendarX2, FileText, X } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   lazy,
   Suspense,
@@ -17,7 +17,7 @@ import {
   selectUpcomingReminders,
 } from "@/lib/voto/selectors";
 import { fmtDate, toIso } from "@/lib/voto/dates";
-import type { AppNotification } from "@/lib/voto/types";
+import type { AppNotification, Assignment, Grade, Subject } from "@/lib/voto/types";
 import { useClock, useVoto } from "@/lib/voto/store";
 import { fmt, overallAverage } from "@/lib/voto/calc";
 import { KEYS, load, save } from "@/lib/voto/storage";
@@ -79,12 +79,17 @@ export function DidupDashboard() {
   const v = useVoto();
   const now = useClock();
   const [averageHidden, setAverageHidden] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => {
     setAverageHidden(load(KEYS.homeAverageHidden, false));
   }, []);
   const { subjects, assignments, notifications, attendance } = v.data;
   const { subjects: periodSubjects, label: periodLabel } = useSchoolPeriods();
   const [selectedCircular, setSelectedCircular] = useState<AppNotification | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<{ grade: Grade; subject: Subject } | null>(
+    null,
+  );
   const [viewerRequested, setViewerRequested] = useState(false);
   const today = toIso(now);
   const isDone = v.isDone;
@@ -205,12 +210,19 @@ export function DidupDashboard() {
           ) : (
             <div className="text-center">
               <h2 className="text-[16px] font-extrabold leading-none">Media</h2>
-              <div
-                className="didup-average-ring mx-auto mt-[22px]"
-                style={{ "--progress": `${progress}%` } as CSSProperties}
+              <button
+                type="button"
+                aria-label="Apri i voti"
+                onClick={() => void navigate({ to: "/voti" })}
+                className="mx-auto mt-[22px] block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0aa0b1]"
               >
-                <span>{avg === null ? "—" : fmt(avg)}</span>
-              </div>
+                <div
+                  className="didup-average-ring"
+                  style={{ "--progress": `${progress}%` } as CSSProperties}
+                >
+                  <span>{avg === null ? "—" : fmt(avg)}</span>
+                </div>
+              </button>
               <p className="mt-[22px] text-[12px] italic leading-5 text-white/90">
                 Calcolata nel periodo
               </p>
@@ -259,9 +271,12 @@ export function DidupDashboard() {
       <DidupScroller>
         {openAssignments.length > 0 ? (
           openAssignments.slice(0, 5).map((item) => (
-            <article
+            <button
+              type="button"
               key={item.id}
-              className="didup-tile didup-task-tile flex min-h-[172px] w-[84%] shrink-0 flex-col overflow-hidden px-5 pb-5 pt-[18px]"
+              onClick={() => setSelectedAssignment(item)}
+              aria-label={`Apri compito ${item.title}`}
+              className="didup-tile didup-task-tile flex min-h-[172px] w-[84%] shrink-0 flex-col overflow-hidden px-5 pb-5 pt-[18px] text-left"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="truncate text-[16px] font-medium uppercase text-white/90">
@@ -276,14 +291,82 @@ export function DidupDashboard() {
               <p className="mt-auto border-t border-white/30 pt-3 text-right text-[10px] uppercase text-black/80">
                 Consegna {dueDateLabel(item.dueDate)}
               </p>
-            </article>
+            </button>
           ))
         ) : (
           <EmptyTile text="Nessun compito in scadenza" variant="task" />
         )}
       </DidupScroller>
 
-      <section className="didup-card relative mt-9 overflow-hidden px-5 pb-2 pt-4">
+      {selectedAssignment && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/35"
+          role="presentation"
+          onClick={() => setSelectedAssignment(null)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="didup-assignment-detail-title"
+            className="didup-page w-full max-w-[480px] rounded-t-[18px] bg-black px-5 pb-8 pt-4 text-white shadow-[0_-8px_30px_rgba(0,0,0,0.35)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start gap-4 border-b border-white/30 pb-5">
+              <div className="flex w-9 shrink-0 flex-col items-center">
+                <img
+                  src="/didup-icons/person.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-7 w-7 object-contain brightness-0 invert"
+                />
+                <p className="mt-1 whitespace-nowrap text-[15px] font-semibold uppercase leading-none text-[#08a5b5]">
+                  {shortDate(selectedAssignment.assignedDate || selectedAssignment.dueDate)}
+                </p>
+              </div>
+              <p className="min-w-0 flex-1 pt-1 text-[16px] uppercase leading-tight">
+                {selectedAssignment.teacher ||
+                  teacherForSubject(selectedAssignment.subject) ||
+                  "Compito assegnato"}
+              </p>
+              <button
+                type="button"
+                aria-label="Chiudi dettaglio compito"
+                onClick={() => setSelectedAssignment(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08a5b5]"
+              >
+                <X className="h-8 w-8" strokeWidth={2.4} />
+              </button>
+            </div>
+            <h2
+              id="didup-assignment-detail-title"
+              className="mt-7 text-[19px] font-extrabold uppercase leading-tight"
+            >
+              {selectedAssignment.subject || "COMPITO"}
+            </h2>
+            <p className="mt-5 whitespace-pre-line text-[16px] leading-[1.45] text-white/90">
+              {selectedAssignment.details || selectedAssignment.title}
+            </p>
+            {selectedAssignment.dueDate && (
+              <p className="mt-8 text-right text-[12px] uppercase tracking-wide text-[#08a5b5]">
+                Consegna il {dueDateLabel(selectedAssignment.dueDate)}
+              </p>
+            )}
+          </section>
+        </div>
+      )}
+      <section
+        className="didup-card relative mt-9 cursor-pointer overflow-hidden px-5 pb-2 pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0aa0b1]"
+        role="link"
+        tabIndex={0}
+        aria-label="Apri la sezione Eventi appello"
+        onClick={() => void navigate({ to: "/assenze" })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            void navigate({ to: "/assenze" });
+          }
+        }}
+      >
         <img
           src="/didup-event-badge-transparent.png"
           alt=""
@@ -359,9 +442,12 @@ export function DidupDashboard() {
           const teacher = grade.teacher || subject.teacher;
 
           return (
-            <article
+            <button
+              type="button"
               key={grade.id}
-              className="didup-tile relative min-h-[154px] w-[84%] shrink-0 overflow-hidden p-4"
+              onClick={() => setSelectedGrade({ grade, subject })}
+              aria-label={`Apri voto ${grade.label} ${subject.name}`}
+              className="didup-tile relative min-h-[154px] w-[84%] shrink-0 overflow-hidden p-4 text-left"
             >
               <span className="absolute right-0 top-0 flex h-[60px] w-[60px] items-center justify-center text-[20px] font-extrabold text-white">
                 <img
@@ -376,10 +462,108 @@ export function DidupDashboard() {
               <p className="mt-5 text-[16px] uppercase">{subject.name}</p>
               {grade.comment && <p className="mt-1 text-[13px] text-white/90">{grade.comment}</p>}
               {teacher && <p className="mt-1 text-[11px] text-white/65">{teacher}</p>}
-            </article>
+            </button>
           );
         })}
       </DidupScroller>
+
+      {selectedGrade && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/35"
+          role="presentation"
+          onClick={() => setSelectedGrade(null)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="didup-grade-detail-title"
+            className="didup-page w-full max-w-[480px] rounded-t-[18px] bg-black px-5 pb-8 pt-4 text-white shadow-[0_-8px_30px_rgba(0,0,0,0.35)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start gap-4 border-b border-white/30 pb-5">
+              <div className="flex w-9 shrink-0 flex-col items-center">
+                <img
+                  src="/didup-icons/person.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-7 w-7 object-contain brightness-0 invert"
+                />
+                <p className="mt-1 whitespace-nowrap text-[15px] font-semibold uppercase leading-none text-[#08a5b5]">
+                  {shortDate(selectedGrade.grade.date)}
+                </p>
+              </div>
+              <p className="min-w-0 flex-1 pt-1 text-[16px] uppercase leading-tight">
+                {selectedGrade.grade.teacher || selectedGrade.subject.teacher || "Docente"}
+              </p>
+              <button
+                type="button"
+                aria-label="Chiudi dettaglio voto"
+                onClick={() => setSelectedGrade(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08a5b5]"
+              >
+                <X className="h-8 w-8" strokeWidth={2.4} />
+              </button>
+            </div>
+            <div className="mt-8 flex items-start gap-7">
+              <span className="relative flex h-[106px] w-[106px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[31px] font-extrabold text-white">
+                <img
+                  src={
+                    selectedGrade.grade.value < 5
+                      ? "/didup-grade-badge-red.png"
+                      : selectedGrade.grade.value < 6
+                        ? "/didup-grade-badge-orange.png"
+                        : "/didup-grade-badge.png"
+                  }
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full rounded-full object-cover"
+                />
+                <span className="relative z-10">{selectedGrade.grade.label}</span>
+              </span>
+              <div className="min-w-0 pt-1">
+                <h2 id="didup-grade-detail-title" className="text-[20px] font-extrabold uppercase">
+                  {selectedGrade.subject.name}
+                </h2>
+                <p className="mt-2 text-[16px] font-semibold uppercase">
+                  {selectedGrade.grade.type === "scritto"
+                    ? "Prova scritta"
+                    : selectedGrade.grade.type === "orale"
+                      ? "Interrogazione orale"
+                      : selectedGrade.grade.type === "pratico"
+                        ? "Prova pratica"
+                        : "Valutazione"}
+                </p>
+                <p className="mt-1 text-[16px] text-white/65">
+                  Valore: {selectedGrade.grade.value.toFixed(1)}
+                </p>
+                <p className="text-[16px] text-white/65">
+                  descrizione: {selectedGrade.grade.label}
+                </p>
+              </div>
+            </div>
+            <div className="mt-10">
+              <div className="flex items-center gap-4">
+                <h3 className="whitespace-nowrap text-[15px] italic uppercase">
+                  Descrizione prova
+                </h3>
+                <span className="h-px flex-1 bg-white/45" />
+              </div>
+              <p className="mt-4 text-[17px] text-white/90">
+                {selectedGrade.grade.comment || "Non è presente nessuna descrizione..."}
+              </p>
+            </div>
+            <div className="mt-8">
+              <div className="flex items-center gap-4">
+                <h3 className="whitespace-nowrap text-[15px] italic uppercase">Commento docente</h3>
+                <span className="h-px flex-1 bg-white/45" />
+              </div>
+              <p className="mt-4 text-[17px] text-white/90">
+                Non è presente nessuna descrizione...
+              </p>
+            </div>
+          </section>
+        </div>
+      )}
 
       <DidupSectionTitle title="Bacheca" href="/bacheca" compact linkLabel="Vedi tutte" />
       <DidupScroller>
