@@ -20,6 +20,7 @@ const DEFAULT_STATUS: DidupSyncStatus = {
   hasCredentials: false,
   hasSession: false,
   intervalMinutes: 360,
+  variableInterval: false,
   quietHoursEnabled: true,
   quietHoursStart: "00:00",
   quietHoursEnd: "06:00",
@@ -33,6 +34,9 @@ const DEFAULT_STATUS: DidupSyncStatus = {
 
 const SYNC_INTERVAL_OPTIONS = [
   { minutes: 15, label: "Ogni 15 minuti" },
+  { minutes: 20, label: "Ogni 20 minuti" },
+  { minutes: 25, label: "Ogni 25 minuti" },
+  { minutes: 30, label: "Ogni 30 minuti" },
   { minutes: 60, label: "Ogni ora" },
   { minutes: 180, label: "Ogni 3 ore" },
   { minutes: 360, label: "Ogni 6 ore" },
@@ -77,6 +81,7 @@ export function DidupSyncSettings() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState(360);
+  const [variableInterval, setVariableInterval] = useState(false);
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(true);
   const [quietHoursStart, setQuietHoursStart] = useState("00:00");
   const [quietHoursEnd, setQuietHoursEnd] = useState("06:00");
@@ -89,6 +94,7 @@ export function DidupSyncSettings() {
       const next = await getNativeDidupSyncStatus();
       setStatus(next);
       setIntervalMinutes(next.intervalMinutes || 360);
+      setVariableInterval(next.variableInterval ?? false);
       setQuietHoursEnabled(next.quietHoursEnabled ?? true);
       setQuietHoursStart(next.quietHoursStart || "00:00");
       setQuietHoursEnd(next.quietHoursEnd || "06:00");
@@ -149,6 +155,7 @@ export function DidupSyncSettings() {
         username: username.trim(),
         password,
         intervalMinutes,
+        variableInterval,
       });
       setSchoolCode("");
       setUsername("");
@@ -235,7 +242,7 @@ export function DidupSyncSettings() {
     setBusy(true);
     setStatus((current) => ({ ...current, enabled }));
     try {
-      await setNativeDidupSyncEnabled(enabled, intervalMinutes);
+      await setNativeDidupSyncEnabled(enabled, intervalMinutes, variableInterval);
       await refreshStatus();
       // Mantieni lo stato richiesto anche se il bridge restituisce per un istante il valore cache.
       setStatus((current) => ({ ...current, enabled }));
@@ -253,7 +260,7 @@ export function DidupSyncSettings() {
   async function handleIntervalSave() {
     setBusy(true);
     try {
-      await setNativeDidupSyncEnabled(status.enabled, intervalMinutes);
+      await setNativeDidupSyncEnabled(status.enabled, intervalMinutes, variableInterval);
       await refreshStatus();
       toast.success("Intervallo aggiornato.");
     } catch {
@@ -342,7 +349,7 @@ export function DidupSyncSettings() {
             </p>
             <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
               {status.hasCredentials
-                ? `Controllo periodico ${status.enabled ? "attivo" : "sospeso"} · ${intervalLabel(status.intervalMinutes)} · pausa ${status.quietHoursEnabled ? `${status.quietHoursStart}–${status.quietHoursEnd}` : "disattivata"}`
+                ? `Controllo periodico ${status.enabled ? "attivo" : "sospeso"} · ${status.variableInterval ? `intervallo variabile intorno a ${intervalLabel(status.intervalMinutes)}` : intervalLabel(status.intervalMinutes)} · pausa ${status.quietHoursEnabled ? `${status.quietHoursStart}–${status.quietHoursEnd}` : "disattivata"}`
                 : "Salva le credenziali DidUP per attivare il controllo periodico."}
             </p>
           </div>
@@ -496,6 +503,22 @@ export function DidupSyncSettings() {
             ))}
           </select>
         </div>
+        <label className="mt-3 flex items-start gap-2 text-[11px] leading-relaxed">
+          <input
+            type="checkbox"
+            checked={variableInterval}
+            onChange={(event) => setVariableInterval(event.target.checked)}
+            disabled={busy}
+            className="mt-0.5 h-4 w-4 accent-primary"
+          />
+          <span>
+            Intervallo variabile (±5 minuti)
+            <span className="mt-0.5 block text-[10px] text-muted-foreground">
+              Il prossimo controllo viene scelto automaticamente nell’intervallo indicato; mai sotto
+              i 15 minuti.
+            </span>
+          </span>
+        </label>
 
         <fieldset className="space-y-3 rounded-xl border border-border bg-surface/40 p-3">
           <legend className="px-1 text-xs font-semibold">Fascia senza controlli</legend>

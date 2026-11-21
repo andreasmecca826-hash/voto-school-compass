@@ -97,14 +97,18 @@ function Assenze() {
         to="/calendario-assenze"
         className={cn(
           "press mt-4 flex min-h-12 w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold",
-          isDidup ? "border-white/10 bg-[#262626] text-white" : "border-border bg-card text-foreground",
+          isDidup
+            ? "border-white/10 bg-[#262626] text-white"
+            : "border-border bg-card text-foreground",
         )}
       >
         <span className="flex items-center gap-2">
           <CalendarDays className={cn("h-5 w-5", isDidup ? "text-[#08a5b5]" : "text-primary")} />
           Apri calendario presenze
         </span>
-        <ChevronRight className={cn("h-4 w-4", isDidup ? "text-white/55" : "text-muted-foreground")} />
+        <ChevronRight
+          className={cn("h-4 w-4", isDidup ? "text-white/55" : "text-muted-foreground")}
+        />
       </Link>
 
       <div className="mt-6 flex items-center justify-between">
@@ -161,7 +165,6 @@ function Assenze() {
                   )}
                 >
                   Assenza
-                  {event.justificationStatus ? ` · ${event.justificationStatus}` : " registrata"}
                 </p>
               </div>
             </li>

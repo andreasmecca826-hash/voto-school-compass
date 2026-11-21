@@ -62,6 +62,7 @@ public class DidupSyncPlugin extends Plugin {
         String supabaseUrl = call.getString("supabaseUrl", "").trim();
         String publishableKey = call.getString("publishableKey", "").trim();
         int intervalMinutes = call.getInt("intervalMinutes", 360);
+        boolean variableInterval = call.getBoolean("variableInterval", false);
         if (schoolCode.isEmpty() || username.isEmpty() || password.isEmpty()
                 || supabaseUrl.isEmpty() || publishableKey.isEmpty()) {
             call.reject("Completa tutti i campi richiesti.");
@@ -73,7 +74,7 @@ public class DidupSyncPlugin extends Plugin {
         }
         try {
             DidupSyncVault.saveCredentials(getContext(), schoolCode, username, password,
-                    supabaseUrl, publishableKey, intervalMinutes);
+                    supabaseUrl, publishableKey, intervalMinutes, variableInterval);
             DidupSyncWorker.configurePeriodic(getContext());
             call.resolve();
         } catch (Exception error) {
@@ -201,7 +202,9 @@ public class DidupSyncPlugin extends Plugin {
     public void setEnabled(PluginCall call) {
         boolean enabled = call.getBoolean("enabled", false);
         int intervalMinutes = call.getInt("intervalMinutes", DidupSyncVault.intervalMinutes(getContext()));
+        boolean variableInterval = call.getBoolean("variableInterval", DidupSyncVault.variableInterval(getContext()));
         DidupSyncVault.setIntervalMinutes(getContext(), intervalMinutes);
+        DidupSyncVault.setVariableInterval(getContext(), variableInterval);
         DidupSyncVault.setEnabled(getContext(), enabled);
         if (enabled) {
             DidupSyncWorker.configurePeriodic(getContext());

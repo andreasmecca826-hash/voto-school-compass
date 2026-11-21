@@ -8,6 +8,7 @@ const native = vi.hoisted(() => ({
     hasCredentials: true,
     hasSession: true,
     intervalMinutes: 360,
+    variableInterval: false,
     quietHoursEnabled: true,
     quietHoursStart: "00:00",
     quietHoursEnd: "06:00",
@@ -52,6 +53,7 @@ beforeEach(() => {
     hasCredentials: true,
     hasSession: true,
     intervalMinutes: 360,
+    variableInterval: false,
     quietHoursEnabled: true,
     quietHoursStart: "00:00",
     quietHoursEnd: "06:00",
@@ -121,7 +123,7 @@ describe("toggle sincronizzazione DidUP", () => {
     fireEvent.click(toggle);
 
     await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "true"));
-    expect(native.setEnabled).toHaveBeenCalledWith(true, 360);
+    expect(native.setEnabled).toHaveBeenCalledWith(true, 360, false);
     expect(screen.getByText("Attiva")).toBeInTheDocument();
     expect(
       screen.getByText("Controllo periodico attivo · ogni 6 ore · pausa 00:00–06:00"),
@@ -129,7 +131,7 @@ describe("toggle sincronizzazione DidUP", () => {
 
     fireEvent.click(toggle);
     await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
-    expect(native.setEnabled).toHaveBeenLastCalledWith(false, 360);
+    expect(native.setEnabled).toHaveBeenLastCalledWith(false, 360, false);
   });
 
   it("mostra il warning allegati anche se i dati generali sono stati sincronizzati", async () => {

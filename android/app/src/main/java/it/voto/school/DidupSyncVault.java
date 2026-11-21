@@ -34,6 +34,7 @@ final class DidupSyncVault {
     private static final String KEY_REFRESH = "enc_supabase_refresh";
     private static final String KEY_EXPIRES = "supabase_expires_at";
     private static final String KEY_INTERVAL_MINUTES = "interval_minutes";
+    private static final String KEY_VARIABLE_INTERVAL = "variable_interval";
     private static final String LEGACY_INTERVAL_HOURS = "interval_hours";
     private static final String KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled";
     private static final String KEY_QUIET_HOURS_START = "quiet_hours_start";
@@ -103,7 +104,7 @@ final class DidupSyncVault {
 
     static synchronized void saveCredentials(Context context, String schoolCode, String username,
                                              String password, String supabaseUrl, String publishableKey,
-                                             int intervalMinutes) throws Exception {
+                                             int intervalMinutes, boolean variableInterval) throws Exception {
         SharedPreferences.Editor editor = prefs(context).edit();
         editor.putString(KEY_SCHOOL, encrypt(schoolCode.trim()));
         editor.putString(KEY_USERNAME, encrypt(username.trim()));
@@ -111,6 +112,7 @@ final class DidupSyncVault {
         editor.putString("supabase_url", supabaseUrl.trim());
         editor.putString("publishable_key", publishableKey.trim());
         editor.putInt(KEY_INTERVAL_MINUTES, Math.max(15, Math.min(1440, intervalMinutes)));
+        editor.putBoolean(KEY_VARIABLE_INTERVAL, variableInterval);
         editor.remove(LEGACY_INTERVAL_HOURS);
         editor.putBoolean("enabled", true);
         editor.apply();
@@ -261,6 +263,14 @@ final class DidupSyncVault {
                 .apply();
     }
 
+    static synchronized void setVariableInterval(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_VARIABLE_INTERVAL, enabled).apply();
+    }
+
+    static synchronized boolean variableInterval(Context context) {
+        return prefs(context).getBoolean(KEY_VARIABLE_INTERVAL, false);
+    }
+
     static synchronized boolean isEnabled(Context context) {
         return prefs(context).getBoolean("enabled", false);
     }
@@ -298,6 +308,7 @@ final class DidupSyncVault {
         result.put("hasCredentials", hasCredentials(context));
         result.put("hasSession", hasSession(context));
         result.put("intervalMinutes", intervalMinutes(context));
+        result.put("variableInterval", variableInterval(context));
         result.put("quietHoursEnabled", p.getBoolean(KEY_QUIET_HOURS_ENABLED, true));
         result.put("quietHoursStart", p.getString(KEY_QUIET_HOURS_START, DEFAULT_QUIET_HOURS_START));
         result.put("quietHoursEnd", p.getString(KEY_QUIET_HOURS_END, DEFAULT_QUIET_HOURS_END));

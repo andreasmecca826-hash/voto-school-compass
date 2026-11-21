@@ -23,6 +23,7 @@ import com.chaquo.python.android.AndroidPlatform;
 import org.json.JSONObject;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class DidupSyncWorker extends Worker {
     private static final String PERIODIC_NAME = "voto-didup-periodic-sync";
@@ -40,13 +41,18 @@ public final class DidupSyncWorker extends Worker {
         boolean manual = getInputData().getBoolean("manual", false);
         if (!manual && !DidupSyncVault.isEnabled(context)) return Result.success();
         // La pausa vale solo per i job periodici; il comando manuale resta disponibile.
-        if (!manual && DidupSyncVault.isQuietHoursNow(context)) return Result.success();
+        if (!manual && DidupSyncVault.isQuietHoursNow(context)) {
+            scheduleNextVariable(context);
+            return Result.success();
+        }
         if (!DidupSyncVault.hasCredentials(context)) {
             recordLocalError(context, "credentials_required", "Inserisci le credenziali DidUP per attivare la sincronizzazione.");
+            if (!manual) scheduleNextVariable(context);
             return manual ? Result.failure() : Result.success();
         }
         if (!DidupSyncVault.hasSession(context)) {
             recordLocalError(context, "session_required", "Apri VOTO e accedi per autorizzare la sincronizzazione sicura.");
+            if (!manual) scheduleNextVariable(context);
             return manual ? Result.failure() : Result.success();
         }
 
@@ -63,19 +69,28 @@ public final class DidupSyncWorker extends Worker {
             if (result.optBoolean("retry", false)) return Result.retry();
             if ("attachment_pending".equals(result.optString("code"))) {
                 enqueueAttachmentContinuation(context);
+                scheduleNextVariable(context);
                 return Result.success();
             }
             if (result.optBoolean("ok", false)) {
                 WidgetData.refreshLatest(context);
+                scheduleNextVariable(context);
                 return Result.success();
             }
             // Result.failure() termina definitivamente un PeriodicWorkRequest.
             // Conserva lo stato di errore nel vault, ma lascia attivo il ciclo automatico.
+            if (!manual) scheduleNextVariable(context);
             return manual ? Result.failure() : Result.success();
         } catch (Throwable error) {
             recordLocalError(context, "sync_error", "Sincronizzazione non riuscita. Riproverò quando le condizioni lo consentiranno.");
             return Result.retry();
         }
+    }
+
+    private static void scheduleNextVariable(Context context) {
+        Context app = context.getApplicationContext();
+        if (!DidupSyncVault.variableInterval(app) || !DidupSyncVault.isEnabled(app)) return;
+        scheduleVariableWork(app);
     }
 
     private static void recordLocalError(Context context, String code, String message) {
@@ -97,6 +112,11 @@ public final class DidupSyncWorker extends Worker {
             WorkManager.getInstance(app).cancelUniqueWork(PERIODIC_NAME);
             return;
         }
+        if (DidupSyncVault.variableInterval(app)) {
+            WorkManager.getInstance(app).cancelUniqueWork(PERIODIC_NAME);
+            scheduleVariableWork(app);
+            return;
+        }
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
@@ -110,6 +130,26 @@ public final class DidupSyncWorker extends Worker {
         WorkManager.getInstance(app).enqueueUniquePeriodicWork(
                 PERIODIC_NAME,
                 ExistingPeriodicWorkPolicy.UPDATE,
+                request
+        );
+    }
+
+    private static void scheduleVariableWork(Context context) {
+        int base = Math.max(15, Math.min(1440, DidupSyncVault.intervalMinutes(context)));
+        int lower = Math.max(15, base - 5);
+        int upper = Math.min(1440, base + 5);
+        long delay = ThreadLocalRandom.current().nextInt(lower, upper + 1);
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(DidupSyncWorker.class)
+                .setConstraints(constraints)
+                .setInitialDelay(delay, TimeUnit.MINUTES)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+                .build();
+        WorkManager.getInstance(context).enqueueUniqueWork(
+                PERIODIC_NAME,
+                ExistingWorkPolicy.REPLACE,
                 request
         );
     }
