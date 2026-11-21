@@ -21,6 +21,7 @@ import {
   generateOnDeviceLlm,
   getOnDeviceLlmStatus,
   getSelectedLocalModel,
+  LOCAL_MODEL_CATALOG,
   type LocalModelId,
 } from "@/lib/native-local-llm";
 import {
@@ -179,6 +180,17 @@ function Assistant() {
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
   const [attachmentError, setAttachmentError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supportsAttachments = activeAssistantMode === "api" || activeAssistantMode === "on-device";
+  const selectedDeviceModelInfo = selectedDeviceModel
+    ? LOCAL_MODEL_CATALOG.find((model) => model.id === selectedDeviceModel)
+    : undefined;
+
+  useEffect(() => {
+    if (supportsAttachments || !attachment) return;
+    setAttachment(null);
+    setAttachmentError("");
+  }, [attachment, supportsAttachments]);
+
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<AssistantChatMessage[]>(() => {
     if (typeof window === "undefined") {
@@ -633,7 +645,7 @@ function Assistant() {
             {activeAssistantMode === "local"
               ? "Modalità Locale"
               : activeAssistantMode === "on-device"
-                ? "AI telefono · Qwen3 0.6B"
+                ? `AI telefono · ${selectedDeviceModelInfo?.label ?? selectedDeviceModelInfo?.modelName ?? "modello locale"}`
                 : "Modalità API Groq (Qwen)"}
           </div>
           <div
@@ -678,7 +690,7 @@ function Assistant() {
           {activeAssistantMode === "local"
             ? "Locale consulta sul dispositivo il regolamento ufficiale Morselli-Sturzo e la ricerca PDF fornita dall’utente (non verificata). Domande, circolari e dati scolastici non vengono inviati a Groq."
             : activeAssistantMode === "on-device"
-              ? "AI telefono usa il modello Qwen3 installato localmente: domanda e soli estratti pertinenti non escono dal dispositivo. Scarica il modello da Impostazioni; nessun fallback API in caso di errore."
+              ? `AI telefono usa ${selectedDeviceModelInfo?.modelName ?? "il modello locale selezionato"}: domanda e soli estratti pertinenti non escono dal dispositivo. Nessun fallback API in caso di errore.`
               : "API invia a Groq la domanda e gli estratti pertinenti dei documenti. Non invia automaticamente dati scolastici o cronologia; i dati personali scritti nella domanda vengono inviati."}{" "}
           {!canUseApi && (
             <span className="font-medium text-primary">
@@ -690,20 +702,6 @@ function Assistant() {
         {activeAssistantMode === "on-device" && deviceModelState === "unsupported" && (
           <p className="mt-2 text-xs font-medium text-destructive">
             AI telefono non disponibile su questo dispositivo. Gestisci il modello da Impostazioni.
-          </p>
-        )}
-        {activeAssistantMode === "on-device" && deviceModelState === "not-installed" && (
-          <p className="mt-2 text-xs font-medium">
-            Modello assente: installalo da Impostazioni prima di inviare una domanda.
-          </p>
-        )}
-        {activeAssistantMode === "on-device" && (
-          <p className="mt-1 text-xs">
-            Se il modello manca o non risponde, riceverai un errore esplicito senza invio a Groq.{" "}
-            <a href="/impostazioni" className="text-primary underline">
-              Apri Impostazioni per installarlo
-            </a>
-            .
           </p>
         )}
         {activeAssistantMode === "api" && apiQuota && (
@@ -912,27 +910,31 @@ function Assistant() {
         }}
         className="sticky bottom-20 mt-5 flex gap-2 rounded-2xl border border-border bg-background/95 p-2 backdrop-blur md:bottom-8"
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          className="hidden"
-          aria-label="Allega file alla chat"
-          onChange={(event) => {
-            selectAttachment(event.target.files?.[0]);
-            event.currentTarget.value = "";
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isReplying || isReadingAttachment}
-          className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground disabled:opacity-40"
-          aria-label="Allega file alla chat"
-          title="Allega file alla chat"
-        >
-          <Paperclip className="h-4 w-4" />
-        </button>
+        {supportsAttachments && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              aria-label="Allega file alla chat"
+              onChange={(event) => {
+                selectAttachment(event.target.files?.[0]);
+                event.currentTarget.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isReplying || isReadingAttachment}
+              className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground disabled:opacity-40"
+              aria-label="Allega file alla chat"
+              title="Allega file alla chat"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+          </>
+        )}
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
